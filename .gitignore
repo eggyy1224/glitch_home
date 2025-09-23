@@ -1,0 +1,15 @@
+夜遊 - 毛刺
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Generated artifacts
+offspring_images/
+metadata/
+embeddings/
+genes_pool/
+
+# Node
+node_modules/
