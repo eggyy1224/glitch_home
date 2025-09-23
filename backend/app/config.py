@@ -34,6 +34,8 @@ class Settings:
         "FIXED_PROMPT",
         "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
     )
+    # Resize input images before sending to model to reduce flaky errors due to size limits
+    image_size: int = int(os.getenv("IMAGE_SIZE", "1024"))
 
     def __post_init__(self) -> None:
         # Resolve relative paths against project root to allow using
@@ -61,5 +63,4 @@ class Settings:
 
 
 settings = Settings()
-
 

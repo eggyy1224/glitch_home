@@ -21,6 +21,7 @@ pip install -r requirements.txt
 - `OFFSPRING_DIR`（預設 `backend/offspring_images`）
 - `METADATA_DIR`（預設 `backend/metadata`）
 - `FIXED_PROMPT`（可自訂融合風格）
+- `IMAGE_SIZE`（預設 `1024`，送進模型前會把每張輸入圖等比例縮到最長邊不超過此值，降低因輸入過大導致的偶發失敗）
 
 範例：
 ```bash
@@ -40,14 +41,15 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ## API
 - `GET /health`
 - `POST /api/generate/mix-two`
-  從 `GENES_POOL_DIRS`（或 `GENES_POOL_DIR`）隨機選 2 張，呼叫 Gemini 生成融合圖，結果存於 `OFFSPRING_DIR`，metadata 存於 `METADATA_DIR`。
+  - Query 參數：`count`（預設 2，需 ≥ 2）
+  - 從 `GENES_POOL_DIRS`（或 `GENES_POOL_DIR`）隨機選 `count` 張，呼叫 Gemini 生成融合圖，結果存於 `OFFSPRING_DIR`，metadata 存於 `METADATA_DIR`。
 
 回應範例：
 ```json
 {
   "output_image_path": "backend/offspring_images/offspring_20250101_120000_123.png",
   "metadata_path": "backend/metadata/offspring_20250101_120000_123.json",
-  "parents": ["a.png", "b.jpg"],
+  "parents": ["a.png", "b.jpg", "c.jpg"],
   "model_name": "gemini-2.5-flash-image-preview"
 }
 ```
