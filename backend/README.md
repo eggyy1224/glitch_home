@@ -18,15 +18,15 @@ pip install -r requirements.txt
 - `MODEL_NAME`（預設 `gemini-2.5-flash-image-preview`）
 - `GENES_POOL_DIRS`（多資料夾，逗號分隔；若設定此值則優先於 `GENES_POOL_DIR`）
 - `GENES_POOL_DIR`（單一資料夾，舊設定）
-- `OFFSPRING_DIR`（預設 `offspring_images`）
-- `METADATA_DIR`（預設 `metadata`）
+- `OFFSPRING_DIR`（預設 `backend/offspring_images`）
+- `METADATA_DIR`（預設 `backend/metadata`）
 - `FIXED_PROMPT`（可自訂融合風格）
 
 範例：
 ```bash
 export GENES_POOL_DIRS="夜遊 - 毛刺/攝影圖像/橫式,夜遊 - 毛刺/攝影圖像/直式,夜遊 - 毛刺/AI生成靜態影像"
-export OFFSPRING_DIR="offspring_images"
-export METADATA_DIR="metadata"
+export OFFSPRING_DIR="backend/offspring_images"
+export METADATA_DIR="backend/metadata"
 export GEMINI_API_KEY="你的金鑰"
 ```
 
@@ -45,8 +45,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 回應範例：
 ```json
 {
-  "output_image_path": "offspring_images/offspring_20250101_120000_123.png",
-  "metadata_path": "metadata/offspring_20250101_120000_123.json",
+  "output_image_path": "backend/offspring_images/offspring_20250101_120000_123.png",
+  "metadata_path": "backend/metadata/offspring_20250101_120000_123.json",
   "parents": ["a.png", "b.jpg"],
   "model_name": "gemini-2.5-flash-image-preview"
 }

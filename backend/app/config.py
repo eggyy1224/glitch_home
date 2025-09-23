@@ -28,8 +28,8 @@ class Settings:
     genes_pool_dir: str = os.getenv("GENES_POOL_DIR", "genes_pool")
     # New: multiple dirs, comma-separated
     genes_pool_dirs_raw: Optional[str] = os.getenv("GENES_POOL_DIRS")
-    offspring_dir: str = os.getenv("OFFSPRING_DIR", "offspring_images")
-    metadata_dir: str = os.getenv("METADATA_DIR", "metadata")
+    offspring_dir: str = os.getenv("OFFSPRING_DIR", "backend/offspring_images")
+    metadata_dir: str = os.getenv("METADATA_DIR", "backend/metadata")
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
         "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
