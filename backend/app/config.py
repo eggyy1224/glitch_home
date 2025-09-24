@@ -33,11 +33,13 @@ class Settings:
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
         (
-            "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. "
-            "Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), "
-            "shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, "
-            "realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; "
-            "present as a single shot (not a collage); avoid painterly or digital-art looks."
+            "Extract the most distinctive subjects, forms, textures, and lighting cues from the provided images and recombine them "
+            "into a freshly composed scene. Build a new layout from scratch—do not preserve or layer whole backgrounds; reinterpret "
+            "placement, perspective, and scale so every element feels re-staged rather than pasted. Render as photorealistic "
+            "large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when "
+            "appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical "
+            "falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly "
+            "stylization or obvious digital compositing artifacts."
         ),
     )
     # Resize input images before sending to model to reduce flaky errors due to size limits
