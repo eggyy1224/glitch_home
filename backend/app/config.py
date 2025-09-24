@@ -32,7 +32,13 @@ class Settings:
     metadata_dir: str = os.getenv("METADATA_DIR", "backend/metadata")
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
-        "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+        (
+            "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. "
+            "Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), "
+            "shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, "
+            "realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; "
+            "present as a single shot (not a collage); avoid painterly or digital-art looks."
+        ),
     )
     # Resize input images before sending to model to reduce flaky errors due to size limits
     image_size: int = int(os.getenv("IMAGE_SIZE", "1024"))
@@ -63,4 +69,3 @@ class Settings:
 
 
 settings = Settings()
-
