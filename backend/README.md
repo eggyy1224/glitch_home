@@ -41,8 +41,28 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ## API
 - `GET /health`
 - `POST /api/generate/mix-two`
-  - Query 參數：`count`（預設 2，需 ≥ 2）
-  - 從 `GENES_POOL_DIRS`（或 `GENES_POOL_DIR`）隨機選 `count` 張，呼叫 Gemini 生成融合圖，結果存於 `OFFSPRING_DIR`，metadata 存於 `METADATA_DIR`。
+  - 向下相容：可不帶 Body，改用 Query 參數 `count`（預設 2，需 ≥ 2），舊行為不變。
+  - 擴充（建議）：以 JSON Body 指定更完整的控制：
+    ```json
+    {
+      "parents": ["攝影圖像/直式/a.jpg", "AI生成靜態影像/b.png"],
+      "count": 3,
+      "prompt": "custom prompt here",
+      "strength": 0.6,
+      "output_format": "png",
+      "output_width": 1024,
+      "output_height": 768,
+      "output_max_side": 1200,
+      "resize_mode": "cover"
+    }
+    ```
+    - `parents`：可用絕對路徑、相對於 `GENES_POOL_DIRS` 的相對路徑，或檔名 basename；若未提供則會隨機抽樣 `count` 張（預設 2）。
+    - `prompt`：自訂 prompt；未提供則用 `FIXED_PROMPT`。
+    - `strength`：0..1 的融合強度提示；目前以 prompt 訊息傳遞（未使用模型原生參數）。
+    - `output_format`：`png` 或 `jpeg`（`jpg` 同義）。
+    - `output_width`/`output_height`：輸出尺寸；若只給其中一個，會等比計算另一邊；若兩者皆無但給 `output_max_side`，會將最長邊等比縮至該值；若都未給則保留模型輸出尺寸。
+    - `resize_mode`：當同時提供寬與高時的行為：`cover`（預設，等比放大填滿後置中裁切，無黑邊）或 `fit`（等比縮放塞入框內，必要時補邊，PNG 透明 / JPEG 黑色）。
+  - 流程：從 `GENES_POOL_DIRS`（或 `GENES_POOL_DIR`）取父圖（指定或隨機），呼叫 Gemini 生成融合圖，結果存於 `OFFSPRING_DIR`，metadata 存於 `METADATA_DIR`。
 
 回應範例：
 ```json
@@ -50,7 +70,10 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
   "output_image_path": "backend/offspring_images/offspring_20250101_120000_123.png",
   "metadata_path": "backend/metadata/offspring_20250101_120000_123.json",
   "parents": ["a.png", "b.jpg", "c.jpg"],
-  "model_name": "gemini-2.5-flash-image-preview"
+  "model_name": "gemini-2.5-flash-image-preview",
+  "output_format": "png",
+  "width": 1024,
+  "height": 768
 }
 ```
 
