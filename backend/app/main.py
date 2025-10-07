@@ -74,7 +74,10 @@ def _load_all_metadata() -> dict:
 
 
 @app.get("/api/kinship")
-def api_kinship(img: str = Query(..., description="offspring 檔名（含副檔名）")) -> dict:
+def api_kinship(
+    img: str = Query(..., description="offspring 檔名（含副檔名）"),
+    depth: int = Query(1, ge=-1, description="祖先追溯層數；-1 代表窮盡直到無父母"),
+) -> dict:
     metas = _load_all_metadata()
     if img not in metas:
         raise HTTPException(status_code=404, detail="image metadata not found")
@@ -97,4 +100,48 @@ def api_kinship(img: str = Query(..., description="offspring 檔名（含副檔�
                 siblings.add(name)
 
     related = sorted(parents | children | siblings)
-    return {"original_image": img, "related_images": related}
+
+    # 祖先（依 depth 追溯；-1 代表窮盡）
+    ancestors: set[str] = set()
+    ancestors_by_level: list[list[str]] = []
+    if depth != 0:
+        visited: set[str] = set([img])
+        frontier: set[str] = set(parents)
+        level: int = 1
+        while frontier:
+            level_items = sorted(frontier)
+            ancestors_by_level.append(level_items)
+            ancestors.update(frontier)
+            visited.update(frontier)
+            if depth != -1 and level >= depth:
+                break
+            next_frontier: set[str] = set()
+            for name in frontier:
+                ps = set(metas.get(name, {}).get("parents", []))
+                ps = {p for p in ps if p not in visited}
+                next_frontier.update(ps)
+            frontier = next_frontier
+            level += 1
+
+    # 最上層（沒有父母或已窮盡）
+    root_ancestors: list[str] = []
+    if ancestors_by_level:
+        last_level = set(ancestors_by_level[-1])
+        roots = []
+        for a in last_level:
+            ps = metas.get(a, {}).get("parents", [])
+            if not ps:
+                roots.append(a)
+        root_ancestors = sorted(roots)
+
+    return {
+        "original_image": img,
+        "related_images": related,  # 向下相容
+        "parents": sorted(parents),
+        "children": sorted(children),
+        "siblings": sorted(siblings),
+        "ancestors": sorted(ancestors),
+        "ancestors_by_level": ancestors_by_level,
+        "root_ancestors": root_ancestors,
+        "depth_used": depth,
+    }
