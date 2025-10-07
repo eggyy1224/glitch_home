@@ -26,7 +26,7 @@ function Photo({ url, size = 3, position = [0, 0, 0], name, onPick }) {
         onPointerOut={() => (document.body.style.cursor = "default")}
       >
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial map={tex} toneMapped={false} />
+        <meshBasicMaterial map={tex} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
     </Float>
   );
