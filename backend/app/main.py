@@ -1,11 +1,22 @@
 from fastapi import FastAPI, HTTPException, Query, Body
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+import glob
+import json
+import os
 from .config import settings
 from .services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
 from .models.schemas import GenerateMixTwoResponse, GenerateMixTwoRequest
 
 
 app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
+
+# 靜態掛載生成影像：/generated_images -> settings.offspring_dir
+app.mount(
+    "/generated_images",
+    StaticFiles(directory=settings.offspring_dir),
+    name="generated_images",
+)
 
 
 @app.get("/health")
@@ -44,3 +55,46 @@ def api_generate_mix_two(
         raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(status_code=201, content=result)
+
+
+def _load_all_metadata() -> dict:
+    """讀取所有 metadata，回傳 {output_image: meta_dict}。"""
+    mapping: dict[str, dict] = {}
+    pattern = os.path.join(settings.metadata_dir, "*.json")
+    for path in glob.glob(pattern):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            out = data.get("output_image")
+            if out:
+                mapping[out] = data
+        except Exception:
+            continue
+    return mapping
+
+
+@app.get("/api/kinship")
+def api_kinship(img: str = Query(..., description="offspring 檔名（含副檔名）")) -> dict:
+    metas = _load_all_metadata()
+    if img not in metas:
+        raise HTTPException(status_code=404, detail="image metadata not found")
+
+    # 父母
+    parents = set(metas[img].get("parents", []))
+
+    # 子代：誰把我當作 parent
+    children = {name for name, meta in metas.items() if img in meta.get("parents", [])}
+
+    # 兄弟姊妹：共享任一父母
+    siblings = set()
+    my_parents = set(metas[img].get("parents", []))
+    if my_parents:
+        for name, meta in metas.items():
+            if name == img:
+                continue
+            ps = set(meta.get("parents", []))
+            if ps & my_parents:
+                siblings.add(name)
+
+    related = sorted(parents | children | siblings)
+    return {"original_image": img, "related_images": related}
