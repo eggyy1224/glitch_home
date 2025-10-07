@@ -82,6 +82,13 @@ def api_kinship(
     if img not in metas:
         raise HTTPException(status_code=404, detail="image metadata not found")
 
+    def exists_in_offspring(name: str) -> bool:
+        path = os.path.join(settings.offspring_dir, name)
+        return os.path.isfile(path)
+
+    def filter_existing(names: set[str] | list[str]) -> list[str]:
+        return sorted([n for n in names if exists_in_offspring(n)])
+
     # 父母
     parents = set(metas[img].get("parents", []))
 
@@ -99,6 +106,10 @@ def api_kinship(
             if ps & my_parents:
                 siblings.add(name)
 
+    # 僅保留實際存在於 offspring_dir 的影像，避免前端 404
+    parents = set(filter_existing(parents))
+    children = set(filter_existing(children))
+    siblings = set(filter_existing(siblings))
     related = sorted(parents | children | siblings)
 
     # 祖先（依 depth 追溯；-1 代表窮盡）
@@ -132,7 +143,7 @@ def api_kinship(
             ps = metas.get(a, {}).get("parents", [])
             if not ps:
                 roots.append(a)
-        root_ancestors = sorted(roots)
+        root_ancestors = filter_existing(roots)
 
     return {
         "original_image": img,
@@ -140,8 +151,8 @@ def api_kinship(
         "parents": sorted(parents),
         "children": sorted(children),
         "siblings": sorted(siblings),
-        "ancestors": sorted(ancestors),
-        "ancestors_by_level": ancestors_by_level,
+        "ancestors": filter_existing(ancestors),
+        "ancestors_by_level": [filter_existing(set(level)) for level in ancestors_by_level],
         "root_ancestors": root_ancestors,
         "depth_used": depth,
     }
