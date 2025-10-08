@@ -106,25 +106,25 @@ function SceneContent({ imagesBase, original, parents = [], children = [], sibli
     api.stop();
     api.start({
       from: { center: 0, parents: 0, siblings: 0, children: 0, ancestors: 0 },
-      config: { mass: 1, tension: 160, friction: 22 },
+      config: { mass: 1.2, tension: 90, friction: 26 },
       to: async (next) => {
-        await next({ center: 1, delay: 80 });
+        await next({ center: 1, delay: 160 });
         if (cancelled) return;
         if (parentsRing.length) {
-          await next({ parents: 1, delay: 120 });
+          await next({ parents: 1, delay: 220 });
           if (cancelled) return;
         }
         if (siblingsRing.length) {
-          await next({ siblings: 1, delay: 120 });
+          await next({ siblings: 1, delay: 220 });
           if (cancelled) return;
         }
         if (childrenRing.length) {
-          await next({ children: 1, delay: 120 });
+          await next({ children: 1, delay: 220 });
           if (cancelled) return;
         }
         if (ancestorRings.length) {
           for (let i = 0; i < ancestorRings.length; i++) {
-            await next({ ancestors: i + 1, delay: 140 });
+            await next({ ancestors: i + 1, delay: 240 });
             if (cancelled) return;
           }
         } else {
