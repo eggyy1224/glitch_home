@@ -3,6 +3,8 @@ import { fetchKinship } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
+const MAX_CLUSTERS = 3;
+const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
 
 export default function App() {
   const readParams = () => new URLSearchParams(window.location.search);
@@ -12,10 +14,38 @@ export default function App() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [clusters, setClusters] = useState([]);
 
   useEffect(() => {
     if (!imgId) return;
-    fetchKinship(imgId, -1).then(setData).catch((e) => setErr(e.message));
+    let cancelled = false;
+    setErr(null);
+    const anchorForCluster = { ...DEFAULT_ANCHOR };
+
+    fetchKinship(imgId, -1)
+      .then((res) => {
+        if (cancelled) return;
+        setData(res);
+        const originalImage = res?.original_image || imgId;
+        const cluster = {
+          id: `${originalImage}-${Date.now()}`,
+          original: originalImage,
+          anchor: anchorForCluster,
+          data: res,
+        };
+        setClusters((prev) => {
+          const next = [...prev, cluster];
+          if (next.length > MAX_CLUSTERS) next.splice(0, next.length - MAX_CLUSTERS);
+          return next;
+        });
+      })
+      .catch((e) => {
+        if (!cancelled) setErr(e.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [imgId]);
 
   const navigateToImage = (nextImg) => {
@@ -51,7 +81,9 @@ export default function App() {
     sessionStorage.setItem(key, JSON.stringify(Array.from(visited)));
 
     if (!next) return;
-    const t = setTimeout(() => navigateToImage(next), stepSec * 1000);
+    const t = setTimeout(() => {
+      navigateToImage(next);
+    }, stepSec * 1000);
     return () => clearTimeout(t);
   }, [data]);
 
@@ -90,16 +122,7 @@ export default function App() {
           <div className="badge">祖先（去重）：{ancestors.length}</div>
         </div>
       )}
-      <KinshipScene
-        imagesBase={IMAGES_BASE}
-        original={original}
-        related={related}
-        parents={parents}
-        children={children}
-        siblings={siblings}
-        ancestorsByLevel={ancestorsByLevel}
-        onPick={(n) => navigateToImage(n)}
-      />
+      <KinshipScene imagesBase={IMAGES_BASE} clusters={clusters} onPick={(name) => navigateToImage(name)} />
     </>
   );
 }
