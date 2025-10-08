@@ -11,7 +11,6 @@ export default function App() {
   const [imgId, setImgId] = useState(initialImg);
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [focus, setFocus] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
@@ -31,6 +30,9 @@ export default function App() {
   useEffect(() => {
     if (!data) return;
     const params = readParams();
+    // 新增：continuous=true 時，不自動切換
+    const continuous = (params.get("continuous") ?? "false") === "true";
+    if (continuous) return;
     const autoplay = (params.get("autoplay") ?? "1") !== "0"; // 預設自動
     if (!autoplay) return;
     const stepSec = Math.max(2, parseInt(params.get("step") || "30"));
@@ -96,13 +98,8 @@ export default function App() {
         children={children}
         siblings={siblings}
         ancestorsByLevel={ancestorsByLevel}
-        onPick={(n) => setFocus(n)}
+        onPick={(n) => navigateToImage(n)}
       />
-      <div className={`modal ${focus ? "open" : ""}`} onClick={() => setFocus(null)}>
-        {focus && <img src={`${IMAGES_BASE}${focus}`} alt={focus} />}
-      </div>
     </>
   );
 }
-
-
