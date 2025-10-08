@@ -1,16 +1,44 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Float, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useSpring } from "@react-spring/three";
 
-function Photo({ url, size = 3, position = [0, 0, 0], name, onPick, externalRef = null, getProgress = null }) {
+const onlyOffspring = (arr) => (arr || []).filter((n) => typeof n === "string" && n.startsWith("offspring_"));
+const levelsOnlyOffspring = (levels) => (levels || []).map((lv) => onlyOffspring(lv));
+const clamp01 = (value) => THREE.MathUtils.clamp(value, 0, 1);
+
+const toVec3 = (anchor) => new THREE.Vector3(anchor?.x || 0, anchor?.y || 0, anchor?.z || 0);
+
+const makeRing = (names, radius, yOffset, jitter, center) => {
+  const N = Math.max(names.length, 1);
+  return names.map((name, i) => {
+    const t = (i / N) * Math.PI * 2;
+    return {
+      name,
+      pos: new THREE.Vector3(
+        center.x + Math.cos(t) * radius,
+        center.y + yOffset + Math.sin(i * 1.3) * 0.4 * jitter,
+        center.z + Math.sin(t) * radius
+      ),
+    };
+  });
+};
+
+const wobblePosition = (pos, t, speed = 0.2, amp = 0.4, phase = 0) =>
+  new THREE.Vector3(
+    pos.x + Math.sin(t * speed + phase + pos.z * 0.1) * amp,
+    pos.y + Math.sin(t * (speed * 1.3) + phase + pos.x * 0.1) * amp * 0.4,
+    pos.z + Math.cos(t * (speed * 0.9) + phase + pos.y * 0.1) * amp
+  );
+
+function Photo({ url, size = 3, name, onPick, externalRef = null, getProgress = null }) {
   const tex = useTexture(url);
   const meshRef = useRef();
   const scaleRef = useRef([size, size, 1]);
   const phaseRef = useRef(Math.random() * Math.PI * 2);
   const speedRef = useRef(0.25 + Math.random() * 0.15);
-  const ampRef = useRef(0.06 + Math.random() * 0.03); // 6%~9%
+  const ampRef = useRef(0.06 + Math.random() * 0.03);
   const progressFnRef = useRef(() => 1);
 
   useEffect(() => {
@@ -32,10 +60,10 @@ function Photo({ url, size = 3, position = [0, 0, 0], name, onPick, externalRef 
   }, [getProgress]);
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
     const node = meshRef.current;
     if (!node) return;
-    const progress = THREE.MathUtils.clamp(progressFnRef.current?.() ?? 1, 0, 1);
+    const progress = clamp01(progressFnRef.current?.() ?? 1);
+    const t = clock.getElapsedTime();
     const [bx, by, bz] = scaleRef.current;
     const s = 1 + Math.sin(t * speedRef.current + phaseRef.current) * ampRef.current;
     const scaled = s * (progress > 0 ? progress : 0);
@@ -50,7 +78,6 @@ function Photo({ url, size = 3, position = [0, 0, 0], name, onPick, externalRef 
           meshRef.current = node;
           if (externalRef) externalRef.current = node;
         }}
-        position={position}
         onClick={() => onPick?.(name)}
         onPointerOver={() => (document.body.style.cursor = "pointer")}
         onPointerOut={() => (document.body.style.cursor = "default")}
@@ -62,42 +89,31 @@ function Photo({ url, size = 3, position = [0, 0, 0], name, onPick, externalRef 
   );
 }
 
-function SceneContent({ imagesBase, original, parents = [], children = [], siblings = [], ancestorsByLevel = [], onPick }) {
+function ClusterFlower({ imagesBase, cluster, onPick }) {
   const group = useRef();
-  const mainPos = useMemo(() => new THREE.Vector3(0, 0, 0), []);
-  // 僅顯示可從 /generated_images 提供的 offspring_* 影像，避免 404 造成渲染錯誤
-  const onlyOffspring = (arr) => (arr || []).filter((n) => typeof n === "string" && n.startsWith("offspring_"));
-  const levelsOnlyOffspring = (levels) => (levels || []).map((lv) => onlyOffspring(lv));
-  const ring = (names, radius, y = 0, jitter = 0.8) => {
-    const N = Math.max(names.length, 1);
-    return names.map((name, i) => {
-      const t = (i / N) * Math.PI * 2;
-      return {
-        name,
-        pos: new THREE.Vector3(
-          Math.cos(t) * radius,
-          y + Math.sin(i * 1.3) * 0.4 * jitter,
-          Math.sin(t) * radius
-        ),
-      };
-    });
-  };
+  const centerRef = useRef();
+  const { data, anchor } = cluster;
+  const original = data?.original_image || cluster.original || cluster.id;
+  const parents = data?.parents || [];
+  const siblings = data?.siblings || [];
+  const children = data?.children || [];
+  const ancestorsByLevel = data?.ancestors_by_level || [];
+  const anchorVec = useMemo(() => toVec3(anchor), [anchor?.x, anchor?.y, anchor?.z]);
 
-  const parentsRing = useMemo(() => ring(onlyOffspring(parents), 8, 3), [parents]);
-  const siblingsRing = useMemo(() => ring(onlyOffspring(siblings), 10, 0), [siblings]);
-  const childrenRing = useMemo(() => ring(onlyOffspring(children), 8, -3), [children]);
+  const parentsRing = useMemo(() => makeRing(onlyOffspring(parents), 8, 3, 0.8, anchorVec), [parents, anchorVec]);
+  const siblingsRing = useMemo(() => makeRing(onlyOffspring(siblings), 10, 0, 0.8, anchorVec), [siblings, anchorVec]);
+  const childrenRing = useMemo(() => makeRing(onlyOffspring(children), 8, -3, 0.8, anchorVec), [children, anchorVec]);
   const ancestorRings = useMemo(() => {
-    // 從父母之上開始鋪外圈（level1=父母的父母），每層半徑+3, y 也逐層+1
     const rings = [];
-    let baseRadius = 11; // 大於 siblings 的半徑
-    let baseY = 4;       // 高於 parents 的高度
+    let baseRadius = 11;
+    let baseY = 4;
     const lvls = levelsOnlyOffspring(ancestorsByLevel);
-    for (let i = 0; i < lvls.length - 1; i++) { // 減去 level0=直接父母
+    for (let i = 0; i < lvls.length - 1; i++) {
       const names = lvls[i + 1] || [];
-      rings.push(ring(names, baseRadius + i * 3, baseY + i * 1));
+      rings.push(makeRing(names, baseRadius + i * 3, baseY + i * 1, 0.7, anchorVec));
     }
-    return rings; // 陣列的每個元素是一個 nodes 陣列
-  }, [ancestorsByLevel]);
+    return rings;
+  }, [ancestorsByLevel, anchorVec]);
 
   const [springs, api] = useSpring(() => ({ center: 0, parents: 0, siblings: 0, children: 0, ancestors: 0 }));
 
@@ -137,50 +153,50 @@ function SceneContent({ imagesBase, original, parents = [], children = [], sibli
       cancelled = true;
       api.stop();
     };
-  }, [api, original, parentsRing.length, siblingsRing.length, childrenRing.length, ancestorRings.length]);
+  }, [api, cluster.id, parentsRing.length, siblingsRing.length, childrenRing.length, ancestorRings.length]);
 
-  const clamp01 = (v) => THREE.MathUtils.clamp(v, 0, 1);
-  const readSpring = (value, fallback = 0) => (value && typeof value.get === "function" ? value.get() : fallback);
+  const readSpring = (value, fallback = 0) => {
+    if (!value || typeof value.get !== "function") return fallback;
+    return value.get();
+  };
+
   const getCenterProgress = () => clamp01(readSpring(springs.center, 0));
   const getParentProgress = () => clamp01(readSpring(springs.parents, 0));
   const getSiblingProgress = () => clamp01(readSpring(springs.siblings, 0));
   const getChildrenProgress = () => clamp01(readSpring(springs.children, 0));
   const getAncestorProgress = (ringIdx) => () => clamp01(readSpring(springs.ancestors, 0) - ringIdx);
 
-  // 有機漂移：讓非原圖節點做微幅噪聲運動，並即時更新連線兩端
   const parentRefs = useRef([]);
   const siblingRefs = useRef([]);
   const childRefs = useRef([]);
-  const ancestorRefs = useRef([]); // 陣列中每一層是一個陣列
+  const ancestorRefs = useRef([]);
   parentRefs.current = [];
   siblingRefs.current = [];
   childRefs.current = [];
   ancestorRefs.current = ancestorRings.map(() => []);
 
-  function wobblePosition(pos, t, speed = 0.2, amp = 0.4, phase = 0) {
-    return new THREE.Vector3(
-      pos.x + Math.sin(t * speed + phase + pos.z * 0.1) * amp,
-      pos.y + Math.sin(t * (speed * 1.3) + phase + pos.x * 0.1) * amp * 0.4,
-      pos.z + Math.cos(t * (speed * 0.9) + phase + pos.y * 0.1) * amp
-    );
-  }
+  useEffect(() => {
+    if (centerRef.current) {
+      centerRef.current.position.set(anchorVec.x, anchorVec.y, anchorVec.z);
+    }
+  }, [anchorVec]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    if (group.current) group.current.rotation.y = t * 0.08;
+    if (group.current) group.current.rotation.y = t * 0.06;
 
-    const updateNodes = (entries) => {
+    const updateNodes = (entries, baseAnchor) => {
       entries.forEach((entry, idx) => {
         const ref = entry.meshRef?.current;
-        const lineRef = entry.lineRef?.current;
         if (!ref) return;
+        const lineRef = entry.lineRef?.current;
         const raw = typeof entry.getProgress === "function" ? entry.getProgress(idx) : entry.getProgress ?? 1;
         const factor = clamp01(Number.isFinite(raw) ? raw : 0);
-        const wobble = wobblePosition(entry.basePos, t, entry.speed, entry.amp, idx * 0.6).lerp(mainPos, 1 - factor);
+        const wobble = wobblePosition(entry.basePos, t, entry.speed, entry.amp, idx * 0.6).lerp(baseAnchor, 1 - factor);
         ref.position.copy(wobble);
         ref.visible = factor > 0.001;
         if (lineRef?.geometry) {
-          lineRef.geometry.setFromPoints([mainPos, wobble]);
+          lineRef.geometry.setFromPoints([baseAnchor, wobble]);
           lineRef.geometry.attributes.position.needsUpdate = true;
         }
         if (lineRef?.material) {
@@ -191,166 +207,177 @@ function SceneContent({ imagesBase, original, parents = [], children = [], sibli
       });
     };
 
-    updateNodes(parentRefs.current);
-    updateNodes(siblingRefs.current);
-    ancestorRefs.current.forEach((layer) => updateNodes(layer));
-    updateNodes(childRefs.current);
+    updateNodes(parentRefs.current, anchorVec);
+    updateNodes(siblingRefs.current, anchorVec);
+    ancestorRefs.current.forEach((layer) => updateNodes(layer, anchorVec));
+    updateNodes(childRefs.current, anchorVec);
   });
 
   return (
+    <group ref={group}>
+      <Photo
+        url={`${imagesBase}${original}`}
+        size={4.2}
+        name={original}
+        onPick={onPick}
+        externalRef={centerRef}
+        getProgress={getCenterProgress}
+      />
+      {parentsRing.map((n) => {
+        const meshRef = React.createRef();
+        const lineRef = React.createRef();
+        parentRefs.current.push({
+          name: n.name,
+          meshRef,
+          lineRef,
+          basePos: n.pos.clone(),
+          speed: 0.2,
+          amp: 0.5,
+          lineOpacity: 0.8,
+          getProgress: getParentProgress,
+        });
+        return (
+          <group key={`p-${cluster.id}-${n.name}`}>
+            <Photo
+              url={`${imagesBase}${n.name}`}
+              size={3.0}
+              name={n.name}
+              onPick={onPick}
+              externalRef={meshRef}
+              getProgress={getParentProgress}
+            />
+            <line ref={lineRef}>
+              <bufferGeometry attach="geometry" />
+              <lineBasicMaterial attach="material" color="#ffd166" transparent opacity={0} />
+            </line>
+          </group>
+        );
+      })}
+      {siblingsRing.map((n) => {
+        const meshRef = React.createRef();
+        const lineRef = React.createRef();
+        siblingRefs.current.push({
+          name: n.name,
+          meshRef,
+          lineRef,
+          basePos: n.pos.clone(),
+          speed: 0.25,
+          amp: 0.6,
+          lineOpacity: 0.4,
+          getProgress: getSiblingProgress,
+        });
+        return (
+          <group key={`s-${cluster.id}-${n.name}`}>
+            <Photo
+              url={`${imagesBase}${n.name}`}
+              size={2.8}
+              name={n.name}
+              onPick={onPick}
+              externalRef={meshRef}
+              getProgress={getSiblingProgress}
+            />
+            <line ref={lineRef}>
+              <bufferGeometry attach="geometry" />
+              <lineBasicMaterial attach="material" color="#44ccff" transparent opacity={0} />
+            </line>
+          </group>
+        );
+      })}
+      {ancestorRings.map((ringNodes, idx) => {
+        const ringProgress = getAncestorProgress(idx);
+        return (
+          <group key={`a-ring-${cluster.id}-${idx}`}>
+            {ringNodes.map((n) => {
+              const meshRef = React.createRef();
+              const lineRef = React.createRef();
+              if (!ancestorRefs.current[idx]) ancestorRefs.current[idx] = [];
+              ancestorRefs.current[idx].push({
+                name: n.name,
+                meshRef,
+                lineRef,
+                basePos: n.pos.clone(),
+                speed: 0.18,
+                amp: 0.5,
+                lineOpacity: 0.35,
+                getProgress: ringProgress,
+              });
+              return (
+                <group key={`a-${cluster.id}-${idx}-${n.name}`}>
+                  <Photo
+                    url={`${imagesBase}${n.name}`}
+                    size={2.6}
+                    name={n.name}
+                    onPick={onPick}
+                    externalRef={meshRef}
+                    getProgress={ringProgress}
+                  />
+                  <line ref={lineRef}>
+                    <bufferGeometry attach="geometry" />
+                    <lineBasicMaterial attach="material" color="#ffaaee" transparent opacity={0} />
+                  </line>
+                </group>
+              );
+            })}
+          </group>
+        );
+      })}
+      {childrenRing.map((n) => {
+        const meshRef = React.createRef();
+        const lineRef = React.createRef();
+        childRefs.current.push({
+          name: n.name,
+          meshRef,
+          lineRef,
+          basePos: n.pos.clone(),
+          speed: 0.22,
+          amp: 0.6,
+          lineOpacity: 0.8,
+          getProgress: getChildrenProgress,
+        });
+        return (
+          <group key={`c-${cluster.id}-${n.name}`}>
+            <Photo
+              url={`${imagesBase}${n.name}`}
+              size={3.0}
+              name={n.name}
+              onPick={onPick}
+              externalRef={meshRef}
+              getProgress={getChildrenProgress}
+            />
+            <line ref={lineRef}>
+              <bufferGeometry attach="geometry" />
+              <lineBasicMaterial attach="material" color="#06d6a0" transparent opacity={0} />
+            </line>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+function SceneContent({ imagesBase, clusters = [], onPick }) {
+  return (
     <>
-      <ambientLight intensity={0.9} />
-      <directionalLight intensity={0.6} position={[5, 10, 7]} />
-      <group ref={group}>
-        <Photo url={`${imagesBase}${original}`} size={4.2} position={[0, 0, 0]} name={original} onPick={onPick} getProgress={getCenterProgress} />
-        {parentsRing.map((n, idx) => {
-          const meshRef = React.createRef();
-          const lineRef = React.createRef();
-          parentRefs.current.push({
-            meshRef,
-            lineRef,
-            basePos: n.pos.clone(),
-            speed: 0.2,
-            amp: 0.5,
-            lineOpacity: 0.8,
-            getProgress: getParentProgress,
-          });
-          return (
-            <group key={`p-${n.name}`}>
-              <Photo
-                url={`${imagesBase}${n.name}`}
-                size={3.0}
-                position={[n.pos.x, n.pos.y, n.pos.z]}
-                name={n.name}
-                onPick={onPick}
-                externalRef={meshRef}
-                getProgress={getParentProgress}
-              />
-              <line ref={lineRef}>
-                <bufferGeometry attach="geometry" />
-                <lineBasicMaterial attach="material" color="#ffd166" transparent opacity={0} />
-              </line>
-            </group>
-          );
-        })}
-        {siblingsRing.map((n) => {
-          const meshRef = React.createRef();
-          const lineRef = React.createRef();
-          siblingRefs.current.push({
-            meshRef,
-            lineRef,
-            basePos: n.pos.clone(),
-            speed: 0.25,
-            amp: 0.6,
-            lineOpacity: 0.4,
-            getProgress: getSiblingProgress,
-          });
-          return (
-            <group key={`s-${n.name}`}>
-              <Photo
-                url={`${imagesBase}${n.name}`}
-                size={2.8}
-                position={[n.pos.x, n.pos.y, n.pos.z]}
-                name={n.name}
-                onPick={onPick}
-                externalRef={meshRef}
-                getProgress={getSiblingProgress}
-              />
-              <line ref={lineRef}>
-                <bufferGeometry attach="geometry" />
-                <lineBasicMaterial attach="material" color="#44ccff" transparent opacity={0} />
-              </line>
-            </group>
-          );
-        })}
-        {ancestorRings.map((ringNodes, idx) => {
-          const ringProgress = getAncestorProgress(idx);
-          return (
-            <group key={`a-ring-${idx}`}>
-              {ringNodes.map((n) => {
-                const meshRef = React.createRef();
-                const lineRef = React.createRef();
-                if (!ancestorRefs.current[idx]) ancestorRefs.current[idx] = [];
-                ancestorRefs.current[idx].push({
-                  meshRef,
-                  lineRef,
-                  basePos: n.pos.clone(),
-                  speed: 0.18,
-                  amp: 0.5,
-                  lineOpacity: 0.35,
-                  getProgress: ringProgress,
-                });
-                return (
-                  <group key={`a-${idx}-${n.name}`}>
-                    <Photo
-                      url={`${imagesBase}${n.name}`}
-                      size={2.6}
-                      position={[n.pos.x, n.pos.y, n.pos.z]}
-                      name={n.name}
-                      onPick={onPick}
-                      externalRef={meshRef}
-                      getProgress={ringProgress}
-                    />
-                    <line ref={lineRef}>
-                      <bufferGeometry attach="geometry" />
-                      <lineBasicMaterial attach="material" color="#ffaaee" transparent opacity={0} />
-                    </line>
-                  </group>
-                );
-              })}
-            </group>
-          );
-        })}
-        {childrenRing.map((n) => {
-          const meshRef = React.createRef();
-          const lineRef = React.createRef();
-          childRefs.current.push({
-            meshRef,
-            lineRef,
-            basePos: n.pos.clone(),
-            speed: 0.22,
-            amp: 0.6,
-            lineOpacity: 0.8,
-            getProgress: getChildrenProgress,
-          });
-          return (
-            <group key={`c-${n.name}`}>
-              <Photo
-                url={`${imagesBase}${n.name}`}
-                size={3.0}
-                position={[n.pos.x, n.pos.y, n.pos.z]}
-                name={n.name}
-                onPick={onPick}
-                externalRef={meshRef}
-                getProgress={getChildrenProgress}
-              />
-              <line ref={lineRef}>
-                <bufferGeometry attach="geometry" />
-                <lineBasicMaterial attach="material" color="#06d6a0" transparent opacity={0} />
-              </line>
-            </group>
-          );
-        })}
-      </group>
-      <OrbitControls enableDamping makeDefault />
+      {clusters.map((cluster) => (
+        <ClusterFlower
+          key={cluster.id}
+          cluster={cluster}
+          imagesBase={imagesBase}
+          onPick={onPick}
+        />
+      ))}
     </>
   );
 }
 
-export default function ThreeKinshipScene({ imagesBase, original, related, parents, children, siblings, ancestorsByLevel, onPick }) {
+export default function ThreeKinshipScene({ imagesBase, clusters, onPick }) {
   return (
     <Canvas camera={{ fov: 55, position: [0, 3, 12] }} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
       <fogExp2 attach="fog" args={[0x000000, 0.035]} />
-      <SceneContent
-        key={original}
-        imagesBase={imagesBase}
-        original={original}
-        parents={parents}
-        children={children}
-        siblings={siblings}
-        ancestorsByLevel={ancestorsByLevel}
-        onPick={onPick}
-      />
+      <ambientLight intensity={0.9} />
+      <directionalLight intensity={0.6} position={[5, 10, 7]} />
+      <SceneContent imagesBase={imagesBase} clusters={clusters} onPick={onPick} />
+      <OrbitControls enableDamping makeDefault />
     </Canvas>
   );
 }
