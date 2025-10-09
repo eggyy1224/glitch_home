@@ -372,7 +372,7 @@ function SceneContent({ imagesBase, clusters = [], onPick }) {
 
 export default function ThreeKinshipScene({ imagesBase, clusters, onPick }) {
   return (
-    <Canvas camera={{ fov: 55, position: [0, 3, 12] }} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
+    <Canvas camera={{ fov: 55, position: [0, 1.2, 15] }} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
       <fogExp2 attach="fog" args={[0x000000, 0.035]} />
       <ambientLight intensity={0.9} />
       <directionalLight intensity={0.6} position={[5, 10, 7]} />
