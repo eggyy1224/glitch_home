@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from datetime import datetime
 
 
 class GenerateMixTwoResponse(BaseModel):
@@ -30,3 +31,22 @@ class GenerateMixTwoRequest(BaseModel):
     # Resize behavior when both width & height provided: 'cover' (fill+center-crop)
     # or 'fit' (contain+pad). Defaults to 'cover'.
     resize_mode: Optional[str] = Field(default=None, description="cover|fit; default cover when width & height provided")
+
+
+class Vector3(BaseModel):
+    x: float
+    y: float
+    z: float
+
+
+class CameraPreset(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    position: Vector3
+    target: Vector3
+    updated_at: Optional[datetime] = None
+
+
+class SaveCameraPresetRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    position: Vector3
+    target: Vector3

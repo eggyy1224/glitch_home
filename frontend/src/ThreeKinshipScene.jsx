@@ -439,12 +439,32 @@ function FpsTracker({ onFpsUpdate }) {
   return null;
 }
 
+function CameraPresetApplier({ preset }) {
+  const controls = useThree((state) => state.controls);
+  const camera = useThree((state) => state.camera);
+
+  useEffect(() => {
+    if (!preset || !controls || !camera) return;
+    const { position, target } = preset;
+    if (position) {
+      camera.position.set(position.x, position.y, position.z);
+    }
+    if (target) {
+      controls.target.set(target.x, target.y, target.z);
+    }
+    controls.update();
+  }, [preset, controls, camera]);
+
+  return null;
+}
+
 export default function ThreeKinshipScene({
   imagesBase,
   clusters,
   onPick,
   onFpsUpdate = () => {},
   onCameraUpdate = () => {},
+  applyPreset = null,
 }) {
   return (
     <Canvas camera={{ fov: 55, position: [0, 1.2, 15] }} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
@@ -455,6 +475,7 @@ export default function ThreeKinshipScene({
       <OrbitControls enableDamping makeDefault />
       <FpsTracker onFpsUpdate={onFpsUpdate} />
       <CameraTracker onCameraUpdate={onCameraUpdate} />
+      <CameraPresetApplier preset={applyPreset} />
     </Canvas>
   );
 }
