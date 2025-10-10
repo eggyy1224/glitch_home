@@ -225,11 +225,9 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
       />
       {parentsRing.map((n) => {
         const meshRef = React.createRef();
-        const lineRef = React.createRef();
         parentRefs.current.push({
           name: n.name,
           meshRef,
-          lineRef,
           basePos: n.pos.clone(),
           speed: 0.2,
           amp: 0.5,
@@ -246,20 +244,14 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
               externalRef={meshRef}
               getProgress={getParentProgress}
             />
-            <line ref={lineRef}>
-              <bufferGeometry attach="geometry" />
-              <lineBasicMaterial attach="material" color="#ffd166" transparent opacity={0} />
-            </line>
           </group>
         );
       })}
       {siblingsRing.map((n) => {
         const meshRef = React.createRef();
-        const lineRef = React.createRef();
         siblingRefs.current.push({
           name: n.name,
           meshRef,
-          lineRef,
           basePos: n.pos.clone(),
           speed: 0.25,
           amp: 0.6,
@@ -276,10 +268,6 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
               externalRef={meshRef}
               getProgress={getSiblingProgress}
             />
-            <line ref={lineRef}>
-              <bufferGeometry attach="geometry" />
-              <lineBasicMaterial attach="material" color="#44ccff" transparent opacity={0} />
-            </line>
           </group>
         );
       })}
@@ -289,12 +277,10 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
           <group key={`a-ring-${cluster.id}-${idx}`}>
             {ringNodes.map((n) => {
               const meshRef = React.createRef();
-              const lineRef = React.createRef();
               if (!ancestorRefs.current[idx]) ancestorRefs.current[idx] = [];
               ancestorRefs.current[idx].push({
                 name: n.name,
                 meshRef,
-                lineRef,
                 basePos: n.pos.clone(),
                 speed: 0.18,
                 amp: 0.5,
@@ -311,10 +297,6 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
                     externalRef={meshRef}
                     getProgress={ringProgress}
                   />
-                  <line ref={lineRef}>
-                    <bufferGeometry attach="geometry" />
-                    <lineBasicMaterial attach="material" color="#ffaaee" transparent opacity={0} />
-                  </line>
                 </group>
               );
             })}
@@ -323,11 +305,9 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
       })}
       {childrenRing.map((n) => {
         const meshRef = React.createRef();
-        const lineRef = React.createRef();
         childRefs.current.push({
           name: n.name,
           meshRef,
-          lineRef,
           basePos: n.pos.clone(),
           speed: 0.22,
           amp: 0.6,
@@ -344,10 +324,6 @@ function ClusterFlower({ imagesBase, cluster, onPick }) {
               externalRef={meshRef}
               getProgress={getChildrenProgress}
             />
-            <line ref={lineRef}>
-              <bufferGeometry attach="geometry" />
-              <lineBasicMaterial attach="material" color="#06d6a0" transparent opacity={0} />
-            </line>
           </group>
         );
       })}
