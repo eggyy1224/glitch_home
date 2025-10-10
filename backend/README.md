@@ -64,17 +64,20 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
     - `resize_mode`：當同時提供寬與高時的行為：`cover`（預設，等比放大填滿後置中裁切，無黑邊）或 `fit`（等比縮放塞入框內，必要時補邊，PNG 透明 / JPEG 黑色）。
   - 流程：從 `GENES_POOL_DIRS`（或 `GENES_POOL_DIR`）取父圖（指定或隨機），呼叫 Gemini 生成融合圖，結果存於 `OFFSPRING_DIR`，metadata 存於 `METADATA_DIR`。
 
-回應範例：
-```json
-{
-  "output_image_path": "backend/offspring_images/offspring_20250101_120000_123.png",
-  "metadata_path": "backend/metadata/offspring_20250101_120000_123.json",
-  "parents": ["a.png", "b.jpg", "c.jpg"],
-  "model_name": "gemini-2.5-flash-image-preview",
-  "output_format": "png",
-  "width": 1024,
-  "height": 768
-}
-```
+  回應範例：
+  ```json
+  {
+    "output_image_path": "backend/offspring_images/offspring_20250101_120000_123.png",
+    "metadata_path": "backend/metadata/offspring_20250101_120000_123.json",
+    "parents": ["a.png", "b.jpg", "c.jpg"],
+    "model_name": "gemini-2.5-flash-image-preview",
+    "output_format": "png",
+    "width": 1024,
+    "height": 768
+  }
+  ```
+- `GET /api/camera-presets`：列出目前儲存的視角列表。
+- `POST /api/camera-presets`：儲存 / 覆寫視角。Body 需要包含 `name`、`position{x,y,z}`、`target{x,y,z}`。
+- `DELETE /api/camera-presets/{name}`：刪除指定名稱的視角。
 
 文件參考：[`Gemini Image Generation`](https://ai.google.dev/gemini-api/docs/image-generation)

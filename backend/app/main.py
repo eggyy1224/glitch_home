@@ -6,7 +6,17 @@ import json
 import os
 from .config import settings
 from .services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
-from .models.schemas import GenerateMixTwoResponse, GenerateMixTwoRequest
+from .services.camera_presets import (
+    list_camera_presets,
+    upsert_camera_preset,
+    delete_camera_preset,
+)
+from .models.schemas import (
+    GenerateMixTwoResponse,
+    GenerateMixTwoRequest,
+    CameraPreset,
+    SaveCameraPresetRequest,
+)
 
 
 app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
@@ -55,6 +65,33 @@ def api_generate_mix_two(
         raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(status_code=201, content=result)
+
+
+@app.get("/api/camera-presets", response_model=list[CameraPreset])
+def api_list_camera_presets() -> list[CameraPreset]:
+    presets = list_camera_presets()
+    return presets
+
+
+@app.post("/api/camera-presets", response_model=CameraPreset, status_code=201)
+def api_save_camera_preset(body: SaveCameraPresetRequest) -> CameraPreset:
+    try:
+        saved = upsert_camera_preset(body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return saved
+
+
+@app.delete("/api/camera-presets/{name}", status_code=204)
+def api_delete_camera_preset(name: str) -> None:
+    cleaned = name.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="name is required")
+    if any(sep in cleaned for sep in ("/", "\\", ":", "*", "?", "\"", "<", ">", "|")):
+        raise HTTPException(status_code=400, detail="invalid name")
+    deleted = delete_camera_preset(cleaned)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="preset not found")
 
 
 def _load_all_metadata() -> dict:
