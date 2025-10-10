@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchKinship } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 
@@ -15,6 +15,11 @@ export default function App() {
   const [err, setErr] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
   const [clusters, setClusters] = useState([]);
+  const [fps, setFps] = useState(null);
+
+  const handleFpsUpdate = useCallback((value) => {
+    setFps(value);
+  }, []);
 
   useEffect(() => {
     if (!imgId) return;
@@ -120,9 +125,15 @@ export default function App() {
           <div className="badge">子代：{children.length}</div>
           <div className="badge">兄弟姊妹：{siblings.length}</div>
           <div className="badge">祖先（去重）：{ancestors.length}</div>
+          <div className="badge">FPS：{fps !== null ? fps.toFixed(1) : "--"}</div>
         </div>
       )}
-      <KinshipScene imagesBase={IMAGES_BASE} clusters={clusters} onPick={(name) => navigateToImage(name)} />
+      <KinshipScene
+        imagesBase={IMAGES_BASE}
+        clusters={clusters}
+        onPick={(name) => navigateToImage(name)}
+        onFpsUpdate={handleFpsUpdate}
+      />
     </>
   );
 }
