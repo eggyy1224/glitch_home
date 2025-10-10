@@ -33,7 +33,15 @@ export default function App() {
 
   useEffect(() => {
     fetchCameraPresets()
-      .then((list) => setCameraPresets(Array.isArray(list) ? list : []))
+      .then((list) => {
+        const arr = Array.isArray(list) ? [...list].sort((a, b) => a.name.localeCompare(b.name)) : [];
+        setCameraPresets(arr);
+        const defaultPreset = arr.find((p) => p.name === "center");
+        if (defaultPreset) {
+          setSelectedPresetName(defaultPreset.name);
+          setPendingPreset({ ...defaultPreset, key: Date.now() });
+        }
+      })
       .catch(() => setCameraPresets([]));
   }, []);
 
