@@ -16,9 +16,14 @@ export default function App() {
   const [showInfo, setShowInfo] = useState(false);
   const [clusters, setClusters] = useState([]);
   const [fps, setFps] = useState(null);
+  const [cameraInfo, setCameraInfo] = useState(null);
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
+  }, []);
+
+  const handleCameraUpdate = useCallback((info) => {
+    setCameraInfo(info);
   }, []);
 
   useEffect(() => {
@@ -126,6 +131,13 @@ export default function App() {
           <div className="badge">兄弟姊妹：{siblings.length}</div>
           <div className="badge">祖先（去重）：{ancestors.length}</div>
           <div className="badge">FPS：{fps !== null ? fps.toFixed(1) : "--"}</div>
+          <div className="badge">
+            視角：
+            {cameraInfo
+              ? `pos(${cameraInfo.position.x.toFixed(1)}, ${cameraInfo.position.y.toFixed(1)}, ${cameraInfo.position.z.toFixed(1)}) ` +
+                `target(${cameraInfo.target.x.toFixed(1)}, ${cameraInfo.target.y.toFixed(1)}, ${cameraInfo.target.z.toFixed(1)})`
+              : "--"}
+          </div>
         </div>
       )}
       <KinshipScene
@@ -133,6 +145,7 @@ export default function App() {
         clusters={clusters}
         onPick={(name) => navigateToImage(name)}
         onFpsUpdate={handleFpsUpdate}
+        onCameraUpdate={handleCameraUpdate}
       />
     </>
   );
