@@ -370,7 +370,35 @@ function SceneContent({ imagesBase, clusters = [], onPick }) {
   );
 }
 
-export default function ThreeKinshipScene({ imagesBase, clusters, onPick }) {
+function FpsTracker({ onFpsUpdate }) {
+  const frameCount = useRef(0);
+  const timeAccum = useRef(0);
+  const lastReported = useRef(null);
+  const callbackRef = useRef(onFpsUpdate);
+
+  useEffect(() => {
+    callbackRef.current = onFpsUpdate;
+  }, [onFpsUpdate]);
+
+  useFrame((_, delta) => {
+    frameCount.current += 1;
+    timeAccum.current += delta;
+    if (timeAccum.current >= 0.5) {
+      const fpsRaw = frameCount.current / timeAccum.current;
+      frameCount.current = 0;
+      timeAccum.current = 0;
+      const rounded = Math.round(fpsRaw * 10) / 10;
+      if (lastReported.current !== rounded) {
+        lastReported.current = rounded;
+        callbackRef.current?.(rounded);
+      }
+    }
+  });
+
+  return null;
+}
+
+export default function ThreeKinshipScene({ imagesBase, clusters, onPick, onFpsUpdate = () => {} }) {
   return (
     <Canvas camera={{ fov: 55, position: [0, 1.2, 15] }} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
       <fogExp2 attach="fog" args={[0x000000, 0.035]} />
@@ -378,6 +406,7 @@ export default function ThreeKinshipScene({ imagesBase, clusters, onPick }) {
       <directionalLight intensity={0.6} position={[5, 10, 7]} />
       <SceneContent imagesBase={imagesBase} clusters={clusters} onPick={onPick} />
       <OrbitControls enableDamping makeDefault />
+      <FpsTracker onFpsUpdate={onFpsUpdate} />
     </Canvas>
   );
 }
