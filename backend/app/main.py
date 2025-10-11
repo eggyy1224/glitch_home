@@ -149,6 +149,44 @@ def api_kinship(
     siblings = set(filter_existing(siblings))
     related = sorted(parents | children | siblings)
 
+    graph_nodes: dict[str, dict] = {}
+    graph_edges: set[tuple[str, str]] = set()
+
+    priority_order = {
+        "original": 0,
+        "parent": 1,
+        "child": 1,
+        "sibling": 2,
+        "ancestor": 3,
+    }
+
+    def add_node(name: str, kind: str, level: int) -> None:
+        if not exists_in_offspring(name):
+            return
+        current = graph_nodes.get(name)
+        if current is None:
+            graph_nodes[name] = {"name": name, "kind": kind, "level": level}
+            return
+        if level < current["level"]:
+            current["level"] = level
+        if priority_order.get(kind, 99) < priority_order.get(current["kind"], 99):
+            current["kind"] = kind
+
+    def add_edge(source: str, target: str) -> None:
+        if not exists_in_offspring(source) or not exists_in_offspring(target):
+            return
+        graph_edges.add((source, target))
+
+    add_node(img, "original", 0)
+
+    for parent_name in parents:
+        add_node(parent_name, "parent", -1)
+        add_edge(parent_name, img)
+
+    for child_name in children:
+        add_node(child_name, "child", 1)
+        add_edge(img, child_name)
+
     # 祖先（依 depth 追溯；-1 代表窮盡）
     ancestors: set[str] = set()
     ancestors_by_level: list[list[str]] = []
@@ -161,6 +199,12 @@ def api_kinship(
             ancestors_by_level.append(level_items)
             ancestors.update(frontier)
             visited.update(frontier)
+            for name in frontier:
+                add_node(name, "parent" if level == 1 else "ancestor", -level)
+                parent_list = metas.get(name, {}).get("parents", [])
+                for parent_name in parent_list:
+                    add_node(parent_name, "ancestor", -(level + 1))
+                    add_edge(parent_name, name)
             if depth != -1 and level >= depth:
                 break
             next_frontier: set[str] = set()
@@ -170,6 +214,14 @@ def api_kinship(
                 next_frontier.update(ps)
             frontier = next_frontier
             level += 1
+
+    # 補齊兄弟姊妹及其父母邊
+    for sibling_name in siblings:
+        add_node(sibling_name, "sibling", 0)
+        parent_list = metas.get(sibling_name, {}).get("parents", [])
+        for parent_name in parent_list:
+            add_node(parent_name, "parent", -1)
+            add_edge(parent_name, sibling_name)
 
     # 最上層（沒有父母或已窮盡）
     root_ancestors: list[str] = []
@@ -182,6 +234,16 @@ def api_kinship(
                 roots.append(a)
         root_ancestors = filter_existing(roots)
 
+    lineage_graph = {
+        "nodes": sorted(
+            graph_nodes.values(),
+            key=lambda item: (item["level"], item["name"]),
+        ),
+        "edges": [
+            {"source": source, "target": target} for source, target in sorted(graph_edges)
+        ],
+    }
+
     return {
         "original_image": img,
         "related_images": related,  # 向下相容
@@ -192,4 +254,5 @@ def api_kinship(
         "ancestors_by_level": [filter_existing(set(level)) for level in ancestors_by_level],
         "root_ancestors": root_ancestors,
         "depth_used": depth,
+        "lineage_graph": lineage_graph,
     }

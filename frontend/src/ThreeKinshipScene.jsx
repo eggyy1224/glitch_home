@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Float, useTexture } from "@react-three/drei";
+import { OrbitControls, Float, useTexture, Line, Billboard } from "@react-three/drei";
 import * as THREE from "three";
 import { useSpring } from "@react-spring/three";
 
@@ -31,6 +31,134 @@ const wobblePosition = (pos, t, speed = 0.2, amp = 0.4, phase = 0) =>
     pos.y + Math.sin(t * (speed * 1.3) + phase + pos.x * 0.1) * amp * 0.4,
     pos.z + Math.cos(t * (speed * 0.9) + phase + pos.y * 0.1) * amp
   );
+
+const KIND_PRIORITY = {
+  original: 0,
+  parent: 1,
+  child: 1,
+  sibling: 2,
+  ancestor: 3,
+};
+
+const KIND_COLORS = {
+  original: "#88c0ff",
+  parent: "#ffb347",
+  child: "#a7ff83",
+  sibling: "#d291ff",
+  ancestor: "#ffd166",
+};
+
+const PHYLO_LEVEL_GAP = 7.5;
+const PHYLO_NODE_SPACING = 6.2;
+const PHYLO_NODE_BASE_SIZE = 3.4;
+
+const defaultGraph = { nodes: [], edges: [] };
+
+const sanitizeGraph = (graphInput, data) => {
+  const graph = graphInput || {};
+  const rawNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const rawEdges = Array.isArray(graph.edges) ? graph.edges : [];
+
+  const nodes = [];
+  const nodeLookup = new Map();
+
+  rawNodes.forEach((node) => {
+    if (!node || typeof node.name !== "string") return;
+    const name = node.name;
+    const level = Number.isFinite(node.level) ? node.level : 0;
+    const kind = node.kind || (level === 0 ? "original" : level > 0 ? "child" : level === -1 ? "parent" : "ancestor");
+    const normalized = { name, level, kind };
+    nodes.push(normalized);
+    nodeLookup.set(name, normalized);
+  });
+
+  if (!nodeLookup.has(data?.original_image)) {
+    const fallbackOriginal = {
+      name: data?.original_image,
+      level: 0,
+      kind: "original",
+    };
+    nodes.push(fallbackOriginal);
+    nodeLookup.set(fallbackOriginal.name, fallbackOriginal);
+  }
+
+  const edges = [];
+  const dedupe = new Set();
+
+  rawEdges.forEach((edge) => {
+    if (!edge) return;
+    const source = typeof edge.source === "string" ? edge.source : null;
+    const target = typeof edge.target === "string" ? edge.target : null;
+    if (!source || !target) return;
+    if (!nodeLookup.has(source) || !nodeLookup.has(target)) return;
+    const key = `${source}->${target}`;
+    if (dedupe.has(key)) return;
+    dedupe.add(key);
+    edges.push({ source, target });
+  });
+
+  return { nodes, edges };
+};
+
+const buildFallbackGraph = (data) => {
+  if (!data) return defaultGraph;
+  const nodes = [];
+  const edges = [];
+  const seen = new Map();
+
+  const upsert = (name, kind, level) => {
+    if (!name) return;
+    if (seen.has(name)) {
+      const node = seen.get(name);
+      if (level < node.level) node.level = level;
+      if (KIND_PRIORITY[kind] < KIND_PRIORITY[node.kind]) node.kind = kind;
+      return node;
+    }
+    const node = { name, kind, level };
+    nodes.push(node);
+    seen.set(name, node);
+    return node;
+  };
+
+  const addEdge = (source, target) => {
+    if (!source || !target) return;
+    edges.push({ source, target });
+  };
+
+  const original = upsert(data.original_image, "original", 0);
+
+  (data.parents || []).forEach((parent) => {
+    upsert(parent, "parent", -1);
+    addEdge(parent, original?.name);
+  });
+
+  (data.children || []).forEach((child) => {
+    upsert(child, "child", 1);
+    addEdge(original?.name, child);
+  });
+
+  (data.ancestors_by_level || []).forEach((levelNames, idx) => {
+    const level = -(idx + 1);
+    (levelNames || []).forEach((name) => {
+      upsert(name, idx === 0 ? "parent" : "ancestor", level);
+    });
+    if (idx > 0) {
+      const prevLevel = data.ancestors_by_level[idx - 1] || [];
+      (levelNames || []).forEach((name) => {
+        (prevLevel || []).forEach((prevName) => addEdge(name, prevName));
+      });
+    }
+  });
+
+  return { nodes, edges };
+};
+
+const buildLineageGraph = (data) => {
+  if (!data) return defaultGraph;
+  const graph = sanitizeGraph(data.lineage_graph, data);
+  if (graph.nodes.length > 0) return graph;
+  return buildFallbackGraph(data);
+};
 
 function Photo({ url, size = 3, name, onPick, externalRef = null, getProgress = null }) {
   const tex = useTexture(url);
@@ -346,6 +474,189 @@ function SceneContent({ imagesBase, clusters = [], onPick }) {
   );
 }
 
+const computePhylogenyLayout = (graph) => {
+  if (!graph || !graph.nodes.length) {
+    return { nodes: [], edges: [], bounds: null };
+  }
+
+  const levels = Array.from(
+    new Set(
+      graph.nodes.map((node) => (Number.isFinite(node.level) ? node.level : 0))
+    )
+  ).sort((a, b) => a - b);
+
+  if (!levels.length) {
+    return { nodes: [], edges: [], bounds: null };
+  }
+
+  const zeroIndex = levels.indexOf(0);
+  const indexLookup = new Map(levels.map((level, idx) => [level, idx]));
+  const nodesByLevel = new Map();
+
+  graph.nodes.forEach((node) => {
+    const level = Number.isFinite(node.level) ? node.level : 0;
+    if (!nodesByLevel.has(level)) nodesByLevel.set(level, []);
+    nodesByLevel.get(level).push(node);
+  });
+
+  nodesByLevel.forEach((list) => {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const tempEntries = [];
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  nodesByLevel.forEach((list, level) => {
+    const levelIndex = indexLookup.get(level) ?? 0;
+    const anchorIndex = zeroIndex >= 0 ? zeroIndex : 0;
+    const y = (anchorIndex - levelIndex) * PHYLO_LEVEL_GAP;
+    const count = list.length || 1;
+    list.forEach((node, idx) => {
+      const x = (idx - (count - 1) / 2) * PHYLO_NODE_SPACING;
+      tempEntries.push({ node, x, y });
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    });
+  });
+
+  if (!tempEntries.length) {
+    return { nodes: [], edges: [], bounds: null };
+  }
+
+  const offsetX = (minX + maxX) / 2 || 0;
+  const offsetY = (minY + maxY) / 2 || 0;
+
+  const placedNodes = [];
+  const positionLookup = new Map();
+
+  tempEntries.forEach(({ node, x, y }) => {
+    const position = new THREE.Vector3(x - offsetX, y - offsetY, 0);
+    const entry = { ...node, position };
+    placedNodes.push(entry);
+    positionLookup.set(node.name, entry);
+  });
+
+  const placedEdges = (graph.edges || [])
+    .map((edge) => {
+      const source = positionLookup.get(edge.source);
+      const target = positionLookup.get(edge.target);
+      if (!source || !target) return null;
+      return { ...edge, source, target };
+    })
+    .filter(Boolean);
+
+  const bounds = {
+    minX: minX - offsetX,
+    maxX: maxX - offsetX,
+    minY: minY - offsetY,
+    maxY: maxY - offsetY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+
+  return { nodes: placedNodes, edges: placedEdges, bounds };
+};
+
+function PhylogenyNode({ node, imagesBase, onPick }) {
+  const url = `${imagesBase}${node.name}`;
+  const tex = useTexture(url);
+  const sizeMultiplier = node.kind === "original" ? 1.2 : 1;
+  const size = PHYLO_NODE_BASE_SIZE * sizeMultiplier;
+  const frameSize = size * 1.1;
+  const color = KIND_COLORS[node.kind] || "#d0d0d0";
+  const frameRef = useRef();
+  const imageRef = useRef();
+  const [scales, setScales] = useState({
+    frame: [frameSize, frameSize, 1],
+    image: [size, size, 1],
+  });
+
+  useEffect(() => {
+    if (!tex.image) return;
+    const width = tex.image.width || 1;
+    const height = tex.image.height || 1;
+    const aspect = width / height || 1;
+    const imageScale = [size, size / aspect, 1];
+    const frameScale = [frameSize, frameSize / aspect, 1];
+    setScales({ frame: frameScale, image: imageScale });
+    if (frameRef.current) frameRef.current.scale.set(...frameScale);
+    if (imageRef.current) imageRef.current.scale.set(...imageScale);
+  }, [tex.image, size, frameSize]);
+
+  return (
+    <group position={node.position.toArray()}>
+      <Billboard follow>
+        <group>
+          <mesh ref={frameRef} position={[0, 0, -0.02]} scale={scales.frame}>
+            <planeGeometry args={[1, 1]} />
+            <meshBasicMaterial color={color} transparent opacity={0.9} />
+          </mesh>
+          <mesh
+            ref={imageRef}
+            onClick={() => onPick?.(node.name)}
+            onPointerOver={() => (document.body.style.cursor = "pointer")}
+            onPointerOut={() => (document.body.style.cursor = "default")}
+            scale={scales.image}
+          >
+            <planeGeometry args={[1, 1]} />
+            <meshBasicMaterial map={tex} toneMapped={false} />
+          </mesh>
+        </group>
+      </Billboard>
+    </group>
+  );
+}
+
+function PhylogenySceneContent({ imagesBase, data, onPick }) {
+  const graph = useMemo(() => buildLineageGraph(data), [data]);
+  const layout = useMemo(() => computePhylogenyLayout(graph), [graph]);
+
+  if (!layout.nodes.length) {
+    return null;
+  }
+
+  const paddingX = PHYLO_NODE_SPACING * 2.2;
+  const paddingY = PHYLO_LEVEL_GAP * 1.8;
+  const width = Math.max(layout.bounds?.width || 0, PHYLO_NODE_SPACING * 4) + paddingX;
+  const height = Math.max(layout.bounds?.height || 0, PHYLO_LEVEL_GAP * 2) + paddingY;
+
+  return (
+    <group>
+      <mesh position={[0, 0, -0.08]}>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial color="#090909" transparent opacity={0.55} />
+      </mesh>
+      {layout.edges.map((edge) => (
+        <Line
+          key={`${edge.source.name}->${edge.target.name}`}
+          points={[
+            edge.source.position.toArray(),
+            edge.target.position.toArray(),
+          ]}
+          color="#9aa0a6"
+          lineWidth={2}
+          depthTest={false}
+          opacity={0.45}
+          transparent
+        />
+      ))}
+      {layout.nodes.map((node) => (
+        <PhylogenyNode
+          key={node.name}
+          node={node}
+          imagesBase={imagesBase}
+          onPick={onPick}
+        />
+      ))}
+    </group>
+  );
+}
+
 function CameraTracker({ onCameraUpdate }) {
   const controls = useThree((state) => state.controls);
   const camera = useThree((state) => state.camera);
@@ -437,18 +748,36 @@ function CameraPresetApplier({ preset }) {
 export default function ThreeKinshipScene({
   imagesBase,
   clusters,
+  data = null,
+  phylogenyMode = false,
   onPick,
   onFpsUpdate = () => {},
   onCameraUpdate = () => {},
   applyPreset = null,
 }) {
+  const cameraProps = phylogenyMode
+    ? { fov: 50, position: [0, 0, 32] }
+    : { fov: 55, position: [0, 1.2, 15] };
+
+  const fogDensity = phylogenyMode ? 0.018 : 0.035;
+
   return (
-    <Canvas camera={{ fov: 55, position: [0, 1.2, 15] }} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
-      <fogExp2 attach="fog" args={[0x000000, 0.035]} />
-      <ambientLight intensity={0.9} />
-      <directionalLight intensity={0.6} position={[5, 10, 7]} />
-      <SceneContent imagesBase={imagesBase} clusters={clusters} onPick={onPick} />
-      <OrbitControls enableDamping makeDefault />
+    <Canvas camera={cameraProps} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
+      <fogExp2 attach="fog" args={[0x000000, fogDensity]} />
+      <ambientLight intensity={phylogenyMode ? 1.1 : 0.9} />
+      <directionalLight intensity={phylogenyMode ? 0.75 : 0.6} position={[5, 10, 7]} />
+      {phylogenyMode ? (
+        <PhylogenySceneContent imagesBase={imagesBase} data={data} onPick={onPick} />
+      ) : (
+        <SceneContent imagesBase={imagesBase} clusters={clusters} onPick={onPick} />
+      )}
+      <OrbitControls
+        enableDamping
+        makeDefault
+        minDistance={phylogenyMode ? 10 : 4}
+        maxDistance={phylogenyMode ? 80 : 60}
+        enablePan
+      />
       <FpsTracker onFpsUpdate={onFpsUpdate} />
       <CameraTracker onCameraUpdate={onCameraUpdate} />
       <CameraPresetApplier preset={applyPreset} />
