@@ -22,6 +22,7 @@ export default function App() {
   const [pendingPreset, setPendingPreset] = useState(null);
   const [presetMessage, setPresetMessage] = useState(null);
   const messageTimerRef = useRef(null);
+  const phylogenyMode = (readParams().get("phylogeny") ?? "false") === "true";
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -131,24 +132,27 @@ export default function App() {
     if (!imgId) return;
     let cancelled = false;
     setErr(null);
-    const anchorForCluster = { ...DEFAULT_ANCHOR };
-
     fetchKinship(imgId, -1)
       .then((res) => {
         if (cancelled) return;
         setData(res);
-        const originalImage = res?.original_image || imgId;
-        const cluster = {
-          id: `${originalImage}-${Date.now()}`,
-          original: originalImage,
-          anchor: anchorForCluster,
-          data: res,
-        };
-        setClusters((prev) => {
-          const next = [...prev, cluster];
-          if (next.length > MAX_CLUSTERS) next.splice(0, next.length - MAX_CLUSTERS);
-          return next;
-        });
+        if (phylogenyMode) {
+          setClusters([]);
+        } else {
+          const anchorForCluster = { ...DEFAULT_ANCHOR };
+          const originalImage = res?.original_image || imgId;
+          const cluster = {
+            id: `${originalImage}-${Date.now()}`,
+            original: originalImage,
+            anchor: anchorForCluster,
+            data: res,
+          };
+          setClusters((prev) => {
+            const next = [...prev, cluster];
+            if (next.length > MAX_CLUSTERS) next.splice(0, next.length - MAX_CLUSTERS);
+            return next;
+          });
+        }
       })
       .catch((e) => {
         if (!cancelled) setErr(e.message);
@@ -157,7 +161,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId]);
+  }, [imgId, phylogenyMode]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -225,6 +229,7 @@ export default function App() {
     <>
       {showInfo && (
         <div className="topbar">
+          <div className="badge">模式：{phylogenyMode ? "親緣圖 2D" : "3D 景觀"}</div>
           <div className="badge">原圖：{original}</div>
           <div className="badge">關聯：{related.length} 張</div>
           <div className="badge">父母：{parents.length}</div>
@@ -262,6 +267,8 @@ export default function App() {
       <KinshipScene
         imagesBase={IMAGES_BASE}
         clusters={clusters}
+        data={data}
+        phylogenyMode={phylogenyMode}
         onPick={(name) => navigateToImage(name)}
         onFpsUpdate={handleFpsUpdate}
         onCameraUpdate={handleCameraUpdate}
