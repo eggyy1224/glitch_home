@@ -22,7 +22,8 @@ export default function App() {
   const [pendingPreset, setPendingPreset] = useState(null);
   const [presetMessage, setPresetMessage] = useState(null);
   const messageTimerRef = useRef(null);
-  const phylogenyMode = (readParams().get("phylogeny") ?? "false") === "true";
+  const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
+  const phylogenyMode = !incubatorMode && (readParams().get("phylogeny") ?? "false") === "true";
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -136,7 +137,7 @@ export default function App() {
       .then((res) => {
         if (cancelled) return;
         setData(res);
-        if (phylogenyMode) {
+        if (phylogenyMode || incubatorMode) {
           setClusters([]);
         } else {
           const anchorForCluster = { ...DEFAULT_ANCHOR };
@@ -161,7 +162,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId, phylogenyMode]);
+  }, [imgId, phylogenyMode, incubatorMode]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -225,11 +226,13 @@ export default function App() {
   const ancestors = data?.ancestors || [];
   const ancestorsByLevel = data?.ancestors_by_level || [];
 
+  const modeLabel = incubatorMode ? "孵化室 3D" : phylogenyMode ? "親緣圖 2D" : "3D 景觀";
+
   return (
     <>
       {showInfo && (
         <div className="topbar">
-          <div className="badge">模式：{phylogenyMode ? "親緣圖 2D" : "3D 景觀"}</div>
+          <div className="badge">模式：{modeLabel}</div>
           <div className="badge">原圖：{original}</div>
           <div className="badge">關聯：{related.length} 張</div>
           <div className="badge">父母：{parents.length}</div>
@@ -269,6 +272,7 @@ export default function App() {
         clusters={clusters}
         data={data}
         phylogenyMode={phylogenyMode}
+        incubatorMode={incubatorMode}
         onPick={(name) => navigateToImage(name)}
         onFpsUpdate={handleFpsUpdate}
         onCameraUpdate={handleCameraUpdate}

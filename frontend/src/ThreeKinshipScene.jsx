@@ -160,6 +160,146 @@ const buildLineageGraph = (data) => {
   return buildFallbackGraph(data);
 };
 
+const MAX_INCUBATOR_NODES = 60;
+const INCUBATOR_LEVEL_GAP = 4.6;
+const INCUBATOR_BASE_RADIUS = 4.4;
+const INCUBATOR_RADIUS_STEP = 3.3;
+
+const seededRandom = (key, salt = 0) => {
+  const str = `${key}:${salt}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const x = Math.sin(hash) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+
+const createIncubatorLayout = (graph) => {
+  if (!graph || !Array.isArray(graph.nodes) || graph.nodes.length === 0) return [];
+
+  const nodesSorted = [...graph.nodes].sort((a, b) => {
+    const pa = KIND_PRIORITY[a.kind] ?? 99;
+    const pb = KIND_PRIORITY[b.kind] ?? 99;
+    if (pa !== pb) return pa - pb;
+    const la = Number.isFinite(a.level) ? a.level : 0;
+    const lb = Number.isFinite(b.level) ? b.level : 0;
+    if (la !== lb) return la - lb;
+    return a.name.localeCompare(b.name);
+  });
+
+  const limited = nodesSorted.slice(0, MAX_INCUBATOR_NODES);
+
+  const nodes = limited.map((node, idx) => {
+    const level = Number.isFinite(node.level) ? node.level : 0;
+    const kind = node.kind || (level === 0 ? "sibling" : level > 0 ? "child" : "ancestor");
+    const absLevel = Math.abs(level);
+    const seedBase = `${node.name}:${idx}`;
+    const angle = seededRandom(seedBase, 1) * Math.PI * 2;
+
+    const radiusMultiplier =
+      kind === "original"
+        ? 0
+        : kind === "parent"
+        ? 0.85
+        : kind === "child"
+        ? 0.95
+        : kind === "sibling"
+        ? 1.35
+        : 1.4 + absLevel * 0.28;
+
+    const radius =
+      (INCUBATOR_BASE_RADIUS + absLevel * INCUBATOR_RADIUS_STEP) *
+      radiusMultiplier *
+      (0.85 + seededRandom(seedBase, 2) * 0.55);
+
+    let baseY = 0;
+    if (kind === "parent" || level < 0) {
+      baseY =
+        INCUBATOR_LEVEL_GAP * (absLevel + 0.35) * (0.9 + seededRandom(seedBase, 3) * 0.4);
+    } else if (kind === "child" || level > 0) {
+      baseY =
+        -INCUBATOR_LEVEL_GAP * (absLevel + 0.35) * (0.9 + seededRandom(seedBase, 4) * 0.4);
+    } else if (kind === "ancestor") {
+      const direction = level < 0 ? 1 : -1;
+      baseY =
+        INCUBATOR_LEVEL_GAP * direction * (absLevel + 0.6) * (0.85 + seededRandom(seedBase, 5) * 0.5);
+    } else {
+      baseY = (seededRandom(seedBase, 6) - 0.5) * INCUBATOR_LEVEL_GAP * 0.8;
+    }
+
+    const orbitSpeed = 0.07 + seededRandom(seedBase, 7) * 0.16;
+    const floatAmp = 0.65 + seededRandom(seedBase, 8) * 0.55;
+    const floatSpeed = 0.55 + seededRandom(seedBase, 9) * 0.85;
+    const floatPhase = seededRandom(seedBase, 10) * Math.PI * 2;
+    const wobbleAmp = 0.5 + seededRandom(seedBase, 11) * 0.8;
+    const wobbleSpeed = 0.25 + seededRandom(seedBase, 12) * 0.5;
+    const growthDuration = 1.8 + seededRandom(seedBase, 13) * 1.3;
+
+    return {
+      ...node,
+      kind,
+      angle,
+      radius,
+      baseY,
+      orbitSpeed,
+      floatAmp,
+      floatSpeed,
+      floatPhase,
+      wobbleAmp,
+      wobbleSpeed,
+      growthDuration,
+      spawnDelay: 0,
+    };
+  });
+
+  const groups = [
+    { kinds: ["original"], step: 0.45, gapAfter: 0.6 },
+    { kinds: ["parent"], step: 0.35, gapAfter: 0.9 },
+    { kinds: ["child"], step: 0.32, gapAfter: 0.8 },
+    { kinds: ["sibling"], step: 0.28, gapAfter: 0.7 },
+    { kinds: ["ancestor"], step: 0.25, gapAfter: 0.65 },
+  ];
+
+  let cursor = 0;
+  groups.forEach(({ kinds, step, gapAfter }) => {
+    const subset = nodes.filter((node) => kinds.includes(node.kind));
+    if (!subset.length) return;
+    subset.forEach((node, index) => {
+      node.spawnDelay = cursor + index * step;
+    });
+    cursor += gapAfter + subset.length * step * 0.25;
+  });
+
+  return nodes;
+};
+
+const createIncubatorEdges = (graph, layoutNodes) => {
+  if (!graph || !Array.isArray(graph.edges) || !layoutNodes.length) return [];
+  const lookup = new Map(layoutNodes.map((node) => [node.name, node]));
+  const seen = new Set();
+  return graph.edges
+    .map((edge) => {
+      const source = lookup.get(edge.source);
+      const target = lookup.get(edge.target);
+      if (!source || !target) return null;
+      const key = `${source.name}->${target.name}`;
+      if (seen.has(key)) return null;
+      seen.add(key);
+      const tight =
+        source.kind === "original" ||
+        target.kind === "original" ||
+        (source.kind === "parent" && target.kind === "child") ||
+        (source.kind === "child" && target.kind === "parent");
+      const baseOpacity = tight ? 0.6 : 0.35;
+      return { source, target, baseOpacity };
+    })
+    .filter(Boolean);
+};
+
 function Photo({ url, size = 3, name, onPick, externalRef = null, getProgress = null }) {
   const tex = useTexture(url);
   const meshRef = useRef();
@@ -474,6 +614,217 @@ function SceneContent({ imagesBase, clusters = [], onPick }) {
   );
 }
 
+const INCUBATOR_PARTICLE_COUNT = 96;
+
+function IncubatorMist() {
+  const configs = useMemo(() => {
+    const entries = [];
+    for (let i = 0; i < INCUBATOR_PARTICLE_COUNT; i += 1) {
+      entries.push({
+        radius: 8 + Math.random() * 14,
+        baseAngle: Math.random() * Math.PI * 2,
+        speed: 0.03 + Math.random() * 0.065,
+        verticalSpeed: 0.35 + Math.random() * 0.65,
+        height: (Math.random() - 0.5) * 12,
+        scale: 0.16 + Math.random() * 0.14,
+        scaleSpeed: 0.6 + Math.random() * 0.9,
+        seed: Math.random() * Math.PI * 2,
+      });
+    }
+    return entries;
+  }, []);
+  const instancedRef = useRef();
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  useFrame(({ clock }) => {
+    if (!instancedRef.current) return;
+    const t = clock.getElapsedTime();
+    configs.forEach((cfg, idx) => {
+      const angle = cfg.baseAngle + t * cfg.speed;
+      const radius = cfg.radius + Math.sin(t * 0.22 + cfg.seed) * 0.9;
+      const y = cfg.height + Math.sin(t * cfg.verticalSpeed + cfg.seed) * 1.1;
+      dummy.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+      const scale = cfg.scale * (0.75 + Math.sin(t * cfg.scaleSpeed + cfg.seed) * 0.35);
+      dummy.scale.setScalar(scale);
+      dummy.rotation.y = angle;
+      dummy.rotation.z = angle * 0.18;
+      dummy.updateMatrix();
+      instancedRef.current.setMatrixAt(idx, dummy.matrix);
+    });
+    instancedRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={instancedRef} args={[null, null, configs.length]}>
+      <sphereGeometry args={[1, 6, 6]} />
+      <meshStandardMaterial
+        color="#1a5e7a"
+        transparent
+        opacity={0.22}
+        emissive="#1d628f"
+        emissiveIntensity={0.55}
+        depthWrite={false}
+      />
+    </instancedMesh>
+  );
+}
+
+function IncubatorSceneContent({ imagesBase, data, onPick }) {
+  const graph = useMemo(() => buildLineageGraph(data), [data]);
+  const nodes = useMemo(() => createIncubatorLayout(graph), [graph]);
+  const edges = useMemo(() => createIncubatorEdges(graph, nodes), [graph, nodes]);
+
+  const groupRef = useRef();
+  const spawnStart = useRef(null);
+  const nodeEntriesRef = useRef([]);
+  const nodeLookupRef = useRef(new Map());
+  const edgeEntriesRef = useRef([]);
+
+  nodeEntriesRef.current = [];
+  nodeLookupRef.current = new Map();
+  edgeEntriesRef.current = [];
+
+  const nodeElements = nodes.map((node) => {
+    const meshRef = React.createRef();
+    const progressRef = { current: 0 };
+    const entry = { node, meshRef, progressRef };
+    nodeEntriesRef.current.push(entry);
+    nodeLookupRef.current.set(node.name, entry);
+
+    const progressFn = () => progressRef.current;
+    const size =
+      node.kind === "original"
+        ? 4.4
+        : node.kind === "parent"
+        ? 3.6
+        : node.kind === "child"
+        ? 3.4
+        : node.kind === "sibling"
+        ? 3.0
+        : 2.8;
+
+    return (
+      <group key={`inc-node-${node.name}`}>
+        <Photo
+          url={`${imagesBase}${node.name}`}
+          size={size}
+          name={node.name}
+          onPick={onPick}
+          externalRef={meshRef}
+          getProgress={progressFn}
+        />
+      </group>
+    );
+  });
+
+  const edgeElements = edges
+    .map((edge, idx) => {
+      const sourceEntry = nodeLookupRef.current.get(edge.source.name);
+      const targetEntry = nodeLookupRef.current.get(edge.target.name);
+      if (!sourceEntry || !targetEntry) return null;
+      const lineRef = React.createRef();
+      edgeEntriesRef.current.push({
+        lineRef,
+        sourceEntry,
+        targetEntry,
+        baseOpacity: edge.baseOpacity,
+      });
+      return (
+        <Line
+          key={`inc-edge-${edge.source.name}-${edge.target.name}-${idx}`}
+          ref={lineRef}
+          points={[
+            [0, 0, 0],
+            [0, 0, 0],
+          ]}
+          color="#6ea7ff"
+          lineWidth={1.2}
+          transparent
+          opacity={0}
+          depthTest={false}
+        />
+      );
+    })
+    .filter(Boolean);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (spawnStart.current === null) {
+      spawnStart.current = t;
+    }
+    const elapsed = t - spawnStart.current;
+
+    nodeEntriesRef.current.forEach((entry) => {
+      const { node, meshRef, progressRef } = entry;
+      const mesh = meshRef.current;
+      if (!mesh) return;
+      const local = elapsed - node.spawnDelay;
+      const progress = local > 0 ? Math.min(local / node.growthDuration, 1) : 0;
+      const eased = easeOutCubic(progress);
+      progressRef.current = eased;
+      const radial = node.radius * eased;
+      const spin = node.angle + node.orbitSpeed * t * (0.8 + eased * 0.6);
+      const wobble = node.wobbleAmp * eased * Math.sin(t * node.wobbleSpeed + node.floatPhase);
+      const x =
+        Math.cos(spin) * radial +
+        Math.cos(t * node.floatSpeed * 0.6 + node.floatPhase) * wobble * 0.32;
+      const z =
+        Math.sin(spin) * radial +
+        Math.sin(t * node.floatSpeed * 0.6 + node.floatPhase) * wobble * 0.32;
+      const y =
+        THREE.MathUtils.lerp(0, node.baseY, eased) +
+        Math.sin(t * node.floatSpeed + node.floatPhase) *
+          node.floatAmp *
+          0.35 *
+          (0.6 + eased * 0.5);
+      mesh.position.set(x, y, z);
+      mesh.visible = eased > 0.015;
+    });
+
+    edgeEntriesRef.current.forEach((entry) => {
+      const line = entry.lineRef.current;
+      const sourceMesh = entry.sourceEntry.meshRef.current;
+      const targetMesh = entry.targetEntry.meshRef.current;
+      if (!line || !sourceMesh || !targetMesh) return;
+      const visibility = Math.min(
+        entry.sourceEntry.progressRef.current,
+        entry.targetEntry.progressRef.current
+      );
+      line.geometry.setFromPoints([sourceMesh.position, targetMesh.position]);
+      if (line.material) {
+        line.material.opacity = visibility * entry.baseOpacity;
+        line.material.transparent = true;
+      }
+      line.visible = visibility > 0.08;
+    });
+
+    if (groupRef.current) {
+      groupRef.current.rotation.y = Math.sin(elapsed * 0.1) * 0.12;
+      groupRef.current.rotation.x = Math.sin(elapsed * 0.05) * 0.035;
+    }
+
+  });
+
+  return (
+    <group ref={groupRef}>
+      <mesh scale={[34, 34, 34]}>
+        <sphereGeometry args={[1, 48, 48]} />
+        <meshStandardMaterial
+          color="#040a16"
+          transparent
+          opacity={0.32}
+          side={THREE.BackSide}
+          emissive="#0b203a"
+          emissiveIntensity={0.55}
+        />
+      </mesh>
+      <IncubatorMist />
+      {edgeElements}
+      {nodeElements}
+    </group>
+  );
+}
+
 const computePhylogenyLayout = (graph) => {
   if (!graph || !graph.nodes.length) {
     return { nodes: [], edges: [], bounds: null };
@@ -750,6 +1101,7 @@ export default function ThreeKinshipScene({
   clusters,
   data = null,
   phylogenyMode = false,
+  incubatorMode = false,
   onPick,
   onFpsUpdate = () => {},
   onCameraUpdate = () => {},
@@ -757,25 +1109,34 @@ export default function ThreeKinshipScene({
 }) {
   const cameraProps = phylogenyMode
     ? { fov: 50, position: [0, 0, 32] }
+    : incubatorMode
+    ? { fov: 52, position: [0, 2.4, 24] }
     : { fov: 55, position: [0, 1.2, 15] };
 
-  const fogDensity = phylogenyMode ? 0.018 : 0.035;
+  const fogDensity = phylogenyMode ? 0.018 : incubatorMode ? 0.026 : 0.035;
+  const ambientIntensity = phylogenyMode ? 1.1 : incubatorMode ? 1.05 : 0.9;
+  const directionalIntensity = phylogenyMode ? 0.75 : incubatorMode ? 0.5 : 0.6;
+  const minDistance = phylogenyMode ? 10 : incubatorMode ? 6 : 4;
+  const maxDistance = phylogenyMode ? 80 : incubatorMode ? 48 : 60;
 
   return (
     <Canvas camera={cameraProps} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
       <fogExp2 attach="fog" args={[0x000000, fogDensity]} />
-      <ambientLight intensity={phylogenyMode ? 1.1 : 0.9} />
-      <directionalLight intensity={phylogenyMode ? 0.75 : 0.6} position={[5, 10, 7]} />
+      <ambientLight intensity={ambientIntensity} />
+      <directionalLight intensity={directionalIntensity} position={[5, 10, 7]} />
+      {incubatorMode && <pointLight intensity={1.2} position={[0, 3, 0]} color="#3fa9ff" distance={42} decay={2} />}
       {phylogenyMode ? (
         <PhylogenySceneContent imagesBase={imagesBase} data={data} onPick={onPick} />
+      ) : incubatorMode ? (
+        <IncubatorSceneContent imagesBase={imagesBase} data={data} onPick={onPick} />
       ) : (
         <SceneContent imagesBase={imagesBase} clusters={clusters} onPick={onPick} />
       )}
       <OrbitControls
         enableDamping
         makeDefault
-        minDistance={phylogenyMode ? 10 : 4}
-        maxDistance={phylogenyMode ? 80 : 60}
+        minDistance={minDistance}
+        maxDistance={maxDistance}
         enablePan
       />
       <FpsTracker onFpsUpdate={onFpsUpdate} />
