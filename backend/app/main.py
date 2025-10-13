@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import glob
@@ -11,6 +11,7 @@ from .services.camera_presets import (
     upsert_camera_preset,
     delete_camera_preset,
 )
+from .services.screenshots import save_screenshot
 from .models.schemas import (
     GenerateMixTwoResponse,
     GenerateMixTwoRequest,
@@ -92,6 +93,22 @@ def api_delete_camera_preset(name: str) -> None:
     deleted = delete_camera_preset(cleaned)
     if not deleted:
         raise HTTPException(status_code=404, detail="preset not found")
+
+
+@app.post("/api/screenshots", status_code=201)
+async def api_upload_screenshot(file: UploadFile = File(...)) -> dict:
+    try:
+        saved = save_screenshot(file)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:  # noqa: BLE001 - surface as 500
+        raise HTTPException(status_code=500, detail="failed to save screenshot") from exc
+
+    return {
+        "filename": saved["filename"],
+        "absolute_path": saved["absolute_path"],
+        "relative_path": saved.get("relative_path"),
+    }
 
 
 def _load_all_metadata() -> dict:

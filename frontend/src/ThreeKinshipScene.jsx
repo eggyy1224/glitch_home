@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Float, useTexture, Line, Billboard } from "@react-three/drei";
 import * as THREE from "three";
@@ -1207,7 +1207,50 @@ export default function ThreeKinshipScene({
   onFpsUpdate = () => {},
   onCameraUpdate = () => {},
   applyPreset = null,
+  onCaptureReady = null,
 }) {
+  const rendererRef = useRef(null);
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+
+  const captureScreenshot = useCallback(() => {
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!renderer || !scene || !camera) {
+      return Promise.reject(new Error("renderer not ready"));
+    }
+
+    return new Promise((resolve, reject) => {
+      try {
+        requestAnimationFrame(() => {
+          try {
+            renderer.render(scene, camera);
+            renderer.domElement.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error("無法產生截圖"));
+                return;
+              }
+              resolve(blob);
+            }, "image/png");
+          } catch (err) {
+            reject(err);
+          }
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof onCaptureReady !== "function") return undefined;
+    onCaptureReady(captureScreenshot);
+    return () => {
+      onCaptureReady(null);
+    };
+  }, [captureScreenshot, onCaptureReady]);
+
   const cameraProps = phylogenyMode
     ? { fov: 50, position: [0, 0, 32] }
     : incubatorMode
@@ -1221,7 +1264,17 @@ export default function ThreeKinshipScene({
   const maxDistance = phylogenyMode ? 80 : incubatorMode ? 48 : 60;
 
   return (
-    <Canvas camera={cameraProps} gl={{ antialias: true }} style={{ width: "100%", height: "100%", background: "#000" }}>
+    <Canvas
+      camera={cameraProps}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      onCreated={({ gl, scene, camera }) => {
+        rendererRef.current = gl;
+        sceneRef.current = scene;
+        cameraRef.current = camera;
+        gl.preserveDrawingBuffer = true;
+      }}
+      style={{ width: "100%", height: "100%", background: "#000" }}
+    >
       <fogExp2 attach="fog" args={[0x000000, fogDensity]} />
       <ambientLight intensity={ambientIntensity} />
       <directionalLight intensity={directionalIntensity} position={[5, 10, 7]} />
