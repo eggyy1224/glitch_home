@@ -99,22 +99,31 @@ def api_delete_camera_preset(name: str) -> None:
 @app.post("/api/screenshots", status_code=201)
 async def api_upload_screenshot(
     request_id: str | None = Form(default=None),
+    client_id: str | None = Form(default=None),
     file: UploadFile = File(...),
 ) -> dict:
     try:
         saved = save_screenshot(file)
     except ValueError as exc:
         if request_id:
-            await screenshot_requests_manager.mark_failed(request_id, str(exc))
+            await screenshot_requests_manager.mark_failed(request_id, str(exc), processed_by=client_id)
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:  # noqa: BLE001 - surface as 500
         if request_id:
-            await screenshot_requests_manager.mark_failed(request_id, "failed to save screenshot")
+            await screenshot_requests_manager.mark_failed(
+                request_id,
+                "failed to save screenshot",
+                processed_by=client_id,
+            )
         raise HTTPException(status_code=500, detail="failed to save screenshot") from exc
 
     record = None
     if request_id:
-        record = await screenshot_requests_manager.mark_completed(request_id, saved)
+        record = await screenshot_requests_manager.mark_completed(
+            request_id,
+            saved,
+            processed_by=client_id,
+        )
         if record is None:
             try:
                 os.remove(saved["absolute_path"])
@@ -128,6 +137,7 @@ async def api_upload_screenshot(
         "relative_path": saved.get("relative_path"),
         "request_id": request_id,
         "status": record["status"] if record else None,
+        "processed_by": record.get("processed_by") if record else client_id,
     }
 
 
@@ -148,9 +158,17 @@ async def api_get_screenshot_request(request_id: str) -> dict:
 @app.post("/api/screenshots/{request_id}/fail", status_code=200)
 async def api_fail_screenshot_request(request_id: str, body: dict | None = Body(default=None)) -> dict:
     message = ""
+    client_id = None
     if body and isinstance(body, dict):
         message = str(body.get("error", ""))
-    record = await screenshot_requests_manager.mark_failed(request_id, message or "client reported failure")
+        if body.get("client_id") is not None:
+            client_id_raw = body.get("client_id")
+            client_id = str(client_id_raw).strip() or None
+    record = await screenshot_requests_manager.mark_failed(
+        request_id,
+        message or "client reported failure",
+        processed_by=client_id,
+    )
     if record is None:
         raise HTTPException(status_code=404, detail="screenshot request not found")
     return record
@@ -161,7 +179,19 @@ async def websocket_screenshots(websocket: WebSocket) -> None:
     await screenshot_requests_manager.add_connection(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            try:
+                message = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+
+            msg_type = message.get("type")
+            if msg_type == "hello":
+                client_id_raw = message.get("client_id")
+                client_id = None
+                if isinstance(client_id_raw, str):
+                    client_id = client_id_raw.strip() or None
+                await screenshot_requests_manager.register_client(websocket, client_id)
     except WebSocketDisconnect:
         await screenshot_requests_manager.remove_connection(websocket)
     except Exception:

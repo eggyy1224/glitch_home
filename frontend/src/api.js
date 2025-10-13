@@ -31,13 +31,16 @@ export async function deleteCameraPreset(name) {
   return true;
 }
 
-export async function uploadScreenshot(blob, requestId = null) {
+export async function uploadScreenshot(blob, requestId = null, clientId = null) {
   const url = `${API_BASE}/api/screenshots`;
   const form = new FormData();
   const filename = `scene-${Date.now()}.png`;
   form.append("file", blob, filename);
   if (requestId) {
     form.append("request_id", requestId);
+  }
+  if (clientId) {
+    form.append("client_id", clientId);
   }
   const res = await fetch(url, {
     method: "POST",
@@ -47,12 +50,16 @@ export async function uploadScreenshot(blob, requestId = null) {
   return res.json();
 }
 
-export async function reportScreenshotFailure(requestId, errorMessage = "") {
+export async function reportScreenshotFailure(requestId, errorMessage = "", clientId = null) {
   const url = `${API_BASE}/api/screenshots/${encodeURIComponent(requestId)}/fail`;
+  const payload = { error: errorMessage };
+  if (clientId) {
+    payload.client_id = clientId;
+  }
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ error: errorMessage }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();

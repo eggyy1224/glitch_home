@@ -42,6 +42,14 @@ export default function App() {
   const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const phylogenyMode = !incubatorMode && (readParams().get("phylogeny") ?? "false") === "true";
+  const clientId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get("client");
+    if (fromQuery && fromQuery.trim()) return fromQuery.trim();
+    const fromEnv = import.meta.env.VITE_CLIENT_ID;
+    if (fromEnv && `${fromEnv}`.trim()) return `${fromEnv}`.trim();
+    return "default";
+  }, []);
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -263,14 +271,14 @@ export default function App() {
         throw new Error("場景尚未準備好");
       }
       const blob = await captureFn();
-      const result = await uploadScreenshot(blob, requestId);
+      const result = await uploadScreenshot(blob, requestId, clientId);
       const label =
         result?.relative_path || result?.filename || (requestId ? `request ${requestId}` : "已上傳");
       const prefix = isAuto ? "自動截圖完成" : "截圖完成";
       pushScreenshotMessage(`${prefix}：${label}`);
       return result;
     },
-    [pushScreenshotMessage]
+    [pushScreenshotMessage, clientId]
   );
 
   const processQueue = useCallback(() => {
@@ -310,7 +318,7 @@ export default function App() {
         pushScreenshotMessage(`自動截圖失敗：${message}`);
         if (request.request_id) {
           try {
-            await reportScreenshotFailure(request.request_id, message);
+            await reportScreenshotFailure(request.request_id, message, clientId);
           } catch (reportErr) {
             console.error("回報截圖失敗錯誤", reportErr);
           }
@@ -327,11 +335,15 @@ export default function App() {
         }
       }
     })();
-  }, [reportScreenshotFailure, runCaptureInternal, pushScreenshotMessage]);
+  }, [reportScreenshotFailure, runCaptureInternal, pushScreenshotMessage, clientId]);
 
   const enqueueScreenshotRequest = useCallback(
     (payload) => {
       if (!payload || !payload.request_id) return;
+      const targetClientId = payload?.target_client_id ?? payload?.metadata?.client_id ?? null;
+      if (targetClientId && targetClientId !== clientId) {
+        return;
+      }
       const id = payload.request_id;
       if (pendingRequestIdsRef.current.has(id)) return;
       pendingRequestIdsRef.current.add(id);
@@ -340,7 +352,7 @@ export default function App() {
       pushScreenshotMessage(`收到截圖請求：${label}`);
       processQueue();
     },
-    [processQueue, pushScreenshotMessage]
+    [processQueue, pushScreenshotMessage, clientId]
   );
 
   const handleCaptureReady = useCallback(
@@ -397,6 +409,19 @@ export default function App() {
 
       wsRef.current = socket;
 
+      socket.onopen = () => {
+        if (!active) return;
+        const hello = {
+          type: "hello",
+          client_id: clientId,
+        };
+        try {
+          socket.send(JSON.stringify(hello));
+        } catch (err) {
+          console.error("WebSocket hello 發送失敗", err);
+        }
+      };
+
       socket.onmessage = (event) => {
         if (!active) return;
         let payload;
@@ -437,7 +462,7 @@ export default function App() {
       }
       cleanupSocket();
     };
-  }, [enqueueScreenshotRequest]);
+  }, [enqueueScreenshotRequest, clientId]);
 
   if (!imgId) return <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>;
   if (err) return <div style={{ padding: 16 }}>載入失敗：{err}</div>;
@@ -458,6 +483,7 @@ export default function App() {
         <div className="topbar">
           <div className="badge">模式：{modeLabel}</div>
           <div className="badge">原圖：{original}</div>
+          <div className="badge">客戶端：{clientId}</div>
           <div className="badge">關聯：{related.length} 張</div>
           <div className="badge">父母：{parents.length}</div>
           <div className="badge">子代：{children.length}</div>
