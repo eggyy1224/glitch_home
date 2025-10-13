@@ -31,3 +31,15 @@ export async function deleteCameraPreset(name) {
   return true;
 }
 
+export async function uploadScreenshot(blob) {
+  const url = `${API_BASE}/api/screenshots`;
+  const form = new FormData();
+  const filename = `scene-${Date.now()}.png`;
+  form.append("file", blob, filename);
+  const res = await fetch(url, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}

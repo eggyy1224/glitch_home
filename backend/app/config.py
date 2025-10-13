@@ -31,6 +31,7 @@ class Settings:
     offspring_dir: str = os.getenv("OFFSPRING_DIR", "backend/offspring_images")
     metadata_dir: str = os.getenv("METADATA_DIR", "backend/metadata")
     camera_presets_file: str = os.getenv("CAMERA_PRESETS_FILE", "backend/metadata/camera_presets.json")
+    screenshot_dir: str = os.getenv("SCREENSHOT_DIR", "screen_shots")
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
         (
@@ -70,6 +71,7 @@ class Settings:
         self.offspring_dir = resolve(self.offspring_dir)
         self.metadata_dir = resolve(self.metadata_dir)
         self.camera_presets_file = resolve(self.camera_presets_file)
+        self.screenshot_dir = resolve(self.screenshot_dir)
 
 
 settings = Settings()

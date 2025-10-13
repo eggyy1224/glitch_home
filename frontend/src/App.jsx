@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchKinship, fetchCameraPresets, saveCameraPreset, deleteCameraPreset } from "./api.js";
+import {
+  fetchKinship,
+  fetchCameraPresets,
+  saveCameraPreset,
+  deleteCameraPreset,
+  uploadScreenshot,
+} from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
@@ -21,7 +27,11 @@ export default function App() {
   const [selectedPresetName, setSelectedPresetName] = useState("");
   const [pendingPreset, setPendingPreset] = useState(null);
   const [presetMessage, setPresetMessage] = useState(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [screenshotMessage, setScreenshotMessage] = useState(null);
   const messageTimerRef = useRef(null);
+  const screenshotTimerRef = useRef(null);
+  const captureFnRef = useRef(null);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const phylogenyMode = !incubatorMode && (readParams().get("phylogeny") ?? "false") === "true";
 
@@ -79,6 +89,9 @@ export default function App() {
     return () => {
       if (messageTimerRef.current) {
         clearTimeout(messageTimerRef.current);
+      }
+      if (screenshotTimerRef.current) {
+        clearTimeout(screenshotTimerRef.current);
       }
     };
   }, []);
@@ -215,6 +228,40 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const pushScreenshotMessage = useCallback((text, ttl = 2500) => {
+    setScreenshotMessage(text);
+    if (screenshotTimerRef.current) {
+      clearTimeout(screenshotTimerRef.current);
+    }
+    screenshotTimerRef.current = setTimeout(() => {
+      setScreenshotMessage(null);
+      screenshotTimerRef.current = null;
+    }, ttl);
+  }, []);
+
+  const handleCaptureReady = useCallback((fn) => {
+    captureFnRef.current = fn;
+  }, []);
+
+  const handleTakeScreenshot = useCallback(async () => {
+    if (!captureFnRef.current) {
+      pushScreenshotMessage("場景尚未準備好");
+      return;
+    }
+    setIsCapturing(true);
+    try {
+      const blob = await captureFnRef.current();
+      const result = await uploadScreenshot(blob);
+      const label = result?.relative_path || result?.filename || "已上傳";
+      pushScreenshotMessage(`截圖完成：${label}`);
+    } catch (err) {
+      const message = err?.message || String(err);
+      pushScreenshotMessage(`截圖失敗：${message}`);
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [pushScreenshotMessage]);
+
   if (!imgId) return <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>;
   if (err) return <div style={{ padding: 16 }}>載入失敗：{err}</div>;
 
@@ -277,7 +324,14 @@ export default function App() {
         onFpsUpdate={handleFpsUpdate}
         onCameraUpdate={handleCameraUpdate}
         applyPreset={pendingPreset}
+        onCaptureReady={handleCaptureReady}
       />
+      <div className="screenshot-panel">
+        <button type="button" onClick={handleTakeScreenshot} disabled={isCapturing}>
+          {isCapturing ? "截圖中…" : "截圖並上傳"}
+        </button>
+        {screenshotMessage && <div className="screenshot-message">{screenshotMessage}</div>}
+      </div>
     </>
   );
 }
