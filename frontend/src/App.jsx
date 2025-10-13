@@ -5,6 +5,7 @@ import {
   saveCameraPreset,
   deleteCameraPreset,
   uploadScreenshot,
+  reportScreenshotFailure,
 } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 
@@ -32,6 +33,13 @@ export default function App() {
   const messageTimerRef = useRef(null);
   const screenshotTimerRef = useRef(null);
   const captureFnRef = useRef(null);
+  const requestQueueRef = useRef([]);
+  const pendingRequestIdsRef = useRef(new Set());
+  const isProcessingRef = useRef(false);
+  const isCapturingRef = useRef(false);
+  const queueTimerRef = useRef(null);
+  const wsRef = useRef(null);
+  const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const phylogenyMode = !incubatorMode && (readParams().get("phylogeny") ?? "false") === "true";
 
@@ -42,6 +50,10 @@ export default function App() {
   const handleCameraUpdate = useCallback((info) => {
     setCameraInfo(info);
   }, []);
+
+  useEffect(() => {
+    isCapturingRef.current = isCapturing;
+  }, [isCapturing]);
 
   useEffect(() => {
     fetchCameraPresets()
@@ -93,6 +105,11 @@ export default function App() {
       if (screenshotTimerRef.current) {
         clearTimeout(screenshotTimerRef.current);
       }
+      if (queueTimerRef.current) {
+        clearTimeout(queueTimerRef.current);
+        queueTimerRef.current = null;
+      }
+      isMountedRef.current = false;
     };
   }, []);
 
@@ -239,28 +256,211 @@ export default function App() {
     }, ttl);
   }, []);
 
-  const handleCaptureReady = useCallback((fn) => {
-    captureFnRef.current = fn;
-  }, []);
+  const runCaptureInternal = useCallback(
+    async (requestId = null, isAuto = false) => {
+      const captureFn = captureFnRef.current;
+      if (!captureFn) {
+        throw new Error("場景尚未準備好");
+      }
+      const blob = await captureFn();
+      const result = await uploadScreenshot(blob, requestId);
+      const label =
+        result?.relative_path || result?.filename || (requestId ? `request ${requestId}` : "已上傳");
+      const prefix = isAuto ? "自動截圖完成" : "截圖完成";
+      pushScreenshotMessage(`${prefix}：${label}`);
+      return result;
+    },
+    [pushScreenshotMessage]
+  );
+
+  const processQueue = useCallback(() => {
+    if (!isMountedRef.current) return;
+    if (isProcessingRef.current) return;
+
+    const next = requestQueueRef.current.shift();
+    if (!next) return;
+
+    if (isCapturingRef.current) {
+      requestQueueRef.current.unshift(next);
+      if (!queueTimerRef.current) {
+        queueTimerRef.current = setTimeout(() => {
+          queueTimerRef.current = null;
+          processQueue();
+        }, 400);
+      }
+      return;
+    }
+
+    isProcessingRef.current = true;
+    if (queueTimerRef.current) {
+      clearTimeout(queueTimerRef.current);
+      queueTimerRef.current = null;
+    }
+    isCapturingRef.current = true;
+    if (isMountedRef.current) {
+      setIsCapturing(true);
+    }
+
+    const request = next;
+    (async () => {
+      try {
+        await runCaptureInternal(request.request_id, true);
+      } catch (err) {
+        const message = err?.message || String(err);
+        pushScreenshotMessage(`自動截圖失敗：${message}`);
+        if (request.request_id) {
+          try {
+            await reportScreenshotFailure(request.request_id, message);
+          } catch (reportErr) {
+            console.error("回報截圖失敗錯誤", reportErr);
+          }
+        }
+      } finally {
+        pendingRequestIdsRef.current.delete(request.request_id);
+        isCapturingRef.current = false;
+        if (isMountedRef.current) {
+          setIsCapturing(false);
+        }
+        isProcessingRef.current = false;
+        if (isMountedRef.current) {
+          processQueue();
+        }
+      }
+    })();
+  }, [reportScreenshotFailure, runCaptureInternal, pushScreenshotMessage]);
+
+  const enqueueScreenshotRequest = useCallback(
+    (payload) => {
+      if (!payload || !payload.request_id) return;
+      const id = payload.request_id;
+      if (pendingRequestIdsRef.current.has(id)) return;
+      pendingRequestIdsRef.current.add(id);
+      requestQueueRef.current.push(payload);
+      const label = payload?.metadata?.label || payload?.metadata?.source || id;
+      pushScreenshotMessage(`收到截圖請求：${label}`);
+      processQueue();
+    },
+    [processQueue, pushScreenshotMessage]
+  );
+
+  const handleCaptureReady = useCallback(
+    (fn) => {
+      captureFnRef.current = fn;
+      if (fn) {
+        processQueue();
+      }
+    },
+    [processQueue]
+  );
 
   const handleTakeScreenshot = useCallback(async () => {
+    if (isCapturingRef.current) {
+      pushScreenshotMessage("正在處理其他截圖，請稍候");
+      return;
+    }
     if (!captureFnRef.current) {
       pushScreenshotMessage("場景尚未準備好");
       return;
     }
+    isCapturingRef.current = true;
     setIsCapturing(true);
     try {
-      const blob = await captureFnRef.current();
-      const result = await uploadScreenshot(blob);
-      const label = result?.relative_path || result?.filename || "已上傳";
-      pushScreenshotMessage(`截圖完成：${label}`);
+      await runCaptureInternal(null, false);
     } catch (err) {
       const message = err?.message || String(err);
       pushScreenshotMessage(`截圖失敗：${message}`);
     } finally {
+      isCapturingRef.current = false;
       setIsCapturing(false);
+      processQueue();
     }
-  }, [pushScreenshotMessage]);
+  }, [runCaptureInternal, pushScreenshotMessage, processQueue]);
+
+  useEffect(() => {
+    let active = true;
+    let retryTimer = null;
+
+    function cleanupSocket() {
+      const existing = wsRef.current;
+      if (existing) {
+        try {
+          existing.close();
+        } catch (err) {
+          // ignore close error
+        }
+      }
+      wsRef.current = null;
+    }
+
+    function scheduleReconnect() {
+      if (!active || retryTimer) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        connect();
+      }, 2000);
+    }
+
+    function connect() {
+      if (!active) return;
+      let base = import.meta.env.VITE_API_BASE;
+      if (!base) {
+        base = window.location.origin;
+      }
+      base = base.replace(/\/$/, "");
+      const wsUrl = `${base.replace(/^http/, "ws")}/ws/screenshots`;
+
+      let socket;
+      try {
+        socket = new WebSocket(wsUrl);
+      } catch (err) {
+        console.error("WebSocket 連線失敗", err);
+        scheduleReconnect();
+        return;
+      }
+
+      wsRef.current = socket;
+
+      socket.onmessage = (event) => {
+        if (!active) return;
+        let payload;
+        try {
+          payload = JSON.parse(event.data);
+        } catch (err) {
+          return;
+        }
+
+        if (payload?.type === "screenshot_request") {
+          enqueueScreenshotRequest(payload);
+        } else if (payload?.type === "screenshot_completed" || payload?.type === "screenshot_failed") {
+          if (payload?.request_id) {
+            pendingRequestIdsRef.current.delete(payload.request_id);
+          }
+        }
+      };
+
+      socket.onclose = () => {
+        if (!active) return;
+        if (wsRef.current === socket) {
+          wsRef.current = null;
+        }
+        scheduleReconnect();
+      };
+
+      socket.onerror = () => {
+        socket.close();
+      };
+    }
+
+    connect();
+
+    return () => {
+      active = false;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
+      cleanupSocket();
+    };
+  }, [enqueueScreenshotRequest]);
 
   if (!imgId) return <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>;
   if (err) return <div style={{ padding: 16 }}>載入失敗：{err}</div>;

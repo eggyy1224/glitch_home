@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File
+from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Form, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import glob
@@ -12,6 +12,7 @@ from .services.camera_presets import (
     delete_camera_preset,
 )
 from .services.screenshots import save_screenshot
+from .services.screenshot_requests import screenshot_requests_manager
 from .models.schemas import (
     GenerateMixTwoResponse,
     GenerateMixTwoRequest,
@@ -96,19 +97,75 @@ def api_delete_camera_preset(name: str) -> None:
 
 
 @app.post("/api/screenshots", status_code=201)
-async def api_upload_screenshot(file: UploadFile = File(...)) -> dict:
+async def api_upload_screenshot(
+    request_id: str | None = Form(default=None),
+    file: UploadFile = File(...),
+) -> dict:
     try:
         saved = save_screenshot(file)
     except ValueError as exc:
+        if request_id:
+            await screenshot_requests_manager.mark_failed(request_id, str(exc))
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:  # noqa: BLE001 - surface as 500
+        if request_id:
+            await screenshot_requests_manager.mark_failed(request_id, "failed to save screenshot")
         raise HTTPException(status_code=500, detail="failed to save screenshot") from exc
+
+    record = None
+    if request_id:
+        record = await screenshot_requests_manager.mark_completed(request_id, saved)
+        if record is None:
+            try:
+                os.remove(saved["absolute_path"])
+            except OSError:
+                pass
+            raise HTTPException(status_code=404, detail="screenshot request not found")
 
     return {
         "filename": saved["filename"],
         "absolute_path": saved["absolute_path"],
         "relative_path": saved.get("relative_path"),
+        "request_id": request_id,
+        "status": record["status"] if record else None,
     }
+
+
+@app.post("/api/screenshots/request", status_code=202)
+async def api_create_screenshot_request(body: dict | None = Body(default=None)) -> dict:
+    record = await screenshot_requests_manager.create_request(metadata=body or {})
+    return record
+
+
+@app.get("/api/screenshots/{request_id}")
+async def api_get_screenshot_request(request_id: str) -> dict:
+    record = await screenshot_requests_manager.get_request(request_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="screenshot request not found")
+    return record
+
+
+@app.post("/api/screenshots/{request_id}/fail", status_code=200)
+async def api_fail_screenshot_request(request_id: str, body: dict | None = Body(default=None)) -> dict:
+    message = ""
+    if body and isinstance(body, dict):
+        message = str(body.get("error", ""))
+    record = await screenshot_requests_manager.mark_failed(request_id, message or "client reported failure")
+    if record is None:
+        raise HTTPException(status_code=404, detail="screenshot request not found")
+    return record
+
+
+@app.websocket("/ws/screenshots")
+async def websocket_screenshots(websocket: WebSocket) -> None:
+    await screenshot_requests_manager.add_connection(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await screenshot_requests_manager.remove_connection(websocket)
+    except Exception:
+        await screenshot_requests_manager.remove_connection(websocket)
 
 
 def _load_all_metadata() -> dict:
