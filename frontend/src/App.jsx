@@ -353,29 +353,6 @@ export default function App() {
     [processQueue]
   );
 
-  const handleTakeScreenshot = useCallback(async () => {
-    if (isCapturingRef.current) {
-      pushScreenshotMessage("正在處理其他截圖，請稍候");
-      return;
-    }
-    if (!captureFnRef.current) {
-      pushScreenshotMessage("場景尚未準備好");
-      return;
-    }
-    isCapturingRef.current = true;
-    setIsCapturing(true);
-    try {
-      await runCaptureInternal(null, false);
-    } catch (err) {
-      const message = err?.message || String(err);
-      pushScreenshotMessage(`截圖失敗：${message}`);
-    } finally {
-      isCapturingRef.current = false;
-      setIsCapturing(false);
-      processQueue();
-    }
-  }, [runCaptureInternal, pushScreenshotMessage, processQueue]);
-
   useEffect(() => {
     let active = true;
     let retryTimer = null;
@@ -526,12 +503,11 @@ export default function App() {
         applyPreset={pendingPreset}
         onCaptureReady={handleCaptureReady}
       />
-      <div className="screenshot-panel">
-        <button type="button" onClick={handleTakeScreenshot} disabled={isCapturing}>
-          {isCapturing ? "截圖中…" : "截圖並上傳"}
-        </button>
-        {screenshotMessage && <div className="screenshot-message">{screenshotMessage}</div>}
-      </div>
+      {screenshotMessage && (
+        <div className="screenshot-panel">
+          <div className="screenshot-message">{screenshotMessage}</div>
+        </div>
+      )}
     </>
   );
 }
