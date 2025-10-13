@@ -31,14 +31,28 @@ export async function deleteCameraPreset(name) {
   return true;
 }
 
-export async function uploadScreenshot(blob) {
+export async function uploadScreenshot(blob, requestId = null) {
   const url = `${API_BASE}/api/screenshots`;
   const form = new FormData();
   const filename = `scene-${Date.now()}.png`;
   form.append("file", blob, filename);
+  if (requestId) {
+    form.append("request_id", requestId);
+  }
   const res = await fetch(url, {
     method: "POST",
     body: form,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function reportScreenshotFailure(requestId, errorMessage = "") {
+  const url = `${API_BASE}/api/screenshots/${encodeURIComponent(requestId)}/fail`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ error: errorMessage }),
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
