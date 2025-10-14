@@ -24,6 +24,7 @@ from .models.schemas import (
     SaveCameraPresetRequest,
     AnalyzeScreenshotRequest,
     GenerateSoundRequest,
+    AnalyzeAndSoundRequest,
 )
 
 
@@ -232,17 +233,19 @@ def _resolve_screenshot_path(path_str: str) -> Path | None:
     return None
 
 
-@app.post("/api/analyze-screenshot")
-async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
+async def _resolve_image_and_snapshot(
+    image_path: str | None,
+    request_id: str | None,
+) -> tuple[Path, dict | None]:
     resolved_path: Path | None = None
     snapshot_record: dict | None = None
 
-    if body.image_path:
-        resolved_path = _resolve_screenshot_path(body.image_path)
+    if image_path:
+        resolved_path = _resolve_screenshot_path(image_path)
         if resolved_path is None:
             raise HTTPException(status_code=404, detail="指定的影像檔案不存在")
-    elif body.request_id:
-        snapshot_record = await screenshot_requests_manager.get_request(body.request_id)
+    elif request_id:
+        snapshot_record = await screenshot_requests_manager.get_request(request_id)
         if snapshot_record is None:
             raise HTTPException(status_code=404, detail="screenshot request not found")
         result = snapshot_record.get("result") or {}
@@ -252,8 +255,56 @@ async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
         resolved_path = _resolve_screenshot_path(candidate_path)
         if resolved_path is None:
             raise HTTPException(status_code=404, detail="截圖檔案不存在或已被移除")
-    else:  # Defensive, should be handled by model validator
+    else:
         raise HTTPException(status_code=400, detail="image_path 或 request_id 必須提供")
+
+    return resolved_path, snapshot_record
+
+
+def _build_auto_sound_prompt(analysis: dict, duration: float) -> str:
+    summary = (analysis.get("summary") or "").strip()
+    segments = analysis.get("segments") or []
+
+    pieces: list[str] = []
+    if summary:
+        pieces.append(summary.replace("\n", " ").strip())
+    for seg in segments:
+        if isinstance(seg, str):
+            cleaned = seg.replace("\n", " ").strip()
+            if cleaned:
+                pieces.append(cleaned)
+
+    if not pieces:
+        raise HTTPException(status_code=500, detail="分析結果缺少文字，無法自動產生音效描述")
+
+    combined = " ".join(pieces)
+    combined = " ".join(combined.split())  # collapse whitespace
+
+    max_details_len = 320
+    if len(combined) > max_details_len:
+        combined = combined[:max_details_len].rsplit(" ", 1)[0] + "..."
+
+    prefix = (
+        "Create an immersive {duration:.1f}-second soundscape inspired by this scene. "
+        "Focus on atmosphere, motion, focal elements, and spatial depth. Details: "
+    ).format(duration=duration)
+
+    prompt = prefix + combined
+    if len(prompt) > 440:
+        overflow = len(prompt) - 440
+        trim_target = max(10, len(combined) - overflow - 3)
+        combined_trim_raw = combined[:trim_target]
+        if " " in combined_trim_raw:
+            combined_trim_raw = combined_trim_raw.rsplit(" ", 1)[0]
+        combined_trimmed = combined_trim_raw + "..."
+        prompt = prefix + combined_trimmed
+
+    return prompt
+
+
+@app.post("/api/analyze-screenshot")
+async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
+    resolved_path, snapshot_record = await _resolve_image_and_snapshot(body.image_path, body.request_id)
 
     analysis = await run_in_threadpool(analyze_screenshot, str(resolved_path), body.prompt)
 
@@ -279,26 +330,7 @@ async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
 
 @app.post("/api/sound-effects")
 async def api_generate_sound(body: GenerateSoundRequest) -> dict:
-    resolved_path: Path | None = None
-    snapshot_record: dict | None = None
-
-    if body.image_path:
-        resolved_path = _resolve_screenshot_path(body.image_path)
-        if resolved_path is None:
-            raise HTTPException(status_code=404, detail="指定的影像檔案不存在")
-    elif body.request_id:
-        snapshot_record = await screenshot_requests_manager.get_request(body.request_id)
-        if snapshot_record is None:
-            raise HTTPException(status_code=404, detail="screenshot request not found")
-        result_info = snapshot_record.get("result") or {}
-        candidate_path = result_info.get("absolute_path") or result_info.get("relative_path")
-        if not candidate_path:
-            raise HTTPException(status_code=409, detail="截圖尚未完成或缺少檔案資訊")
-        resolved_path = _resolve_screenshot_path(candidate_path)
-        if resolved_path is None:
-            raise HTTPException(status_code=404, detail="截圖檔案不存在或已被移除")
-    else:
-        raise HTTPException(status_code=400, detail="image_path 或 request_id 必須提供")
+    resolved_path, snapshot_record = await _resolve_image_and_snapshot(body.image_path, body.request_id)
 
     sound_result = await run_in_threadpool(
         generate_sound_effect,
@@ -315,6 +347,51 @@ async def api_generate_sound(body: GenerateSoundRequest) -> dict:
     response: dict = {
         "image_path": str(resolved_path),
         "sound": sound_result,
+    }
+
+    if body.request_id:
+        updated = await screenshot_requests_manager.attach_sound_effect(body.request_id, sound_result)
+        response["request_id"] = body.request_id
+        if updated:
+            response["request_metadata"] = {
+                "status": updated.get("status"),
+                "target_client_id": updated.get("target_client_id"),
+                "processed_by": updated.get("processed_by"),
+                "sound_effect": updated.get("sound_effect"),
+                "updated_at": updated.get("updated_at"),
+            }
+
+    return response
+
+
+@app.post("/api/screenshot/bundle")
+async def api_analyze_and_sound(body: AnalyzeAndSoundRequest) -> dict:
+    resolved_path, snapshot_record = await _resolve_image_and_snapshot(body.image_path, body.request_id)
+
+    analysis = await run_in_threadpool(analyze_screenshot, str(resolved_path), body.prompt)
+
+    if body.sound_prompt_override and body.sound_prompt_override.strip():
+        sound_prompt = body.sound_prompt_override.strip()
+    else:
+        sound_prompt = _build_auto_sound_prompt(analysis, body.sound_duration_seconds)
+
+    sound_result = await run_in_threadpool(
+        generate_sound_effect,
+        prompt=sound_prompt,
+        image_path=str(resolved_path),
+        request_id=body.request_id,
+        duration_seconds=body.sound_duration_seconds,
+        prompt_influence=body.sound_prompt_influence,
+        loop=body.sound_loop,
+        model_id=body.sound_model_id,
+        output_format=body.sound_output_format,
+    )
+
+    response: dict = {
+        "image_path": str(resolved_path),
+        "analysis": analysis,
+        "sound": sound_result,
+        "used_prompt": sound_prompt,
     }
 
     if body.request_id:
