@@ -83,3 +83,25 @@ class GenerateSoundRequest(AnalyzeScreenshotRequest):
     loop: bool = Field(default=False, description="Request a seamlessly looping sound (model-dependent)")
     model_id: Optional[str] = Field(default=None, description="Override ElevenLabs model identifier")
     output_format: Optional[str] = Field(default=None, description="Output format e.g. mp3_44100_128")
+
+
+class AnalyzeAndSoundRequest(AnalyzeScreenshotRequest):
+    sound_prompt_override: Optional[str] = Field(
+        default=None,
+        description="Optional custom sound prompt. When omitted we derive it from the analysis summary.",
+    )
+    sound_duration_seconds: float = Field(
+        default=10.0,
+        ge=0.5,
+        le=30.0,
+        description="Duration for the generated sound effect (seconds)",
+    )
+    sound_prompt_influence: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Prompt influence forwarded to ElevenLabs", 
+    )
+    sound_loop: bool = Field(default=False, description="Request a seamlessly looping sound (model-dependent)")
+    sound_model_id: Optional[str] = Field(default=None, description="Override ElevenLabs model identifier")
+    sound_output_format: Optional[str] = Field(default=None, description="Override ElevenLabs output format")
