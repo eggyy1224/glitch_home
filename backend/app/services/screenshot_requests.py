@@ -106,6 +106,29 @@ class ScreenshotRequestManager:
         )
         return snapshot
 
+    async def attach_sound_effect(self, request_id: str, sound_result: Dict[str, Any]) -> Dict[str, Any] | None:
+        async with self._lock:
+            record = self._requests.get(request_id)
+            if record is None:
+                return None
+            record["sound_effect"] = sound_result
+            record["updated_at"] = _utc_timestamp()
+            snapshot = dict(record)
+
+        await self._broadcast(
+            {
+                "type": "sound_effect_ready",
+                "request_id": request_id,
+                "sound": {
+                    "filename": sound_result.get("filename"),
+                    "relative_path": sound_result.get("relative_path"),
+                    "output_format": sound_result.get("output_format"),
+                },
+            },
+            target_client_id=record.get("target_client_id"),
+        )
+        return snapshot
+
     async def get_request(self, request_id: str) -> Dict[str, Any] | None:
         async with self._lock:
             record = self._requests.get(request_id)

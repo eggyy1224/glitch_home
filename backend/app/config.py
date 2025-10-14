@@ -23,6 +23,7 @@ _load_dotenv_if_present()
 @dataclass
 class Settings:
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
+    elevenlabs_api_key: Optional[str] = os.getenv("ELEVENLABS_API_KEY")
     model_name: str = os.getenv("MODEL_NAME", "gemini-2.5-flash-image-preview")
     # Backward-compatible single dir
     genes_pool_dir: str = os.getenv("GENES_POOL_DIR", "genes_pool")
@@ -32,6 +33,7 @@ class Settings:
     metadata_dir: str = os.getenv("METADATA_DIR", "backend/metadata")
     camera_presets_file: str = os.getenv("CAMERA_PRESETS_FILE", "backend/metadata/camera_presets.json")
     screenshot_dir: str = os.getenv("SCREENSHOT_DIR", "screen_shots")
+    generated_sounds_dir: str = os.getenv("GENERATED_SOUNDS_DIR", "backend/generated_sounds")
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
         (
@@ -72,6 +74,7 @@ class Settings:
         self.metadata_dir = resolve(self.metadata_dir)
         self.camera_presets_file = resolve(self.camera_presets_file)
         self.screenshot_dir = resolve(self.screenshot_dir)
+        self.generated_sounds_dir = resolve(self.generated_sounds_dir)
 
 
 settings = Settings()
