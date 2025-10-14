@@ -1223,20 +1223,17 @@ export default function ThreeKinshipScene({
 
     return new Promise((resolve, reject) => {
       try {
-        requestAnimationFrame(() => {
-          try {
-            renderer.render(scene, camera);
-            renderer.domElement.toBlob((blob) => {
-              if (!blob) {
-                reject(new Error("無法產生截圖"));
-                return;
-              }
-              resolve(blob);
-            }, "image/png");
-          } catch (err) {
-            reject(err);
-          }
-        });
+        renderer.render(scene, camera);
+        renderer.domElement.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("無法產生截圖"));
+              return;
+            }
+            resolve(blob);
+          },
+          "image/png",
+        );
       } catch (err) {
         reject(err);
       }
