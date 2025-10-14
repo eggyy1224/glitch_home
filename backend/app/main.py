@@ -9,6 +9,7 @@ from pathlib import Path
 from .config import settings
 from .services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
 from .services.image_analysis import analyze_screenshot
+from .services.sound_effects import generate_sound_effect
 from .services.camera_presets import (
     list_camera_presets,
     upsert_camera_preset,
@@ -22,6 +23,7 @@ from .models.schemas import (
     CameraPreset,
     SaveCameraPresetRequest,
     AnalyzeScreenshotRequest,
+    GenerateSoundRequest,
 )
 
 
@@ -271,6 +273,61 @@ async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
             "updated_at": snapshot_record.get("updated_at"),
             "metadata": snapshot_record.get("metadata"),
         }
+
+    return response
+
+
+@app.post("/api/sound-effects")
+async def api_generate_sound(body: GenerateSoundRequest) -> dict:
+    resolved_path: Path | None = None
+    snapshot_record: dict | None = None
+
+    if body.image_path:
+        resolved_path = _resolve_screenshot_path(body.image_path)
+        if resolved_path is None:
+            raise HTTPException(status_code=404, detail="指定的影像檔案不存在")
+    elif body.request_id:
+        snapshot_record = await screenshot_requests_manager.get_request(body.request_id)
+        if snapshot_record is None:
+            raise HTTPException(status_code=404, detail="screenshot request not found")
+        result_info = snapshot_record.get("result") or {}
+        candidate_path = result_info.get("absolute_path") or result_info.get("relative_path")
+        if not candidate_path:
+            raise HTTPException(status_code=409, detail="截圖尚未完成或缺少檔案資訊")
+        resolved_path = _resolve_screenshot_path(candidate_path)
+        if resolved_path is None:
+            raise HTTPException(status_code=404, detail="截圖檔案不存在或已被移除")
+    else:
+        raise HTTPException(status_code=400, detail="image_path 或 request_id 必須提供")
+
+    sound_result = await run_in_threadpool(
+        generate_sound_effect,
+        prompt=body.prompt,
+        image_path=str(resolved_path),
+        request_id=body.request_id,
+        duration_seconds=body.duration_seconds,
+        prompt_influence=body.prompt_influence,
+        loop=body.loop,
+        model_id=body.model_id,
+        output_format=body.output_format,
+    )
+
+    response: dict = {
+        "image_path": str(resolved_path),
+        "sound": sound_result,
+    }
+
+    if body.request_id:
+        updated = await screenshot_requests_manager.attach_sound_effect(body.request_id, sound_result)
+        response["request_id"] = body.request_id
+        if updated:
+            response["request_metadata"] = {
+                "status": updated.get("status"),
+                "target_client_id": updated.get("target_client_id"),
+                "processed_by": updated.get("processed_by"),
+                "sound_effect": updated.get("sound_effect"),
+                "updated_at": updated.get("updated_at"),
+            }
 
     return response
 

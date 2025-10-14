@@ -64,3 +64,22 @@ class AnalyzeScreenshotRequest(BaseModel):
         if self.image_path and self.request_id:
             raise ValueError("image_path 與 request_id 不可同時指定")
         return self
+
+
+class GenerateSoundRequest(AnalyzeScreenshotRequest):
+    prompt: str = Field(..., min_length=1, description="Text prompt that drives sound generation")
+    duration_seconds: Optional[float] = Field(
+        default=None,
+        ge=0.5,
+        le=30.0,
+        description="Desired duration in seconds (0.5-30). When omitted ElevenLabs auto-selects.",
+    )
+    prompt_influence: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Prompt influence between 0 and 1 (defaults to provider setting).",
+    )
+    loop: bool = Field(default=False, description="Request a seamlessly looping sound (model-dependent)")
+    model_id: Optional[str] = Field(default=None, description="Override ElevenLabs model identifier")
+    output_format: Optional[str] = Field(default=None, description="Output format e.g. mp3_44100_128")
