@@ -1,11 +1,14 @@
 from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Form, WebSocket, WebSocketDisconnect
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import glob
 import json
 import os
+from pathlib import Path
 from .config import settings
 from .services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
+from .services.image_analysis import analyze_screenshot
 from .services.camera_presets import (
     list_camera_presets,
     upsert_camera_preset,
@@ -18,10 +21,13 @@ from .models.schemas import (
     GenerateMixTwoRequest,
     CameraPreset,
     SaveCameraPresetRequest,
+    AnalyzeScreenshotRequest,
 )
 
 
 app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # 靜態掛載生成影像：/generated_images -> settings.offspring_dir
 app.mount(
@@ -196,6 +202,77 @@ async def websocket_screenshots(websocket: WebSocket) -> None:
         await screenshot_requests_manager.remove_connection(websocket)
     except Exception:
         await screenshot_requests_manager.remove_connection(websocket)
+
+
+def _resolve_screenshot_path(path_str: str) -> Path | None:
+    if not path_str:
+        return None
+    raw = Path(path_str)
+    candidates: list[Path] = []
+    candidates.append(raw)
+    if not raw.is_absolute():
+        candidates.append(PROJECT_ROOT / raw)
+        candidates.append(Path(settings.screenshot_dir) / raw)
+        candidates.append(Path(settings.screenshot_dir) / raw.name)
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if not candidate:
+            continue
+        try:
+            candidate_resolved = candidate.resolve()
+        except Exception:
+            continue
+        if candidate_resolved in seen:
+            continue
+        seen.add(candidate_resolved)
+        if candidate_resolved.is_file():
+            return candidate_resolved
+    return None
+
+
+@app.post("/api/analyze-screenshot")
+async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
+    resolved_path: Path | None = None
+    snapshot_record: dict | None = None
+
+    if body.image_path:
+        resolved_path = _resolve_screenshot_path(body.image_path)
+        if resolved_path is None:
+            raise HTTPException(status_code=404, detail="指定的影像檔案不存在")
+    elif body.request_id:
+        snapshot_record = await screenshot_requests_manager.get_request(body.request_id)
+        if snapshot_record is None:
+            raise HTTPException(status_code=404, detail="screenshot request not found")
+        result = snapshot_record.get("result") or {}
+        candidate_path = result.get("absolute_path") or result.get("relative_path")
+        if not candidate_path:
+            raise HTTPException(status_code=409, detail="截圖尚未完成或缺少檔案資訊")
+        resolved_path = _resolve_screenshot_path(candidate_path)
+        if resolved_path is None:
+            raise HTTPException(status_code=404, detail="截圖檔案不存在或已被移除")
+    else:  # Defensive, should be handled by model validator
+        raise HTTPException(status_code=400, detail="image_path 或 request_id 必須提供")
+
+    analysis = await run_in_threadpool(analyze_screenshot, str(resolved_path), body.prompt)
+
+    response: dict = {
+        "image_path": str(resolved_path),
+        "analysis": analysis,
+    }
+
+    if body.request_id:
+        response["request_id"] = body.request_id
+    if snapshot_record:
+        response["request_metadata"] = {
+            "status": snapshot_record.get("status"),
+            "target_client_id": snapshot_record.get("target_client_id"),
+            "processed_by": snapshot_record.get("processed_by"),
+            "created_at": snapshot_record.get("created_at"),
+            "updated_at": snapshot_record.get("updated_at"),
+            "metadata": snapshot_record.get("metadata"),
+        }
+
+    return response
 
 
 def _load_all_metadata() -> dict:

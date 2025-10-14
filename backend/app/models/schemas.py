@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -50,3 +50,17 @@ class SaveCameraPresetRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     position: Vector3
     target: Vector3
+
+
+class AnalyzeScreenshotRequest(BaseModel):
+    image_path: Optional[str] = Field(default=None, description="Absolute or relative path to the screenshot")
+    request_id: Optional[str] = Field(default=None, description="Existing screenshot request identifier")
+    prompt: Optional[str] = Field(default=None, description="Optional override instructions for Gemini analysis")
+
+    @model_validator(mode="after")
+    def _validate_source(self) -> "AnalyzeScreenshotRequest":
+        if not self.image_path and not self.request_id:
+            raise ValueError("image_path 或 request_id 必須擇一提供")
+        if self.image_path and self.request_id:
+            raise ValueError("image_path 與 request_id 不可同時指定")
+        return self
