@@ -105,3 +105,24 @@ class AnalyzeAndSoundRequest(AnalyzeScreenshotRequest):
     sound_loop: bool = Field(default=False, description="Request a seamlessly looping sound (model-dependent)")
     sound_model_id: Optional[str] = Field(default=None, description="Override ElevenLabs model identifier")
     sound_output_format: Optional[str] = Field(default=None, description="Override ElevenLabs output format")
+
+
+# Embedding / Search schemas
+class IndexOffspringRequest(BaseModel):
+    limit: Optional[int] = Field(default=None, description="Max number to index in this run")
+    force: bool = Field(default=False, description="Recompute even if exists")
+
+
+class IndexOneImageRequest(BaseModel):
+    basename: str = Field(..., min_length=1, description="offspring image filename e.g. offspring_...png")
+    force: bool = Field(default=False)
+
+
+class TextSearchRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    top_k: int = Field(default=10, ge=1, le=200)
+
+
+class ImageSearchRequest(BaseModel):
+    image_path: str = Field(..., min_length=1, description="Absolute or relative path to an image")
+    top_k: int = Field(default=10, ge=1, le=200)

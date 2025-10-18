@@ -80,4 +80,48 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 - `POST /api/camera-presets`：儲存 / 覆寫視角。Body 需要包含 `name`、`position{x,y,z}`、`target{x,y,z}`。
 - `DELETE /api/camera-presets/{name}`：刪除指定名稱的視角。
 
+### 向量嵌入與 ChromaDB
+
+環境變數（可用 .env 設定）：
+- `CHROMA_DB_PATH`（預設 `backend/chroma_db`）
+- `GOOGLE_EMBEDDING_MODEL`（預設 `text-embedding-004`）
+- `GOOGLE_IMAGE_EMBEDDING_MODEL`（預設 `multimodalembedding`，需 Vertex 支援才可直接嵌入影像）
+- `CHROMA_COLLECTION_IMAGES`（預設 `offspring_images`）
+- `CHROMA_COLLECTION_TEXT`（預設 `text_queries`）
+- `GENAI_USE_VERTEX`（預設 `false`）：啟用 Vertex AI 路徑（需專案與位置）
+- `VERTEX_PROJECT`、`VERTEX_LOCATION`：Vertex 專案與地區，例如 `my-gcp-project`、`us-central1`
+- `ENABLE_IMAGE_EMBEDDING`（預設 `false`）：直接嘗試影像嵌入；若模型/權限不支援會自動回退至「描述→文字嵌入」
+
+端點：
+- `POST /api/index/offspring`
+  - Body（可省略）：`{ "limit": number|null, "force": boolean }`
+  - 將 `backend/offspring_images` 下所有影像計算 embedding 並寫入 ChromaDB；會自動合併對應的 metadata JSON。
+- `POST /api/index/image`
+  - Body：`{ "basename": "offspring_...png", "force": false }`
+  - 只索引單一影像（檔名為 `offspring_images/` 下的檔名）。
+- `POST /api/search/text`
+  - Body：`{ "query": "...", "top_k": 10 }`
+  - 使用文字在影像集合中搜尋（需 `GOOGLE_IMAGE_EMBEDDING_MODEL` 為 multimodal 才支援跨模態）。
+- `POST /api/search/image`
+  - Body：`{ "image_path": "/abs/or/relative/path.png", "top_k": 10 }`
+  - 以圖搜圖。
+
+安裝與初始化：
+```bash
+pip install -r requirements.txt  # 需要 chromadb
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+# 初次索引
+curl -X POST http://localhost:8000/api/index/offspring
+# 文字搜尋（若為 multimodal 模型）
+curl -X POST http://localhost:8000/api/search/text -H 'Content-Type: application/json' \
+  -d '{"query":"foggy night umbrellas with green rims", "top_k": 8}'
+
+# 啟用 Vertex 直接影像嵌入（選用）
+export GENAI_USE_VERTEX=true
+export VERTEX_PROJECT=<your_project>
+export VERTEX_LOCATION=<your_location>
+export ENABLE_IMAGE_EMBEDDING=true
+# 需先設定 ADC（服務帳戶或本機 gcloud auth），否則請改用預設的「描述→文字嵌入」路徑
+```
+
 文件參考：[`Gemini Image Generation`](https://ai.google.dev/gemini-api/docs/image-generation)

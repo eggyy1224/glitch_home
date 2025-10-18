@@ -8,6 +8,7 @@ import {
   reportScreenshotFailure,
 } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
+import SearchMode from "./SearchMode.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -42,6 +43,7 @@ export default function App() {
   const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const phylogenyMode = !incubatorMode && (readParams().get("phylogeny") ?? "false") === "true";
+  const searchMode = !incubatorMode && !phylogenyMode && (readParams().get("search_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -463,6 +465,10 @@ export default function App() {
       cleanupSocket();
     };
   }, [enqueueScreenshotRequest, clientId]);
+
+  if (searchMode) {
+    return <SearchMode imagesBase={IMAGES_BASE} />;
+  }
 
   if (!imgId) return <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>;
   if (err) return <div style={{ padding: 16 }}>載入失敗：{err}</div>;
