@@ -62,6 +62,11 @@ class Settings:
     # Enable direct image embedding attempts (requires Vertex + supported model)
     enable_image_embedding: bool = os.getenv("ENABLE_IMAGE_EMBEDDING", "false").lower() in {"1", "true", "yes"}
 
+    # OpenAI API
+    openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
+    openai_embedding_model: str = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+    openai_vision_model: str = os.getenv("OPENAI_VISION_MODEL", "gpt-4o-mini")
+
     def __post_init__(self) -> None:
         # Resolve relative paths against project root to allow using
         # paths like "夜遊 - 毛刺/AI生成靜態影像" regardless of cwd.

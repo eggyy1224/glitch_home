@@ -22,7 +22,6 @@ from ..utils.embeddings import (
     embed_text,
     embed_image,
     embed_image_as_text,
-    is_multimodal_model,
     caption_image,
 )
 import os
@@ -45,7 +44,7 @@ def get_images_collection():
     return client.get_or_create_collection(
         name=settings.chroma_collection_images,
         metadata={
-            "embedding_model_image": settings.google_image_embedding_model,
+            "embedding_model_image": settings.openai_embedding_model,
         },
     )
 
@@ -55,7 +54,7 @@ def get_text_collection():
     return client.get_or_create_collection(
         name=settings.chroma_collection_text,
         metadata={
-            "embedding_model_text": settings.google_text_embedding_model,
+            "embedding_model_text": settings.openai_embedding_model,
         },
     )
 
@@ -158,16 +157,9 @@ def sweep_and_index_offspring(limit: Optional[int] = None, *, force: bool = Fals
 
 
 def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
-    """Search the image collection with a text query.
-
-    - 若有啟用 direct image embedding 且 image 模型看起來是 multimodal，
-      以該模型做文字嵌入（跨模態同空間）。
-    - 否則使用 text-embedding-004。
-    """
-    if settings.enable_image_embedding and is_multimodal_model(settings.google_image_embedding_model):
-        vec = embed_text(query, model=settings.google_image_embedding_model)
-    else:
-        vec = embed_text(query, model=settings.google_text_embedding_model)
+    """Search the image collection with a text query using OpenAI embeddings."""
+    # 用 OpenAI text-embedding-3-small 進行查詢
+    vec = embed_text(query)
     col = get_images_collection()
     res = col.query(query_embeddings=[vec], n_results=top_k)
     # Standardise output
