@@ -156,6 +156,59 @@ def sweep_and_index_offspring(limit: Optional[int] = None, *, force: bool = Fals
     return {"indexed": indexed, "skipped": skipped, "errors": errors, "results": results}
 
 
+def index_offspring_batch(batch_size: int = 50, offset: int = 0, *, force: bool = False) -> Dict[str, Any]:
+    """Index a batch of offspring images starting from offset.
+    
+    Args:
+        batch_size: Number of images to index in this batch (default: 50)
+        offset: Starting position (default: 0)
+        force: Force re-indexing even if exists
+    
+    Returns:
+        Dictionary with indexed, skipped, errors counts and results list
+    """
+    image_dir = Path(settings.offspring_dir)
+    if not image_dir.exists():
+        return {"indexed": 0, "skipped": 0, "errors": 0, "results": []}
+
+    # Get all images sorted by name (ensures consistent ordering by creation time)
+    files = [p for p in image_dir.iterdir() if p.suffix.lower() in {".png", ".jpg", ".jpeg"}]
+    files.sort()
+    
+    # Get the batch
+    batch_files = files[offset:offset + batch_size]
+    
+    indexed = 0
+    skipped = 0
+    errors = 0
+    results: List[Dict[str, Any]] = []
+    
+    for p in batch_files:
+        try:
+            res = index_offspring_image(p.name, force=force)
+            if res["status"] == "indexed":
+                indexed += 1
+            else:
+                skipped += 1
+            results.append(res)
+        except Exception as exc:  # noqa: BLE001
+            errors += 1
+            results.append({"id": p.name, "status": "error", "error": str(exc)})
+
+    return {
+        "indexed": indexed,
+        "skipped": skipped,
+        "errors": errors,
+        "results": results,
+        "batch_info": {
+            "batch_size": batch_size,
+            "offset": offset,
+            "total_files": len(files),
+            "next_offset": offset + batch_size
+        }
+    }
+
+
 def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
     """Search the image collection with a text query using OpenAI embeddings."""
     # 用 OpenAI text-embedding-3-small 進行查詢

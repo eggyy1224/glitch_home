@@ -30,6 +30,7 @@ from .models.schemas import (
     IndexOneImageRequest,
     TextSearchRequest,
     ImageSearchRequest,
+    IndexBatchRequest,
 )
 
 
@@ -103,6 +104,28 @@ def api_index_one_image(body: IndexOneImageRequest) -> dict:
         res = vector_store.index_offspring_image(body.basename, force=body.force)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return res
+
+
+@app.post("/api/index/batch")
+def api_index_batch(body: IndexBatchRequest) -> dict:
+    """Index a batch of offspring images.
+    
+    批量索引圖像，按生成順序從指定位置開始。
+    
+    Query params:
+    - batch_size: 每次索引的圖像數量 (default: 50)
+    - offset: 起始位置，0-based (default: 0)
+    - force: 強制重新索引 (default: false)
+    """
+    try:
+        res = vector_store.index_offspring_batch(
+            batch_size=body.batch_size,
+            offset=body.offset,
+            force=body.force
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     return res
