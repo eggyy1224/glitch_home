@@ -64,3 +64,35 @@ export async function reportScreenshotFailure(requestId, errorMessage = "", clie
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
+
+// 以圖搜圖 API
+export async function searchImagesByImage(imagePath, topK = 10) {
+  const url = `${API_BASE}/api/search/image`;
+  const payload = {
+    image_path: imagePath,
+    top_k: topK,
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+// 文字搜尋 API
+export async function searchImagesByText(query, topK = 10) {
+  const url = `${API_BASE}/api/search/text`;
+  const payload = {
+    query,
+    top_k: topK,
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}

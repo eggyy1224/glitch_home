@@ -49,6 +49,19 @@ class Settings:
     # Resize input images before sending to model to reduce flaky errors due to size limits
     image_size: int = int(os.getenv("IMAGE_SIZE", "1024"))
 
+    # Embeddings / Vector store
+    google_text_embedding_model: str = os.getenv("GOOGLE_EMBEDDING_MODEL", "text-embedding-004")
+    google_image_embedding_model: str = os.getenv("GOOGLE_IMAGE_EMBEDDING_MODEL", "multimodalembedding")
+    chroma_db_path: str = os.getenv("CHROMA_DB_PATH", "backend/chroma_db")
+    chroma_collection_images: str = os.getenv("CHROMA_COLLECTION_IMAGES", "offspring_images")
+    chroma_collection_text: str = os.getenv("CHROMA_COLLECTION_TEXT", "text_queries")
+    # Optional: use Vertex AI instead of Google AI API (AI Studio)
+    genai_use_vertex: bool = os.getenv("GENAI_USE_VERTEX", "false").lower() in {"1", "true", "yes"}
+    vertex_project: Optional[str] = os.getenv("VERTEX_PROJECT")
+    vertex_location: Optional[str] = os.getenv("VERTEX_LOCATION")
+    # Enable direct image embedding attempts (requires Vertex + supported model)
+    enable_image_embedding: bool = os.getenv("ENABLE_IMAGE_EMBEDDING", "false").lower() in {"1", "true", "yes"}
+
     def __post_init__(self) -> None:
         # Resolve relative paths against project root to allow using
         # paths like "夜遊 - 毛刺/AI生成靜態影像" regardless of cwd.
@@ -75,6 +88,7 @@ class Settings:
         self.camera_presets_file = resolve(self.camera_presets_file)
         self.screenshot_dir = resolve(self.screenshot_dir)
         self.generated_sounds_dir = resolve(self.generated_sounds_dir)
+        self.chroma_db_path = resolve(self.chroma_db_path)
 
 
 settings = Settings()

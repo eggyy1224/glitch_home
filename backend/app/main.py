@@ -17,6 +17,7 @@ from .services.camera_presets import (
 )
 from .services.screenshots import save_screenshot
 from .services.screenshot_requests import screenshot_requests_manager
+from .services import vector_store
 from .models.schemas import (
     GenerateMixTwoResponse,
     GenerateMixTwoRequest,
@@ -25,6 +26,10 @@ from .models.schemas import (
     AnalyzeScreenshotRequest,
     GenerateSoundRequest,
     AnalyzeAndSoundRequest,
+    IndexOffspringRequest,
+    IndexOneImageRequest,
+    TextSearchRequest,
+    ImageSearchRequest,
 )
 
 
@@ -76,6 +81,51 @@ def api_generate_mix_two(
         raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(status_code=201, content=result)
+
+
+# --- Embeddings / Vector store endpoints ---
+
+
+@app.post("/api/index/offspring")
+def api_index_offspring(body: IndexOffspringRequest | None = Body(default=None)) -> dict:
+    limit = body.limit if body else None
+    force = body.force if body else False
+    try:
+        res = vector_store.sweep_and_index_offspring(limit=limit, force=force)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return res
+
+
+@app.post("/api/index/image")
+def api_index_one_image(body: IndexOneImageRequest) -> dict:
+    try:
+        res = vector_store.index_offspring_image(body.basename, force=body.force)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return res
+
+
+@app.post("/api/search/text")
+def api_search_text(body: TextSearchRequest) -> dict:
+    try:
+        res = vector_store.search_images_by_text(body.query, top_k=body.top_k)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return res
+
+
+@app.post("/api/search/image")
+def api_search_image(body: ImageSearchRequest) -> dict:
+    try:
+        res = vector_store.search_images_by_image(body.image_path, top_k=body.top_k)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return res
 
 
 @app.get("/api/camera-presets", response_model=list[CameraPreset])
