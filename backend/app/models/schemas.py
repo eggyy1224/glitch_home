@@ -126,3 +126,9 @@ class TextSearchRequest(BaseModel):
 class ImageSearchRequest(BaseModel):
     image_path: str = Field(..., min_length=1, description="Absolute or relative path to an image")
     top_k: int = Field(default=10, ge=1, le=200)
+
+
+class IndexBatchRequest(BaseModel):
+    batch_size: int = Field(default=50, ge=1, le=500, description="Number of images per batch")
+    offset: int = Field(default=0, ge=0, description="Starting position (0-based)")
+    force: bool = Field(default=False, description="Recompute even if exists")
