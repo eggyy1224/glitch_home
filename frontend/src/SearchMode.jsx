@@ -307,8 +307,51 @@ export default function SearchMode({ imagesBase = IMAGES_BASE }) {
               const cleanId = result.id.replace(/:(en|zh)$/, "");
               const imageUrl = `${imagesBase}${cleanId}`;
 
+              const handleClickResult = async () => {
+                console.log("點擊結果:", cleanId);
+                setSearching(true);
+                setError(null);
+                
+                try {
+                  // 以點擊的圖片進行搜尋
+                  const searchPath = `backend/offspring_images/${cleanId}`;
+                  console.log("搜尋路徑:", searchPath);
+                  
+                  const searchResults = await searchImagesByImage(searchPath, 15);
+                  console.log("新搜尋結果:", searchResults);
+
+                  const resultList = searchResults.results || [];
+                  if (resultList.length === 0) {
+                    setError("搜尋完成，但沒有找到相似的圖像");
+                  } else {
+                    setResults(resultList);
+                  }
+                } catch (err) {
+                  console.error("搜尋出錯:", err);
+                  setError(err.message || "搜尋出錯，請重試");
+                } finally {
+                  setSearching(false);
+                }
+              };
+
               return (
-                <div key={i} style={styles.resultCard}>
+                <div 
+                  key={i} 
+                  style={{
+                    ...styles.resultCard,
+                    cursor: "pointer",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  }}
+                  onClick={handleClickResult}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                  }}
+                >
                   <div style={styles.resultImageContainer}>
                     <img
                       src={imageUrl}
@@ -479,8 +522,8 @@ const styles = {
     borderRadius: "8px",
     overflow: "hidden",
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    transition: "transform 0.3s ease",
     cursor: "pointer",
+    border: "2px solid transparent",
   },
   resultImageContainer: {
     position: "relative",
