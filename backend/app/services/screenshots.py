@@ -61,6 +61,7 @@ def save_screenshot(upload: UploadFile) -> dict[str, str]:
 
     return {
         "filename": filename,
+        "original_filename": upload.filename,  # 新增：保存原始檔案名稱
         "absolute_path": str(full_path),
         "relative_path": relative_path,
     }

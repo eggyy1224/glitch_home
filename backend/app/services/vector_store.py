@@ -238,6 +238,8 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
     """
     # Resolve flexible paths: absolute, relative, or just basename under offspring_dir
     path = image_path
+    original_path = image_path  # 保存原始路徑作為回退選項
+    
     if not os.path.isabs(path):
         # Try as given relative to project root
         abs_try = os.path.abspath(path)
@@ -252,15 +254,19 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
                 path = cand1
             elif os.path.isfile(cand2):
                 path = cand2
-    if not os.path.isfile(path):
-        raise FileNotFoundError(path)
-
+            # 如果檔案不在 offspring_images 中，暫時不拋出錯誤，先檢查資料庫
+    
+    # 只在確實需要時才驗證檔案存在
+    # （因為可能是已在資料庫中的圖像，不需要檔案存在）
+    
     # ✨ 優化：檢查圖像是否已在資料庫中
     basename = os.path.basename(path)
     col = get_images_collection()
     
-    # 嘗試從資料庫取得該圖像的向量
+    # 先嘗試用完整的 basename 在資料庫中查找
+    print(f"🔍 檢查資料庫: {basename}")
     existing = col.get(ids=[basename], include=["embeddings"])
+    
     if existing and len(existing.get("ids", [])) > 0:
         # ✓ 圖像已在資料庫中，直接取得其向量
         print(f"✓ 使用已索引的向量: {basename}")
@@ -277,9 +283,26 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
         else:
             # 如果沒有向量（不應該發生），則降級到 embedding
             print(f"⚠️  {basename} 在資料庫中但沒有向量，進行 embedding")
-            vec = _embed_image_for_search(path)
+            # 使用原始路徑或任何存在的路徑進行 embedding
+            if os.path.isfile(path):
+                vec = _embed_image_for_search(path)
+            else:
+                # 如果現在檔案也不存在，使用 original_path 嘗試
+                if os.path.isfile(original_path):
+                    vec = _embed_image_for_search(original_path)
+                else:
+                    raise FileNotFoundError(original_path)
     else:
         # ✗ 圖像不在資料庫中，進行 embedding
+        # 需要確保檔案存在
+        if not os.path.isfile(path):
+            # 如果解析出的路徑不存在，嘗試原始路徑
+            if os.path.isfile(original_path):
+                path = original_path
+            else:
+                # 都不存在，拋出錯誤
+                raise FileNotFoundError(f"檔案不存在: {original_path}")
+        
         print(f"📤 {basename} 未在資料庫中，進行 embedding...")
         vec = _embed_image_for_search(path)
     

@@ -54,6 +54,7 @@ export default function SearchMode({ imagesBase = IMAGES_BASE }) {
       const uploadUrl = `${apiBase}/api/screenshots`;
 
       console.log("上傳圖片到:", uploadUrl);
+      console.log("原始檔案名稱:", selectedFile.name);
 
       const uploadRes = await fetch(uploadUrl, {
         method: "POST",
@@ -75,15 +76,48 @@ export default function SearchMode({ imagesBase = IMAGES_BASE }) {
       }
 
       console.log("使用路徑搜尋:", uploadedPath);
+      
+      // 💡 優化：如果有原始檔案名稱，優先嘗試在 offspring_images 中尋找
+      // 這樣可以利用資料庫快速查詢（如果圖像已索引）
+      let searchPath = uploadedPath;
+      let fallbackPath = uploadedPath;  // 備選路徑
+      
+      if (uploadData.original_filename) {
+        const possiblePath = `backend/offspring_images/${uploadData.original_filename}`;
+        searchPath = possiblePath;
+        console.log("💡 嘗試使用原始檔案名稱進行快速查詢:", searchPath);
+      }
 
-      const searchResults = await searchImagesByImage(uploadedPath, 15);
-      console.log("搜尋結果:", searchResults);
+      try {
+        const searchResults = await searchImagesByImage(searchPath, 15);
+        console.log("搜尋結果:", searchResults);
 
-      const resultList = searchResults.results || [];
-      if (resultList.length === 0) {
-        setError("搜尋完成，但沒有找到相似的圖像");
-      } else {
-        setResults(resultList);
+        const resultList = searchResults.results || [];
+        if (resultList.length === 0) {
+          setError("搜尋完成，但沒有找到相似的圖像");
+        } else {
+          setResults(resultList);
+        }
+      } catch (searchErr) {
+        // 如果快速路徑失敗，使用完整的上傳路徑重試
+        if (searchPath !== fallbackPath) {
+          console.log("💡 快速路徑失敗，回退到上傳檔案路徑:", fallbackPath);
+          try {
+            const searchResults = await searchImagesByImage(fallbackPath, 15);
+            console.log("搜尋結果 (回退):", searchResults);
+
+            const resultList = searchResults.results || [];
+            if (resultList.length === 0) {
+              setError("搜尋完成，但沒有找到相似的圖像");
+            } else {
+              setResults(resultList);
+            }
+          } catch (fallbackErr) {
+            throw fallbackErr;
+          }
+        } else {
+          throw searchErr;
+        }
       }
     } catch (err) {
       console.error("搜尋出錯:", err);

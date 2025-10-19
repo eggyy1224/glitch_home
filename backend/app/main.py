@@ -145,7 +145,8 @@ def api_search_image(body: ImageSearchRequest) -> dict:
     try:
         res = vector_store.search_images_by_image(body.image_path, top_k=body.top_k)
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        # 返回 400 而非 404，讓前端知道應該使用回退路徑
+        raise HTTPException(status_code=400, detail=f"圖像不存在或無法索引: {str(exc)}")
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return res
@@ -215,6 +216,7 @@ async def api_upload_screenshot(
 
     return {
         "filename": saved["filename"],
+        "original_filename": saved["original_filename"],  # 新增：返回原始檔案名稱
         "absolute_path": saved["absolute_path"],
         "relative_path": saved.get("relative_path"),
         "request_id": request_id,
