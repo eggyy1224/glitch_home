@@ -1,5 +1,5 @@
-import React, { Suspense, useEffect, useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { searchImagesByImage } from "./api.js";
@@ -101,6 +101,24 @@ const styles = {
 
 const cleanId = (value) => (value ? value.replace(/:(en|zh)$/, "") : value);
 
+const HALF_ROOM_SIZE = 6;
+const FACE_NORMALS = [
+  new THREE.Vector3(1, 0, 0),
+  new THREE.Vector3(-1, 0, 0),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(0, -1, 0),
+  new THREE.Vector3(0, 0, 1),
+  new THREE.Vector3(0, 0, -1),
+];
+const FACE_CENTERS = FACE_NORMALS.map((normal) => normal.clone().multiplyScalar(HALF_ROOM_SIZE));
+const TMP_VEC_A = new THREE.Vector3();
+const TMP_VEC_B = new THREE.Vector3();
+const TMP_VEC_C = new THREE.Vector3();
+const TMP_VEC_D = new THREE.Vector3();
+const TMP_VEC_E = new THREE.Vector3();
+
+const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
 function CubeRoom({ faceUrls }) {
   const textures = useTexture(faceUrls);
 
@@ -135,11 +153,103 @@ function CubeRoom({ faceUrls }) {
   );
 }
 
+function OrganicCube({ faceUrls, enabled }) {
+  const groupRef = useRef();
+  const phaseRef = useRef(0);
+  useFrame((_, delta) => {
+    const ref = groupRef.current;
+    if (!ref) return;
+    if (!enabled) return;
+    phaseRef.current += delta;
+    const t = phaseRef.current;
+    ref.rotation.x = Math.sin(t * 0.24) * 0.18 + Math.sin(t * 0.09) * 0.05;
+    ref.rotation.y = Math.sin(t * 0.17) * 0.12 + Math.cos(t * 0.11) * 0.06;
+    ref.rotation.z = Math.cos(t * 0.21) * 0.14 + Math.sin(t * 0.13) * 0.05;
+  });
+  return (
+    <group ref={groupRef}>
+      <CubeRoom faceUrls={faceUrls} />
+    </group>
+  );
+}
+
+function OrganicCruise({ enabled, controlsRef, faceIds, onEnterFace }) {
+  const { camera } = useThree();
+  const cycleRef = useRef({
+    time: 0,
+    index: 0,
+    triggered: false,
+  });
+
+  useEffect(() => {
+    cycleRef.current = { time: 0, index: 0, triggered: false };
+  }, [faceIds]);
+
+  useFrame((_, delta) => {
+    if (!enabled || !faceIds.length) {
+      return;
+    }
+
+    const cycle = cycleRef.current;
+    cycle.time += delta;
+    const cycleDuration = 24;
+    if (cycle.time >= cycleDuration) {
+      cycle.time -= cycleDuration;
+      cycle.index = (cycle.index + 1) % faceIds.length;
+      cycle.triggered = false;
+    }
+
+    const progress = cycle.time / cycleDuration;
+    const wanderPos = TMP_VEC_A.set(
+      Math.cos(cycle.time * 0.22) * 3.2,
+      Math.sin(cycle.time * 0.17) * 0.55,
+      Math.sin(cycle.time * 0.19) * 2.9
+    );
+
+    const targetLook = TMP_VEC_B.set(
+      Math.sin(cycle.time * 0.28) * 0.45,
+      -1.2 + Math.sin(cycle.time * 0.41) * 0.28,
+      Math.cos(cycle.time * 0.25) * 0.45
+    );
+
+    let desiredPos = TMP_VEC_E.copy(wanderPos);
+    const approachStart = 0.62;
+    const approachEnd = 0.94;
+    const faceIndex = cycle.index % faceIds.length;
+
+    if (progress > approachStart) {
+      const normal = FACE_NORMALS[faceIndex];
+      const center = FACE_CENTERS[faceIndex];
+      const approachPoint = TMP_VEC_C.copy(center).sub(TMP_VEC_D.copy(normal).multiplyScalar(1.4));
+      const p = THREE.MathUtils.clamp((progress - approachStart) / (approachEnd - approachStart), 0, 1);
+      const eased = easeInOutCubic(p);
+      desiredPos = TMP_VEC_E.copy(wanderPos).lerp(approachPoint, eased);
+      targetLook.lerp(TMP_VEC_D.copy(center).multiplyScalar(0.2), 0.6);
+
+      if (p > 0.98 && !cycle.triggered && onEnterFace) {
+        cycle.triggered = true;
+        onEnterFace(faceIds[faceIndex]);
+      }
+    }
+
+    camera.position.lerp(desiredPos, 0.12);
+    camera.lookAt(targetLook);
+    if (controlsRef?.current) {
+      controlsRef.current.target.lerp(targetLook, 0.12);
+      controlsRef.current.update();
+    }
+  });
+
+  return null;
+}
+
 export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImage, showInfo = false }) {
   const anchorClean = cleanId(anchorImage);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [results, setResults] = useState([]);
+  const controlsRef = useRef(null);
+  const motionEnabled = !showInfo;
 
   useEffect(() => {
     if (!anchorClean) {
@@ -206,6 +316,17 @@ export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImag
 
   const faceUrls = useMemo(() => faceIds.map((id) => `${imagesBase}${id}`), [faceIds, imagesBase]);
   const ready = faceUrls.length === 6 && faceUrls.every(Boolean);
+  const motionActive = motionEnabled && ready;
+
+  const handleEnterFace = useCallback(
+    (faceId) => {
+      if (!faceId || !onSelectImage) return;
+      const clean = cleanId(faceId);
+      if (clean === anchorClean) return;
+      onSelectImage(clean);
+    },
+    [anchorClean, onSelectImage]
+  );
 
   return (
     <div style={styles.root}>
@@ -217,15 +338,22 @@ export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImag
           <pointLight position={[3, -2, 2]} intensity={0.8} color={0xff6f91} />
           {ready && (
             <Suspense fallback={null}>
-              <CubeRoom faceUrls={faceUrls} />
+              <OrganicCube faceUrls={faceUrls} enabled={motionActive} />
             </Suspense>
           )}
           <OrbitControls
+            ref={controlsRef}
             enablePan={false}
             enableZoom
             minDistance={2.5}
             maxDistance={8}
             target={[0, -1.2, 0]}
+          />
+          <OrganicCruise
+            enabled={motionActive}
+            controlsRef={controlsRef}
+            faceIds={faceIds}
+            onEnterFace={handleEnterFace}
           />
         </Canvas>
       </div>
