@@ -230,6 +230,12 @@ def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
 
 
 def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
+    """搜尋類似圖像。
+    
+    優化邏輯：
+    1. 如果搜尋的圖像已在資料庫中，直接從資料庫取得向量（不重複 embedding）
+    2. 如果圖像不在資料庫中，才進行 embedding（發送 API 呼叫）
+    """
     # Resolve flexible paths: absolute, relative, or just basename under offspring_dir
     path = image_path
     if not os.path.isabs(path):
@@ -249,21 +255,35 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
     if not os.path.isfile(path):
         raise FileNotFoundError(path)
 
-    try:
-        vec = embed_image(path)
-    except Exception:
-        # Fallback: caption + text embedding
-        hint = None
-        meta_json = Path(settings.metadata_dir) / f"{Path(path).stem}.json"
-        if meta_json.exists():
+    # ✨ 優化：檢查圖像是否已在資料庫中
+    basename = os.path.basename(path)
+    col = get_images_collection()
+    
+    # 嘗試從資料庫取得該圖像的向量
+    existing = col.get(ids=[basename], include=["embeddings"])
+    if existing and len(existing.get("ids", [])) > 0:
+        # ✓ 圖像已在資料庫中，直接取得其向量
+        print(f"✓ 使用已索引的向量: {basename}")
+        embeddings = existing.get("embeddings", [])
+        # 檢查 embeddings 是否有效（不要用 if embeddings，會觸發 numpy 陣列的真值歧義）
+        if embeddings is not None and len(embeddings) > 0 and embeddings[0] is not None:
+            vec = embeddings[0]
+            # 如果是 numpy 陣列，轉換為列表
             try:
-                import json
-                md = json.loads(meta_json.read_text(encoding="utf-8"))
-                hint = md.get("prompt") or None
+                if hasattr(vec, 'tolist'):
+                    vec = vec.tolist()
             except Exception:
                 pass
-        vec = embed_image_as_text(path, extra_hint=hint)
-    col = get_images_collection()
+        else:
+            # 如果沒有向量（不應該發生），則降級到 embedding
+            print(f"⚠️  {basename} 在資料庫中但沒有向量，進行 embedding")
+            vec = _embed_image_for_search(path)
+    else:
+        # ✗ 圖像不在資料庫中，進行 embedding
+        print(f"📤 {basename} 未在資料庫中，進行 embedding...")
+        vec = _embed_image_for_search(path)
+    
+    # 使用獲得的向量進行搜尋
     res = col.query(query_embeddings=[vec], n_results=top_k)
     out: List[Dict[str, Any]] = []
     ids = res.get("ids", [[]])[0] if res else []
@@ -276,3 +296,25 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
             "metadata": metas[i] if i < len(metas) else None,
         })
     return {"results": out}
+
+
+def _embed_image_for_search(image_path: str) -> List[float]:
+    """為搜尋目的進行圖像 embedding。
+    
+    包含回退邏輯：主要方法失敗時回退到標題 + 文字 embedding。
+    """
+    try:
+        vec = embed_image(image_path)
+    except Exception:
+        # Fallback: caption + text embedding
+        hint = None
+        meta_json = Path(settings.metadata_dir) / f"{Path(image_path).stem}.json"
+        if meta_json.exists():
+            try:
+                import json
+                md = json.loads(meta_json.read_text(encoding="utf-8"))
+                hint = md.get("prompt") or None
+            except Exception:
+                pass
+        vec = embed_image_as_text(image_path, extra_hint=hint)
+    return vec
