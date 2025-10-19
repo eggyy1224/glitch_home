@@ -9,6 +9,7 @@ import {
 } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
+import OrganicRoomScene from "./OrganicRoomScene.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -42,8 +43,10 @@ export default function App() {
   const wsRef = useRef(null);
   const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
-  const phylogenyMode = !incubatorMode && (readParams().get("phylogeny") ?? "false") === "true";
-  const searchMode = !incubatorMode && !phylogenyMode && (readParams().get("search_mode") ?? "false") === "true";
+  const organicMode = !incubatorMode && (readParams().get("organic_mode") ?? "false") === "true";
+  const phylogenyMode = !incubatorMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
+  const searchMode =
+    !incubatorMode && !organicMode && !phylogenyMode && (readParams().get("search_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -170,7 +173,7 @@ export default function App() {
   }, [selectedPresetName, removePresetInState, pushPresetMessage]);
 
   useEffect(() => {
-    if (!imgId) return;
+    if (!imgId || organicMode) return;
     let cancelled = false;
     setErr(null);
     fetchKinship(imgId, -1)
@@ -202,7 +205,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId, phylogenyMode, incubatorMode]);
+  }, [imgId, phylogenyMode, incubatorMode, organicMode]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -214,7 +217,7 @@ export default function App() {
 
   // 自動向子代/兄弟/父母切換
   useEffect(() => {
-    if (!data) return;
+    if (!data || organicMode) return;
     const params = readParams();
     // 新增：continuous=true 時，不自動切換
     const continuous = (params.get("continuous") ?? "false") === "true";
@@ -241,7 +244,7 @@ export default function App() {
       navigateToImage(next);
     }, stepSec * 1000);
     return () => clearTimeout(t);
-  }, [data]);
+  }, [data, organicMode]);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
@@ -465,6 +468,17 @@ export default function App() {
       cleanupSocket();
     };
   }, [enqueueScreenshotRequest, clientId]);
+
+  if (organicMode) {
+    return (
+      <OrganicRoomScene
+        imagesBase={IMAGES_BASE}
+        anchorImage={imgId}
+        onSelectImage={navigateToImage}
+        showInfo={showInfo}
+      />
+    );
+  }
 
   if (searchMode) {
     return <SearchMode imagesBase={IMAGES_BASE} />;
