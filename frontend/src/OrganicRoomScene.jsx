@@ -116,6 +116,9 @@ const TMP_VEC_B = new THREE.Vector3();
 const TMP_VEC_C = new THREE.Vector3();
 const TMP_VEC_D = new THREE.Vector3();
 const TMP_VEC_E = new THREE.Vector3();
+const TMP_VEC_F = new THREE.Vector3();
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -200,31 +203,47 @@ function OrganicCruise({ enabled, controlsRef, faceIds, onEnterFace }) {
     }
 
     const progress = cycle.time / cycleDuration;
+    const radius = 2.6 + Math.sin(cycle.time * 0.2) * 0.35;
     const wanderPos = TMP_VEC_A.set(
-      Math.cos(cycle.time * 0.22) * 3.2,
-      Math.sin(cycle.time * 0.17) * 0.55,
-      Math.sin(cycle.time * 0.19) * 2.9
+      Math.cos(cycle.time * 0.18) * radius,
+      Math.sin(cycle.time * 0.12) * 0.35,
+      Math.sin(cycle.time * 0.16) * radius * 0.85
     );
 
     const targetLook = TMP_VEC_B.set(
-      Math.sin(cycle.time * 0.28) * 0.45,
-      -1.2 + Math.sin(cycle.time * 0.41) * 0.28,
-      Math.cos(cycle.time * 0.25) * 0.45
+      Math.sin(cycle.time * 0.21) * 0.15,
+      -1.0 + Math.sin(cycle.time * 0.27) * 0.18,
+      Math.cos(cycle.time * 0.19) * 0.15
     );
 
     let desiredPos = TMP_VEC_E.copy(wanderPos);
-    const approachStart = 0.62;
-    const approachEnd = 0.94;
+    const approachStart = 0.58;
+    const approachEnd = 0.9;
     const faceIndex = cycle.index % faceIds.length;
 
     if (progress > approachStart) {
       const normal = FACE_NORMALS[faceIndex];
       const center = FACE_CENTERS[faceIndex];
-      const approachPoint = TMP_VEC_C.copy(center).sub(TMP_VEC_D.copy(normal).multiplyScalar(1.4));
+      const side = TMP_VEC_F.copy(normal).cross(WORLD_UP);
+      if (side.lengthSq() < 1e-3) {
+        side.copy(normal).cross(X_AXIS);
+      }
+      side.normalize();
+      const vertical = TMP_VEC_D.copy(normal).cross(side).normalize();
+      const lateralSwing = Math.sin(cycle.time * 0.9) * 0.55;
+      const verticalSwing = Math.cos(cycle.time * 0.7) * 0.35;
+
+      const offset = TMP_VEC_C
+        .copy(normal)
+        .multiplyScalar(-3.2)
+        .add(side.multiplyScalar(lateralSwing))
+        .add(vertical.multiplyScalar(verticalSwing));
+      const approachPoint = TMP_VEC_D.copy(center).add(offset);
       const p = THREE.MathUtils.clamp((progress - approachStart) / (approachEnd - approachStart), 0, 1);
       const eased = easeInOutCubic(p);
       desiredPos = TMP_VEC_E.copy(wanderPos).lerp(approachPoint, eased);
-      targetLook.lerp(TMP_VEC_D.copy(center).multiplyScalar(0.2), 0.6);
+      const lookPoint = TMP_VEC_C.copy(center).multiplyScalar(0.85);
+      targetLook.lerp(lookPoint, 0.72);
 
       if (p > 0.98 && !cycle.triggered && onEnterFace) {
         cycle.triggered = true;
