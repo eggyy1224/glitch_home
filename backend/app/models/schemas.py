@@ -132,3 +132,8 @@ class IndexBatchRequest(BaseModel):
     batch_size: int = Field(default=50, ge=1, le=500, description="Number of images per batch")
     offset: int = Field(default=0, ge=0, description="Starting position (0-based)")
     force: bool = Field(default=False, description="Recompute even if exists")
+
+
+class SoundPlayRequest(BaseModel):
+    filename: str = Field(..., min_length=1, description="音效檔案名稱（含副檔名）")
+    target_client_id: Optional[str] = Field(default=None, description="指定播放的 client_id，可為空代表廣播")

@@ -10,6 +10,7 @@ import {
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
+import SoundPlayer from "./SoundPlayer.jsx";
 import SlideMode from "./SlideMode.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
@@ -33,6 +34,7 @@ export default function App() {
   const [presetMessage, setPresetMessage] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [screenshotMessage, setScreenshotMessage] = useState(null);
+  const [soundPlayRequest, setSoundPlayRequest] = useState(null);
   const messageTimerRef = useRef(null);
   const screenshotTimerRef = useRef(null);
   const captureFnRef = useRef(null);
@@ -44,6 +46,7 @@ export default function App() {
   const wsRef = useRef(null);
   const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
+  const soundPlayerEnabled = (readParams().get("sound_player") ?? "false") === "true";
   const slideMode = !incubatorMode && (readParams().get("slide_mode") ?? "false") === "true";
   const organicMode = !incubatorMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
   const phylogenyMode =
@@ -446,6 +449,10 @@ export default function App() {
           if (payload?.request_id) {
             pendingRequestIdsRef.current.delete(payload.request_id);
           }
+        } else if (payload?.type === "sound_play") {
+          if (payload?.filename) {
+            setSoundPlayRequest({ filename: payload.filename, url: payload.url });
+          }
         }
       };
 
@@ -474,26 +481,81 @@ export default function App() {
   }, [enqueueScreenshotRequest, clientId]);
 
   if (slideMode) {
-    return <SlideMode imagesBase={IMAGES_BASE} anchorImage={imgId} />;
+    return (
+      <>
+        <SlideMode imagesBase={IMAGES_BASE} anchorImage={imgId} />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+      </>
+    );
   }
 
   if (organicMode) {
     return (
-      <OrganicRoomScene
-        imagesBase={IMAGES_BASE}
-        anchorImage={imgId}
-        onSelectImage={navigateToImage}
-        showInfo={showInfo}
-      />
+      <>
+        <OrganicRoomScene
+          imagesBase={IMAGES_BASE}
+          anchorImage={imgId}
+          onSelectImage={navigateToImage}
+          showInfo={showInfo}
+        />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+      </>
     );
   }
 
   if (searchMode) {
-    return <SearchMode imagesBase={IMAGES_BASE} />;
+    return (
+      <>
+        <SearchMode imagesBase={IMAGES_BASE} />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+      </>
+    );
   }
 
-  if (!imgId) return <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>;
-  if (err) return <div style={{ padding: 16 }}>載入失敗：{err}</div>;
+  if (!imgId)
+    return (
+      <>
+        <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+      </>
+    );
+  if (err)
+    return (
+      <>
+        <div style={{ padding: 16 }}>載入失敗：{err}</div>
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+      </>
+    );
 
   const original = data?.original_image || imgId;
   const related = data?.related_images || [];
@@ -561,6 +623,13 @@ export default function App() {
         <div className="screenshot-panel">
           <div className="screenshot-message">{screenshotMessage}</div>
         </div>
+      )}
+      {soundPlayerEnabled && (
+        <SoundPlayer
+          playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+          onPlayHandled={() => setSoundPlayRequest(null)}
+          visible={showInfo}
+        />
       )}
     </>
   );

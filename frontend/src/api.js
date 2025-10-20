@@ -96,3 +96,32 @@ export async function searchImagesByText(query, topK = 10) {
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
+
+export async function fetchSoundFiles() {
+  const url = `${API_BASE}/api/sound-files`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const data = await res.json();
+  const list = Array.isArray(data?.files) ? data.files : [];
+  const requestUrl = new URL(res.url);
+  const mapped = list.map((file) => {
+    if (!file?.url) return file;
+    try {
+      const href = String(file.url);
+      const absolute = new URL(href, requestUrl.origin);
+      // Encode pathname segments to avoid issues with spaces or unicode.
+      const encodedPath = absolute.pathname
+        .split("/")
+        .map((segment) => encodeURIComponent(segment))
+        .join("/");
+      absolute.pathname = encodedPath;
+      return {
+        ...file,
+        url: absolute.toString(),
+      };
+    } catch (err) {
+      return file;
+    }
+  });
+  return { files: mapped };
+}

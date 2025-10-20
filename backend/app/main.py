@@ -1,11 +1,14 @@
-from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Form, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import glob
 import json
 import os
 from pathlib import Path
+from datetime import datetime, timezone
+from urllib.parse import quote
+import mimetypes
 from .config import settings
 from .services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
 from .services.image_analysis import analyze_screenshot
@@ -31,6 +34,7 @@ from .models.schemas import (
     TextSearchRequest,
     ImageSearchRequest,
     IndexBatchRequest,
+    SoundPlayRequest,
 )
 
 
@@ -38,11 +42,19 @@ app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
+Path(settings.generated_sounds_dir).mkdir(parents=True, exist_ok=True)
+
 # 靜態掛載生成影像：/generated_images -> settings.offspring_dir
 app.mount(
     "/generated_images",
     StaticFiles(directory=settings.offspring_dir),
     name="generated_images",
+)
+
+app.mount(
+    "/generated_sounds",
+    StaticFiles(directory=settings.generated_sounds_dir),
+    name="generated_sounds",
 )
 
 
@@ -87,6 +99,13 @@ def api_generate_mix_two(
 # --- Embeddings / Vector store endpoints ---
 
 
+def _format_iso(ts: float) -> str:
+    try:
+        return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+    except Exception:
+        return datetime.utcfromtimestamp(ts).isoformat() + "Z"
+
+
 @app.post("/api/index/offspring")
 def api_index_offspring(body: IndexOffspringRequest | None = Body(default=None)) -> dict:
     limit = body.limit if body else None
@@ -96,6 +115,60 @@ def api_index_offspring(body: IndexOffspringRequest | None = Body(default=None))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     return res
+
+
+@app.get("/api/sound-files")
+def api_sound_files() -> dict:
+    directory = Path(settings.generated_sounds_dir)
+    if not directory.exists():
+        return {"files": []}
+
+    allowed_exts = {".mp3", ".wav", ".opus", ".ulaw", ".alaw"}
+    files: list[dict] = []
+    for path in sorted(directory.iterdir()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() not in allowed_exts:
+            continue
+        stat = path.stat()
+        files.append(
+            {
+                "filename": path.name,
+                "url": f"/api/sound-files/{quote(path.name)}",
+                "size": stat.st_size,
+                "modified_at": _format_iso(stat.st_mtime),
+            }
+        )
+
+    return {"files": files}
+
+
+@app.get("/api/sound-files/{filename}")
+def api_sound_file(filename: str) -> FileResponse:
+    safe_name = os.path.basename(filename)
+    if not safe_name:
+        raise HTTPException(status_code=400, detail="invalid filename")
+    path = Path(settings.generated_sounds_dir) / safe_name
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="sound file not found")
+
+    media_type, _ = mimetypes.guess_type(str(path))
+    return FileResponse(path, media_type=media_type or "audio/mpeg", filename=path.name)
+
+
+@app.post("/api/sound-play", status_code=202)
+async def api_sound_play(body: SoundPlayRequest, request: Request) -> dict:
+    safe_name = os.path.basename(body.filename)
+    if not safe_name:
+        raise HTTPException(status_code=400, detail="invalid filename")
+    path = Path(settings.generated_sounds_dir) / safe_name
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="sound file not found")
+
+    url = str(request.url_for("api_sound_file", filename=safe_name))
+    await screenshot_requests_manager.broadcast_sound_play(safe_name, url, body.target_client_id)
+
+    return {"status": "queued", "filename": safe_name, "url": url}
 
 
 @app.post("/api/index/image")
