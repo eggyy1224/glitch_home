@@ -10,6 +10,7 @@ import {
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
+import SlideMode from "./SlideMode.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -43,10 +44,13 @@ export default function App() {
   const wsRef = useRef(null);
   const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
-  const organicMode = !incubatorMode && (readParams().get("organic_mode") ?? "false") === "true";
-  const phylogenyMode = !incubatorMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
+  const slideMode = !incubatorMode && (readParams().get("slide_mode") ?? "false") === "true";
+  const organicMode = !incubatorMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
+  const phylogenyMode =
+    !incubatorMode && !slideMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
   const searchMode =
-    !incubatorMode && !organicMode && !phylogenyMode && (readParams().get("search_mode") ?? "false") === "true";
+    !incubatorMode && !slideMode && !organicMode && !phylogenyMode &&
+    (readParams().get("search_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -173,7 +177,7 @@ export default function App() {
   }, [selectedPresetName, removePresetInState, pushPresetMessage]);
 
   useEffect(() => {
-    if (!imgId || organicMode) return;
+    if (!imgId || organicMode || slideMode) return;
     let cancelled = false;
     setErr(null);
     fetchKinship(imgId, -1)
@@ -205,7 +209,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId, phylogenyMode, incubatorMode, organicMode]);
+  }, [imgId, phylogenyMode, incubatorMode, organicMode, slideMode]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -217,7 +221,7 @@ export default function App() {
 
   // 自動向子代/兄弟/父母切換
   useEffect(() => {
-    if (!data || organicMode) return;
+    if (!data || organicMode || slideMode) return;
     const params = readParams();
     // 新增：continuous=true 時，不自動切換
     const continuous = (params.get("continuous") ?? "false") === "true";
@@ -244,7 +248,7 @@ export default function App() {
       navigateToImage(next);
     }, stepSec * 1000);
     return () => clearTimeout(t);
-  }, [data, organicMode]);
+  }, [data, organicMode, slideMode]);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
@@ -468,6 +472,10 @@ export default function App() {
       cleanupSocket();
     };
   }, [enqueueScreenshotRequest, clientId]);
+
+  if (slideMode) {
+    return <SlideMode imagesBase={IMAGES_BASE} anchorImage={imgId} />;
+  }
 
   if (organicMode) {
     return (
