@@ -30,7 +30,7 @@ const styles = {
   },
   caption: {
     position: "absolute",
-    bottom: "32px",
+    bottom: "100px",
     left: "50%",
     transform: "translateX(-50%)",
     padding: "10px 16px",
@@ -51,7 +51,82 @@ const styles = {
     fontSize: "13px",
     letterSpacing: "0.04em",
   },
+  controlBar: {
+    position: "absolute",
+    bottom: "20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+    padding: "12px 20px",
+    borderRadius: "24px",
+    background: "rgba(20,20,20,0.85)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    backdropFilter: "blur(10px)",
+  },
+  slider: {
+    minWidth: "150px",
+    height: "4px",
+    borderRadius: "2px",
+    background: "rgba(255,255,255,0.2)",
+    outline: "none",
+    cursor: "pointer",
+    WebkitAppearance: "none",
+    appearance: "none",
+    accentColor: "#4a9eff",
+  },
+  sliderLabel: {
+    fontSize: "12px",
+    color: "#888",
+    minWidth: "45px",
+    textAlign: "right",
+    fontVariantNumeric: "tabular-nums",
+  },
+  button: {
+    padding: "6px 12px",
+    borderRadius: "6px",
+    border: "1px solid rgba(255,255,255,0.2)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#f5f5f5",
+    cursor: "pointer",
+    fontSize: "12px",
+    transition: "all 0.2s ease",
+    fontFamily: "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif",
+  },
 };
+
+// 添加 CSS 規則用於 slider thumb 的樣式
+if (typeof document !== "undefined" && !document.getElementById("sliderStyles")) {
+  const style = document.createElement("style");
+  style.id = "sliderStyles";
+  style.innerHTML = `
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4a9eff;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(74, 158, 255, 0.5);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4a9eff;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 8px rgba(74, 158, 255, 0.5);
+    }
+    button:hover {
+      background: rgba(255,255,255,0.1) !important;
+      border-color: rgba(255,255,255,0.3) !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 const cleanId = (value) => (value ? value.replace(/:(en|zh)$/, "") : value);
 
@@ -71,6 +146,8 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
     const mode = (params.get("slide_source") || "vector").toLowerCase();
     return mode === "kinship" ? "kinship" : "vector";
   });
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
 
   const anchorClean = cleanId(anchorImage);
 
@@ -227,7 +304,8 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
   }, [anchor, generation, sourceMode, performSearch]);
 
   useEffect(() => {
-    if (items.length <= 1) return undefined;
+    if (items.length <= 1 || isPaused) return undefined;
+    const effectiveInterval = Math.max(1000, intervalMs / playbackSpeed);
     const timer = setInterval(() => {
       setIndex((prev) => {
         const next = prev + 1;
@@ -241,9 +319,9 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
         }
         return next;
       });
-    }, Math.max(1000, intervalMs));
+    }, effectiveInterval);
     return () => clearInterval(timer);
-  }, [items, intervalMs]);
+  }, [items, intervalMs, playbackSpeed, isPaused]);
 
   const current = useMemo(() => {
     if (!items.length) return null;
@@ -269,6 +347,27 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
           {showCaption && (
             <div style={styles.caption}>
               {items.length > 1 && `${index + 1}/${items.length}`} · {current.cleanId}
+            </div>
+          )}
+          {showCaption && (
+            <div style={styles.controlBar}>
+              <span style={{ fontSize: "12px", color: "#666" }}>速度</span>
+              <input
+                type="range"
+                min="0.5"
+                max="10"
+                step="0.1"
+                value={playbackSpeed}
+                onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                style={styles.slider}
+              />
+              <span style={styles.sliderLabel}>{playbackSpeed.toFixed(1)}x</span>
+              <button
+                onClick={() => setIsPaused(!isPaused)}
+                style={styles.button}
+              >
+                {isPaused ? "▶ 播放" : "⏸ 暫停"}
+              </button>
             </div>
           )}
         </>
