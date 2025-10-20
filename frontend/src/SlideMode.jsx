@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { searchImagesByImage } from "./api.js";
+import { searchImagesByImage, fetchKinship } from "./api.js";
 
 const styles = {
   root: {
@@ -65,18 +65,39 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
   const [error, setError] = useState(null);
   const [anchor, setAnchor] = useState(null);
   const [generation, setGeneration] = useState(0);
+  const [showCaption, setShowCaption] = useState(false);
+  const [sourceMode, setSourceMode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = (params.get("slide_source") || "vector").toLowerCase();
+    return mode === "kinship" ? "kinship" : "vector";
+  });
 
   const anchorClean = cleanId(anchorImage);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = (params.get("slide_source") || "vector").toLowerCase();
+    setSourceMode(mode === "kinship" ? "kinship" : "vector");
     setAnchor(anchorClean || null);
     setGeneration((prev) => prev + 1);
     setItems([]);
     setIndex(0);
+    setShowCaption(false);
   }, [anchorClean]);
 
+  useEffect(() => {
+    const handler = (event) => {
+      if (event.ctrlKey && (event.key === "r" || event.key === "R")) {
+        event.preventDefault();
+        setShowCaption((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler, { passive: false });
+    return () => window.removeEventListener("keydown", handler, { passive: false });
+  }, []);
+
   const performSearch = useCallback(
-    (imageId, currentGeneration) => {
+    (imageId, currentGeneration, mode) => {
       if (!imageId) {
         setItems([]);
         setError("請在網址加入 ?img=offspring_xxx.png 以決定播放內容。");
@@ -88,59 +109,106 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
       setLoading(true);
       setError(null);
 
-      const searchPath = `backend/offspring_images/${imageId}`;
-      searchImagesByImage(searchPath, BATCH_SIZE)
-        .then((data) => {
-          if (cancelled || currentGeneration !== generation) return;
-          const list = Array.isArray(data?.results) ? data.results : [];
-          const prepared = list
-            .map((item) => ({
-              id: item?.id || "",
-              cleanId: cleanId(item?.id || ""),
-              distance: typeof item?.distance === "number" ? item.distance : null,
-            }))
-            .filter((entry) => entry.cleanId);
+      const run = async () => {
+        try {
+          let finalList = [];
 
-          const ordered = [];
-          const seen = new Set();
+          if (mode === "kinship") {
+            const data = await fetchKinship(imageId, -1);
+            if (cancelled || currentGeneration !== generation) return;
 
-          DISPLAY_ORDER.forEach((i) => {
-            const entry = prepared[i];
-            if (!entry || seen.has(entry.cleanId)) return;
-            ordered.push(entry);
-            seen.add(entry.cleanId);
-          });
+            const ordered = [];
+            const seen = new Set();
 
-          prepared.forEach((entry) => {
-            if (!seen.has(entry.cleanId)) {
+            const pushList = (arr) => {
+              (arr || []).forEach((item) => {
+                const clean = cleanId(item);
+                if (!clean || seen.has(clean)) return;
+                ordered.push({ id: clean, cleanId: clean, distance: null });
+                seen.add(clean);
+              });
+            };
+
+            const children = data?.children || [];
+            const siblings = data?.siblings || [];
+            const parents = data?.parents || [];
+            const ancestorsLevels = data?.ancestors_by_level || [];
+            const ancestors = data?.ancestors || [];
+            const related = data?.related_images || [];
+
+            pushList(children);
+            pushList(siblings);
+            pushList(parents);
+            ancestorsLevels.forEach((lv) => pushList(lv));
+            pushList(ancestors);
+            pushList(related);
+
+            const originalClean = cleanId(data?.original_image || imageId);
+            if (originalClean && !seen.has(originalClean)) {
+              ordered.unshift({ id: originalClean, cleanId: originalClean, distance: null });
+              seen.add(originalClean);
+            }
+
+            finalList = ordered.slice(0, BATCH_SIZE);
+            if (finalList.length === 0 && originalClean) {
+              finalList.push({ id: originalClean, cleanId: originalClean, distance: null });
+            }
+          } else {
+            const searchPath = `backend/offspring_images/${imageId}`;
+            const data = await searchImagesByImage(searchPath, BATCH_SIZE);
+            if (cancelled || currentGeneration !== generation) return;
+            const list = Array.isArray(data?.results) ? data.results : [];
+            const prepared = list
+              .map((item) => ({
+                id: item?.id || "",
+                cleanId: cleanId(item?.id || ""),
+                distance: typeof item?.distance === "number" ? item.distance : null,
+              }))
+              .filter((entry) => entry.cleanId);
+
+            const ordered = [];
+            const seen = new Set();
+
+            DISPLAY_ORDER.forEach((i) => {
+              const entry = prepared[i];
+              if (!entry || seen.has(entry.cleanId)) return;
               ordered.push(entry);
               seen.add(entry.cleanId);
+            });
+
+            prepared.forEach((entry) => {
+              if (!seen.has(entry.cleanId)) {
+                ordered.push(entry);
+                seen.add(entry.cleanId);
+              }
+            });
+
+            if (!seen.has(imageId)) {
+              const clean = cleanId(imageId);
+              ordered.unshift({ id: clean, cleanId: clean, distance: null });
             }
-          });
 
-          if (!seen.has(imageId)) {
-            ordered.unshift({ id: imageId, cleanId: imageId, distance: null });
-          }
-
-          const finalList = ordered.slice(0, BATCH_SIZE);
-          if (finalList.length === 0) {
-            finalList.push({ id: imageId, cleanId: imageId, distance: null });
+            finalList = ordered.slice(0, BATCH_SIZE);
+            if (finalList.length === 0) {
+              finalList.push({ id: imageId, cleanId: imageId, distance: null });
+            }
           }
 
           setItems(finalList);
           setIndex(0);
-        })
-        .catch((err) => {
+        } catch (err) {
           if (cancelled || currentGeneration !== generation) return;
           setError(err?.message || "搜尋失敗，請稍後再試。");
-          setItems([{ id: imageId, cleanId: imageId, distance: null }]);
+          setItems([{ id: imageId, cleanId: cleanId(imageId), distance: null }]);
           setIndex(0);
-        })
-        .finally(() => {
+        } finally {
           if (!cancelled && currentGeneration === generation) {
             setLoading(false);
           }
-        });
+        }
+      };
+
+      run();
 
       return () => {
         cancelled = true;
@@ -155,8 +223,8 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
       return () => {};
     }
 
-    return performSearch(anchor, generation);
-  }, [anchor, generation, performSearch]);
+    return performSearch(anchor, generation, sourceMode);
+  }, [anchor, generation, sourceMode, performSearch]);
 
   useEffect(() => {
     if (items.length <= 1) return undefined;
@@ -198,9 +266,11 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
               style={styles.image}
             />
           </div>
-          <div style={styles.caption}>
-            {items.length > 1 && `${index + 1}/${items.length}`} · {current.cleanId}
-          </div>
+          {showCaption && (
+            <div style={styles.caption}>
+              {items.length > 1 && `${index + 1}/${items.length}`} · {current.cleanId}
+            </div>
+          )}
         </>
       ) : (
         <div style={styles.status}>尚無可播放的圖片</div>
