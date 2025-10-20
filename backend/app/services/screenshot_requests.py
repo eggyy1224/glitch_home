@@ -129,6 +129,19 @@ class ScreenshotRequestManager:
         )
         return snapshot
 
+    async def broadcast_sound_play(
+        self,
+        filename: str,
+        url: str,
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        payload = {
+            "type": "sound_play",
+            "filename": filename,
+            "url": url,
+        }
+        await self._broadcast(payload, target_client_id=target_client_id)
+
     async def get_request(self, request_id: str) -> Dict[str, Any] | None:
         async with self._lock:
             record = self._requests.get(request_id)
