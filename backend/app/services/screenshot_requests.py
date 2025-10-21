@@ -142,6 +142,17 @@ class ScreenshotRequestManager:
         }
         await self._broadcast(payload, target_client_id=target_client_id)
 
+    async def broadcast_iframe_config(
+        self,
+        config_payload: Dict[str, Any],
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        payload = {
+            "type": "iframe_config",
+            "config": config_payload,
+        }
+        await self._broadcast(payload, target_client_id=target_client_id)
+
     async def get_request(self, request_id: str) -> Dict[str, Any] | None:
         async with self._lock:
             record = self._requests.get(request_id)
