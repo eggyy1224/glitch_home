@@ -20,6 +20,11 @@ from .services.camera_presets import (
 )
 from .services.screenshots import save_screenshot
 from .services.screenshot_requests import screenshot_requests_manager
+from .services.iframe_config import (
+    config_payload_for_response,
+    load_iframe_config,
+    save_iframe_config,
+)
 from .services import vector_store
 from .models.schemas import (
     GenerateMixTwoResponse,
@@ -61,6 +66,28 @@ app.mount(
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/api/iframe-config")
+def api_get_iframe_config() -> dict:
+    config = load_iframe_config()
+    return config_payload_for_response(config)
+
+
+@app.put("/api/iframe-config")
+async def api_put_iframe_config(body: dict = Body(...)) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    try:
+        config = save_iframe_config(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    payload = config_payload_for_response(config)
+    await screenshot_requests_manager.broadcast_iframe_config(payload)
+    return payload
 
 
 @app.post("/api/generate/mix-two", response_model=GenerateMixTwoResponse, status_code=201)

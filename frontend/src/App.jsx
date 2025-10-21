@@ -18,6 +18,137 @@ const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
 const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
 
+const IFRAME_LAYOUTS = new Set(["grid", "horizontal", "vertical"]);
+
+const normalizeIframeLayout = (value, fallback = "grid") => {
+  const candidate = (value || "").toString().trim().toLowerCase();
+  return IFRAME_LAYOUTS.has(candidate) ? candidate : fallback;
+};
+
+const clampInt = (value, fallback, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  const intVal = Math.floor(parsed);
+  if (intVal < min) return min;
+  if (intVal > max) return max;
+  return intVal;
+};
+
+const parseRatio = (value, fallback = 1) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+};
+
+const parseIframeConfigFromParams = (params) => {
+  if (!params) return null;
+
+  const layout = normalizeIframeLayout(params.get("iframe_layout"));
+  const gap = clampInt(params.get("iframe_gap"), 0, { min: 0 });
+  const columns = clampInt(params.get("iframe_columns"), 2, { min: 1 });
+
+  const rawKeys = (params.get("iframe_panels") || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const panels = [];
+  const keys = rawKeys.length ? rawKeys : null;
+
+  if (keys) {
+    keys.forEach((key, index) => {
+      const src = params.get(`iframe_${key}`);
+      if (!src) return;
+      const ratio = parseRatio(params.get(`iframe_${key}_ratio`), 1);
+      const label = params.get(`iframe_${key}_label`) || undefined;
+      panels.push({
+        id: key || `panel_${index + 1}`,
+        src,
+        ratio,
+        label,
+      });
+    });
+  } else {
+    for (let index = 1; index <= 12; index += 1) {
+      const key = `${index}`;
+      const src = params.get(`iframe_${key}`);
+      if (!src) break;
+      const ratio = parseRatio(params.get(`iframe_${key}_ratio`), 1);
+      const label = params.get(`iframe_${key}_label`) || undefined;
+      panels.push({
+        id: key,
+        src,
+        ratio,
+        label,
+      });
+    }
+  }
+
+  if (!panels.length) {
+    return null;
+  }
+
+  return { layout, gap, columns, panels };
+};
+
+const sanitizeIframePanels = (panels, fallbackPanels = []) => {
+  if (!Array.isArray(panels)) return [...fallbackPanels];
+  const usedIds = new Set();
+  const result = [];
+  panels.forEach((panel, index) => {
+    if (!panel || typeof panel !== "object") return;
+    const src = typeof panel.src === "string" ? panel.src.trim() : "";
+    if (!src) return;
+    let id = typeof panel.id === "string" && panel.id.trim() ? panel.id.trim() : `panel_${index + 1}`;
+    if (usedIds.has(id)) {
+      id = `${id}_${index + 1}`;
+    }
+    usedIds.add(id);
+    const ratio = parseRatio(panel.ratio, 1);
+    const label = typeof panel.label === "string" && panel.label.trim() ? panel.label.trim() : undefined;
+    result.push({ id, src, ratio, label, image: panel.image, params: panel.params, url: panel.url });
+  });
+  return result.length ? result : [...fallbackPanels];
+};
+
+const sanitizeIframeConfig = (config, fallback) => {
+  const base = fallback || { layout: "grid", gap: 0, columns: 2, panels: [] };
+  if (!config || typeof config !== "object") {
+    return { ...base, panels: [...(base.panels || [])] };
+  }
+  const layout = normalizeIframeLayout(config.layout, base.layout);
+  const gap = clampInt(config.gap, base.gap, { min: 0 });
+  const columns = clampInt(config.columns, base.columns, { min: 1 });
+  const panels = sanitizeIframePanels(config.panels, base.panels || []);
+  return { layout, gap, columns, panels };
+};
+
+const buildQueryFromIframeConfig = (config) => {
+  if (!config || typeof config !== "object") return null;
+  const panels = Array.isArray(config.panels) ? config.panels : [];
+  if (!panels.length) return null;
+  const keys = panels.map((_, index) => `p${index + 1}`);
+  const entries = [];
+  entries.push(["iframe_panels", keys.join(",")]);
+  entries.push(["iframe_layout", config.layout]);
+  entries.push(["iframe_gap", String(config.gap ?? 0)]);
+  entries.push(["iframe_columns", String(config.columns ?? 2)]);
+  panels.forEach((panel, index) => {
+    const key = keys[index];
+    if (!panel || typeof panel !== "object") return;
+    if (panel.src) {
+      entries.push([`iframe_${key}`, panel.src]);
+    }
+    if (panel.label) {
+      entries.push([`iframe_${key}_label`, panel.label]);
+    }
+    if (panel.ratio && panel.ratio !== 1) {
+      entries.push([`iframe_${key}_ratio`, String(panel.ratio)]);
+    }
+  });
+  return entries;
+};
+
 export default function App() {
   const readParams = () => new URLSearchParams(window.location.search);
   const initialParams = useMemo(() => readParams(), []);
@@ -66,36 +197,119 @@ export default function App() {
     return "default";
   }, []);
 
-  const iframeDefaults = useMemo(() => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return {
+  const iframeDefaultConfig = useMemo(
+    () => ({
       layout: "grid",
       gap: 12,
       columns: 2,
       panels: [
         {
           id: "left",
-          src: `${origin}/?img=offspring_20250929_114732_835.png`,
+          src: "/?img=offspring_20250929_114732_835.png",
           ratio: 1,
         },
         {
           id: "right",
-          src: `${origin}/?img=offspring_20250929_112621_888.png&slide_mode=true`,
+          src: "/?img=offspring_20250929_112621_888.png&slide_mode=true",
           ratio: 1,
         },
         {
           id: "third",
-          src: `${origin}/?img=offspring_20250927_141336_787.png&incubator=true`,
+          src: "/?img=offspring_20250927_141336_787.png&incubator=true",
           ratio: 1,
         },
         {
           id: "fourth",
-          src: `${origin}/?img=offspring_20251001_181913_443.png&organic_mode=true`,
+          src: "/?img=offspring_20251001_181913_443.png&organic_mode=true",
           ratio: 1,
         },
       ],
-    };
+    }),
+    [],
+  );
+
+  const initialIframeConfigFromParams = useMemo(
+    () => sanitizeIframeConfig(parseIframeConfigFromParams(initialParams), iframeDefaultConfig),
+    [initialParams, iframeDefaultConfig],
+  );
+  const [localIframeConfig, setLocalIframeConfig] = useState(initialIframeConfigFromParams);
+  const [serverIframeConfig, setServerIframeConfig] = useState(null);
+  const [iframeConfigError, setIframeConfigError] = useState(null);
+
+  const updateQueryWithIframeConfig = useCallback((config) => {
+    if (typeof window === "undefined" || !config) return;
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+    const reserved = new Set(["iframe_mode", "iframe_layout", "iframe_gap", "iframe_columns"]);
+    const keysToDelete = [];
+    params.forEach((_, key) => {
+      if (key.startsWith("iframe_") && !reserved.has(key)) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach((key) => params.delete(key));
+
+    const entries = buildQueryFromIframeConfig(config);
+    if (entries) {
+      entries.forEach(([key, value]) => {
+        params.set(key, value);
+      });
+    } else {
+      params.delete("iframe_panels");
+    }
+
+    window.history.replaceState(null, "", `${url.pathname}?${params.toString()}`);
   }, []);
+
+  const handleLocalIframeConfigApply = useCallback(
+    (nextConfig) => {
+      const sanitized = sanitizeIframeConfig(nextConfig, iframeDefaultConfig);
+      setLocalIframeConfig(sanitized);
+      updateQueryWithIframeConfig(sanitized);
+    },
+    [iframeDefaultConfig, updateQueryWithIframeConfig],
+  );
+
+  useEffect(() => {
+    if (!iframeMode) {
+      setServerIframeConfig(null);
+      setIframeConfigError(null);
+    }
+  }, [iframeMode]);
+
+  useEffect(() => {
+    if (!iframeMode) return undefined;
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadConfig = async () => {
+      try {
+        const response = await fetch("/api/iframe-config", { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const json = await response.json();
+        if (cancelled) return;
+        const sanitized = sanitizeIframeConfig(json, iframeDefaultConfig);
+        setServerIframeConfig(sanitized);
+        setIframeConfigError(null);
+        updateQueryWithIframeConfig(sanitized);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("取得 iframe 配置失敗", error);
+        setIframeConfigError(error.message || String(error));
+        setServerIframeConfig(null);
+      }
+    };
+
+    loadConfig();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [iframeMode, iframeDefaultConfig, updateQueryWithIframeConfig]);
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -487,6 +701,11 @@ export default function App() {
           if (payload?.filename) {
             setSoundPlayRequest({ filename: payload.filename, url: payload.url });
           }
+        } else if (payload?.type === "iframe_config" && payload?.config) {
+          const sanitized = sanitizeIframeConfig(payload.config, iframeDefaultConfig);
+          setServerIframeConfig(sanitized);
+          setIframeConfigError(null);
+          updateQueryWithIframeConfig(sanitized);
         }
       };
 
@@ -515,9 +734,15 @@ export default function App() {
   }, [enqueueScreenshotRequest, clientId]);
 
   if (iframeMode) {
+    const activeConfig = serverIframeConfig || localIframeConfig || iframeDefaultConfig;
+    const controlsEnabled = !serverIframeConfig;
     return (
       <>
-        <IframeMode defaults={iframeDefaults} />
+        <IframeMode
+          config={activeConfig}
+          controlsEnabled={controlsEnabled}
+          onApplyConfig={controlsEnabled ? handleLocalIframeConfigApply : undefined}
+        />
         {soundPlayerEnabled && (
           <SoundPlayer
             playRequest={soundPlayerEnabled ? soundPlayRequest : null}
