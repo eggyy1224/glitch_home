@@ -12,6 +12,7 @@ import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
 import SoundPlayer from "./SoundPlayer.jsx";
 import SlideMode from "./SlideMode.jsx";
+import IframeMode from "./IframeMode.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -47,12 +48,14 @@ export default function App() {
   const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const soundPlayerEnabled = (readParams().get("sound_player") ?? "false") === "true";
-  const slideMode = !incubatorMode && (readParams().get("slide_mode") ?? "false") === "true";
-  const organicMode = !incubatorMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
+  const iframeMode = !incubatorMode && (readParams().get("iframe_mode") ?? "false") === "true";
+  const slideMode = !incubatorMode && !iframeMode && (readParams().get("slide_mode") ?? "false") === "true";
+  const organicMode =
+    !incubatorMode && !iframeMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
   const phylogenyMode =
-    !incubatorMode && !slideMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
+    !incubatorMode && !iframeMode && !slideMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
   const searchMode =
-    !incubatorMode && !slideMode && !organicMode && !phylogenyMode &&
+    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
     (readParams().get("search_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,6 +64,37 @@ export default function App() {
     const fromEnv = import.meta.env.VITE_CLIENT_ID;
     if (fromEnv && `${fromEnv}`.trim()) return `${fromEnv}`.trim();
     return "default";
+  }, []);
+
+  const iframeDefaults = useMemo(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return {
+      layout: "grid",
+      gap: 12,
+      columns: 2,
+      panels: [
+        {
+          id: "left",
+          src: `${origin}/?img=offspring_20250929_114732_835.png`,
+          ratio: 1,
+        },
+        {
+          id: "right",
+          src: `${origin}/?img=offspring_20250929_112621_888.png&slide_mode=true`,
+          ratio: 1,
+        },
+        {
+          id: "third",
+          src: `${origin}/?img=offspring_20250927_141336_787.png&incubator=true`,
+          ratio: 1,
+        },
+        {
+          id: "fourth",
+          src: `${origin}/?img=offspring_20251001_181913_443.png&organic_mode=true`,
+          ratio: 1,
+        },
+      ],
+    };
   }, []);
 
   const handleFpsUpdate = useCallback((value) => {
@@ -180,7 +214,7 @@ export default function App() {
   }, [selectedPresetName, removePresetInState, pushPresetMessage]);
 
   useEffect(() => {
-    if (!imgId || organicMode || slideMode) return;
+    if (!imgId || organicMode || slideMode || iframeMode) return;
     let cancelled = false;
     setErr(null);
     fetchKinship(imgId, -1)
@@ -212,7 +246,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId, phylogenyMode, incubatorMode, organicMode, slideMode]);
+  }, [imgId, phylogenyMode, incubatorMode, organicMode, slideMode, iframeMode]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -224,7 +258,7 @@ export default function App() {
 
   // 自動向子代/兄弟/父母切換
   useEffect(() => {
-    if (!data || organicMode || slideMode) return;
+    if (!data || organicMode || slideMode || iframeMode) return;
     const params = readParams();
     // 新增：continuous=true 時，不自動切換
     const continuous = (params.get("continuous") ?? "false") === "true";
@@ -251,7 +285,7 @@ export default function App() {
       navigateToImage(next);
     }, stepSec * 1000);
     return () => clearTimeout(t);
-  }, [data, organicMode, slideMode]);
+  }, [data, organicMode, slideMode, iframeMode]);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
@@ -479,6 +513,21 @@ export default function App() {
       cleanupSocket();
     };
   }, [enqueueScreenshotRequest, clientId]);
+
+  if (iframeMode) {
+    return (
+      <>
+        <IframeMode defaults={iframeDefaults} />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+      </>
+    );
+  }
 
   if (slideMode) {
     return (
