@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import quote_plus
@@ -9,8 +10,30 @@ from ..config import settings
 from ..models.iframe import IframeConfig, PanelConfig, ResolvedIframeConfig, ResolvedPanel, isoformat
 
 
-_CONFIG_PATH = Path(settings.metadata_dir) / "iframe_config.json"
-_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+_BASE_DIR = Path(settings.metadata_dir)
+_BASE_DIR.mkdir(parents=True, exist_ok=True)
+_GLOBAL_CONFIG_PATH = _BASE_DIR / "iframe_config.json"
+
+
+_CLIENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _sanitize_client_id(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    candidate = value.strip()
+    if not candidate:
+        return None
+    if not _CLIENT_ID_PATTERN.fullmatch(candidate):
+        raise ValueError("target_client_id 僅允許字母、數字、底線、連字號")
+    return candidate
+
+
+def _config_path_for(client_id: Optional[str]) -> Path:
+    if client_id:
+        safe = _sanitize_client_id(client_id)
+        return _BASE_DIR / f"iframe_config__{safe}.json"
+    return _GLOBAL_CONFIG_PATH
 
 
 def _default_config() -> IframeConfig:
@@ -23,18 +46,20 @@ def _default_config() -> IframeConfig:
     return IframeConfig(layout="grid", gap=12, columns=2, panels=panels)
 
 
-def _load_raw() -> Dict[str, object] | None:
-    if not _CONFIG_PATH.exists():
+def _load_raw(client_id: Optional[str] = None) -> Dict[str, object] | None:
+    path = _config_path_for(client_id)
+    if not path.exists():
         return None
     try:
-        with _CONFIG_PATH.open("r", encoding="utf-8") as fp:
+        with path.open("r", encoding="utf-8") as fp:
             return json.load(fp)
     except Exception:
         return None
 
 
-def load_iframe_config() -> IframeConfig:
-    raw = _load_raw()
+def load_iframe_config(client_id: Optional[str] = None) -> IframeConfig:
+    sanitized_client_id = _sanitize_client_id(client_id)
+    raw = _load_raw(sanitized_client_id)
     if raw is None:
         return _default_config()
     try:
@@ -43,16 +68,26 @@ def load_iframe_config() -> IframeConfig:
         return _default_config()
 
 
-def save_iframe_config(payload: Dict[str, object]) -> IframeConfig:
-    config = IframeConfig(**payload)
+def save_iframe_config(payload: Dict[str, object]) -> tuple[IframeConfig, Optional[str]]:
+    target_client_id = None
+    if isinstance(payload, dict):
+        raw_target = payload.get("target_client_id")
+        if isinstance(raw_target, str):
+            target_client_id = _sanitize_client_id(raw_target)
+
+    config_payload = {k: v for k, v in payload.items() if k != "target_client_id"}
+    config = IframeConfig(**config_payload)
     _validate_images(config)
     data = config.model_dump()
-    with _CONFIG_PATH.open("w", encoding="utf-8") as fp:
+
+    path = _config_path_for(target_client_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fp:
         json.dump(data, fp, ensure_ascii=False, indent=2)
-    return config
+    return config, target_client_id
 
 
-def resolve_iframe_config(config: IframeConfig) -> ResolvedIframeConfig:
+def resolve_iframe_config(config: IframeConfig, client_id: Optional[str] = None) -> ResolvedIframeConfig:
     base_url = "/"
     panels: List[ResolvedPanel] = []
     for idx, panel in enumerate(config.panels):
@@ -83,7 +118,8 @@ def resolve_iframe_config(config: IframeConfig) -> ResolvedIframeConfig:
             ),
         )
 
-    updated_at = isoformat(_CONFIG_PATH.stat().st_mtime) if _CONFIG_PATH.exists() else None
+    path = _config_path_for(client_id)
+    updated_at = isoformat(path.stat().st_mtime) if path.exists() else None
     return ResolvedIframeConfig(
         layout=config.layout,
         gap=config.gap,
@@ -102,8 +138,10 @@ def _validate_images(config: IframeConfig) -> None:
                 raise ValueError(f"找不到指定的圖像檔案：{panel.image}")
 
 
-def config_payload_for_response(config: IframeConfig) -> Dict[str, object]:
-    resolved = resolve_iframe_config(config)
+def config_payload_for_response(config: IframeConfig, client_id: Optional[str] = None) -> Dict[str, object]:
+    resolved = resolve_iframe_config(config, client_id)
     payload = resolved.to_payload()
     payload["raw"] = config.model_dump()
+    if client_id:
+        payload["target_client_id"] = client_id
     return payload

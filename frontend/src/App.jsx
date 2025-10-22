@@ -285,7 +285,12 @@ export default function App() {
 
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/iframe-config", { signal: controller.signal });
+        let endpoint = "/api/iframe-config";
+        if (clientId) {
+          const qs = new URLSearchParams({ client: clientId });
+          endpoint = `${endpoint}?${qs.toString()}`;
+        }
+        const response = await fetch(endpoint, { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -309,7 +314,7 @@ export default function App() {
       cancelled = true;
       controller.abort();
     };
-  }, [iframeMode, iframeDefaultConfig, updateQueryWithIframeConfig]);
+  }, [iframeMode, iframeDefaultConfig, updateQueryWithIframeConfig, clientId]);
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -702,6 +707,10 @@ export default function App() {
             setSoundPlayRequest({ filename: payload.filename, url: payload.url });
           }
         } else if (payload?.type === "iframe_config" && payload?.config) {
+          const targetId = payload?.target_client_id;
+          if (targetId && targetId !== clientId) {
+            return;
+          }
           const sanitized = sanitizeIframeConfig(payload.config, iframeDefaultConfig);
           setServerIframeConfig(sanitized);
           setIframeConfigError(null);
@@ -731,7 +740,7 @@ export default function App() {
       }
       cleanupSocket();
     };
-  }, [enqueueScreenshotRequest, clientId]);
+  }, [enqueueScreenshotRequest, clientId, iframeDefaultConfig, updateQueryWithIframeConfig]);
 
   if (iframeMode) {
     const activeConfig = serverIframeConfig || localIframeConfig || iframeDefaultConfig;
