@@ -69,9 +69,12 @@ def health() -> dict:
 
 
 @app.get("/api/iframe-config")
-def api_get_iframe_config() -> dict:
-    config = load_iframe_config()
-    return config_payload_for_response(config)
+def api_get_iframe_config(client: str | None = Query(default=None)) -> dict:
+    try:
+        config = load_iframe_config(client)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return config_payload_for_response(config, client)
 
 
 @app.put("/api/iframe-config")
@@ -79,14 +82,14 @@ async def api_put_iframe_config(body: dict = Body(...)) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
-        config = save_iframe_config(body)
+        config, target_client_id = save_iframe_config(body)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
-    payload = config_payload_for_response(config)
-    await screenshot_requests_manager.broadcast_iframe_config(payload)
+    payload = config_payload_for_response(config, target_client_id)
+    await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
     return payload
 
 
