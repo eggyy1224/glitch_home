@@ -1,6 +1,7 @@
 export default {
   server: {
     port: 5173,
+    allowedHosts: [".ngrok-free.app"],
     proxy: {
       // 讓開發時同源請求 /api/* 轉發到後端 FastAPI（預設 8000）
       "/api": {
