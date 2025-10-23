@@ -1078,7 +1078,8 @@ function PhylogenySceneContent({ imagesBase, data, onPick }) {
   const height = Math.max(layout.bounds?.height || 0, PHYLO_LEVEL_GAP * 2) + paddingY;
 
   return (
-    <group>
+    <PhylogenyAnimatedWrapper>
+      <PhylogenyAutoFrame width={width} height={height} />
       <mesh position={[0, 0, -0.08]}>
         <planeGeometry args={[width, height]} />
         <meshStandardMaterial color="#090909" transparent opacity={0.55} />
@@ -1105,8 +1106,62 @@ function PhylogenySceneContent({ imagesBase, data, onPick }) {
           onPick={onPick}
         />
       ))}
-    </group>
+    </PhylogenyAnimatedWrapper>
   );
+}
+
+function PhylogenyAutoFrame({ width, height }) {
+  const { camera, size, controls } = useThree((state) => ({
+    camera: state.camera,
+    size: state.size,
+    controls: state.controls,
+  }));
+
+  useEffect(() => {
+    if (!camera?.isPerspectiveCamera) return;
+    if (!width || !height) return;
+
+    const aspect = size.width / Math.max(size.height, 1);
+    const verticalFov = (camera.fov * Math.PI) / 180;
+    const paddingFactor = 1.15;
+    const paddedHeight = height * paddingFactor;
+    const paddedWidth = width * paddingFactor;
+
+    const distanceForHeight = (paddedHeight / 2) / Math.tan(verticalFov / 2);
+    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * aspect);
+    const distanceForWidth = (paddedWidth / 2) / Math.tan(horizontalFov / 2);
+    const targetDistance = Math.max(distanceForHeight, distanceForWidth) + 2;
+
+    camera.position.set(0, 0, targetDistance);
+    camera.near = Math.max(0.1, targetDistance / 100);
+    camera.far = targetDistance * 10;
+    camera.updateProjectionMatrix();
+
+    if (controls) {
+      controls.target.set(0, 0, 0);
+      controls.minDistance = targetDistance * 0.25;
+      controls.maxDistance = targetDistance * 3.0;
+      controls.update();
+    }
+  }, [camera, controls, width, height, size.width, size.height]);
+
+  return null;
+}
+
+function PhylogenyAnimatedWrapper({ children }) {
+  const groupRef = useRef();
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    const group = groupRef.current;
+    if (!group) return;
+    const slow = t * 0.12;
+    group.rotation.y = slow;
+    group.rotation.x = Math.sin(t * 0.18) * 0.08;
+    group.position.y = Math.sin(t * 0.22) * 0.6;
+  });
+
+  return <group ref={groupRef}>{children}</group>;
 }
 
 function CameraTracker({ onCameraUpdate }) {
