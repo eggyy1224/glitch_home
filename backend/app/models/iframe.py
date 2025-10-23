@@ -15,6 +15,8 @@ class PanelConfig(BaseModel):
     params: Dict[str, str] = Field(default_factory=dict, description="Additional query parameters")
     ratio: float = Field(default=1.0, description="Flex ratio weight")
     label: Optional[str] = Field(default=None, description="Optional caption")
+    col_span: Optional[int] = Field(default=None, ge=1, description="Grid column span (grid layout only)")
+    row_span: Optional[int] = Field(default=None, ge=1, description="Grid row span (grid layout only)")
 
     @field_validator("ratio")
     def _ensure_positive_ratio(cls, value: float) -> float:
@@ -64,6 +66,8 @@ class ResolvedPanel:
     image: Optional[str]
     params: Dict[str, str]
     url: Optional[str]
+    col_span: Optional[int]
+    row_span: Optional[int]
 
 
 @dataclass
@@ -89,6 +93,8 @@ class ResolvedIframeConfig:
                     "image": panel.image,
                     "params": panel.params,
                     "url": panel.url,
+                    "col_span": panel.col_span,
+                    "row_span": panel.row_span,
                 }
                 for panel in self.panels
             ],

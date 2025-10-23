@@ -115,6 +115,8 @@ def resolve_iframe_config(config: IframeConfig, client_id: Optional[str] = None)
                 image=panel.image,
                 params=dict(panel.params),
                 url=panel.url,
+                col_span=panel.col_span,
+                row_span=panel.row_span,
             ),
         )
 

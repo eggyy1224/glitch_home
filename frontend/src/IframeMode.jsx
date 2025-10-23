@@ -27,6 +27,10 @@ const clampInt = (value, fallback, { min = Number.NEGATIVE_INFINITY, max = Numbe
 const sanitizePanels = (panels) => {
   if (!Array.isArray(panels)) return [];
   const usedIds = new Set();
+  const clampSpan = (value) => {
+    if (value === null || value === undefined) return undefined;
+    return clampInt(value, 1, { min: 1 }) || 1;
+  };
   return panels
     .map((panel, index) => {
       if (!panel || typeof panel !== "object") return null;
@@ -46,6 +50,8 @@ const sanitizePanels = (panels) => {
         image: typeof panel.image === "string" && panel.image.trim() ? panel.image.trim() : undefined,
         params: panel.params && typeof panel.params === "object" ? { ...panel.params } : undefined,
         url: typeof panel.url === "string" && panel.url.trim() ? panel.url.trim() : undefined,
+        colSpan: clampSpan(panel.col_span ?? panel.colSpan),
+        rowSpan: clampSpan(panel.row_span ?? panel.rowSpan),
       };
     })
     .filter(Boolean);
@@ -123,6 +129,7 @@ export default function IframeMode({
         display: "grid",
         gridTemplateColumns: `repeat(${Math.max(1, Math.min(sanitizedConfig.columns, Math.max(1, panels.length)))}, minmax(0, 1fr))`,
         gridAutoRows: "1fr",
+        gridAutoFlow: "dense",
         gap: `${sanitizedConfig.gap}px`,
       };
     }
@@ -295,8 +302,18 @@ export default function IframeMode({
         {panels.length ? (
           panels.map((panel, index) => {
             const flexStyle = sanitizedConfig.layout === "grid" ? {} : { flex: `${panel.ratio} 1 0` };
+            const gridStyle =
+              sanitizedConfig.layout === "grid"
+                ? {
+                    ...(panel.colSpan ? { gridColumn: `span ${panel.colSpan}` } : {}),
+                    ...(panel.rowSpan ? { gridRow: `span ${panel.rowSpan}` } : {}),
+                  }
+                : {};
+            const combinedStyle = sanitizedConfig.layout === "grid"
+              ? { ...panelStyle, ...gridStyle }
+              : { ...panelStyle, ...flexStyle };
             return (
-              <div key={panel.id || index} style={{ ...panelStyle, ...flexStyle }}>
+              <div key={panel.id || index} style={combinedStyle}>
                 {panel.label ? <div style={labelStyle}>{panel.label}</div> : null}
                 <iframe
                   title={panel.label || `iframe-${index + 1}`}
@@ -367,4 +384,3 @@ export default function IframeMode({
     </>
   );
 }
-

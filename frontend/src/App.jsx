@@ -95,6 +95,11 @@ const sanitizeIframePanels = (panels, fallbackPanels = []) => {
   if (!Array.isArray(panels)) return [...fallbackPanels];
   const usedIds = new Set();
   const result = [];
+  const clampSpan = (value) => {
+    if (value === null || value === undefined) return undefined;
+    const parsed = clampInt(value, 1, { min: 1 });
+    return parsed || 1;
+  };
   panels.forEach((panel, index) => {
     if (!panel || typeof panel !== "object") return;
     const src = typeof panel.src === "string" ? panel.src.trim() : "";
@@ -106,7 +111,19 @@ const sanitizeIframePanels = (panels, fallbackPanels = []) => {
     usedIds.add(id);
     const ratio = parseRatio(panel.ratio, 1);
     const label = typeof panel.label === "string" && panel.label.trim() ? panel.label.trim() : undefined;
-    result.push({ id, src, ratio, label, image: panel.image, params: panel.params, url: panel.url });
+    const colSpan = clampSpan(panel.col_span ?? panel.colSpan);
+    const rowSpan = clampSpan(panel.row_span ?? panel.rowSpan);
+    result.push({
+      id,
+      src,
+      ratio,
+      label,
+      image: panel.image,
+      params: panel.params,
+      url: panel.url,
+      colSpan,
+      rowSpan,
+    });
   });
   return result.length ? result : [...fallbackPanels];
 };
