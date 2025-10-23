@@ -1,8 +1,18 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { searchImagesByImage, fetchKinship } from "./api.js";
 
-const styles = {
-  root: {
+const FONT_FAMILY = "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif";
+
+const getSizeClass = (width, height) => {
+  if (!width || !height) return "large";
+  if (width <= 420 || height <= 360) return "xsmall";
+  if (width <= 720 || height <= 520) return "small";
+  if (width <= 1024 || height <= 720) return "medium";
+  return "large";
+};
+
+const computeStyles = (sizeClass) => {
+  const root = {
     width: "100vw",
     height: "100vh",
     backgroundColor: "#000",
@@ -16,9 +26,10 @@ const styles = {
     gap: "24px",
     position: "relative",
     overflow: "hidden",
-    fontFamily: "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif",
-  },
-  stage: {
+    fontFamily: FONT_FAMILY,
+  };
+
+  const stage = {
     width: "100%",
     maxWidth: "90vw",
     maxHeight: "100%",
@@ -27,15 +38,17 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-  },
-  image: {
+  };
+
+  const image = {
     maxWidth: "100%",
     maxHeight: "100%",
     objectFit: "contain",
     boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
     borderRadius: "12px",
-  },
-  caption: {
+  };
+
+  const caption = {
     padding: "10px 16px",
     borderRadius: "20px",
     background: "rgba(0,0,0,0.55)",
@@ -44,8 +57,9 @@ const styles = {
     letterSpacing: "0.05em",
     textAlign: "center",
     maxWidth: "90vw",
-  },
-  status: {
+  };
+
+  const status = {
     position: "absolute",
     top: "32px",
     left: "50%",
@@ -55,8 +69,9 @@ const styles = {
     background: "rgba(20,20,20,0.75)",
     fontSize: "13px",
     letterSpacing: "0.04em",
-  },
-  controlBar: {
+  };
+
+  const controlBar = {
     display: "flex",
     alignItems: "center",
     gap: "16px",
@@ -65,8 +80,9 @@ const styles = {
     background: "rgba(20,20,20,0.85)",
     border: "1px solid rgba(255,255,255,0.15)",
     backdropFilter: "blur(10px)",
-  },
-  slider: {
+  };
+
+  const slider = {
     minWidth: "150px",
     height: "4px",
     borderRadius: "2px",
@@ -76,15 +92,17 @@ const styles = {
     WebkitAppearance: "none",
     appearance: "none",
     accentColor: "#4a9eff",
-  },
-  sliderLabel: {
+  };
+
+  const sliderLabel = {
     fontSize: "12px",
     color: "#888",
     minWidth: "45px",
     textAlign: "right",
     fontVariantNumeric: "tabular-nums",
-  },
-  button: {
+  };
+
+  const button = {
     padding: "6px 12px",
     borderRadius: "6px",
     border: "1px solid rgba(255,255,255,0.2)",
@@ -93,8 +111,55 @@ const styles = {
     cursor: "pointer",
     fontSize: "12px",
     transition: "all 0.2s ease",
-    fontFamily: "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif",
-  },
+    fontFamily: FONT_FAMILY,
+  };
+
+  if (sizeClass === "medium") {
+    root.padding = "48px 24px 72px";
+    stage.maxWidth = "100%";
+    caption.maxWidth = "100%";
+    caption.fontSize = "13px";
+  } else if (sizeClass === "small") {
+    root.padding = "24px 16px 32px";
+    root.gap = "16px";
+    stage.maxWidth = "100%";
+    stage.maxHeight = "100%";
+    image.boxShadow = "0 12px 40px rgba(0,0,0,0.55)";
+    image.borderRadius = "10px";
+    caption.fontSize = "12px";
+    caption.maxWidth = "100%";
+    status.top = "18px";
+    status.fontSize = "12px";
+    controlBar.padding = "10px 16px";
+    controlBar.gap = "12px";
+    slider.minWidth = "120px";
+    button.fontSize = "11px";
+  } else if (sizeClass === "xsmall") {
+    root.padding = "12px";
+    root.gap = "12px";
+    stage.maxWidth = "100%";
+    stage.maxHeight = "100%";
+    image.boxShadow = "0 10px 28px rgba(0,0,0,0.5)";
+    image.borderRadius = "10px";
+    caption.fontSize = "11px";
+    caption.padding = "8px 12px";
+    caption.maxWidth = "100%";
+    status.top = "12px";
+    status.padding = "6px 12px";
+    status.fontSize = "11px";
+    controlBar.flexDirection = "column";
+    controlBar.alignItems = "stretch";
+    controlBar.gap = "12px";
+    controlBar.padding = "10px 14px";
+    slider.minWidth = "100%";
+    slider.width = "100%";
+    sliderLabel.minWidth = "auto";
+    sliderLabel.textAlign = "center";
+    button.width = "100%";
+    button.fontSize = "11px";
+  }
+
+  return { root, stage, image, caption, status, controlBar, slider, sliderLabel, button };
 };
 
 // 添加 CSS 規則用於 slider thumb 的樣式
@@ -135,6 +200,9 @@ const DISPLAY_ORDER = Array.from({ length: 15 }, (_, i) => i);
 const BATCH_SIZE = 15;
 
 export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }) {
+  const rootRef = useRef(null);
+  const [sizeClass, setSizeClass] = useState("large");
+  const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]);
   const [items, setItems] = useState([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -151,6 +219,32 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
   const [isPaused, setIsPaused] = useState(false);
 
   const anchorClean = cleanId(anchorImage);
+
+  useEffect(() => {
+    const element = rootRef.current;
+    if (!element) return undefined;
+
+    const updateSize = () => {
+      const rect = element.getBoundingClientRect();
+      const next = getSizeClass(rect.width, rect.height);
+      setSizeClass((prev) => (prev === next ? prev : next));
+    };
+
+    let observer;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => updateSize());
+      observer.observe(element);
+      updateSize();
+      return () => {
+        observer.disconnect();
+      };
+    }
+
+    updateSize();
+    const onResize = () => updateSize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -332,7 +426,7 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
   const imageUrl = current ? `${imagesBase}${current.cleanId}` : null;
 
   return (
-    <div style={styles.root}>
+    <div ref={rootRef} style={styles.root}>
       {loading && <div style={styles.status}>正在載入相似影像...</div>}
       {error && <div style={styles.status}>{error}</div>}
       {current ? (
