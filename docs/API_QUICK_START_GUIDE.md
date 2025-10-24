@@ -161,6 +161,83 @@ curl -X PUT http://localhost:8000/api/iframe-config \
   }'
 ```
 
+- ✅ **單張滿版（mobile）**
+  ```bash
+  curl -X PUT http://localhost:8000/api/iframe-config \
+    -H "Content-Type: application/json" \
+    -d '{
+      "target_client_id": "mobile",
+      "layout": "grid",
+      "columns": 1,
+      "gap": 0,
+      "panels": [
+        {
+          "id": "p1",
+          "image": "offspring_20250923_161624_066.png",
+          "params": {}
+        }
+      ]
+    }'
+  ```
+  > `params` 給空物件即可，避免殘留 `slide_mode` 或 `iframe_mode` 造成效果錯亂。
+
+- ✅ **10×10 展示牆（任何客戶端）**
+  ```bash
+  python backend/playback_scripts/set_mixed_grid_10x10_layout.py \
+    --api-base http://localhost:8000 \
+    --client desktop2
+  ```
+  > Playback script 會自動填滿 40 張圖片並依預設 span 混搭。需要換圖時可改 `--images` 或重新執行腳本。
+
+- ✅ **左右大圖 + 小圖混排（範例：desktop2）**
+  ```bash
+  curl -X PUT http://localhost:8000/api/iframe-config \
+    -H "Content-Type: application/json" \
+    -d '{
+      "target_client_id": "desktop2",
+      "layout": "grid",
+      "columns": 12,
+      "gap": 12,
+      "panels": [
+        {"id": "p1", "image": "offspring_A.png", "col_span": 2, "row_span": 2,
+         "params": {"slide_mode": "true", "slide_source": "kinship"}},
+        {"id": "p2", "image": "offspring_B.png",
+         "params": {"slide_mode": "true", "slide_source": "kinship"}},
+        {"id": "p3", "image": "offspring_C.png",
+         "params": {"slide_mode": "true", "slide_source": "kinship"}},
+        {"id": "p_right", "image": "offspring_big.png",
+         "col_span": 4, "row_span": 8,
+         "params": {"slide_mode": "true", "slide_source": "kinship"}}
+      ]
+    }'
+  ```
+  > 右側面板一次跨多欄多列即可營造「大圖 + 小圖」的視覺。記得所有面板 id 要唯一，並同步設定 `col_span` / `row_span`。
+
+- 🚨 **常見錯誤**
+  - 忘記在目標前端加上 `?iframe_mode=true&client=<id>`，配置更新將不會呈現。
+  - 重複沿用舊 payload，未清空 `params` 導致意外套用 `slide_mode=false`、`incubator=true` 等。
+  - 在 PUT 時提供了不存在的圖片名稱，後端會傳回 400；可先 `ls backend/offspring_images` 確認。
+
+### 任務 8: 查詢目前在線客戶端
+
+```bash
+curl -X GET http://localhost:8000/api/clients | jq .
+```
+
+回傳格式：
+
+```json
+{
+  "clients": [
+    {"client_id": "desktop", "connections": 1},
+    {"client_id": "mobile", "connections": 1},
+    {"client_id": "default", "connections": 42}
+  ]
+}
+```
+
+> 以 WebSocket 連線數為準；可用來確認指定 client 是否在線、是否重複開啟頁面。
+
 ---
 
 ## 🎬 使用 Playback Scripts（現成的配置腳本）
