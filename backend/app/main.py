@@ -77,6 +77,12 @@ def api_get_iframe_config(client: str | None = Query(default=None)) -> dict:
     return config_payload_for_response(config, client)
 
 
+@app.get("/api/clients")
+async def api_list_clients() -> dict:
+    clients = await screenshot_requests_manager.list_clients()
+    return {"clients": clients}
+
+
 @app.put("/api/iframe-config")
 async def api_put_iframe_config(body: dict = Body(...)) -> dict:
     if not isinstance(body, dict):

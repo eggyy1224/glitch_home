@@ -219,6 +219,25 @@ class ScreenshotRequestManager:
         async with self._lock:
             self._connections.pop(websocket, None)
 
+    async def list_clients(self) -> list[dict]:
+        """Return snapshot of registered clients with connection counts."""
+        async with self._lock:
+            counts: dict[str | None, int] = {}
+            for info in self._connections.values():
+                client_id = info.get("client_id")
+                counts[client_id] = counts.get(client_id, 0) + 1
+
+        clients: list[dict] = []
+        for client_id, connection_count in counts.items():
+            clients.append(
+                {
+                    "client_id": client_id,
+                    "connections": connection_count,
+                }
+            )
+        clients.sort(key=lambda item: (item["client_id"] is None, item["client_id"] or ""))
+        return clients
+
     async def _broadcast(
         self,
         message: Dict[str, Any],
