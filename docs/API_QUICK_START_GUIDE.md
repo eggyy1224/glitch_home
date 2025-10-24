@@ -213,6 +213,41 @@ curl -X PUT http://localhost:8000/api/iframe-config \
   ```
   > 右側面板一次跨多欄多列即可營造「大圖 + 小圖」的視覺。記得所有面板 id 要唯一，並同步設定 `col_span` / `row_span`。
 
+- ✅ **左右對照（Slide Mode vs Incubator）**
+  ```bash
+  curl -X PUT http://localhost:8000/api/iframe-config \
+    -H "Content-Type: application/json" \
+    -d '{
+      "target_client_id": "desktop",
+      "layout": "grid",
+      "columns": 2,
+      "gap": 16,
+      "panels": [
+        {"id": "p1", "image": "offspring_20251012_182916_746.png",
+         "params": {"slide_mode": "true", "slide_source": "kinship"}},
+        {"id": "p2", "image": "offspring_20251012_182916_746.png",
+         "params": {"incubator": "true"}}
+      ]
+    }'
+  ```
+  > 同一張圖左右對照兩種場景，gap 依需求調整；這種模式很適合現場示範不同渲染模式的差異。
+
+- ✅ **單張純靜態畫面（mobile 等裝置）**
+  ```bash
+  curl -X PUT http://localhost:8000/api/iframe-config \
+    -H "Content-Type: application/json" \
+    -d '{
+      "target_client_id": "mobile",
+      "layout": "grid",
+      "columns": 1,
+      "gap": 0,
+      "panels": [
+        {"id": "p1", "image": "offspring_20251006_203113_635.png", "params": {}}
+      ]
+    }'
+  ```
+  > 若曾經啟用過 Slide Mode / incubator，務必把 `params` 清空，避免殘留舊參數。
+
 - 🚨 **常見錯誤**
   - 忘記在目標前端加上 `?iframe_mode=true&client=<id>`，配置更新將不會呈現。
   - 重複沿用舊 payload，未清空 `params` 導致意外套用 `slide_mode=false`、`incubator=true` 等。
@@ -303,6 +338,7 @@ python backend/playback_scripts/set_global_six_modes.py \
 - `set_global_slide_mode_grid.py` - 所有面板都是幻燈片模式
 - `set_left_panel_highlight_layout.py` - 左側大面板 + 右側小面板
 - `set_mixed_grid_5x5_layout.py` - 5×5 網格（25 個面板）
+- `set_showcase_triple_layout.py` - 同步設定 `desktop`（slide/incubator 分割）、`desktop2`（15×15 collage）、`mobile`（單張靜態）。支援 `--seed` 與 `--dry-run`。
 
 ### 如何修改這些腳本
 
