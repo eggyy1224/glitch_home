@@ -13,6 +13,7 @@ via `embeddings=` to avoid relying on an internal embedding function.
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from functools import lru_cache
 
 import chromadb
 from chromadb.api.types import Documents, Embeddings, IDs, Metadatas
@@ -41,10 +42,16 @@ def get_client() -> chromadb.ClientAPI:
 def get_images_collection():
     client = get_client()
     # Set metadata to record the model used for sanity checks.
+    # 嘗試加入 HNSW 相關提示（若 Chroma 版本不支援會被忽略，不影響功能）
     return client.get_or_create_collection(
         name=settings.chroma_collection_images,
         metadata={
             "embedding_model_image": settings.openai_embedding_model,
+            # 以下鍵值僅作為提示，某些後端可能不採用
+            "hnsw:space": "cosine",
+            "hnsw:construction_ef": 200,
+            "hnsw:search_ef": 50,
+            "hnsw:M": 16,
         },
     )
 
@@ -212,7 +219,7 @@ def index_offspring_batch(batch_size: int = 50, offset: int = 0, *, force: bool 
 def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
     """Search the image collection with a text query using OpenAI embeddings."""
     # 用 OpenAI text-embedding-3-small 進行查詢
-    vec = embed_text(query)
+    vec = _cached_embed_text(query)
     col = get_images_collection()
     res = col.query(query_embeddings=[vec], n_results=top_k)
     # Standardise output
@@ -264,12 +271,10 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
     col = get_images_collection()
     
     # 先嘗試用完整的 basename 在資料庫中查找
-    print(f"🔍 檢查資料庫: {basename}")
     existing = col.get(ids=[basename], include=["embeddings"])
     
     if existing and len(existing.get("ids", [])) > 0:
         # ✓ 圖像已在資料庫中，直接取得其向量
-        print(f"✓ 使用已索引的向量: {basename}")
         embeddings = existing.get("embeddings", [])
         # 檢查 embeddings 是否有效（不要用 if embeddings，會觸發 numpy 陣列的真值歧義）
         if embeddings is not None and len(embeddings) > 0 and embeddings[0] is not None:
@@ -282,14 +287,13 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
                 pass
         else:
             # 如果沒有向量（不應該發生），則降級到 embedding
-            print(f"⚠️  {basename} 在資料庫中但沒有向量，進行 embedding")
             # 使用原始路徑或任何存在的路徑進行 embedding
             if os.path.isfile(path):
-                vec = _embed_image_for_search(path)
+                vec = _cached_embed_image_for_search(path)
             else:
                 # 如果現在檔案也不存在，使用 original_path 嘗試
                 if os.path.isfile(original_path):
-                    vec = _embed_image_for_search(original_path)
+                    vec = _cached_embed_image_for_search(original_path)
                 else:
                     raise FileNotFoundError(original_path)
     else:
@@ -303,8 +307,7 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
                 # 都不存在，拋出錯誤
                 raise FileNotFoundError(f"檔案不存在: {original_path}")
         
-        print(f"📤 {basename} 未在資料庫中，進行 embedding...")
-        vec = _embed_image_for_search(path)
+        vec = _cached_embed_image_for_search(path)
     
     # 使用獲得的向量進行搜尋
     res = col.query(query_embeddings=[vec], n_results=top_k)
@@ -341,3 +344,23 @@ def _embed_image_for_search(image_path: str) -> List[float]:
                 pass
         vec = embed_image_as_text(image_path, extra_hint=hint)
     return vec
+
+
+# ---- 輕量級快取：減少重複嵌入開銷 ----
+
+@lru_cache(maxsize=2048)
+def _cached_embed_text(q: str) -> List[float]:
+    # 以規範化字串作為快取鍵
+    key = (q or "").strip()
+    if not key:
+        raise ValueError("query must be non-empty")
+    return embed_text(key)
+
+
+@lru_cache(maxsize=512)
+def _cached_embed_image_for_search(path: str) -> Tuple[float, ...]:
+    # 基於絕對路徑做快取（若檔案更新需重開進程或改為加上 mtime）
+    abs_path = str(Path(path).resolve())
+    vec = _embed_image_for_search(abs_path)
+    # lru_cache 需要可雜湊，轉 tuple
+    return tuple(vec)
