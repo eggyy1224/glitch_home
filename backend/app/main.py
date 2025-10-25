@@ -25,6 +25,7 @@ from .services.iframe_config import (
     load_iframe_config,
     save_iframe_config,
 )
+from .services.kinship_index import kinship_index
 from .services import vector_store
 from .models.schemas import (
     GenerateMixTwoResponse,
@@ -614,8 +615,8 @@ def api_kinship(
     img: str = Query(..., description="offspring 檔名（含副檔名）"),
     depth: int = Query(1, ge=-1, description="祖先追溯層數；-1 代表窮盡直到無父母"),
 ) -> dict:
-    metas = _load_all_metadata()
-    if img not in metas:
+    # 使用持久化索引快速查詢
+    if not kinship_index.has_offspring(img):
         raise HTTPException(status_code=404, detail="image metadata not found")
 
     def exists_in_offspring(name: str) -> bool:
@@ -625,22 +626,10 @@ def api_kinship(
     def filter_existing(names: set[str] | list[str]) -> list[str]:
         return sorted([n for n in names if exists_in_offspring(n)])
 
-    # 父母
-    parents = set(metas[img].get("parents", []))
-
-    # 子代：誰把我當作 parent
-    children = {name for name, meta in metas.items() if img in meta.get("parents", [])}
-
-    # 兄弟姊妹：共享任一父母
-    siblings = set()
-    my_parents = set(metas[img].get("parents", []))
-    if my_parents:
-        for name, meta in metas.items():
-            if name == img:
-                continue
-            ps = set(meta.get("parents", []))
-            if ps & my_parents:
-                siblings.add(name)
+    # 使用索引查詢關係（O(1) 快速查詢）
+    parents = set(kinship_index.parents_of(img))
+    children = set(kinship_index.children_of(img))
+    siblings = set(kinship_index.siblings_of(img))
 
     # 僅保留實際存在於 offspring_dir 的影像，避免前端 404
     parents = set(filter_existing(parents))
@@ -686,38 +675,24 @@ def api_kinship(
         add_node(child_name, "child", 1)
         add_edge(img, child_name)
 
-    # 祖先（依 depth 追溯；-1 代表窮盡）
+    # 祖先（依 depth 追溯；-1 代表窮盡）- 使用索引快速查詢
     ancestors: set[str] = set()
     ancestors_by_level: list[list[str]] = []
     if depth != 0:
-        visited: set[str] = set([img])
-        frontier: set[str] = set(parents)
-        level: int = 1
-        while frontier:
-            level_items = sorted(frontier)
-            ancestors_by_level.append(level_items)
-            ancestors.update(frontier)
-            visited.update(frontier)
-            for name in frontier:
-                add_node(name, "parent" if level == 1 else "ancestor", -level)
-                parent_list = metas.get(name, {}).get("parents", [])
-                for parent_name in parent_list:
-                    add_node(parent_name, "ancestor", -(level + 1))
+        ancestors_by_level = kinship_index.ancestors_levels_of(img, depth)
+        for idx, level_items in enumerate(ancestors_by_level, start=1):
+            for name in level_items:
+                ancestors.add(name)
+                add_node(name, "parent" if idx == 1 else "ancestor", -idx)
+                # 連結到下一層的邊
+                for parent_name in kinship_index.parents_of(name):
+                    add_node(parent_name, "ancestor", -(idx + 1))
                     add_edge(parent_name, name)
-            if depth != -1 and level >= depth:
-                break
-            next_frontier: set[str] = set()
-            for name in frontier:
-                ps = set(metas.get(name, {}).get("parents", []))
-                ps = {p for p in ps if p not in visited}
-                next_frontier.update(ps)
-            frontier = next_frontier
-            level += 1
 
     # 補齊兄弟姊妹及其父母邊
     for sibling_name in siblings:
         add_node(sibling_name, "sibling", 0)
-        parent_list = metas.get(sibling_name, {}).get("parents", [])
+        parent_list = kinship_index.parents_of(sibling_name)
         for parent_name in parent_list:
             add_node(parent_name, "parent", -1)
             add_edge(parent_name, sibling_name)
@@ -728,7 +703,7 @@ def api_kinship(
         last_level = set(ancestors_by_level[-1])
         roots = []
         for a in last_level:
-            ps = metas.get(a, {}).get("parents", [])
+            ps = kinship_index.parents_of(a)
             if not ps:
                 roots.append(a)
         root_ancestors = filter_existing(roots)
@@ -755,3 +730,22 @@ def api_kinship(
         "depth_used": depth,
         "lineage_graph": lineage_graph,
     }
+
+
+@app.post("/api/kinship/rebuild")
+def api_kinship_rebuild() -> dict:
+    """重建 kinship 索引檔案（管理端點）"""
+    try:
+        result = kinship_index.build_and_save()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to rebuild index: {e}")
+
+
+@app.get("/api/kinship/stats")
+def api_kinship_stats() -> dict:
+    """取得 kinship 索引統計資訊"""
+    try:
+        return kinship_index.stats()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get stats: {e}")
