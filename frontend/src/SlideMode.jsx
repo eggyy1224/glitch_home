@@ -288,6 +288,9 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
           if (mode === "kinship") {
             const data = await fetchKinship(imageId, -1);
             if (cancelled || currentGeneration !== generation) return;
+            
+            // 清除之前的錯誤（API 成功了）
+            setError(null);
 
             const ordered = [];
             const seen = new Set();
@@ -329,6 +332,10 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
             const searchPath = `backend/offspring_images/${imageId}`;
             const data = await searchImagesByImage(searchPath, BATCH_SIZE);
             if (cancelled || currentGeneration !== generation) return;
+            
+            // 清除之前的錯誤（API 成功了）
+            setError(null);
+            
             const list = Array.isArray(data?.results) ? data.results : [];
             const prepared = list
               .map((item) => ({
@@ -428,7 +435,7 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
   return (
     <div ref={rootRef} style={styles.root}>
       {loading && <div style={styles.status}>正在載入相似影像...</div>}
-      {error && <div style={styles.status}>{error}</div>}
+      {error && !current && <div style={styles.status}>{error}</div>}
       {current ? (
         <>
           <div style={styles.stage}>
