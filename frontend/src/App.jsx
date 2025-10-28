@@ -781,9 +781,13 @@ export default function App() {
   }
 
   if (slideMode) {
+    const slideIntervalParam = initialParams.get("slide_interval") || initialParams.get("slide_interval_ms");
+    const slideIntervalMs = slideIntervalParam
+      ? clampInt(slideIntervalParam, 3000, { min: 1000 })
+      : 3000;
     return (
       <>
-        <SlideMode imagesBase={IMAGES_BASE} anchorImage={imgId} />
+        <SlideMode imagesBase={IMAGES_BASE} anchorImage={imgId} intervalMs={slideIntervalMs} />
         {soundPlayerEnabled && (
           <SoundPlayer
             playRequest={soundPlayerEnabled ? soundPlayRequest : null}
