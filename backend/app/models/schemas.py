@@ -134,6 +134,16 @@ class IndexBatchRequest(BaseModel):
     force: bool = Field(default=False, description="Recompute even if exists")
 
 
+class SubtitleUpdateRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="要顯示的字幕內容")
+    language: Optional[str] = Field(default=None, max_length=32, description="可選語言標籤（例：zh-TW）")
+    duration_seconds: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        description="希望顯示的秒數，省略則持續顯示直到手動清除",
+    )
+
+
 class SoundPlayRequest(BaseModel):
     filename: str = Field(..., min_length=1, description="音效檔案名稱（含副檔名）")
     target_client_id: Optional[str] = Field(default=None, description="指定播放的 client_id，可為空代表廣播")
