@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -27,6 +27,7 @@ from .services.iframe_config import (
 )
 from .services.kinship_index import kinship_index
 from .services import vector_store
+from .services.subtitles import subtitle_manager
 from .models.schemas import (
     GenerateMixTwoResponse,
     GenerateMixTwoRequest,
@@ -41,6 +42,7 @@ from .models.schemas import (
     ImageSearchRequest,
     IndexBatchRequest,
     SoundPlayRequest,
+    SubtitleUpdateRequest,
 )
 
 
@@ -178,6 +180,34 @@ def api_sound_files() -> dict:
         )
 
     return {"files": files}
+
+
+@app.get("/api/subtitles")
+async def api_get_subtitles() -> dict:
+    subtitle = await subtitle_manager.get_subtitle()
+    return {"subtitle": subtitle}
+
+
+@app.post("/api/subtitles", status_code=202)
+async def api_set_subtitles(body: SubtitleUpdateRequest) -> dict:
+    try:
+        subtitle = await subtitle_manager.set_subtitle(
+            body.text,
+            language=body.language,
+            duration_seconds=body.duration_seconds,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    await screenshot_requests_manager.broadcast_subtitle(subtitle)
+    return {"subtitle": subtitle}
+
+
+@app.delete("/api/subtitles", status_code=204)
+async def api_clear_subtitles() -> Response:
+    await subtitle_manager.clear_subtitle()
+    await screenshot_requests_manager.broadcast_subtitle(None)
+    return Response(status_code=204)
 
 
 @app.get("/api/sound-files/{filename}")

@@ -6,6 +6,7 @@ import {
   deleteCameraPreset,
   uploadScreenshot,
   reportScreenshotFailure,
+  fetchSubtitleState,
 } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
@@ -13,6 +14,7 @@ import OrganicRoomScene from "./OrganicRoomScene.jsx";
 import SoundPlayer from "./SoundPlayer.jsx";
 import SlideMode from "./SlideMode.jsx";
 import IframeMode from "./IframeMode.jsx";
+import SubtitleOverlay from "./SubtitleOverlay.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -184,8 +186,10 @@ export default function App() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [screenshotMessage, setScreenshotMessage] = useState(null);
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
+  const [subtitle, setSubtitle] = useState(null);
   const messageTimerRef = useRef(null);
   const screenshotTimerRef = useRef(null);
+  const subtitleTimerRef = useRef(null);
   const captureFnRef = useRef(null);
   const requestQueueRef = useRef([]);
   const pendingRequestIdsRef = useRef(new Set());
@@ -287,6 +291,66 @@ export default function App() {
     [iframeDefaultConfig, updateQueryWithIframeConfig],
   );
 
+  const clearSubtitleTimer = useCallback(() => {
+    if (subtitleTimerRef.current) {
+      clearTimeout(subtitleTimerRef.current);
+      subtitleTimerRef.current = null;
+    }
+  }, []);
+
+  const applySubtitle = useCallback(
+    (payload) => {
+      clearSubtitleTimer();
+      if (!payload || typeof payload !== "object") {
+        setSubtitle(null);
+        return;
+      }
+      const textValue = "text" in payload ? String(payload.text ?? "") : "";
+      if (!textValue.trim()) {
+        setSubtitle(null);
+        return;
+      }
+      const normalized = {
+        text: textValue,
+        language:
+          typeof payload.language === "string" && payload.language.trim() ? payload.language.trim() : null,
+        durationSeconds:
+          typeof payload.duration_seconds === "number" &&
+          Number.isFinite(payload.duration_seconds) &&
+          payload.duration_seconds > 0
+            ? payload.duration_seconds
+            : null,
+        expiresAt: typeof payload.expires_at === "string" ? payload.expires_at : null,
+        updatedAt: typeof payload.updated_at === "string" ? payload.updated_at : null,
+      };
+      setSubtitle(normalized);
+      let delayMs = null;
+      if (normalized.expiresAt) {
+        const expiresTs = Date.parse(normalized.expiresAt);
+        if (!Number.isNaN(expiresTs)) {
+          delayMs = Math.max(0, expiresTs - Date.now());
+        }
+      }
+      if (delayMs === null && typeof normalized.durationSeconds === "number") {
+        delayMs = normalized.durationSeconds * 1000;
+      }
+      if (delayMs !== null) {
+        const expectedUpdatedAt = normalized.updatedAt;
+        subtitleTimerRef.current = setTimeout(() => {
+          setSubtitle((current) => {
+            if (!current) return current;
+            if (expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt) {
+              return current;
+            }
+            return null;
+          });
+          subtitleTimerRef.current = null;
+        }, delayMs);
+      }
+    },
+    [clearSubtitleTimer],
+  );
+
   useEffect(() => {
     if (!iframeMode) {
       setServerIframeConfig(null);
@@ -359,6 +423,19 @@ export default function App() {
       .catch(() => setCameraPresets([]));
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    fetchSubtitleState()
+      .then(({ subtitle: initialSubtitle }) => {
+        if (!active) return;
+        applySubtitle(initialSubtitle ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [applySubtitle]);
+
   const upsertPresetInState = useCallback((preset) => {
     setCameraPresets((prev) => {
       const next = [...prev];
@@ -394,6 +471,10 @@ export default function App() {
       }
       if (screenshotTimerRef.current) {
         clearTimeout(screenshotTimerRef.current);
+      }
+      if (subtitleTimerRef.current) {
+        clearTimeout(subtitleTimerRef.current);
+        subtitleTimerRef.current = null;
       }
       if (queueTimerRef.current) {
         clearTimeout(queueTimerRef.current);
@@ -723,6 +804,8 @@ export default function App() {
           if (payload?.filename) {
             setSoundPlayRequest({ filename: payload.filename, url: payload.url });
           }
+        } else if (payload?.type === "subtitle_update") {
+          applySubtitle(payload?.subtitle ?? null);
         } else if (payload?.type === "iframe_config" && payload?.config) {
           const targetId = payload?.target_client_id;
           if (targetId && targetId !== clientId) {
@@ -757,7 +840,9 @@ export default function App() {
       }
       cleanupSocket();
     };
-  }, [enqueueScreenshotRequest, clientId, iframeDefaultConfig, updateQueryWithIframeConfig]);
+  }, [enqueueScreenshotRequest, clientId, iframeDefaultConfig, updateQueryWithIframeConfig, applySubtitle]);
+
+  const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
 
   if (iframeMode) {
     const activeConfig = serverIframeConfig || localIframeConfig || iframeDefaultConfig;
@@ -776,6 +861,7 @@ export default function App() {
             visible={showInfo}
           />
         )}
+        {subtitleOverlay}
       </>
     );
   }
@@ -795,6 +881,7 @@ export default function App() {
             visible={showInfo}
           />
         )}
+        {subtitleOverlay}
       </>
     );
   }
@@ -815,6 +902,7 @@ export default function App() {
             visible={showInfo}
           />
         )}
+        {subtitleOverlay}
       </>
     );
   }
@@ -830,6 +918,7 @@ export default function App() {
             visible={showInfo}
           />
         )}
+        {subtitleOverlay}
       </>
     );
   }
@@ -845,6 +934,7 @@ export default function App() {
             visible={showInfo}
           />
         )}
+        {subtitleOverlay}
       </>
     );
   if (err)
@@ -858,6 +948,7 @@ export default function App() {
             visible={showInfo}
           />
         )}
+        {subtitleOverlay}
       </>
     );
 
@@ -935,6 +1026,7 @@ export default function App() {
           visible={showInfo}
         />
       )}
+      {subtitleOverlay}
     </>
   );
 }

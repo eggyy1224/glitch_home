@@ -125,3 +125,13 @@ export async function fetchSoundFiles() {
   });
   return { files: mapped };
 }
+
+export async function fetchSubtitleState() {
+  const url = `${API_BASE}/api/subtitles`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const data = await res.json();
+  return {
+    subtitle: data?.subtitle ?? null,
+  };
+}
