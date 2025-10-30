@@ -112,6 +112,25 @@ def post_subtitle(
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def post_caption(
+    api_base: str,
+    *,
+    text: str,
+    client_id: str,
+    language: str | None,
+    duration: float | None,
+) -> None:
+    query = f"?target_client_id={urllib.parse.quote(client_id)}" if client_id else ""
+    payload: dict = {"text": text}
+    if language:
+        payload["language"] = language
+    if duration is not None:
+        payload["duration_seconds"] = duration
+    result = request_json(api_base, "POST", f"/api/captions{query}", payload)
+    print("✅ 已推送標題字幕")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def build_grid_payload(
     images: Iterable[str],
     client_id: str,
@@ -209,6 +228,39 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     images = args.images or DEFAULT_IMAGES
+
+    # 0. Stage 0: Display caption mode in iframe first
+    if not args.dry_run:
+        print("📽️ 準備標題頁...")
+        caption_url = "/?caption_mode=true"
+        if args.client:
+            caption_url += f"&client={args.client}"
+        
+        caption_payload: dict = {
+            "layout": "grid",
+            "gap": 0,
+            "columns": 1,
+            "panels": [
+                {
+                    "id": "caption",
+                    "url": caption_url,
+                }
+            ],
+        }
+        if args.client:
+            caption_payload["target_client_id"] = args.client
+        put_iframe_config(args.api_base, caption_payload)
+        
+        # 推送標題文字到 caption mode
+        post_caption(
+            args.api_base,
+            text="圖像系譜學",
+            language="zh-TW",
+            duration=12.0,
+            client_id=args.client,
+        )
+        print("⏳ 顯示標題 12 秒...")
+        time.sleep(13)  # 等待標題顯示完成
 
     # Stage 1: 10×10 uniform（內含字幕時間，總長保持 hold_10 秒）
     payload_10 = build_grid_payload(images, args.client, columns=10, rows=10, gap=args.gap10)

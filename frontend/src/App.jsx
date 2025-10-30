@@ -7,6 +7,7 @@ import {
   uploadScreenshot,
   reportScreenshotFailure,
   fetchSubtitleState,
+  fetchCaptionState,
 } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
@@ -15,6 +16,7 @@ import SoundPlayer from "./SoundPlayer.jsx";
 import SlideMode from "./SlideMode.jsx";
 import IframeMode from "./IframeMode.jsx";
 import SubtitleOverlay from "./SubtitleOverlay.jsx";
+import CaptionMode from "./CaptionMode.jsx";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -192,9 +194,11 @@ export default function App() {
   const [screenshotMessage, setScreenshotMessage] = useState(null);
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
   const [subtitle, setSubtitle] = useState(null);
+  const [caption, setCaption] = useState(null);
   const messageTimerRef = useRef(null);
   const screenshotTimerRef = useRef(null);
   const subtitleTimerRef = useRef(null);
+  const captionTimerRef = useRef(null);
   const captureFnRef = useRef(null);
   const requestQueueRef = useRef([]);
   const pendingRequestIdsRef = useRef(new Set());
@@ -214,6 +218,9 @@ export default function App() {
   const searchMode =
     !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
     (readParams().get("search_mode") ?? "false") === "true";
+  const captionMode =
+    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode &&
+    (readParams().get("caption_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -371,6 +378,66 @@ export default function App() {
     [clearSubtitleTimer],
   );
 
+  const clearCaptionTimer = useCallback(() => {
+    if (captionTimerRef.current) {
+      clearTimeout(captionTimerRef.current);
+      captionTimerRef.current = null;
+    }
+  }, []);
+
+  const applyCaption = useCallback(
+    (payload) => {
+      clearCaptionTimer();
+      if (!payload || typeof payload !== "object") {
+        setCaption(null);
+        return;
+      }
+      const textValue = "text" in payload ? String(payload.text ?? "") : "";
+      if (!textValue.trim()) {
+        setCaption(null);
+        return;
+      }
+      const normalized = {
+        text: textValue,
+        language:
+          typeof payload.language === "string" && payload.language.trim() ? payload.language.trim() : null,
+        durationSeconds:
+          typeof payload.duration_seconds === "number" &&
+          Number.isFinite(payload.duration_seconds) &&
+          payload.duration_seconds > 0
+            ? payload.duration_seconds
+            : null,
+        expiresAt: typeof payload.expires_at === "string" ? payload.expires_at : null,
+        updatedAt: typeof payload.updated_at === "string" ? payload.updated_at : null,
+      };
+      setCaption(normalized);
+      let delayMs = null;
+      if (normalized.expiresAt) {
+        const expiresTs = Date.parse(normalized.expiresAt);
+        if (!Number.isNaN(expiresTs)) {
+          delayMs = Math.max(0, expiresTs - Date.now());
+        }
+      }
+      if (delayMs === null && typeof normalized.durationSeconds === "number") {
+        delayMs = normalized.durationSeconds * 1000;
+      }
+      if (delayMs !== null) {
+        const expectedUpdatedAt = normalized.updatedAt;
+        captionTimerRef.current = setTimeout(() => {
+          setCaption((current) => {
+            if (!current) return current;
+            if (expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt) {
+              return current;
+            }
+            return null;
+          });
+          captionTimerRef.current = null;
+        }, delayMs);
+      }
+    },
+    [clearCaptionTimer],
+  );
+
   useEffect(() => {
     if (!iframeMode) {
       setServerIframeConfig(null);
@@ -456,6 +523,19 @@ export default function App() {
     };
   }, [applySubtitle, clientId]);
 
+  useEffect(() => {
+    let active = true;
+    fetchCaptionState(clientId)
+      .then(({ caption: initialCaption }) => {
+        if (!active) return;
+        applyCaption(initialCaption ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [applyCaption, clientId]);
+
   const upsertPresetInState = useCallback((preset) => {
     setCameraPresets((prev) => {
       const next = [...prev];
@@ -499,6 +579,10 @@ export default function App() {
       if (queueTimerRef.current) {
         clearTimeout(queueTimerRef.current);
         queueTimerRef.current = null;
+      }
+      if (captionTimerRef.current) {
+        clearTimeout(captionTimerRef.current);
+        captionTimerRef.current = null;
       }
       isMountedRef.current = false;
     };
@@ -830,6 +914,12 @@ export default function App() {
             return;
           }
           applySubtitle(payload?.subtitle ?? null);
+        } else if (payload?.type === "caption_update") {
+          const targetId = payload?.target_client_id;
+          if (targetId && targetId !== clientId) {
+            return;
+          }
+          applyCaption(payload?.caption ?? null);
         } else if (payload?.type === "iframe_config" && payload?.config) {
           const targetId = payload?.target_client_id;
           if (targetId && targetId !== clientId) {
@@ -864,7 +954,7 @@ export default function App() {
       }
       cleanupSocket();
     };
-  }, [enqueueScreenshotRequest, clientId, iframeDefaultConfig, updateQueryWithIframeConfig, applySubtitle]);
+  }, [enqueueScreenshotRequest, clientId, iframeDefaultConfig, updateQueryWithIframeConfig, applySubtitle, applyCaption]);
 
   const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
 
@@ -935,6 +1025,22 @@ export default function App() {
     return (
       <>
         <SearchMode imagesBase={IMAGES_BASE} />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+        {subtitleOverlay}
+      </>
+    );
+  }
+
+  if (captionMode) {
+    return (
+      <>
+        <CaptionMode caption={caption} />
         {soundPlayerEnabled && (
           <SoundPlayer
             playRequest={soundPlayerEnabled ? soundPlayRequest : null}

@@ -168,6 +168,19 @@ class ScreenshotRequestManager:
             payload["target_client_id"] = target_client_id
         await self._broadcast(payload, target_client_id=target_client_id)
 
+    async def broadcast_caption(
+        self,
+        caption_payload: Optional[Dict[str, Any]],
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        payload = {
+            "type": "caption_update",
+            "caption": caption_payload,
+        }
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        await self._broadcast(payload, target_client_id=target_client_id)
+
     async def get_request(self, request_id: str) -> Dict[str, Any] | None:
         async with self._lock:
             record = self._requests.get(request_id)
