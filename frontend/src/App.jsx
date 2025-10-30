@@ -425,7 +425,7 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    fetchSubtitleState()
+    fetchSubtitleState(clientId)
       .then(({ subtitle: initialSubtitle }) => {
         if (!active) return;
         applySubtitle(initialSubtitle ?? null);
@@ -434,7 +434,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [applySubtitle]);
+  }, [applySubtitle, clientId]);
 
   const upsertPresetInState = useCallback((preset) => {
     setCameraPresets((prev) => {
@@ -805,6 +805,10 @@ export default function App() {
             setSoundPlayRequest({ filename: payload.filename, url: payload.url });
           }
         } else if (payload?.type === "subtitle_update") {
+          const targetId = payload?.target_client_id;
+          if (targetId && targetId !== clientId) {
+            return;
+          }
           applySubtitle(payload?.subtitle ?? null);
         } else if (payload?.type === "iframe_config" && payload?.config) {
           const targetId = payload?.target_client_id;

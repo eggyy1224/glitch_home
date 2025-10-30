@@ -164,6 +164,8 @@ class ScreenshotRequestManager:
             "type": "subtitle_update",
             "subtitle": subtitle_payload,
         }
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
         await self._broadcast(payload, target_client_id=target_client_id)
 
     async def get_request(self, request_id: str) -> Dict[str, Any] | None:

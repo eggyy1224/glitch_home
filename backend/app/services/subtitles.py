@@ -39,7 +39,8 @@ class SubtitleState:
 class SubtitleManager:
     def __init__(self) -> None:
         self._lock = asyncio.Lock()
-        self._state: Optional[SubtitleState] = None
+        self._global_state: Optional[SubtitleState] = None
+        self._client_states: Dict[str, Optional[SubtitleState]] = {}
 
     async def set_subtitle(
         self,
@@ -47,6 +48,7 @@ class SubtitleManager:
         *,
         language: Optional[str] = None,
         duration_seconds: Optional[float] = None,
+        target_client_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         cleaned = text.strip()
         if not cleaned:
@@ -72,28 +74,46 @@ class SubtitleManager:
 
         now = _now()
         async with self._lock:
-            self._state = SubtitleState(
+            new_state = SubtitleState(
                 text=cleaned,
                 language=language_clean,
                 duration_seconds=duration_value,
                 expires_at=expires_at,
                 updated_at=now,
             )
-            payload = self._state.to_payload()
+            if target_client_id:
+                self._client_states[target_client_id] = new_state
+            else:
+                self._global_state = new_state
+            payload = new_state.to_payload()
         return payload
 
-    async def clear_subtitle(self) -> None:
+    async def clear_subtitle(self, target_client_id: Optional[str] = None) -> None:
         async with self._lock:
-            self._state = None
+            if target_client_id:
+                if target_client_id in self._client_states:
+                    self._client_states[target_client_id] = None
+            else:
+                self._global_state = None
 
-    async def get_subtitle(self) -> Optional[Dict[str, Any]]:
+    async def get_subtitle(self, client_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         now = _now()
         async with self._lock:
-            state = self._state
+            # 優先查找 client 特定的字幕
+            if client_id and client_id in self._client_states:
+                state = self._client_states[client_id]
+                if state is not None:
+                    if state.expires_at and state.expires_at <= now:
+                        self._client_states[client_id] = None
+                        return None
+                    return state.to_payload()
+            
+            # 回落到全局字幕
+            state = self._global_state
             if state is None:
                 return None
             if state.expires_at and state.expires_at <= now:
-                self._state = None
+                self._global_state = None
                 return None
             return state.to_payload()
 
