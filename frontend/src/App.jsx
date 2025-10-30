@@ -22,6 +22,11 @@ const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
 
 const IFRAME_LAYOUTS = new Set(["grid", "horizontal", "vertical"]);
 
+// Control whether iframe config is mirrored into the URL as query params.
+// Default: false (compact URL). Set VITE_IFRAME_PERSIST_QUERY=true to enable old behavior.
+const PERSIST_IFRAME_QUERY =
+  String(import.meta.env.VITE_IFRAME_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
+
 const normalizeIframeLayout = (value, fallback = "grid") => {
   const candidate = (value || "").toString().trim().toLowerCase();
   return IFRAME_LAYOUTS.has(candidate) ? candidate : fallback;
@@ -258,9 +263,24 @@ export default function App() {
   const [iframeConfigError, setIframeConfigError] = useState(null);
 
   const updateQueryWithIframeConfig = useCallback((config) => {
-    if (typeof window === "undefined" || !config) return;
+    if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const params = url.searchParams;
+
+    // Always clean noisy iframe_* keys except the mode toggle itself when compact mode is on
+    if (!PERSIST_IFRAME_QUERY) {
+      const keysToDelete = [];
+      params.forEach((_, key) => {
+        if (key.startsWith("iframe_") && key !== "iframe_mode") {
+          keysToDelete.push(key);
+        }
+      });
+      keysToDelete.forEach((key) => params.delete(key));
+      window.history.replaceState(null, "", `${url.pathname}?${params.toString()}`);
+      return;
+    }
+
+    if (!config) return;
     const reserved = new Set(["iframe_mode", "iframe_layout", "iframe_gap", "iframe_columns"]);
     const keysToDelete = [];
     params.forEach((_, key) => {
