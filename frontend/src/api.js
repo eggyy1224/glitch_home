@@ -139,3 +139,17 @@ export async function fetchSubtitleState(clientId = null) {
     subtitle: data?.subtitle ?? null,
   };
 }
+
+export async function fetchCaptionState(clientId = null) {
+  let url = `${API_BASE}/api/captions`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const data = await res.json();
+  return {
+    caption: data?.caption ?? null,
+  };
+}

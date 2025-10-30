@@ -28,6 +28,7 @@ from .services.iframe_config import (
 from .services.kinship_index import kinship_index
 from .services import vector_store
 from .services.subtitles import subtitle_manager
+from .services.captions import caption_manager
 from .models.schemas import (
     GenerateMixTwoResponse,
     GenerateMixTwoRequest,
@@ -208,6 +209,35 @@ async def api_set_subtitles(body: SubtitleUpdateRequest, target_client_id: str |
 async def api_clear_subtitles(target_client_id: str | None = Query(default=None)) -> Response:
     await subtitle_manager.clear_subtitle(target_client_id=target_client_id)
     await screenshot_requests_manager.broadcast_subtitle(None, target_client_id=target_client_id)
+    return Response(status_code=204)
+
+
+@app.get("/api/captions")
+async def api_get_captions(client: str | None = Query(default=None)) -> dict:
+    caption = await caption_manager.get_caption(client_id=client)
+    return {"caption": caption}
+
+
+@app.post("/api/captions", status_code=202)
+async def api_set_captions(body: SubtitleUpdateRequest, target_client_id: str | None = Query(default=None)) -> dict:
+    try:
+        caption = await caption_manager.set_caption(
+            body.text,
+            language=body.language,
+            duration_seconds=body.duration_seconds,
+            target_client_id=target_client_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    await screenshot_requests_manager.broadcast_caption(caption, target_client_id=target_client_id)
+    return {"caption": caption}
+
+
+@app.delete("/api/captions", status_code=204)
+async def api_clear_captions(target_client_id: str | None = Query(default=None)) -> Response:
+    await caption_manager.clear_caption(target_client_id=target_client_id)
+    await screenshot_requests_manager.broadcast_caption(None, target_client_id=target_client_id)
     return Response(status_code=204)
 
 
