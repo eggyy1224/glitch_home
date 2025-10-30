@@ -126,8 +126,12 @@ export async function fetchSoundFiles() {
   return { files: mapped };
 }
 
-export async function fetchSubtitleState() {
-  const url = `${API_BASE}/api/subtitles`;
+export async function fetchSubtitleState(clientId = null) {
+  let url = `${API_BASE}/api/subtitles`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API ${res.status}`);
   const data = await res.json();

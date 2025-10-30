@@ -183,30 +183,31 @@ def api_sound_files() -> dict:
 
 
 @app.get("/api/subtitles")
-async def api_get_subtitles() -> dict:
-    subtitle = await subtitle_manager.get_subtitle()
+async def api_get_subtitles(client: str | None = Query(default=None)) -> dict:
+    subtitle = await subtitle_manager.get_subtitle(client_id=client)
     return {"subtitle": subtitle}
 
 
 @app.post("/api/subtitles", status_code=202)
-async def api_set_subtitles(body: SubtitleUpdateRequest) -> dict:
+async def api_set_subtitles(body: SubtitleUpdateRequest, target_client_id: str | None = Query(default=None)) -> dict:
     try:
         subtitle = await subtitle_manager.set_subtitle(
             body.text,
             language=body.language,
             duration_seconds=body.duration_seconds,
+            target_client_id=target_client_id,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    await screenshot_requests_manager.broadcast_subtitle(subtitle)
+    await screenshot_requests_manager.broadcast_subtitle(subtitle, target_client_id=target_client_id)
     return {"subtitle": subtitle}
 
 
 @app.delete("/api/subtitles", status_code=204)
-async def api_clear_subtitles() -> Response:
-    await subtitle_manager.clear_subtitle()
-    await screenshot_requests_manager.broadcast_subtitle(None)
+async def api_clear_subtitles(target_client_id: str | None = Query(default=None)) -> Response:
+    await subtitle_manager.clear_subtitle(target_client_id=target_client_id)
+    await screenshot_requests_manager.broadcast_subtitle(None, target_client_id=target_client_id)
     return Response(status_code=204)
 
 
