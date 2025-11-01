@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, Body, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, File, Form, HTTPException, Query, UploadFile, Response
 
 from ..models.schemas import CameraPreset, SaveCameraPresetRequest
 from ..services.camera_presets import delete_camera_preset, list_camera_presets, upsert_camera_preset
@@ -60,7 +60,7 @@ def api_save_camera_preset(body: SaveCameraPresetRequest) -> CameraPreset:
 
 
 @router.delete("/api/camera-presets/{name}", status_code=204)
-def api_delete_camera_preset(name: str) -> None:
+def api_delete_camera_preset(name: str) -> Response:
     cleaned = name.strip()
     if not cleaned:
         raise HTTPException(status_code=400, detail="name is required")
@@ -69,6 +69,7 @@ def api_delete_camera_preset(name: str) -> None:
     deleted = delete_camera_preset(cleaned)
     if not deleted:
         raise HTTPException(status_code=404, detail="preset not found")
+    return Response(status_code=204)
 
 
 @router.post("/api/screenshots", status_code=201)

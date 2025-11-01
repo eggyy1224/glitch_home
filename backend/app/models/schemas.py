@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
 
 class GenerateMixTwoResponse(BaseModel):
+    # Allow fields like `model_name` without protected namespace warning
+    model_config = ConfigDict(protected_namespaces=())
     output_image_path: str
     metadata_path: str
     parents: list[str]
@@ -67,6 +69,8 @@ class AnalyzeScreenshotRequest(BaseModel):
 
 
 class GenerateSoundRequest(AnalyzeScreenshotRequest):
+    # Allow fields like `model_id` without protected namespace warning
+    model_config = ConfigDict(protected_namespaces=())
     prompt: str = Field(..., min_length=1, description="Text prompt that drives sound generation")
     duration_seconds: Optional[float] = Field(
         default=None,
