@@ -29,13 +29,23 @@ def _resolve_audio_extension(output_format: str) -> str:
 
 
 def _deduplicate_filename(base_name: str, ext: str, directory: Path) -> Path:
-    candidate = directory / f"{base_name}{ext}"
+    # 僅允許純檔名，避免任何子目錄成分
+    safe_base = Path(base_name).name
+    resolved_dir = directory.resolve()
+
+    candidate = resolved_dir / f"{safe_base}{ext}"
     if not candidate.exists():
+        resolved = candidate.resolve()
+        if resolved.parent != resolved_dir:
+            raise ValueError("非法輸出路徑：越界目錄")
         return candidate
     suffix = 2
     while True:
-        candidate = directory / f"{base_name}_{suffix}{ext}"
+        candidate = resolved_dir / f"{safe_base}_{suffix}{ext}"
         if not candidate.exists():
+            resolved = candidate.resolve()
+            if resolved.parent != resolved_dir:
+                raise ValueError("非法輸出路徑：越界目錄")
             return candidate
         suffix += 1
 
@@ -148,4 +158,3 @@ def generate_sound_effect(
         "absolute_path": str(output_path),
         "relative_path": relative_path,
     }
-

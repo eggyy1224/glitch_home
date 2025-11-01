@@ -15,6 +15,7 @@
 - 📊 追溯親緣關係（家族樹）
 - 📸 遠端截圖管理（WebSocket）
 - 🔊 生成配套音效（ElevenLabs）
+- 🗣️ 旁白 TTS（OpenAI gpt-4o-mini-tts）
 - 🎬 多種視覺化展示（7 種模式）
 
 ### 開始前必知
@@ -131,6 +132,38 @@ curl -X POST http://localhost:8000/api/sound-play \
 
 # 前端的 SoundPlayer 會自動接收並播放
 ```
+
+### 任務 6.5: 產生旁白 TTS（OpenAI）
+
+```bash
+# 產生語音（預設 mp3, voice=alloy, model=gpt-4o-mini-tts）
+curl -X POST http://localhost:8000/api/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "各位好，歡迎來到圖像系譜學現場展示。",
+    "instructions": "zh-TW Mandarin, calm, low pitch, slower pace, intimate",
+    "speed": 0.95,
+    "auto_play": true,
+    "target_client_id": "mobile"
+  }' | jq .
+
+# 回應範例
+# {
+#   "tts": {
+#     "text": "...",
+#     "model": "gpt-4o-mini-tts",
+#     "voice": "alloy",
+#     "format": "mp3",
+#     "filename": "narration_20251101T123456_ab12cd34.mp3",
+#     "absolute_path": ".../backend/generated_sounds/narration_...mp3",
+#     "relative_path": "backend/generated_sounds/narration_...mp3"
+#   },
+#   "url": "http://localhost:8000/api/sound-files/narration_...mp3",
+#   "playback": {"status": "queued", "target_client_id": "mobile"}
+# }
+```
+
+> 必備環境變數：在 `backend/.env` 或專案根 `.env` 中設定 `OPENAI_API_KEY=...`。可選：`OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE`, `OPENAI_TTS_FORMAT`。
 
 ### 任務 7: 管理 Iframe 多面板配置
 

@@ -147,3 +147,15 @@ class SubtitleUpdateRequest(BaseModel):
 class SoundPlayRequest(BaseModel):
     filename: str = Field(..., min_length=1, description="音效檔案名稱（含副檔名）")
     target_client_id: Optional[str] = Field(default=None, description="指定播放的 client_id，可為空代表廣播")
+
+
+class TTSRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="要轉語音的文字內容")
+    instructions: Optional[str] = Field(default=None, description="說話風格/語氣指示，例：zh-TW Mandarin, calm, low pitch")
+    voice: Optional[str] = Field(default=None, description="TTS 語音（例如 alloy）")
+    model: Optional[str] = Field(default=None, description="OpenAI TTS 模型，預設 gpt-4o-mini-tts")
+    output_format: Optional[str] = Field(default=None, description="輸出格式：mp3|wav|opus|aac|flac，預設 mp3")
+    filename_base: Optional[str] = Field(default=None, description="自訂輸出檔名基底（系統會自動去重）")
+    speed: Optional[float] = Field(default=None, ge=0.25, le=4.0, description="語速（0.25–4.0），預設 1.0")
+    auto_play: bool = Field(default=False, description="產生後自動播放（透過 WebSocket 廣播）")
+    target_client_id: Optional[str] = Field(default=None, description="指定自動播放目標客戶端 id")

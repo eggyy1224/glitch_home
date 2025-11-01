@@ -13,6 +13,7 @@ from .config import settings
 from .services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
 from .services.image_analysis import analyze_screenshot
 from .services.sound_effects import generate_sound_effect
+from .services.tts_openai import synthesize_speech_openai
 from .services.camera_presets import (
     list_camera_presets,
     upsert_camera_preset,
@@ -43,6 +44,7 @@ from .models.schemas import (
     ImageSearchRequest,
     IndexBatchRequest,
     SoundPlayRequest,
+    TTSRequest,
     SubtitleUpdateRequest,
 )
 
@@ -163,7 +165,7 @@ def api_sound_files() -> dict:
     if not directory.exists():
         return {"files": []}
 
-    allowed_exts = {".mp3", ".wav", ".opus", ".ulaw", ".alaw"}
+    allowed_exts = {".mp3", ".wav", ".opus", ".ulaw", ".alaw", ".aac", ".flac"}
     files: list[dict] = []
     for path in sorted(directory.iterdir()):
         if not path.is_file():
@@ -239,6 +241,38 @@ async def api_clear_captions(target_client_id: str | None = Query(default=None))
     await caption_manager.clear_caption(target_client_id=target_client_id)
     await screenshot_requests_manager.broadcast_caption(None, target_client_id=target_client_id)
     return Response(status_code=204)
+
+
+@app.post("/api/tts", status_code=201)
+async def api_tts_generate(body: TTSRequest, request: Request) -> dict:
+    try:
+        result = await run_in_threadpool(
+            synthesize_speech_openai,
+            text=body.text,
+            instructions=body.instructions,
+            voice=body.voice,
+            model=body.model,
+            output_format=body.output_format,
+            filename_base=body.filename_base,
+            speed=body.speed,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    safe_name = os.path.basename(result.get("filename"))
+    url = str(request.url_for("api_sound_file", filename=safe_name))
+    payload = {
+        "tts": result,
+        "url": url,
+    }
+
+    if body.auto_play:
+        await screenshot_requests_manager.broadcast_sound_play(safe_name, url, body.target_client_id)
+        payload["playback"] = {"status": "queued", "target_client_id": body.target_client_id}
+
+    return payload
 
 
 @app.get("/api/sound-files/{filename}")
