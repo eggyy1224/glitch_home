@@ -100,6 +100,7 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
   const audioRef = useRef(null);
   const filesRef = useRef([]);
   const [pendingAutoPlay, setPendingAutoPlay] = useState(null);
+  const [needsUserAction, setNeedsUserAction] = useState(false);
 
   const loadFiles = useCallback(async () => {
     setLoading(true);
@@ -193,7 +194,10 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
       audio.currentTime = 0;
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => {});
+        playPromise.catch(() => {
+          // Likely blocked by autoplay policy: require user gesture
+          setNeedsUserAction(true);
+        });
       }
     } catch (err) {
       // ignore playback errors (e.g., autoplay restrictions)
@@ -202,8 +206,22 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
     onPlayHandled?.();
   }, [pendingAutoPlay, selected, onPlayHandled]);
 
+  // When autoplay is blocked, listen for the next user click and retry once
+  useEffect(() => {
+    if (!needsUserAction) return undefined;
+    const handler = () => {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.play().catch(() => {});
+      }
+      setNeedsUserAction(false);
+    };
+    document.addEventListener("click", handler, { once: true });
+    return () => document.removeEventListener("click", handler);
+  }, [needsUserAction]);
+
   const containerStyle = useMemo(() => {
-    if (visible) return styles.container;
+    if (visible || needsUserAction) return styles.container;
     return {
       ...styles.container,
       opacity: 0,
@@ -211,7 +229,7 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
       transform: "translateY(12px)",
       visibility: "hidden",
     };
-  }, [visible]);
+  }, [visible, needsUserAction]);
 
   return (
     <div style={containerStyle}>
@@ -226,6 +244,18 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
 
       {files.length > 0 && (
         <>
+          {needsUserAction && (
+            <div style={{
+              marginBottom: 8,
+              padding: "6px 10px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.08)",
+              fontSize: 12,
+              color: "#ffdede",
+            }}>
+              自動播放被瀏覽器阻擋，請點擊任意處或按下方播放。
+            </div>
+          )}
           <select
             style={styles.select}
             value={selected?.filename || ""}
@@ -259,7 +289,10 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
               onError={() => {
                 setError(`音檔載入失敗：${selected.url}`);
               }}
-              onPlay={() => setError(null)}
+              onPlay={() => {
+                setError(null);
+                setNeedsUserAction(false);
+              }}
             >
               您的瀏覽器不支援音訊播放。
             </audio>
