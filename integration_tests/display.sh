@@ -10,9 +10,28 @@ IMG="${IMG:-offspring_20250929_114732_835.png}"
 set_subtitle() {
   local text="$1"
   local duration="${2:-10}"
-  curl -fsS -X POST "${API_BASE}/api/subtitles?target_client_id=${TARGET_CLIENT_ID}" \
+  local payload
+  payload="$(
+    jq -n \
+      --arg text "${text}" \
+      --arg lang "zh-TW" \
+      --argjson duration "${duration}" \
+      '{text: $text, language: $lang, duration_seconds: $duration}'
+  )"
+  local response
+  if ! response="$(curl -fsS -X POST "${API_BASE}/api/subtitles?target_client_id=${TARGET_CLIENT_ID}" \
     -H "Content-Type: application/json" \
-    -d "{\"text\": \"${text}\", \"language\": \"zh-TW\", \"duration_seconds\": ${duration}}" >/dev/null 2>&1 || true
+    -d "${payload}")"; then
+    echo "✗ Failed to set subtitle: ${text}" >&2
+    exit 1
+  fi
+
+  if ! echo "${response}" | jq -e '.subtitle' >/dev/null 2>&1; then
+    echo "✗ Subtitle API returned unexpected response: ${response}" >&2
+    exit 1
+  fi
+
+  echo "✓ Subtitle set: ${text}"
 }
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -29,7 +48,7 @@ if echo "${clients_json}" | jq -e --arg client "${TARGET_CLIENT_ID}" '.clients |
   echo "✓ Client '${TARGET_CLIENT_ID}' is connected."
   
   echo ""
-  echo "➜ Setting up 8-panel iframe grid with all display modes..."
+  echo "➜ Setting up 5-panel iframe grid with all display modes..."
   echo "   Using image: ${IMG}"
   
   # Build the 5 panels JSON
@@ -68,6 +87,78 @@ if echo "${clients_json}" | jq -e --arg client "${TARGET_CLIENT_ID}" '.clients |
 ]
 EOF
   )
+
+  panels_json_two_columns=$(cat <<EOF
+[
+  {
+    "id": "mode_default",
+    "url": "/?img=${IMG}",
+    "ratio": 1.25,
+    "label": "預設 3D 景觀"
+  },
+  {
+    "id": "mode_incubator",
+    "url": "/?incubator=true&img=${IMG}",
+    "ratio": 1.0,
+    "label": "孵化室模式"
+  },
+  {
+    "id": "mode_phylogeny",
+    "url": "/?phylogeny=true&img=${IMG}",
+    "ratio": 0.85,
+    "label": "親緣圖 2D"
+  },
+  {
+    "id": "mode_slide",
+    "url": "/?slide_mode=true&img=${IMG}",
+    "ratio": 1.1,
+    "label": "幻燈片模式"
+  },
+  {
+    "id": "mode_organic",
+    "url": "/?organic_mode=true&img=${IMG}",
+    "ratio": 0.9,
+    "label": "有機室模式"
+  }
+]
+EOF
+  )
+
+  panels_json_single_column=$(cat <<EOF
+[
+  {
+    "id": "mode_default",
+    "url": "/?img=${IMG}",
+    "ratio": 0.75,
+    "label": "預設 3D 景觀"
+  },
+  {
+    "id": "mode_incubator",
+    "url": "/?incubator=true&img=${IMG}",
+    "ratio": 0.6,
+    "label": "孵化室模式"
+  },
+  {
+    "id": "mode_phylogeny",
+    "url": "/?phylogeny=true&img=${IMG}",
+    "ratio": 0.65,
+    "label": "親緣圖 2D"
+  },
+  {
+    "id": "mode_slide",
+    "url": "/?slide_mode=true&img=${IMG}",
+    "ratio": 0.8,
+    "label": "幻燈片模式"
+  },
+  {
+    "id": "mode_organic",
+    "url": "/?organic_mode=true&img=${IMG}",
+    "ratio": 0.7,
+    "label": "有機室模式"
+  }
+]
+EOF
+  )
   
   iframe_config="$(curl -fsS -X PUT "${API_BASE}/api/iframe-config" \
     -H "Content-Type: application/json" \
@@ -83,8 +174,7 @@ EOF
     panel_count=$(echo "${iframe_config}" | jq '.panels | length')
     echo "✓ Iframe configured with ${panel_count} panels"
     
-    set_subtitle "📺 所有顯示模式測試 - 8 種模式展示" 15
-    echo "✓ Subtitle set: 所有顯示模式測試"
+    set_subtitle "📺 所有顯示模式測試 - 5 種模式展示" 15
     
     echo ""
     echo "=== Display Modes Overview ==="
@@ -112,7 +202,7 @@ EOF
         \"layout\": \"grid\",
         \"gap\": 12,
         \"columns\": 2,
-        \"panels\": ${panels_json}
+        \"panels\": ${panels_json_two_columns}
       }")"
     
     if echo "${iframe_config_2}" | jq -e '.panels[0]' >/dev/null 2>&1; then
@@ -132,7 +222,7 @@ EOF
         \"layout\": \"grid\",
         \"gap\": 12,
         \"columns\": 1,
-        \"panels\": ${panels_json}
+        \"panels\": ${panels_json_single_column}
       }")"
     
     if echo "${iframe_config_3}" | jq -e '.panels[0]' >/dev/null 2>&1; then
