@@ -147,13 +147,151 @@ if echo "${clients_json}" | jq -e --arg client "${TARGET_CLIENT_ID}" '.clients |
         "duration_seconds": 10
       }' >/dev/null
     echo "✓ Subtitle set"
-    
-    echo "${iframe_config_2}" | jq '.panels'
-    exit 0
   else
     echo "✗ Failed to set Phase 2 configuration."
     echo "Server response:"
     echo "${iframe_config_2}"
+    exit 1
+  fi
+
+  echo "⏳ Waiting 10 seconds..."
+  sleep 10
+
+  # PHASE 3: 4 Grid (2x2)
+  echo ""
+  echo "➜ PHASE 3: Switching to 4 Grid (2x2)..."
+  iframe_config_3="$(curl -fsS -X PUT "${API_BASE}/api/iframe-config" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"target_client_id\": \"${TARGET_CLIENT_ID}\",
+      \"layout\": \"grid\",
+      \"gap\": 12,
+      \"columns\": 2,
+      \"panels\": [
+        {\"id\": \"p1\", \"url\": \"/?slide_mode=true&img=offspring_20250929_114732_835.png\", \"ratio\": 1},
+        {\"id\": \"p2\", \"url\": \"/?slide_mode=true&img=offspring_20250929_112621_888.png\", \"ratio\": 1},
+        {\"id\": \"p3\", \"url\": \"/?slide_mode=true&img=offspring_20250927_141336_787.png\", \"ratio\": 1},
+        {\"id\": \"p4\", \"url\": \"/?slide_mode=true&img=offspring_20251001_181913_443.png\", \"ratio\": 1}
+      ]
+    }")"
+  
+  if echo "${iframe_config_3}" | jq -e '.panels[0]' >/dev/null 2>&1; then
+    echo "✓ Phase 3 configured - 4 Grid"
+    curl -fsS -X POST "${API_BASE}/api/subtitles?target_client_id=${TARGET_CLIENT_ID}" \
+      -H "Content-Type: application/json" \
+      -d '{"text": "🔲 4 格 布局 (2x2)", "language": "zh-TW", "duration_seconds": 10}' >/dev/null
+  else
+    echo "✗ Failed to set Phase 3 configuration."
+    exit 1
+  fi
+
+  echo "⏳ Waiting 10 seconds..."
+  sleep 10
+
+  # PHASE 4: 16 Grid (4x4)
+  echo ""
+  echo "➜ PHASE 4: Switching to 16 Grid (4x4)..."
+  panels_16=""
+  for i in {1..16}; do
+    img="offspring_20250929_114732_835.png"
+    if [ $((i % 4)) -eq 2 ]; then img="offspring_20250929_112621_888.png"; fi
+    if [ $((i % 4)) -eq 3 ]; then img="offspring_20250927_141336_787.png"; fi
+    if [ $((i % 4)) -eq 0 ]; then img="offspring_20251001_181913_443.png"; fi
+    panels_16="${panels_16}{\"id\": \"p${i}\", \"url\": \"/?slide_mode=true&img=${img}\", \"ratio\": 1},"
+  done
+  panels_16="${panels_16%,}"
+  
+  iframe_config_4="$(curl -fsS -X PUT "${API_BASE}/api/iframe-config" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"target_client_id\": \"${TARGET_CLIENT_ID}\",
+      \"layout\": \"grid\",
+      \"gap\": 8,
+      \"columns\": 4,
+      \"panels\": [${panels_16}]
+    }")"
+  
+  if echo "${iframe_config_4}" | jq -e '.panels[0]' >/dev/null 2>&1; then
+    echo "✓ Phase 4 configured - 16 Grid"
+    curl -fsS -X POST "${API_BASE}/api/subtitles?target_client_id=${TARGET_CLIENT_ID}" \
+      -H "Content-Type: application/json" \
+      -d '{"text": "🔲 16 格 布局 (4x4)", "language": "zh-TW", "duration_seconds": 10}' >/dev/null
+  else
+    echo "✗ Failed to set Phase 4 configuration."
+    exit 1
+  fi
+
+  echo "⏳ Waiting 10 seconds..."
+  sleep 10
+
+  # PHASE 5: 25 Grid (5x5)
+  echo ""
+  echo "➜ PHASE 5: Switching to 25 Grid (5x5)..."
+  panels_25=""
+  for i in {1..25}; do
+    img="offspring_20250929_114732_835.png"
+    if [ $((i % 4)) -eq 2 ]; then img="offspring_20250929_112621_888.png"; fi
+    if [ $((i % 4)) -eq 3 ]; then img="offspring_20250927_141336_787.png"; fi
+    if [ $((i % 4)) -eq 0 ]; then img="offspring_20251001_181913_443.png"; fi
+    panels_25="${panels_25}{\"id\": \"p${i}\", \"url\": \"/?slide_mode=true&img=${img}\", \"ratio\": 1},"
+  done
+  panels_25="${panels_25%,}"
+  
+  iframe_config_5="$(curl -fsS -X PUT "${API_BASE}/api/iframe-config" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"target_client_id\": \"${TARGET_CLIENT_ID}\",
+      \"layout\": \"grid\",
+      \"gap\": 6,
+      \"columns\": 5,
+      \"panels\": [${panels_25}]
+    }")"
+  
+  if echo "${iframe_config_5}" | jq -e '.panels[0]' >/dev/null 2>&1; then
+    echo "✓ Phase 5 configured - 25 Grid"
+    curl -fsS -X POST "${API_BASE}/api/subtitles?target_client_id=${TARGET_CLIENT_ID}" \
+      -H "Content-Type: application/json" \
+      -d '{"text": "🔲 25 格 布局 (5x5)", "language": "zh-TW", "duration_seconds": 10}' >/dev/null
+  else
+    echo "✗ Failed to set Phase 5 configuration."
+    exit 1
+  fi
+
+  echo "⏳ Waiting 10 seconds..."
+  sleep 10
+
+  # PHASE 6: 100 Grid (10x10)
+  echo ""
+  echo "➜ PHASE 6: Switching to 100 Grid (10x10)..."
+  panels_100=""
+  for i in {1..100}; do
+    img="offspring_20250929_114732_835.png"
+    if [ $((i % 4)) -eq 2 ]; then img="offspring_20250929_112621_888.png"; fi
+    if [ $((i % 4)) -eq 3 ]; then img="offspring_20250927_141336_787.png"; fi
+    if [ $((i % 4)) -eq 0 ]; then img="offspring_20251001_181913_443.png"; fi
+    panels_100="${panels_100}{\"id\": \"p${i}\", \"url\": \"/?slide_mode=true&img=${img}\", \"ratio\": 1},"
+  done
+  panels_100="${panels_100%,}"
+  
+  iframe_config_6="$(curl -fsS -X PUT "${API_BASE}/api/iframe-config" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"target_client_id\": \"${TARGET_CLIENT_ID}\",
+      \"layout\": \"grid\",
+      \"gap\": 4,
+      \"columns\": 10,
+      \"panels\": [${panels_100}]
+    }")"
+  
+  if echo "${iframe_config_6}" | jq -e '.panels[0]' >/dev/null 2>&1; then
+    echo "✓ Phase 6 configured - 100 Grid (FINAL)"
+    curl -fsS -X POST "${API_BASE}/api/subtitles?target_client_id=${TARGET_CLIENT_ID}" \
+      -H "Content-Type: application/json" \
+      -d '{"text": "🔲 100 格 布局 (10x10) - 完成！", "language": "zh-TW", "duration_seconds": 10}' >/dev/null
+    echo "${iframe_config_6}" | jq '.panels | length'
+    exit 0
+  else
+    echo "✗ Failed to set Phase 6 configuration."
     exit 1
   fi
 else
