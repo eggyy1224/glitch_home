@@ -748,6 +748,22 @@ export default function App() {
     [pushScreenshotMessage, clientId]
   );
 
+  useEffect(() => {
+    const captureScene = async () => {
+      const captureFn = captureFnRef.current;
+      if (!captureFn) {
+        throw new Error("場景尚未準備好");
+      }
+      return captureFn();
+    };
+    window.__APP_CAPTURE_SCENE = captureScene;
+    return () => {
+      if (window.__APP_CAPTURE_SCENE === captureScene) {
+        delete window.__APP_CAPTURE_SCENE;
+      }
+    };
+  }, []);
+
   const processQueue = useCallback(() => {
     if (!isMountedRef.current) return;
     if (isProcessingRef.current) return;
@@ -967,6 +983,7 @@ export default function App() {
           config={activeConfig}
           controlsEnabled={controlsEnabled}
           onApplyConfig={controlsEnabled ? handleLocalIframeConfigApply : undefined}
+          onCaptureReady={handleCaptureReady}
         />
         {soundPlayerEnabled && (
           <SoundPlayer

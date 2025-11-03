@@ -1,10 +1,71 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const DEFAULT_CONFIG = {
   layout: "grid",
   gap: 0,
   columns: 2,
   panels: [],
+};
+
+let html2canvasLoaderPromise = null;
+
+const ensureHtml2Canvas = () => {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("瀏覽器環境才支援截圖"));
+  }
+  if (window.html2canvas) {
+    return Promise.resolve(window.html2canvas);
+  }
+
+  if (html2canvasLoaderPromise) {
+    return html2canvasLoaderPromise;
+  }
+
+  html2canvasLoaderPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.html2canvas) {
+        resolve(window.html2canvas);
+      } else {
+        html2canvasLoaderPromise = null;
+        reject(new Error("載入截圖模組失敗"));
+      }
+    };
+    script.onerror = () => {
+      html2canvasLoaderPromise = null;
+      reject(new Error("下載 html2canvas 失敗"));
+    };
+    document.head.appendChild(script);
+  });
+
+  return html2canvasLoaderPromise;
+};
+
+const blobToDrawable = async (blob) => {
+  if (!blob) return null;
+  if (typeof window !== "undefined" && typeof window.createImageBitmap === "function") {
+    try {
+      const bitmap = await window.createImageBitmap(blob);
+      return { kind: "bitmap", value: bitmap };
+    } catch (err) {
+      // fall through to Image fallback
+    }
+  }
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ kind: "image", value: img });
+    };
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url);
+      reject(err);
+    };
+    img.src = url;
+  });
 };
 
 const sanitizeLayout = (raw) => {
@@ -70,7 +131,10 @@ export default function IframeMode({
   config,
   controlsEnabled = false,
   onApplyConfig,
+  onCaptureReady = null,
 }) {
+  const containerRef = useRef(null);
+  const iframeRefs = useRef({});
   const sanitizedConfig = useMemo(() => sanitizeConfig(config), [config]);
   const panels = sanitizedConfig.panels;
 
@@ -80,6 +144,112 @@ export default function IframeMode({
     const arr = panels.map((panel) => panel.src || "");
     return arr.length ? arr : [""];
   });
+
+  useEffect(() => {
+    if (typeof onCaptureReady !== "function") {
+      return undefined;
+    }
+
+    const makeCapture = () => {
+      return async () => {
+        const container = containerRef.current;
+        if (!container) {
+          throw new Error("iframe 容器尚未準備好");
+        }
+
+        const html2canvas = await ensureHtml2Canvas();
+        if (!html2canvas) {
+          throw new Error("無法載入截圖模組");
+        }
+
+        const canvas = await html2canvas(container, {
+          backgroundColor: "#000000",
+          useCORS: true,
+          logging: false,
+          windowWidth: container.scrollWidth || container.clientWidth || window.innerWidth,
+          windowHeight: container.scrollHeight || container.clientHeight || window.innerHeight,
+        });
+
+        const ctx = canvas.getContext("2d");
+        const containerRect = container.getBoundingClientRect();
+        const scaleX = containerRect.width ? canvas.width / containerRect.width : 1;
+        const scaleY = containerRect.height ? canvas.height / containerRect.height : 1;
+
+        const iframeEntries = Object.values(iframeRefs.current);
+        for (const iframe of iframeEntries) {
+          if (!iframe || !iframe.contentWindow) continue;
+
+          const rect = iframe.getBoundingClientRect();
+          const offsetX = (rect.left - containerRect.left) * scaleX;
+          const offsetY = (rect.top - containerRect.top) * scaleY;
+          const width = rect.width * scaleX;
+          const height = rect.height * scaleY;
+
+          let drawable = null;
+
+          try {
+            const captureScene = iframe.contentWindow.__APP_CAPTURE_SCENE;
+            if (typeof captureScene === "function") {
+              const blob = await captureScene();
+              drawable = await blobToDrawable(blob);
+            }
+          } catch (err) {
+            console.warn("無法從 iframe 捕捉 3D 畫面", err);
+          }
+
+          if (!drawable) {
+            try {
+              const innerHtml2canvas =
+                iframe.contentWindow.html2canvas ||
+                (iframe.contentWindow.window && iframe.contentWindow.window.html2canvas) ||
+                null;
+              if (innerHtml2canvas) {
+                const innerCanvas = await innerHtml2canvas(iframe.contentDocument.body, {
+                  backgroundColor: "#000000",
+                  logging: false,
+                });
+                ctx.drawImage(innerCanvas, 0, 0, innerCanvas.width, innerCanvas.height, offsetX, offsetY, width, height);
+              }
+            } catch (err) {
+              console.warn("iframe 備援截圖失敗", err);
+            }
+            continue;
+          }
+
+          try {
+            if (drawable.kind === "bitmap") {
+              ctx.drawImage(drawable.value, offsetX, offsetY, width, height);
+              if (typeof drawable.value.close === "function") {
+                drawable.value.close();
+              }
+            } else if (drawable.kind === "image") {
+              ctx.drawImage(drawable.value, offsetX, offsetY, width, height);
+            }
+          } catch (err) {
+            console.warn("繪製 iframe 截圖失敗", err);
+          }
+        }
+
+        return new Promise((resolve, reject) => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error("無法產生截圖"));
+                return;
+              }
+              resolve(blob);
+            },
+            "image/png",
+          );
+        });
+      };
+    };
+
+    onCaptureReady(makeCapture());
+    return () => {
+      onCaptureReady(null);
+    };
+  }, [onCaptureReady, sanitizedConfig]);
 
   useEffect(() => {
     setPanelCount(Math.max(1, panels.length || 1));
@@ -298,9 +468,10 @@ export default function IframeMode({
 
   return (
     <>
-      <div style={containerStyle}>
+      <div ref={containerRef} style={containerStyle}>
         {panels.length ? (
           panels.map((panel, index) => {
+            const panelId = panel.id || `panel_${index + 1}`;
             const flexStyle = sanitizedConfig.layout === "grid" ? {} : { flex: `${panel.ratio} 1 0` };
             const gridStyle =
               sanitizedConfig.layout === "grid"
@@ -313,11 +484,18 @@ export default function IframeMode({
               ? { ...panelStyle, ...gridStyle }
               : { ...panelStyle, ...flexStyle };
             return (
-              <div key={panel.id || index} style={combinedStyle}>
+              <div key={panelId} style={combinedStyle}>
                 {panel.label ? <div style={labelStyle}>{panel.label}</div> : null}
                 <iframe
                   title={panel.label || `iframe-${index + 1}`}
                   src={panel.src}
+                  ref={(node) => {
+                    if (node) {
+                      iframeRefs.current[panelId] = node;
+                    } else {
+                      delete iframeRefs.current[panelId];
+                    }
+                  }}
                   style={{
                     border: "none",
                     width: "100%",
