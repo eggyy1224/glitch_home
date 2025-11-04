@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { searchImagesByImage, fetchKinship } from "./api.js";
+import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
 
 const FONT_FAMILY = "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif";
 
@@ -162,6 +163,20 @@ const computeStyles = (sizeClass) => {
   return { root, stage, image, caption, status, controlBar, slider, sliderLabel, button };
 };
 
+const canvasToBlob = (canvas) =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("無法產生截圖"));
+          return;
+        }
+        resolve(blob);
+      },
+      "image/png",
+    );
+  });
+
 // 添加 CSS 規則用於 slider thumb 的樣式
 if (typeof document !== "undefined" && !document.getElementById("sliderStyles")) {
   const style = document.createElement("style");
@@ -199,7 +214,7 @@ const cleanId = (value) => (value ? value.replace(/:(en|zh)$/, "") : value);
 const DISPLAY_ORDER = Array.from({ length: 15 }, (_, i) => i);
 const BATCH_SIZE = 15;
 
-export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }) {
+export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, onCaptureReady = null }) {
   const rootRef = useRef(null);
   const [sizeClass, setSizeClass] = useState("large");
   const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]);
@@ -245,6 +260,31 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000 }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    if (typeof onCaptureReady !== "function") {
+      return undefined;
+    }
+
+    const captureScene = async () => {
+      const root = rootRef.current;
+      if (!root) {
+        throw new Error("Slide 模式尚未準備好");
+      }
+      const html2canvas = await ensureHtml2Canvas();
+      const canvas = await html2canvas(root, {
+        backgroundColor: "#000000",
+        logging: false,
+        useCORS: true,
+      });
+      return canvasToBlob(canvas);
+    };
+
+    onCaptureReady(captureScene);
+    return () => {
+      onCaptureReady(null);
+    };
+  }, [onCaptureReady]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

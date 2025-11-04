@@ -1,46 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
 
 const DEFAULT_CONFIG = {
   layout: "grid",
   gap: 0,
   columns: 2,
   panels: [],
-};
-
-let html2canvasLoaderPromise = null;
-
-const ensureHtml2Canvas = () => {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("瀏覽器環境才支援截圖"));
-  }
-  if (window.html2canvas) {
-    return Promise.resolve(window.html2canvas);
-  }
-
-  if (html2canvasLoaderPromise) {
-    return html2canvasLoaderPromise;
-  }
-
-  html2canvasLoaderPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
-    script.async = true;
-    script.onload = () => {
-      if (window.html2canvas) {
-        resolve(window.html2canvas);
-      } else {
-        html2canvasLoaderPromise = null;
-        reject(new Error("載入截圖模組失敗"));
-      }
-    };
-    script.onerror = () => {
-      html2canvasLoaderPromise = null;
-      reject(new Error("下載 html2canvas 失敗"));
-    };
-    document.head.appendChild(script);
-  });
-
-  return html2canvasLoaderPromise;
 };
 
 const blobToDrawable = async (blob) => {
@@ -529,7 +494,6 @@ export default function IframeMode({
               : { ...panelStyle, ...flexStyle };
             return (
               <div key={panelId} style={combinedStyle}>
-                {panel.label ? <div style={labelStyle}>{panel.label}</div> : null}
                 <iframe
                   title={panel.label || `iframe-${index + 1}`}
                   src={panel.src}

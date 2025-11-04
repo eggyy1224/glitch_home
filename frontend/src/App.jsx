@@ -1027,7 +1027,12 @@ export default function App() {
       : 3000;
     return (
       <>
-        <SlideMode imagesBase={IMAGES_BASE} anchorImage={imgId} intervalMs={slideIntervalMs} />
+        <SlideMode
+          imagesBase={IMAGES_BASE}
+          anchorImage={imgId}
+          intervalMs={slideIntervalMs}
+          onCaptureReady={handleCaptureReady}
+        />
         {soundPlayerEnabled && (
           <SoundPlayer
             playRequest={soundPlayerEnabled ? soundPlayRequest : null}
