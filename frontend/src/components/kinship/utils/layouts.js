@@ -116,8 +116,8 @@ export const createIncubatorEdges = (graph, layoutNodes) => {
   const seen = new Set();
   return graph.edges
     .map((edge) => {
-      const source = lookup.get(edge.source.name);
-      const target = lookup.get(edge.target.name);
+      const source = lookup.get(edge.source);
+      const target = lookup.get(edge.target);
       if (!source || !target) return null;
       const key = `${source.name}->${target.name}`;
       if (seen.has(key)) return null;
