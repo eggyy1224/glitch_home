@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./CollageMode.css";
 import { fetchKinship } from "./api.js";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
@@ -15,6 +15,8 @@ const STAGE_MAX_WIDTH = 3840;
 const STAGE_MIN_HEIGHT = 240;
 const STAGE_MAX_HEIGHT = 2160;
 const DEFAULT_STAGE_HEIGHT = 540;
+const PERSIST_COLLAGE_QUERY =
+  String(import.meta.env.VITE_COLLAGE_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
 const RATIO_MIN = STAGE_MIN_HEIGHT / STAGE_MAX_WIDTH;
 const RATIO_MAX = STAGE_MAX_HEIGHT / STAGE_MIN_WIDTH;
 
@@ -433,22 +435,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
   const [controlsVisible, setControlsVisible] = useState(true);
 
-  const syncQueryParam = useCallback((key, value, { removeWhenDefault = false, defaultValue = null } = {}) => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (removeWhenDefault && value === defaultValue) {
-      if (!params.has(key)) return;
-      params.delete(key);
-    } else {
-      const stringValue = String(value);
-      if (params.get(key) === stringValue) return;
-      params.set(key, stringValue);
-    }
-    const qs = params.toString();
-    const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    window.history.replaceState(null, "", nextUrl);
-  }, []);
-
   useEffect(() => {
     if (onCaptureReady == null) return undefined;
 
@@ -550,13 +536,57 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   }, [mixBoard.rows, mixBoard.cols]);
 
   const stageWidthBounds = useMemo(() => computeStageWidthBounds(boardRatio), [boardRatio]);
-  const mixSurfaceAspectRatio = useMemo(() => {
-    if (!Number.isFinite(boardRatio) || boardRatio <= 0) {
-      return DEFAULT_STAGE_WIDTH / DEFAULT_STAGE_HEIGHT;
-    }
-    return 1 / boardRatio;
-  }, [boardRatio]);
   const stageHeight = useMemo(() => stageWidth * boardRatio, [stageWidth, boardRatio]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+    const before = params.toString();
+
+    if (!PERSIST_COLLAGE_QUERY) {
+      let modified = false;
+      params.forEach((_, key) => {
+        if (key.startsWith("collage_") && key !== "collage_mode") {
+          params.delete(key);
+          modified = true;
+        }
+      });
+      if (modified) {
+        const next = params.toString();
+        window.history.replaceState(null, "", next ? `${url.pathname}?${next}` : url.pathname);
+      }
+      return;
+    }
+
+    const applyParam = (key, value, defaultValue) => {
+      if (value === undefined || value === null || String(value) === String(defaultValue)) {
+        if (params.has(key)) {
+          params.delete(key);
+        }
+        return;
+      }
+      params.set(key, String(value));
+    };
+
+    applyParam("collage_images", imageCount, DEFAULT_IMAGE_COUNT);
+    applyParam("collage_rows", rows, DEFAULT_ROWS);
+    applyParam("collage_cols", cols, DEFAULT_COLS);
+    applyParam("collage_mix", mixPieces ? "true" : "false", "false");
+
+    if (mixPieces) {
+      applyParam("collage_width", Math.round(stageWidth), DEFAULT_STAGE_WIDTH);
+      applyParam("collage_height", Math.round(stageHeight), DEFAULT_STAGE_HEIGHT);
+    } else {
+      if (params.has("collage_width")) params.delete("collage_width");
+      if (params.has("collage_height")) params.delete("collage_height");
+    }
+
+    const after = params.toString();
+    if (after !== before) {
+      window.history.replaceState(null, "", after ? `${url.pathname}?${after}` : url.pathname);
+    }
+  }, [imageCount, rows, cols, mixPieces, stageWidth, stageHeight]);
 
   const piecesByImage = useMemo(() => {
     const map = new Map();
@@ -597,18 +627,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   }, [maxSelectableImages]);
 
   useEffect(() => {
-    syncQueryParam("collage_images", imageCount);
-  }, [imageCount, syncQueryParam]);
-
-  useEffect(() => {
-    syncQueryParam("collage_rows", rows);
-  }, [rows, syncQueryParam]);
-
-  useEffect(() => {
-    syncQueryParam("collage_cols", cols);
-  }, [cols, syncQueryParam]);
-
-  useEffect(() => {
     setStageWidth((prev) => {
       const clamped = clamp(prev, stageWidthBounds.min, stageWidthBounds.max);
       if (Math.abs(clamped - prev) < 0.5) {
@@ -630,18 +648,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
       window.removeEventListener("keydown", onKeyDown);
     };
   }, []);
-
-  useEffect(() => {
-    syncQueryParam("collage_mix", mixPieces ? "true" : "false", { removeWhenDefault: true, defaultValue: "false" });
-  }, [mixPieces, syncQueryParam]);
-
-  useEffect(() => {
-    syncQueryParam("collage_width", Math.round(stageWidth));
-  }, [stageWidth, syncQueryParam]);
-
-  useEffect(() => {
-    syncQueryParam("collage_height", Math.round(stageHeight));
-  }, [stageHeight, syncQueryParam]);
 
   useEffect(() => {
     if (!mixPieces) {
