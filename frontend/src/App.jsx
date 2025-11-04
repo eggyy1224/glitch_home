@@ -1,14 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  fetchKinship,
-  fetchCameraPresets,
-  saveCameraPreset,
-  deleteCameraPreset,
-  uploadScreenshot,
-  reportScreenshotFailure,
-  fetchSubtitleState,
-  fetchCaptionState,
-} from "./api.js";
+import { fetchKinship, fetchCameraPresets, saveCameraPreset, deleteCameraPreset } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
@@ -17,162 +8,41 @@ import SlideMode from "./SlideMode.jsx";
 import IframeMode from "./IframeMode.jsx";
 import SubtitleOverlay from "./SubtitleOverlay.jsx";
 import CaptionMode from "./CaptionMode.jsx";
+import { clampInt } from "./utils/iframeConfig.js";
+import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
+import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
+import { useIframeConfig } from "./hooks/useIframeConfig.js";
+import { useControlSocket } from "./hooks/useControlSocket.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
 const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
-
-const IFRAME_LAYOUTS = new Set(["grid", "horizontal", "vertical"]);
-
-// Control whether iframe config is mirrored into the URL as query params.
-// Default: false (compact URL). Set VITE_IFRAME_PERSIST_QUERY=true to enable old behavior.
-const PERSIST_IFRAME_QUERY =
-  String(import.meta.env.VITE_IFRAME_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
-
-const normalizeIframeLayout = (value, fallback = "grid") => {
-  const candidate = (value || "").toString().trim().toLowerCase();
-  return IFRAME_LAYOUTS.has(candidate) ? candidate : fallback;
-};
-
-const clampInt = (value, fallback, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return fallback;
-  const intVal = Math.floor(parsed);
-  if (intVal < min) return min;
-  if (intVal > max) return max;
-  return intVal;
-};
-
-const parseRatio = (value, fallback = 1) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return parsed;
-};
-
-const parseIframeConfigFromParams = (params) => {
-  if (!params) return null;
-
-  const layout = normalizeIframeLayout(params.get("iframe_layout"));
-  const gap = clampInt(params.get("iframe_gap"), 0, { min: 0 });
-  const columns = clampInt(params.get("iframe_columns"), 2, { min: 1 });
-
-  const rawKeys = (params.get("iframe_panels") || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  const panels = [];
-  const keys = rawKeys.length ? rawKeys : null;
-
-  if (keys) {
-    keys.forEach((key, index) => {
-      const src = params.get(`iframe_${key}`);
-      if (!src) return;
-      const ratio = parseRatio(params.get(`iframe_${key}_ratio`), 1);
-      const label = params.get(`iframe_${key}_label`) || undefined;
-      panels.push({
-        id: key || `panel_${index + 1}`,
-        src,
-        ratio,
-        label,
-      });
-    });
-  } else {
-    for (let index = 1; index <= 12; index += 1) {
-      const key = `${index}`;
-      const src = params.get(`iframe_${key}`);
-      if (!src) break;
-      const ratio = parseRatio(params.get(`iframe_${key}_ratio`), 1);
-      const label = params.get(`iframe_${key}_label`) || undefined;
-      panels.push({
-        id: key,
-        src,
-        ratio,
-        label,
-      });
-    }
-  }
-
-  if (!panels.length) {
-    return null;
-  }
-
-  return { layout, gap, columns, panels };
-};
-
-const sanitizeIframePanels = (panels, fallbackPanels = []) => {
-  if (!Array.isArray(panels)) return [...fallbackPanels];
-  const usedIds = new Set();
-  const result = [];
-  const clampSpan = (value) => {
-    if (value === null || value === undefined) return undefined;
-    const parsed = clampInt(value, 1, { min: 1 });
-    return parsed || 1;
-  };
-  panels.forEach((panel, index) => {
-    if (!panel || typeof panel !== "object") return;
-    const src = typeof panel.src === "string" ? panel.src.trim() : "";
-    if (!src) return;
-    let id = typeof panel.id === "string" && panel.id.trim() ? panel.id.trim() : `panel_${index + 1}`;
-    if (usedIds.has(id)) {
-      id = `${id}_${index + 1}`;
-    }
-    usedIds.add(id);
-    const ratio = parseRatio(panel.ratio, 1);
-    const label = typeof panel.label === "string" && panel.label.trim() ? panel.label.trim() : undefined;
-    const colSpan = clampSpan(panel.col_span ?? panel.colSpan);
-    const rowSpan = clampSpan(panel.row_span ?? panel.rowSpan);
-    result.push({
-      id,
-      src,
-      ratio,
-      label,
-      image: panel.image,
-      params: panel.params,
-      url: panel.url,
-      colSpan,
-      rowSpan,
-    });
-  });
-  return result.length ? result : [...fallbackPanels];
-};
-
-const sanitizeIframeConfig = (config, fallback) => {
-  const base = fallback || { layout: "grid", gap: 0, columns: 2, panels: [] };
-  if (!config || typeof config !== "object") {
-    return { ...base, panels: [...(base.panels || [])] };
-  }
-  const layout = normalizeIframeLayout(config.layout, base.layout);
-  const gap = clampInt(config.gap, base.gap, { min: 0 });
-  const columns = clampInt(config.columns, base.columns, { min: 1 });
-  const panels = sanitizeIframePanels(config.panels, base.panels || []);
-  return { layout, gap, columns, panels };
-};
-
-const buildQueryFromIframeConfig = (config) => {
-  if (!config || typeof config !== "object") return null;
-  const panels = Array.isArray(config.panels) ? config.panels : [];
-  if (!panels.length) return null;
-  const keys = panels.map((_, index) => `p${index + 1}`);
-  const entries = [];
-  entries.push(["iframe_panels", keys.join(",")]);
-  entries.push(["iframe_layout", config.layout]);
-  entries.push(["iframe_gap", String(config.gap ?? 0)]);
-  entries.push(["iframe_columns", String(config.columns ?? 2)]);
-  panels.forEach((panel, index) => {
-    const key = keys[index];
-    if (!panel || typeof panel !== "object") return;
-    if (panel.src) {
-      entries.push([`iframe_${key}`, panel.src]);
-    }
-    if (panel.label) {
-      entries.push([`iframe_${key}_label`, panel.label]);
-    }
-    if (panel.ratio && panel.ratio !== 1) {
-      entries.push([`iframe_${key}_ratio`, String(panel.ratio)]);
-    }
-  });
-  return entries;
+const IFRAME_DEFAULT_CONFIG = {
+  layout: "grid",
+  gap: 12,
+  columns: 2,
+  panels: [
+    {
+      id: "left",
+      src: "/?img=offspring_20250929_114732_835.png",
+      ratio: 1,
+    },
+    {
+      id: "right",
+      src: "/?img=offspring_20250929_112621_888.png&slide_mode=true",
+      ratio: 1,
+    },
+    {
+      id: "third",
+      src: "/?img=offspring_20250927_141336_787.png&incubator=true",
+      ratio: 1,
+    },
+    {
+      id: "fourth",
+      src: "/?img=offspring_20251001_181913_443.png&organic_mode=true",
+      ratio: 1,
+    },
+  ],
 };
 
 export default function App() {
@@ -190,23 +60,8 @@ export default function App() {
   const [selectedPresetName, setSelectedPresetName] = useState("");
   const [pendingPreset, setPendingPreset] = useState(null);
   const [presetMessage, setPresetMessage] = useState(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [screenshotMessage, setScreenshotMessage] = useState(null);
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
-  const [subtitle, setSubtitle] = useState(null);
-  const [caption, setCaption] = useState(null);
   const messageTimerRef = useRef(null);
-  const screenshotTimerRef = useRef(null);
-  const subtitleTimerRef = useRef(null);
-  const captionTimerRef = useRef(null);
-  const captureFnRef = useRef(null);
-  const requestQueueRef = useRef([]);
-  const pendingRequestIdsRef = useRef(new Set());
-  const isProcessingRef = useRef(false);
-  const isCapturingRef = useRef(false);
-  const queueTimerRef = useRef(null);
-  const wsRef = useRef(null);
-  const isMountedRef = useRef(true);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const soundPlayerEnabled = (readParams().get("sound_player") ?? "false") === "true";
   const iframeMode = !incubatorMode && (readParams().get("iframe_mode") ?? "false") === "true";
@@ -230,259 +85,27 @@ export default function App() {
     return "default";
   }, []);
 
-  const iframeDefaultConfig = useMemo(
-    () => ({
-      layout: "grid",
-      gap: 12,
-      columns: 2,
-      panels: [
-        {
-          id: "left",
-          src: "/?img=offspring_20250929_114732_835.png",
-          ratio: 1,
-        },
-        {
-          id: "right",
-          src: "/?img=offspring_20250929_112621_888.png&slide_mode=true",
-          ratio: 1,
-        },
-        {
-          id: "third",
-          src: "/?img=offspring_20250927_141336_787.png&incubator=true",
-          ratio: 1,
-        },
-        {
-          id: "fourth",
-          src: "/?img=offspring_20251001_181913_443.png&organic_mode=true",
-          ratio: 1,
-        },
-      ],
-    }),
-    [],
-  );
+  const { subtitle, caption, applySubtitle, applyCaption } = useSubtitleCaption(clientId);
 
-  const initialIframeConfigFromParams = useMemo(
-    () => sanitizeIframeConfig(parseIframeConfigFromParams(initialParams), iframeDefaultConfig),
-    [initialParams, iframeDefaultConfig],
-  );
-  const [localIframeConfig, setLocalIframeConfig] = useState(initialIframeConfigFromParams);
-  const [serverIframeConfig, setServerIframeConfig] = useState(null);
-  const [iframeConfigError, setIframeConfigError] = useState(null);
+  const {
+    screenshotMessage,
+    handleCaptureReady,
+    enqueueScreenshotRequest,
+    markRequestDone,
+  } = useScreenshotManager(clientId);
 
-  const updateQueryWithIframeConfig = useCallback((config) => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    const params = url.searchParams;
+  const {
+    activeConfig: iframeActiveConfig,
+    controlsEnabled: iframeControlsEnabled,
+    handleLocalApply: handleLocalIframeConfigApply,
+    applyRemoteConfig: applyRemoteIframeConfig,
+  } = useIframeConfig({
+    initialParams,
+    iframeMode,
+    clientId,
+    defaultConfig: IFRAME_DEFAULT_CONFIG,
+  });
 
-    // Always clean noisy iframe_* keys except the mode toggle itself when compact mode is on
-    if (!PERSIST_IFRAME_QUERY) {
-      const keysToDelete = [];
-      params.forEach((_, key) => {
-        if (key.startsWith("iframe_") && key !== "iframe_mode") {
-          keysToDelete.push(key);
-        }
-      });
-      keysToDelete.forEach((key) => params.delete(key));
-      window.history.replaceState(null, "", `${url.pathname}?${params.toString()}`);
-      return;
-    }
-
-    if (!config) return;
-    const reserved = new Set(["iframe_mode", "iframe_layout", "iframe_gap", "iframe_columns"]);
-    const keysToDelete = [];
-    params.forEach((_, key) => {
-      if (key.startsWith("iframe_") && !reserved.has(key)) {
-        keysToDelete.push(key);
-      }
-    });
-    keysToDelete.forEach((key) => params.delete(key));
-
-    const entries = buildQueryFromIframeConfig(config);
-    if (entries) {
-      entries.forEach(([key, value]) => {
-        params.set(key, value);
-      });
-    } else {
-      params.delete("iframe_panels");
-    }
-
-    window.history.replaceState(null, "", `${url.pathname}?${params.toString()}`);
-  }, []);
-
-  const handleLocalIframeConfigApply = useCallback(
-    (nextConfig) => {
-      const sanitized = sanitizeIframeConfig(nextConfig, iframeDefaultConfig);
-      setLocalIframeConfig(sanitized);
-      updateQueryWithIframeConfig(sanitized);
-    },
-    [iframeDefaultConfig, updateQueryWithIframeConfig],
-  );
-
-  const clearSubtitleTimer = useCallback(() => {
-    if (subtitleTimerRef.current) {
-      clearTimeout(subtitleTimerRef.current);
-      subtitleTimerRef.current = null;
-    }
-  }, []);
-
-  const applySubtitle = useCallback(
-    (payload) => {
-      clearSubtitleTimer();
-      if (!payload || typeof payload !== "object") {
-        setSubtitle(null);
-        return;
-      }
-      const textValue = "text" in payload ? String(payload.text ?? "") : "";
-      if (!textValue.trim()) {
-        setSubtitle(null);
-        return;
-      }
-      const normalized = {
-        text: textValue,
-        language:
-          typeof payload.language === "string" && payload.language.trim() ? payload.language.trim() : null,
-        durationSeconds:
-          typeof payload.duration_seconds === "number" &&
-          Number.isFinite(payload.duration_seconds) &&
-          payload.duration_seconds > 0
-            ? payload.duration_seconds
-            : null,
-        expiresAt: typeof payload.expires_at === "string" ? payload.expires_at : null,
-        updatedAt: typeof payload.updated_at === "string" ? payload.updated_at : null,
-      };
-      setSubtitle(normalized);
-      let delayMs = null;
-      if (normalized.expiresAt) {
-        const expiresTs = Date.parse(normalized.expiresAt);
-        if (!Number.isNaN(expiresTs)) {
-          delayMs = Math.max(0, expiresTs - Date.now());
-        }
-      }
-      if (delayMs === null && typeof normalized.durationSeconds === "number") {
-        delayMs = normalized.durationSeconds * 1000;
-      }
-      if (delayMs !== null) {
-        const expectedUpdatedAt = normalized.updatedAt;
-        subtitleTimerRef.current = setTimeout(() => {
-          setSubtitle((current) => {
-            if (!current) return current;
-            if (expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt) {
-              return current;
-            }
-            return null;
-          });
-          subtitleTimerRef.current = null;
-        }, delayMs);
-      }
-    },
-    [clearSubtitleTimer],
-  );
-
-  const clearCaptionTimer = useCallback(() => {
-    if (captionTimerRef.current) {
-      clearTimeout(captionTimerRef.current);
-      captionTimerRef.current = null;
-    }
-  }, []);
-
-  const applyCaption = useCallback(
-    (payload) => {
-      clearCaptionTimer();
-      if (!payload || typeof payload !== "object") {
-        setCaption(null);
-        return;
-      }
-      const textValue = "text" in payload ? String(payload.text ?? "") : "";
-      if (!textValue.trim()) {
-        setCaption(null);
-        return;
-      }
-      const normalized = {
-        text: textValue,
-        language:
-          typeof payload.language === "string" && payload.language.trim() ? payload.language.trim() : null,
-        durationSeconds:
-          typeof payload.duration_seconds === "number" &&
-          Number.isFinite(payload.duration_seconds) &&
-          payload.duration_seconds > 0
-            ? payload.duration_seconds
-            : null,
-        expiresAt: typeof payload.expires_at === "string" ? payload.expires_at : null,
-        updatedAt: typeof payload.updated_at === "string" ? payload.updated_at : null,
-      };
-      setCaption(normalized);
-      let delayMs = null;
-      if (normalized.expiresAt) {
-        const expiresTs = Date.parse(normalized.expiresAt);
-        if (!Number.isNaN(expiresTs)) {
-          delayMs = Math.max(0, expiresTs - Date.now());
-        }
-      }
-      if (delayMs === null && typeof normalized.durationSeconds === "number") {
-        delayMs = normalized.durationSeconds * 1000;
-      }
-      if (delayMs !== null) {
-        const expectedUpdatedAt = normalized.updatedAt;
-        captionTimerRef.current = setTimeout(() => {
-          setCaption((current) => {
-            if (!current) return current;
-            if (expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt) {
-              return current;
-            }
-            return null;
-          });
-          captionTimerRef.current = null;
-        }, delayMs);
-      }
-    },
-    [clearCaptionTimer],
-  );
-
-  useEffect(() => {
-    if (!iframeMode) {
-      setServerIframeConfig(null);
-      setIframeConfigError(null);
-    }
-  }, [iframeMode]);
-
-  useEffect(() => {
-    if (!iframeMode) return undefined;
-
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const loadConfig = async () => {
-      try {
-        let endpoint = "/api/iframe-config";
-        if (clientId) {
-          const qs = new URLSearchParams({ client: clientId });
-          endpoint = `${endpoint}?${qs.toString()}`;
-        }
-        const response = await fetch(endpoint, { signal: controller.signal });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const json = await response.json();
-        if (cancelled) return;
-        const sanitized = sanitizeIframeConfig(json, iframeDefaultConfig);
-        setServerIframeConfig(sanitized);
-        setIframeConfigError(null);
-        updateQueryWithIframeConfig(sanitized);
-      } catch (error) {
-        if (cancelled) return;
-        console.error("取得 iframe 配置失敗", error);
-        setIframeConfigError(error.message || String(error));
-        setServerIframeConfig(null);
-      }
-    };
-
-    loadConfig();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [iframeMode, iframeDefaultConfig, updateQueryWithIframeConfig, clientId]);
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -491,10 +114,6 @@ export default function App() {
   const handleCameraUpdate = useCallback((info) => {
     setCameraInfo(info);
   }, []);
-
-  useEffect(() => {
-    isCapturingRef.current = isCapturing;
-  }, [isCapturing]);
 
   useEffect(() => {
     fetchCameraPresets()
@@ -509,32 +128,6 @@ export default function App() {
       })
       .catch(() => setCameraPresets([]));
   }, []);
-
-  useEffect(() => {
-    let active = true;
-    fetchSubtitleState(clientId)
-      .then(({ subtitle: initialSubtitle }) => {
-        if (!active) return;
-        applySubtitle(initialSubtitle ?? null);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [applySubtitle, clientId]);
-
-  useEffect(() => {
-    let active = true;
-    fetchCaptionState(clientId)
-      .then(({ caption: initialCaption }) => {
-        if (!active) return;
-        applyCaption(initialCaption ?? null);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [applyCaption, clientId]);
 
   const upsertPresetInState = useCallback((preset) => {
     setCameraPresets((prev) => {
@@ -569,22 +162,6 @@ export default function App() {
       if (messageTimerRef.current) {
         clearTimeout(messageTimerRef.current);
       }
-      if (screenshotTimerRef.current) {
-        clearTimeout(screenshotTimerRef.current);
-      }
-      if (subtitleTimerRef.current) {
-        clearTimeout(subtitleTimerRef.current);
-        subtitleTimerRef.current = null;
-      }
-      if (queueTimerRef.current) {
-        clearTimeout(queueTimerRef.current);
-        queueTimerRef.current = null;
-      }
-      if (captionTimerRef.current) {
-        clearTimeout(captionTimerRef.current);
-        captionTimerRef.current = null;
-      }
-      isMountedRef.current = false;
     };
   }, []);
 
@@ -720,292 +297,73 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const pushScreenshotMessage = useCallback((text, ttl = 2500) => {
-    setScreenshotMessage(text);
-    if (screenshotTimerRef.current) {
-      clearTimeout(screenshotTimerRef.current);
-    }
-    screenshotTimerRef.current = setTimeout(() => {
-      setScreenshotMessage(null);
-      screenshotTimerRef.current = null;
-    }, ttl);
-  }, []);
-
-  const runCaptureInternal = useCallback(
-    async (requestId = null, isAuto = false) => {
-      const captureFn = captureFnRef.current;
-      if (!captureFn) {
-        throw new Error("場景尚未準備好");
-      }
-      const blob = await captureFn();
-      const result = await uploadScreenshot(blob, requestId, clientId);
-      const label =
-        result?.relative_path || result?.filename || (requestId ? `request ${requestId}` : "已上傳");
-      const prefix = isAuto ? "自動截圖完成" : "截圖完成";
-      pushScreenshotMessage(`${prefix}：${label}`);
-      return result;
-    },
-    [pushScreenshotMessage, clientId]
-  );
-
-  useEffect(() => {
-    const captureScene = async () => {
-      const captureFn = captureFnRef.current;
-      if (!captureFn) {
-        throw new Error("場景尚未準備好");
-      }
-      return captureFn();
-    };
-    window.__APP_CAPTURE_SCENE = captureScene;
-    return () => {
-      if (window.__APP_CAPTURE_SCENE === captureScene) {
-        delete window.__APP_CAPTURE_SCENE;
-      }
-    };
-  }, []);
-
-  const processQueue = useCallback(() => {
-    if (!isMountedRef.current) return;
-    if (isProcessingRef.current) return;
-
-    const next = requestQueueRef.current.shift();
-    if (!next) return;
-
-    if (isCapturingRef.current) {
-      requestQueueRef.current.unshift(next);
-      if (!queueTimerRef.current) {
-        queueTimerRef.current = setTimeout(() => {
-          queueTimerRef.current = null;
-          processQueue();
-        }, 400);
-      }
-      return;
-    }
-
-    isProcessingRef.current = true;
-    if (queueTimerRef.current) {
-      clearTimeout(queueTimerRef.current);
-      queueTimerRef.current = null;
-    }
-    isCapturingRef.current = true;
-    if (isMountedRef.current) {
-      setIsCapturing(true);
-    }
-
-    const request = next;
-    (async () => {
-      try {
-        await runCaptureInternal(request.request_id, true);
-      } catch (err) {
-        const message = err?.message || String(err);
-        pushScreenshotMessage(`自動截圖失敗：${message}`);
-        if (request.request_id) {
-          try {
-            await reportScreenshotFailure(request.request_id, message, clientId);
-          } catch (reportErr) {
-            console.error("回報截圖失敗錯誤", reportErr);
-          }
-        }
-      } finally {
-        pendingRequestIdsRef.current.delete(request.request_id);
-        isCapturingRef.current = false;
-        if (isMountedRef.current) {
-          setIsCapturing(false);
-        }
-        isProcessingRef.current = false;
-        if (isMountedRef.current) {
-          processQueue();
-        }
-      }
-    })();
-  }, [reportScreenshotFailure, runCaptureInternal, pushScreenshotMessage, clientId]);
-
-  const enqueueScreenshotRequest = useCallback(
+  const handleScreenshotLifecycle = useCallback(
     (payload) => {
-      if (!payload || !payload.request_id) return;
-      const targetClientId = payload?.target_client_id ?? payload?.metadata?.client_id ?? null;
-      if (targetClientId && targetClientId !== clientId) {
-        return;
-      }
-      
-      // 只有在確認外面真的是 iframe-mode 主控頁時才跳過截圖請求
-      // 其他正常嵌入的情況（如 OBS overlay、其他控制頁）應該照樣服務截圖
-      if (window.self !== window.top) {
-        try {
-          // 嘗試檢查父頁面是否為 iframe-mode
-          // 只有在同源的情況下才能安全訪問 parent.location
-          const parentUrl = window.parent.location.href;
-          const parentParams = new URL(parentUrl).searchParams;
-          const parentIframeMode = parentParams.get("iframe_mode") === "true";
-          
-          // 如果父頁面是 iframe-mode，則跳過（由主控頁統一處理）
-          if (parentIframeMode) {
-            return;
-          }
-          // 否則繼續處理（正常嵌入的情況）
-        } catch (err) {
-          // 跨域情況：無法訪問 parent.location
-          // 假設不是 iframe-mode 主控頁，允許處理截圖
-          // 這樣合法嵌入到其他頁面的客戶可以正常使用
-        }
-      }
-      
-      const id = payload.request_id;
-      if (pendingRequestIdsRef.current.has(id)) return;
-      pendingRequestIdsRef.current.add(id);
-      requestQueueRef.current.push(payload);
-      const label = payload?.metadata?.label || payload?.metadata?.source || id;
-      pushScreenshotMessage(`收到截圖請求：${label}`);
-      processQueue();
-    },
-    [processQueue, pushScreenshotMessage, clientId]
-  );
-
-  const handleCaptureReady = useCallback(
-    (fn) => {
-      captureFnRef.current = fn;
-      if (fn) {
-        processQueue();
+      if (payload?.request_id) {
+        markRequestDone(payload.request_id);
       }
     },
-    [processQueue]
+    [markRequestDone],
   );
 
-  useEffect(() => {
-    let active = true;
-    let retryTimer = null;
+  const handleSoundPlayMessage = useCallback((payload) => {
+    if (!payload?.filename) return;
+    setSoundPlayRequest({ filename: payload.filename, url: payload.url });
+  }, []);
 
-    function cleanupSocket() {
-      const existing = wsRef.current;
-      if (existing) {
-        try {
-          existing.close();
-        } catch (err) {
-          // ignore close error
-        }
-      }
-      wsRef.current = null;
-    }
-
-    function scheduleReconnect() {
-      if (!active || retryTimer) return;
-      retryTimer = setTimeout(() => {
-        retryTimer = null;
-        connect();
-      }, 2000);
-    }
-
-    function connect() {
-      if (!active) return;
-      let base = import.meta.env.VITE_API_BASE;
-      if (!base) {
-        base = window.location.origin;
-      }
-      base = base.replace(/\/$/, "");
-      const wsUrl = `${base.replace(/^http/, "ws")}/ws/screenshots`;
-
-      let socket;
-      try {
-        socket = new WebSocket(wsUrl);
-      } catch (err) {
-        console.error("WebSocket 連線失敗", err);
-        scheduleReconnect();
+  const handleSubtitleMessage = useCallback(
+    (payload) => {
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
         return;
       }
+      applySubtitle(payload?.subtitle ?? null);
+    },
+    [clientId, applySubtitle],
+  );
 
-      wsRef.current = socket;
-
-      socket.onopen = () => {
-        if (!active) return;
-        const hello = {
-          type: "hello",
-          client_id: clientId,
-        };
-        try {
-          socket.send(JSON.stringify(hello));
-        } catch (err) {
-          console.error("WebSocket hello 發送失敗", err);
-        }
-      };
-
-      socket.onmessage = (event) => {
-        if (!active) return;
-        let payload;
-        try {
-          payload = JSON.parse(event.data);
-        } catch (err) {
-          return;
-        }
-
-        if (payload?.type === "screenshot_request") {
-          enqueueScreenshotRequest(payload);
-        } else if (payload?.type === "screenshot_completed" || payload?.type === "screenshot_failed") {
-          if (payload?.request_id) {
-            pendingRequestIdsRef.current.delete(payload.request_id);
-          }
-        } else if (payload?.type === "sound_play") {
-          if (payload?.filename) {
-            setSoundPlayRequest({ filename: payload.filename, url: payload.url });
-          }
-        } else if (payload?.type === "subtitle_update") {
-          const targetId = payload?.target_client_id;
-          if (targetId && targetId !== clientId) {
-            return;
-          }
-          applySubtitle(payload?.subtitle ?? null);
-        } else if (payload?.type === "caption_update") {
-          const targetId = payload?.target_client_id;
-          if (targetId && targetId !== clientId) {
-            return;
-          }
-          applyCaption(payload?.caption ?? null);
-        } else if (payload?.type === "iframe_config" && payload?.config) {
-          const targetId = payload?.target_client_id;
-          if (targetId && targetId !== clientId) {
-            return;
-          }
-          const sanitized = sanitizeIframeConfig(payload.config, iframeDefaultConfig);
-          setServerIframeConfig(sanitized);
-          setIframeConfigError(null);
-          updateQueryWithIframeConfig(sanitized);
-        }
-      };
-
-      socket.onclose = () => {
-        if (!active) return;
-        if (wsRef.current === socket) {
-          wsRef.current = null;
-        }
-        scheduleReconnect();
-      };
-
-      socket.onerror = () => {
-        socket.close();
-      };
-    }
-
-    connect();
-
-    return () => {
-      active = false;
-      if (retryTimer) {
-        clearTimeout(retryTimer);
+  const handleCaptionMessage = useCallback(
+    (payload) => {
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
       }
-      cleanupSocket();
-    };
-  }, [enqueueScreenshotRequest, clientId, iframeDefaultConfig, updateQueryWithIframeConfig, applySubtitle, applyCaption]);
+      applyCaption(payload?.caption ?? null);
+    },
+    [clientId, applyCaption],
+  );
+
+  const handleIframeConfigMessage = useCallback(
+    (payload) => {
+      if (!payload?.config) return;
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      applyRemoteIframeConfig(payload.config);
+    },
+    [clientId, applyRemoteIframeConfig],
+  );
+
+  useControlSocket({
+    clientId,
+    onScreenshotRequest: enqueueScreenshotRequest,
+    onScreenshotLifecycle: handleScreenshotLifecycle,
+    onSoundPlay: handleSoundPlayMessage,
+    onSubtitleUpdate: handleSubtitleMessage,
+    onCaptionUpdate: handleCaptionMessage,
+    onIframeConfig: handleIframeConfigMessage,
+  });
 
   const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
 
   if (iframeMode) {
-    const activeConfig = serverIframeConfig || localIframeConfig || iframeDefaultConfig;
-    const controlsEnabled = !serverIframeConfig;
     return (
       <>
         <IframeMode
-          config={activeConfig}
-          controlsEnabled={controlsEnabled}
-          onApplyConfig={controlsEnabled ? handleLocalIframeConfigApply : undefined}
+          config={iframeActiveConfig}
+          controlsEnabled={iframeControlsEnabled}
+          onApplyConfig={iframeControlsEnabled ? handleLocalIframeConfigApply : undefined}
           onCaptureReady={handleCaptureReady}
         />
         {soundPlayerEnabled && (
