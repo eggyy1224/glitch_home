@@ -9,6 +9,14 @@ const DEFAULT_COLS = 3;
 const MAX_IMAGES = 9;
 const MAX_ROWS = 6;
 const MAX_COLS = 6;
+const DEFAULT_STAGE_WIDTH = 960;
+const STAGE_MIN_WIDTH = 360;
+const STAGE_MAX_WIDTH = 3840;
+const STAGE_MIN_HEIGHT = 240;
+const STAGE_MAX_HEIGHT = 2160;
+const DEFAULT_STAGE_HEIGHT = 540;
+const RATIO_MIN = STAGE_MIN_HEIGHT / STAGE_MAX_WIDTH;
+const RATIO_MAX = STAGE_MAX_HEIGHT / STAGE_MIN_WIDTH;
 
 const cleanId = (value) => (value ? value.replace(/:(en|zh)$/, "") : value);
 
@@ -111,6 +119,51 @@ const buildImageUrl = (base, imageId) => {
   if (!imageId) return "";
   if (!base) return imageId;
   return base.endsWith("/") ? `${base}${imageId}` : `${base}/${imageId}`;
+};
+
+const computeStageWidthBounds = (ratio) => {
+  if (!Number.isFinite(ratio) || ratio <= 0) {
+    return { min: STAGE_MIN_WIDTH, max: STAGE_MAX_WIDTH };
+  }
+  const minWidthCandidate = STAGE_MIN_HEIGHT / ratio;
+  const maxWidthCandidate = STAGE_MAX_HEIGHT / ratio;
+  let minWidth = Math.max(STAGE_MIN_WIDTH, Math.min(minWidthCandidate, STAGE_MAX_WIDTH));
+  let maxWidth = Math.min(STAGE_MAX_WIDTH, Math.max(maxWidthCandidate, STAGE_MIN_WIDTH));
+  if (minWidth > maxWidth) {
+    const fallback = clamp((minWidth + maxWidthCandidate) / 2, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH);
+    minWidth = fallback;
+    maxWidth = fallback;
+  }
+  return { min: minWidth, max: maxWidth };
+};
+
+const computeBoardLayout = (count, targetRatio) => {
+  if (!count || count <= 0) {
+    return { rows: 1, cols: 1 };
+  }
+  const ratio = clamp(Number.isFinite(targetRatio) && targetRatio > 0 ? targetRatio : 1, RATIO_MIN, RATIO_MAX);
+  const maxRows = Math.min(count, 64);
+  let bestRows = 1;
+  let bestCols = count;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (let rowsCandidate = 1; rowsCandidate <= maxRows; rowsCandidate += 1) {
+    const colsCandidate = Math.ceil(count / rowsCandidate);
+    if (colsCandidate <= 0) continue;
+    const candidateRatio = rowsCandidate / colsCandidate;
+    const ratioScore = Math.abs(Math.log(candidateRatio) - Math.log(ratio));
+    const extraSlots = rowsCandidate * colsCandidate - count;
+    const extraPenalty = extraSlots > 0 ? extraSlots / count : 0;
+    const balancePenalty = Math.abs(rowsCandidate - colsCandidate) / count;
+    const score = ratioScore + extraPenalty * 0.05 + balancePenalty * 0.001;
+    if (score < bestScore) {
+      bestScore = score;
+      bestRows = rowsCandidate;
+      bestCols = colsCandidate;
+    }
+  }
+
+  return { rows: Math.max(1, bestRows), cols: Math.max(1, bestCols) };
 };
 
 const shuffleWithRng = (array, rng) => {
@@ -354,6 +407,15 @@ const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
 
 export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = null }) {
   const rootRef = useRef(null);
+  const resizeHandleRef = useRef(null);
+  const initialStageWidth = readInitialParam("collage_width", DEFAULT_STAGE_WIDTH, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH);
+  const initialStageHeight = readInitialParam(
+    "collage_height",
+    DEFAULT_STAGE_HEIGHT,
+    STAGE_MIN_HEIGHT,
+    STAGE_MAX_HEIGHT,
+  );
+  const initialDesiredRatio = clamp(initialStageHeight / Math.max(initialStageWidth, 1), RATIO_MIN, RATIO_MAX);
   const [imagePool, setImagePool] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -366,6 +428,8 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const [mixPieces, setMixPieces] = useState(() => readInitialBooleanParam("collage_mix", false));
   const [edgeLookup, setEdgeLookup] = useState(() => new Map());
   const [edgeStatus, setEdgeStatus] = useState("idle");
+  const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
+  const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
 
   const syncQueryParam = useCallback((key, value, { removeWhenDefault = false, defaultValue = null } = {}) => {
     if (typeof window === "undefined") return;
@@ -498,16 +562,30 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const totalPieces = pieces.length;
 
   const mixBoard = useMemo(() => {
-    if (!mixPieces) {
+    if (!mixPieces || !totalPieces) {
       return { rows, cols };
     }
-    if (!totalPieces) {
-      return { rows, cols };
-    }
-    const mixRows = Math.max(1, rows);
-    const mixCols = Math.max(Math.max(1, cols), Math.ceil(totalPieces / mixRows));
-    return { rows: mixRows, cols: mixCols };
-  }, [mixPieces, totalPieces, rows, cols]);
+    return computeBoardLayout(totalPieces, desiredRatio);
+  }, [mixPieces, totalPieces, desiredRatio, rows, cols]);
+
+  const boardRatio = useMemo(() => {
+    if (!mixBoard?.cols) return DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH;
+    return mixBoard.rows / mixBoard.cols || DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH;
+  }, [mixBoard.rows, mixBoard.cols]);
+
+  const stageWidthBounds = useMemo(() => computeStageWidthBounds(boardRatio), [boardRatio]);
+
+  useEffect(() => {
+    setStageWidth((prev) => {
+      const clamped = clamp(prev, stageWidthBounds.min, stageWidthBounds.max);
+      if (Math.abs(clamped - prev) < 0.5) {
+        return prev;
+      }
+      return clamped;
+    });
+  }, [stageWidthBounds]);
+
+  const stageHeight = useMemo(() => stageWidth * boardRatio, [stageWidth, boardRatio]);
 
   const piecesByImage = useMemo(() => {
     const map = new Map();
@@ -536,6 +614,14 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   useEffect(() => {
     syncQueryParam("collage_mix", mixPieces ? "true" : "false", { removeWhenDefault: true, defaultValue: "false" });
   }, [mixPieces, syncQueryParam]);
+
+  useEffect(() => {
+    syncQueryParam("collage_width", Math.round(stageWidth));
+  }, [stageWidth, syncQueryParam]);
+
+  useEffect(() => {
+    syncQueryParam("collage_height", Math.round(stageHeight));
+  }, [stageHeight, syncQueryParam]);
 
   useEffect(() => {
     if (!mixPieces) {
@@ -603,6 +689,40 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
 
   const handleShuffle = () => {
     setSeed(Date.now());
+  };
+
+  const latestBoundsRef = useRef(stageWidthBounds);
+  useEffect(() => {
+    latestBoundsRef.current = stageWidthBounds;
+  }, [stageWidthBounds]);
+
+  const handleResizePointerDown = (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const bounds = latestBoundsRef.current;
+    const startWidth = stageWidth;
+    const startHeight = stageHeight;
+
+    const onPointerMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      const currentBounds = latestBoundsRef.current || bounds;
+      const nextWidth = clamp(startWidth + deltaX, currentBounds.min, currentBounds.max);
+      const rawHeight = clamp(startHeight + deltaY, STAGE_MIN_HEIGHT, STAGE_MAX_HEIGHT);
+      setStageWidth(nextWidth);
+      const nextRatio = clamp(rawHeight / Math.max(nextWidth, 1), RATIO_MIN, RATIO_MAX);
+      setDesiredRatio(nextRatio);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp, { once: true });
   };
 
   const stageClassName = mixPieces ? "collage-stage collage-stage--mixed" : "collage-stage";
@@ -699,6 +819,11 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
               邊緣配對：{edgesReady && edgeStatus === "ready" ? "已啟用" : edgeStatus === "loading" ? "分析中" : "隨機"}
             </span>
           )}
+          {mixPieces && (
+            <span>
+              畫布尺寸：{Math.round(stageWidth)} × {Math.round(stageHeight)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -716,7 +841,10 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
           <>
             <div
               className="collage-mix-surface"
-              style={{ aspectRatio: `${mixBoard.cols} / ${mixBoard.rows}` }}
+              style={{
+                width: `${stageWidth}px`,
+                height: `${stageHeight}px`,
+              }}
             >
               {mixedPieces.map((piece) => {
                 const widthPercent = 100 / mixBoard.cols;
@@ -743,6 +871,12 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
 
                 return <div key={piece.key} className="collage-piece collage-piece--mixed" style={style} />;
               })}
+              <div
+                ref={resizeHandleRef}
+                className="collage-resize-handle"
+                onPointerDown={handleResizePointerDown}
+                role="presentation"
+              />
             </div>
           </>
         )}
