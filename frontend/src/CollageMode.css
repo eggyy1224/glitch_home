@@ -16,6 +16,18 @@
   margin-bottom: 24px;
 }
 
+.collage-panel-hint {
+  align-self: flex-start;
+  margin-bottom: 24px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: rgba(12, 16, 30, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
 .collage-controls {
   display: flex;
   flex-wrap: wrap;

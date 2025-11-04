@@ -6,9 +6,9 @@ import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
 const DEFAULT_IMAGE_COUNT = 4;
 const DEFAULT_ROWS = 3;
 const DEFAULT_COLS = 3;
-const MAX_IMAGES = 9;
-const MAX_ROWS = 6;
-const MAX_COLS = 6;
+const MAX_IMAGES = 30;
+const MAX_ROWS = 12;
+const MAX_COLS = 12;
 const DEFAULT_STAGE_WIDTH = 960;
 const STAGE_MIN_WIDTH = 360;
 const STAGE_MAX_WIDTH = 3840;
@@ -192,6 +192,7 @@ const loadImageElement = (url) =>
   new Promise((resolve, reject) => {
     const img = new Image();
     img.decoding = "async";
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`無法載入圖像 ${url}`));
     img.src = url;
@@ -430,6 +431,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const [edgeStatus, setEdgeStatus] = useState("idle");
   const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   const syncQueryParam = useCallback((key, value, { removeWhenDefault = false, defaultValue = null } = {}) => {
     if (typeof window === "undefined") return;
@@ -526,6 +528,60 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     return Math.min(MAX_IMAGES, imagePool.length);
   }, [imagePool]);
 
+  const selectedImages = useMemo(() => {
+    if (!imagePool.length) return [];
+    const limit = Math.min(imageCount, imagePool.length);
+    return imagePool.slice(0, limit);
+  }, [imagePool, imageCount]);
+
+  const pieces = useMemo(() => buildPieces(selectedImages, rows, cols, seed), [selectedImages, rows, cols, seed]);
+  const totalPieces = pieces.length;
+
+  const mixBoard = useMemo(() => {
+    if (!mixPieces || !totalPieces) {
+      return { rows, cols };
+    }
+    return computeBoardLayout(totalPieces, desiredRatio);
+  }, [mixPieces, totalPieces, desiredRatio, rows, cols]);
+
+  const boardRatio = useMemo(() => {
+    if (!mixBoard?.cols) return DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH;
+    return mixBoard.rows / mixBoard.cols || DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH;
+  }, [mixBoard.rows, mixBoard.cols]);
+
+  const stageWidthBounds = useMemo(() => computeStageWidthBounds(boardRatio), [boardRatio]);
+  const mixSurfaceAspectRatio = useMemo(() => {
+    if (!Number.isFinite(boardRatio) || boardRatio <= 0) {
+      return DEFAULT_STAGE_WIDTH / DEFAULT_STAGE_HEIGHT;
+    }
+    return 1 / boardRatio;
+  }, [boardRatio]);
+  const stageHeight = useMemo(() => stageWidth * boardRatio, [stageWidth, boardRatio]);
+
+  const piecesByImage = useMemo(() => {
+    const map = new Map();
+    pieces.forEach((piece) => {
+      if (!map.has(piece.imageId)) {
+        map.set(piece.imageId, []);
+      }
+      map.get(piece.imageId).push(piece);
+    });
+    return map;
+  }, [pieces]);
+
+  const edgesReady = useMemo(
+    () => pieces.every((piece) => edgeLookup.has(edgeKeyForPiece(piece))),
+    [pieces, edgeLookup],
+  );
+
+  const mixedPieces = useMemo(() => {
+    if (!mixPieces) return [];
+    if (edgesReady) {
+      return buildEdgeAwareMixedPieces(pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup);
+    }
+    return buildRandomMixedPieces(pieces, mixBoard.rows, mixBoard.cols, seed);
+  }, [mixPieces, pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup, edgesReady]);
+
   useEffect(() => {
     let changed = false;
     setImageCount((prev) => {
@@ -552,29 +608,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     syncQueryParam("collage_cols", cols);
   }, [cols, syncQueryParam]);
 
-  const selectedImages = useMemo(() => {
-    if (!imagePool.length) return [];
-    const limit = Math.min(imageCount, imagePool.length);
-    return imagePool.slice(0, limit);
-  }, [imagePool, imageCount]);
-
-  const pieces = useMemo(() => buildPieces(selectedImages, rows, cols, seed), [selectedImages, rows, cols, seed]);
-  const totalPieces = pieces.length;
-
-  const mixBoard = useMemo(() => {
-    if (!mixPieces || !totalPieces) {
-      return { rows, cols };
-    }
-    return computeBoardLayout(totalPieces, desiredRatio);
-  }, [mixPieces, totalPieces, desiredRatio, rows, cols]);
-
-  const boardRatio = useMemo(() => {
-    if (!mixBoard?.cols) return DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH;
-    return mixBoard.rows / mixBoard.cols || DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH;
-  }, [mixBoard.rows, mixBoard.cols]);
-
-  const stageWidthBounds = useMemo(() => computeStageWidthBounds(boardRatio), [boardRatio]);
-
   useEffect(() => {
     setStageWidth((prev) => {
       const clamped = clamp(prev, stageWidthBounds.min, stageWidthBounds.max);
@@ -585,31 +618,18 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     });
   }, [stageWidthBounds]);
 
-  const stageHeight = useMemo(() => stageWidth * boardRatio, [stageWidth, boardRatio]);
-
-  const piecesByImage = useMemo(() => {
-    const map = new Map();
-    pieces.forEach((piece) => {
-      if (!map.has(piece.imageId)) {
-        map.set(piece.imageId, []);
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.ctrlKey && (event.key === "r" || event.key === "R")) {
+        event.preventDefault();
+        setControlsVisible((prev) => !prev);
       }
-      map.get(piece.imageId).push(piece);
-    });
-    return map;
-  }, [pieces]);
-
-  const edgesReady = useMemo(
-    () => pieces.every((piece) => edgeLookup.has(edgeKeyForPiece(piece))),
-    [pieces, edgeLookup],
-  );
-
-  const mixedPieces = useMemo(() => {
-    if (!mixPieces) return [];
-    if (edgesReady) {
-      return buildEdgeAwareMixedPieces(pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup);
-    }
-    return buildRandomMixedPieces(pieces, mixBoard.rows, mixBoard.cols, seed);
-  }, [mixPieces, pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup, edgesReady]);
+    };
+    window.addEventListener("keydown", onKeyDown, { passive: false });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     syncQueryParam("collage_mix", mixPieces ? "true" : "false", { removeWhenDefault: true, defaultValue: "false" });
@@ -729,8 +749,9 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
 
   return (
     <div className="collage-root">
-      <div className="collage-panel">
-        <div className="collage-controls">
+      {controlsVisible ? (
+        <div className="collage-panel">
+          <div className="collage-controls">
           <div className="collage-control">
             <div className="collage-control-label">圖片數量</div>
             <div className="collage-control-inputs">
@@ -825,7 +846,10 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
             </span>
           )}
         </div>
-      </div>
+        </div>
+      ) : (
+        <div className="collage-panel-hint">按 Ctrl+R 顯示控制面板</div>
+      )}
 
       <div className={stageClassName} ref={rootRef}>
         {loading && <div className="collage-status">載入圖像中...</div>}
