@@ -7,8 +7,8 @@ const DEFAULT_IMAGE_COUNT = 4;
 const DEFAULT_ROWS = 3;
 const DEFAULT_COLS = 3;
 const MAX_IMAGES = 30;
-const MAX_ROWS = 12;
-const MAX_COLS = 12;
+const MAX_ROWS = 24;
+const MAX_COLS = 24;
 const DEFAULT_STAGE_WIDTH = 960;
 const STAGE_MIN_WIDTH = 360;
 const STAGE_MAX_WIDTH = 3840;
@@ -749,7 +749,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
 
   return (
     <div className="collage-root">
-      {controlsVisible ? (
+      {controlsVisible && (
         <div className="collage-panel">
           <div className="collage-controls">
           <div className="collage-control">
@@ -847,8 +847,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
           )}
         </div>
         </div>
-      ) : (
-        <div className="collage-panel-hint">按 Ctrl+R 顯示控制面板</div>
       )}
 
       <div className={stageClassName} ref={rootRef}>
