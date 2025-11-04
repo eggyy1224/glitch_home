@@ -411,6 +411,7 @@ export default function App() {
           anchorImage={imgId}
           onSelectImage={navigateToImage}
           showInfo={showInfo}
+          onCaptureReady={handleCaptureReady}
         />
         {soundPlayerEnabled && (
           <SoundPlayer

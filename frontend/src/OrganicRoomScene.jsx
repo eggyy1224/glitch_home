@@ -262,7 +262,46 @@ function OrganicCruise({ enabled, controlsRef, faceIds, onEnterFace }) {
   return null;
 }
 
-export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImage, showInfo = false }) {
+function ScreenshotCapture({ onCaptureReady }) {
+  const { gl, scene, camera } = useThree();
+
+  useEffect(() => {
+    if (typeof onCaptureReady !== "function") {
+      return undefined;
+    }
+
+    gl.preserveDrawingBuffer = true;
+
+    const captureScreenshot = () => {
+      return new Promise((resolve, reject) => {
+        try {
+          gl.render(scene, camera);
+          gl.domElement.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error("無法產生截圖"));
+                return;
+              }
+              resolve(blob);
+            },
+            "image/png",
+          );
+        } catch (err) {
+          reject(err);
+        }
+      });
+    };
+
+    onCaptureReady(captureScreenshot);
+    return () => {
+      onCaptureReady(null);
+    };
+  }, [gl, scene, camera, onCaptureReady]);
+
+  return null;
+}
+
+export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImage, showInfo = false, onCaptureReady = null }) {
   const anchorClean = cleanId(anchorImage);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -350,7 +389,7 @@ export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImag
   return (
     <div style={styles.root}>
       <div style={styles.canvasOverlay}>
-        <Canvas camera={{ position: [0, 0, 4.6], fov: 58 }}>
+        <Canvas camera={{ position: [0, 0, 4.6], fov: 58 }} gl={{ preserveDrawingBuffer: true }}>
           <color attach="background" args={["#050509"]} />
           <ambientLight intensity={0.8} />
           <pointLight position={[0, 4, 0]} intensity={1.2} color={0x7c9bff} />
@@ -374,6 +413,7 @@ export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImag
             faceIds={faceIds}
             onEnterFace={handleEnterFace}
           />
+          {onCaptureReady && <ScreenshotCapture onCaptureReady={onCaptureReady} />}
         </Canvas>
       </div>
 
