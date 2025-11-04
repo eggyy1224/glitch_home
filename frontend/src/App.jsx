@@ -827,6 +827,29 @@ export default function App() {
       if (targetClientId && targetClientId !== clientId) {
         return;
       }
+      
+      // 只有在確認外面真的是 iframe-mode 主控頁時才跳過截圖請求
+      // 其他正常嵌入的情況（如 OBS overlay、其他控制頁）應該照樣服務截圖
+      if (window.self !== window.top) {
+        try {
+          // 嘗試檢查父頁面是否為 iframe-mode
+          // 只有在同源的情況下才能安全訪問 parent.location
+          const parentUrl = window.parent.location.href;
+          const parentParams = new URL(parentUrl).searchParams;
+          const parentIframeMode = parentParams.get("iframe_mode") === "true";
+          
+          // 如果父頁面是 iframe-mode，則跳過（由主控頁統一處理）
+          if (parentIframeMode) {
+            return;
+          }
+          // 否則繼續處理（正常嵌入的情況）
+        } catch (err) {
+          // 跨域情況：無法訪問 parent.location
+          // 假設不是 iframe-mode 主控頁，允許處理截圖
+          // 這樣合法嵌入到其他頁面的客戶可以正常使用
+        }
+      }
+      
       const id = payload.request_id;
       if (pendingRequestIdsRef.current.has(id)) return;
       pendingRequestIdsRef.current.add(id);

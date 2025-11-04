@@ -157,25 +157,54 @@ export default function IframeMode({
           throw new Error("iframe 容器尚未準備好");
         }
 
+        // 第一步：先用 html2canvas 截取整個容器（包含標籤、背景、間距等外層 DOM）
         const html2canvas = await ensureHtml2Canvas();
         if (!html2canvas) {
           throw new Error("無法載入截圖模組");
         }
 
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width || container.scrollWidth || window.innerWidth;
+        const containerHeight = containerRect.height || container.scrollHeight || window.innerHeight;
+
+        // 明確設定 scale: 1 以避免 devicePixelRatio 造成的尺寸問題
+        // 並指定精確的寬高以確保 canvas 尺寸正確
         const canvas = await html2canvas(container, {
           backgroundColor: "#000000",
           useCORS: true,
           logging: false,
-          windowWidth: container.scrollWidth || container.clientWidth || window.innerWidth,
-          windowHeight: container.scrollHeight || container.clientHeight || window.innerHeight,
+          scale: 1,
+          width: containerWidth,
+          height: containerHeight,
+          windowWidth: containerWidth,
+          windowHeight: containerHeight,
         });
 
         const ctx = canvas.getContext("2d");
-        const containerRect = container.getBoundingClientRect();
-        const scaleX = containerRect.width ? canvas.width / containerRect.width : 1;
-        const scaleY = containerRect.height ? canvas.height / containerRect.height : 1;
+        
+        // 如果 html2canvas 產生的 canvas 尺寸不對，強制重新設定
+        let finalCanvas = canvas;
+        if (canvas.width !== containerWidth || canvas.height !== containerHeight) {
+          const correctedCanvas = document.createElement("canvas");
+          correctedCanvas.width = containerWidth;
+          correctedCanvas.height = containerHeight;
+          const correctedCtx = correctedCanvas.getContext("2d");
+          
+          // 將原 canvas 的內容縮放到正確尺寸
+          correctedCtx.drawImage(canvas, 0, 0, containerWidth, containerHeight);
+          
+          // 使用調整後的 canvas
+          finalCanvas = correctedCanvas;
+        }
 
+        const finalCtx = finalCanvas.getContext("2d");
+        const scaleX = containerWidth > 0 ? finalCanvas.width / containerWidth : 1;
+        const scaleY = containerHeight > 0 ? finalCanvas.height / containerHeight : 1;
+
+        // 第二步：並行從每個 iframe 獲取高品質截圖，然後疊上去覆蓋
         const iframeEntries = Object.values(iframeRefs.current);
+        const capturePromises = [];
+
         for (const iframe of iframeEntries) {
           if (!iframe || !iframe.contentWindow) continue;
 
@@ -185,53 +214,68 @@ export default function IframeMode({
           const width = rect.width * scaleX;
           const height = rect.height * scaleY;
 
-          let drawable = null;
+          // 為每個 iframe 創建一個異步任務
+          const captureTask = (async () => {
+            let drawable = null;
 
-          try {
-            const captureScene = iframe.contentWindow.__APP_CAPTURE_SCENE;
-            if (typeof captureScene === "function") {
-              const blob = await captureScene();
-              drawable = await blobToDrawable(blob);
-            }
-          } catch (err) {
-            console.warn("無法從 iframe 捕捉 3D 畫面", err);
-          }
-
-          if (!drawable) {
+            // 優先使用 3D 場景的截圖功能
             try {
-              const innerHtml2canvas =
-                iframe.contentWindow.html2canvas ||
-                (iframe.contentWindow.window && iframe.contentWindow.window.html2canvas) ||
-                null;
-              if (innerHtml2canvas) {
-                const innerCanvas = await innerHtml2canvas(iframe.contentDocument.body, {
-                  backgroundColor: "#000000",
-                  logging: false,
-                });
-                ctx.drawImage(innerCanvas, 0, 0, innerCanvas.width, innerCanvas.height, offsetX, offsetY, width, height);
+              const captureScene = iframe.contentWindow.__APP_CAPTURE_SCENE;
+              if (typeof captureScene === "function") {
+                const blob = await captureScene();
+                drawable = await blobToDrawable(blob);
               }
             } catch (err) {
-              console.warn("iframe 備援截圖失敗", err);
+              console.warn(`無法從 iframe 捕捉 3D 畫面 (${iframe.title || "unknown"}):`, err);
             }
-            continue;
-          }
 
-          try {
-            if (drawable.kind === "bitmap") {
-              ctx.drawImage(drawable.value, offsetX, offsetY, width, height);
-              if (typeof drawable.value.close === "function") {
-                drawable.value.close();
+            // 備援方案：使用 html2canvas
+            if (!drawable) {
+              try {
+                const innerHtml2canvas =
+                  iframe.contentWindow.html2canvas ||
+                  (iframe.contentWindow.window && iframe.contentWindow.window.html2canvas) ||
+                  null;
+                if (innerHtml2canvas && iframe.contentDocument) {
+                  const innerCanvas = await innerHtml2canvas(iframe.contentDocument.body, {
+                    backgroundColor: "#000000",
+                    logging: false,
+                    useCORS: true,
+                  });
+                  if (innerCanvas) {
+                    drawable = { kind: "image", value: innerCanvas };
+                  }
+                }
+              } catch (err) {
+                console.warn(`iframe 備援截圖失敗 (${iframe.title || "unknown"}):`, err);
               }
-            } else if (drawable.kind === "image") {
-              ctx.drawImage(drawable.value, offsetX, offsetY, width, height);
             }
-          } catch (err) {
-            console.warn("繪製 iframe 截圖失敗", err);
-          }
+
+            // 將 iframe 截圖疊到主 canvas 上（覆蓋 html2canvas 產生的低品質 iframe 區域）
+            if (drawable) {
+              try {
+                if (drawable.kind === "bitmap") {
+                  finalCtx.drawImage(drawable.value, offsetX, offsetY, width, height);
+                  if (typeof drawable.value.close === "function") {
+                    drawable.value.close();
+                  }
+                } else if (drawable.kind === "image") {
+                  finalCtx.drawImage(drawable.value, offsetX, offsetY, width, height);
+                }
+              } catch (err) {
+                console.warn(`繪製 iframe 截圖失敗 (${iframe.title || "unknown"}):`, err);
+              }
+            }
+          })();
+
+          capturePromises.push(captureTask);
         }
 
+        // 等待所有 iframe 截圖完成並疊上去
+        await Promise.all(capturePromises);
+
         return new Promise((resolve, reject) => {
-          canvas.toBlob(
+          finalCanvas.toBlob(
             (blob) => {
               if (!blob) {
                 reject(new Error("無法產生截圖"));
