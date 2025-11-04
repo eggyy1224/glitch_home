@@ -1,0 +1,276 @@
+.collage-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 32px clamp(16px, 4vw, 48px);
+  box-sizing: border-box;
+  background: radial-gradient(circle at top, #12152a 0%, #06070f 55%, #030309 100%);
+  color: #f5f5f5;
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+
+.collage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.collage-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-end;
+  background: rgba(9, 12, 22, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
+}
+
+.collage-control {
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.collage-control-label {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.collage-control-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collage-slider {
+  width: 180px;
+  accent-color: #5aa9ff;
+  cursor: pointer;
+}
+
+.collage-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.7);
+  user-select: none;
+}
+
+.collage-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: #5aa9ff;
+  cursor: pointer;
+}
+
+.collage-number {
+  width: 64px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 14px;
+}
+
+.collage-number:disabled {
+  opacity: 0.4;
+}
+
+.collage-button {
+  padding: 10px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(145deg, rgba(90, 169, 255, 0.18), rgba(90, 169, 255, 0.08));
+  color: #f5f5f5;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.collage-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(145deg, rgba(90, 169, 255, 0.28), rgba(90, 169, 255, 0.12));
+  box-shadow: 0 10px 24px rgba(90, 169, 255, 0.25);
+}
+
+.collage-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.collage-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.collage-stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(16px, 4vw, 36px);
+  align-items: stretch;
+}
+
+.collage-stage--mixed {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  padding: clamp(16px, 4vw, 36px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(160deg, rgba(12, 18, 34, 0.85), rgba(6, 8, 16, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 18px 60px rgba(0, 0, 0, 0.45);
+}
+
+.collage-tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.collage-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(90, 169, 255, 0.1), rgba(90, 169, 255, 0));
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.4;
+}
+
+.collage-piece {
+  position: absolute;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  opacity: 0;
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  animation: collage-piece-enter 0.95s ease-out forwards;
+}
+
+.collage-label {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(12, 16, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(6px);
+}
+
+.collage-status {
+  grid-column: 1 / -1;
+  align-self: center;
+  justify-self: center;
+  padding: 18px 28px;
+  border-radius: 18px;
+  background: rgba(12, 15, 28, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.collage-status-error {
+  color: #ffb8b8;
+  border-color: rgba(255, 120, 120, 0.35);
+  background: rgba(42, 10, 10, 0.85);
+}
+
+.collage-mix-surface {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+  background: rgba(4, 6, 14, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.collage-piece--mixed {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes collage-piece-enter {
+  from {
+    transform: translate3d(var(--from-x, 0), var(--from-y, 0), 0) rotate(var(--from-rot, 0)) scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 960px) {
+  .collage-controls {
+    gap: 18px;
+    padding: 18px 20px;
+  }
+
+  .collage-control {
+    min-width: 180px;
+  }
+
+  .collage-slider {
+    width: 140px;
+  }
+}
+
+@media (max-width: 640px) {
+  .collage-root {
+    padding: 24px 16px;
+  }
+
+  .collage-stage--mixed {
+    padding: 16px;
+  }
+
+  .collage-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .collage-control {
+    min-width: 100%;
+  }
+
+  .collage-control-inputs {
+    justify-content: space-between;
+  }
+
+  .collage-slider {
+    flex: 1;
+    width: 100%;
+  }
+
+  .collage-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

@@ -8,6 +8,7 @@ import SlideMode from "./SlideMode.jsx";
 import IframeMode from "./IframeMode.jsx";
 import SubtitleOverlay from "./SubtitleOverlay.jsx";
 import CaptionMode from "./CaptionMode.jsx";
+import CollageMode from "./CollageMode.jsx";
 import { clampInt } from "./utils/iframeConfig.js";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
@@ -73,8 +74,11 @@ export default function App() {
   const searchMode =
     !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
     (readParams().get("search_mode") ?? "false") === "true";
-  const captionMode =
+  const collageMode =
     !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode &&
+    (readParams().get("collage_mode") ?? "false") === "true";
+  const captionMode =
+    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
     (readParams().get("caption_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -429,6 +433,26 @@ export default function App() {
     return (
       <>
         <SearchMode imagesBase={IMAGES_BASE} />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+        {subtitleOverlay}
+      </>
+    );
+  }
+
+  if (collageMode) {
+    return (
+      <>
+        <CollageMode
+          imagesBase={IMAGES_BASE}
+          anchorImage={imgId}
+          onCaptureReady={handleCaptureReady}
+        />
         {soundPlayerEnabled && (
           <SoundPlayer
             playRequest={soundPlayerEnabled ? soundPlayRequest : null}
