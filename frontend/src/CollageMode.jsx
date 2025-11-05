@@ -149,15 +149,41 @@ const computeBoardLayout = (count, targetRatio) => {
   let bestCols = count;
   let bestScore = Number.POSITIVE_INFINITY;
 
+  // 統一評分所有候選方案，比較完美匹配和近似匹配
+  // 完美匹配有優勢（-0.15 獎勵），但如果比例很差，可能不如比例好的近似匹配
   for (let rowsCandidate = 1; rowsCandidate <= maxRows; rowsCandidate += 1) {
     const colsCandidate = Math.ceil(count / rowsCandidate);
     if (colsCandidate <= 0) continue;
+    const totalSlots = rowsCandidate * colsCandidate;
     const candidateRatio = rowsCandidate / colsCandidate;
     const ratioScore = Math.abs(Math.log(candidateRatio) - Math.log(ratio));
-    const extraSlots = rowsCandidate * colsCandidate - count;
-    const extraPenalty = extraSlots > 0 ? extraSlots / count : 0;
     const balancePenalty = Math.abs(rowsCandidate - colsCandidate) / count;
-    const score = ratioScore + extraPenalty * 0.05 + balancePenalty * 0.001;
+    
+    const isPerfectFit = totalSlots === count;
+    const extraSlots = totalSlots - count;
+    
+    // 計算基礎分數
+    let baseScore;
+    if (isPerfectFit) {
+      // 完美匹配：只考慮比例和平衡度
+      baseScore = ratioScore + balancePenalty * 0.001;
+    } else {
+      // 近似匹配：根據空位數量給予懲罰
+      // 如果總槽位數 >= count，給予較小的懲罰（可以填充）
+      // 如果總槽位數 < count，給予較大的懲罰（會有空缺）
+      const extraPenalty = extraSlots > 0 ? extraSlots / count * 0.02 : Math.abs(extraSlots) / count * 0.15;
+      baseScore = ratioScore + extraPenalty + balancePenalty * 0.001;
+    }
+    
+    // 完美匹配給予小獎勵（-0.15），但如果比例很差，獎勵不足以彌補
+    // 這樣對於 count=5, ratio=1：
+    // - 1×5: baseScore ≈ 1.61, score ≈ 1.46
+    // - 2×3: baseScore ≈ 0.409, score ≈ 0.409
+    // 2×3 會勝出，因為 0.409 < 1.46
+    const perfectFitBonus = isPerfectFit ? -0.15 : 0;
+    const score = baseScore + perfectFitBonus;
+    
+    // 簡單選擇分數最好的候選方案
     if (score < bestScore) {
       bestScore = score;
       bestRows = rowsCandidate;
@@ -315,16 +341,17 @@ const buildRandomMixedPieces = (pieces, rows, cols, seed) => {
     mulberry32(baseSeed ^ 0x9e3779b1),
   );
 
-  const assignCount = Math.min(shuffledPieces.length, totalSlots);
+  // 確保填充所有位置：如果片段少於槽位，重複使用片段
   const result = [];
-  for (let i = 0; i < assignCount; i += 1) {
+  for (let i = 0; i < totalSlots; i += 1) {
     const slot = shuffledSlots[i];
-    const piece = shuffledPieces[i];
+    const pieceIndex = i % shuffledPieces.length;
+    const piece = shuffledPieces[pieceIndex];
     result.push({
       ...piece,
       row: slot.row,
       col: slot.col,
-      key: `${slot.row}-${slot.col}-${piece.key}`,
+      key: `${slot.row}-${slot.col}-${piece.key}-${i}`,
     });
   }
   return result;
@@ -333,15 +360,19 @@ const buildRandomMixedPieces = (pieces, rows, cols, seed) => {
 const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
   if (!pieces.length || !rows || !cols) return [];
   const capacity = rows * cols;
-  const count = Math.min(pieces.length, capacity);
-  if (!count) return [];
-
+  // 確保填充所有位置：如果片段少於槽位，準備重複使用的片段池
+  const piecesPool = [];
+  while (piecesPool.length < capacity) {
+    piecesPool.push(...pieces.map((piece) => ({ ...piece })));
+  }
+  const availablePieces = piecesPool.slice(0, capacity);
+  
   const rand = mulberry32(seed ^ 0xabcdef);
-  const available = pieces.map((piece) => ({ piece }));
+  const available = availablePieces.map((piece) => ({ piece }));
   const placedMatrix = Array.from({ length: rows }, () => Array(cols).fill(null));
   const results = [];
 
-  const slotOrder = Array.from({ length: count }, (_, index) => ({
+  const slotOrder = Array.from({ length: capacity }, (_, index) => ({
     row: Math.floor(index / cols),
     col: index % cols,
   }));
@@ -397,11 +428,12 @@ const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
     }
 
     placedMatrix[row][col] = chosen;
+    const slotIndex = row * cols + col;
     results.push({
       ...chosen,
       row,
       col,
-      key: `${row}-${col}-${chosen.key}`,
+      key: `${row}-${col}-${chosen.key}-${slotIndex}`,
     });
   });
 
