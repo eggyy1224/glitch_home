@@ -15,6 +15,7 @@ const STAGE_MAX_WIDTH = 3840;
 const STAGE_MIN_HEIGHT = 240;
 const STAGE_MAX_HEIGHT = 2160;
 const DEFAULT_STAGE_HEIGHT = 540;
+const PIECE_OVERLAP_PX = 1;
 const PERSIST_COLLAGE_QUERY =
   String(import.meta.env.VITE_COLLAGE_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
 const RATIO_MIN = STAGE_MIN_HEIGHT / STAGE_MAX_WIDTH;
@@ -1044,10 +1045,10 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 const imageUrl = buildImageUrl(imagesBase, piece.imageId);
 
                 const style = {
-                  width: `${widthPercent}%`,
-                  height: `${heightPercent}%`,
-                  left: `${leftPercent}%`,
-                  top: `${topPercent}%`,
+                  width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                  height: `calc(${heightPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                  left: `calc(${leftPercent}% - ${PIECE_OVERLAP_PX}px)`,
+                  top: `calc(${topPercent}% - ${PIECE_OVERLAP_PX}px)`,
                   backgroundImage: `url("${imageUrl}")`,
                   backgroundSize: `${cols * 100}% ${rows * 100}%`,
                   backgroundPosition: `${backgroundX}% ${backgroundY}%`,
@@ -1084,10 +1085,10 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                   const backgroundY = rows <= 1 ? 50 : (piece.sourceRow / (rows - 1)) * 100;
 
                   const style = {
-                    width: `${widthPercent}%`,
-                    height: `${heightPercent}%`,
-                    left: `${leftPercent}%`,
-                    top: `${topPercent}%`,
+                    width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                    height: `calc(${heightPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                    left: `calc(${leftPercent}% - ${PIECE_OVERLAP_PX}px)`,
+                    top: `calc(${topPercent}% - ${PIECE_OVERLAP_PX}px)`,
                     backgroundImage: `url("${imageUrl}")`,
                     backgroundSize: `${cols * 100}% ${rows * 100}%`,
                     backgroundPosition: `${backgroundX}% ${backgroundY}%`,
