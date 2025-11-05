@@ -216,6 +216,7 @@ const colorDistance = (a, b) => {
 
 const edgeKeyForPiece = (piece) => `${piece.imageId}|${piece.sourceRow}|${piece.sourceCol}`;
 const EDGE_SAMPLE_CACHE = new Map();
+const IMAGE_DIMENSION_CACHE = new Map();
 
 const loadImageElement = (url) =>
   new Promise((resolve, reject) => {
@@ -226,6 +227,36 @@ const loadImageElement = (url) =>
     img.onerror = () => reject(new Error(`無法載入圖像 ${url}`));
     img.src = url;
   });
+
+const ensureImageDimensions = (imageUrl) => {
+  if (!imageUrl) {
+    return Promise.resolve(null);
+  }
+  const cached = IMAGE_DIMENSION_CACHE.get(imageUrl);
+  if (cached) {
+    return cached instanceof Promise ? cached : Promise.resolve(cached);
+  }
+  const promise = loadImageElement(imageUrl)
+    .then((img) => {
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+      if (!width || !height) {
+        throw new Error(`圖像尺寸為 0：${imageUrl}`);
+      }
+      const payload = { width, height, ratio: width / height };
+      IMAGE_DIMENSION_CACHE.set(imageUrl, payload);
+      return payload;
+    })
+    .catch((err) => {
+      const cachedValue = IMAGE_DIMENSION_CACHE.get(imageUrl);
+      if (cachedValue === promise) {
+        IMAGE_DIMENSION_CACHE.delete(imageUrl);
+      }
+      throw err;
+    });
+  IMAGE_DIMENSION_CACHE.set(imageUrl, promise);
+  return promise;
+};
 
 const averageRectColor = (data, width, height, startX, startY, rectWidth, rectHeight) => {
   if (!rectWidth || !rectHeight) return [0, 0, 0];
@@ -588,6 +619,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [imageMetrics, setImageMetrics] = useState(() => ({}));
 
   useEffect(() => {
     if (onCaptureReady == null) return undefined;
@@ -759,6 +791,46 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     });
     return map;
   }, [pieces]);
+
+  useEffect(() => {
+    const baseKey = imagesBase ?? "";
+    let cancelled = false;
+    const missing = selectedImages.filter((imageId) => {
+      const metric = imageMetrics[imageId];
+      return !metric || metric.base !== baseKey;
+    });
+    if (!missing.length) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    missing.forEach((imageId) => {
+      const imageUrl = buildImageUrl(imagesBase, imageId);
+      ensureImageDimensions(imageUrl)
+        .then((dimensions) => {
+          if (cancelled || !dimensions) return;
+          setImageMetrics((prev) => {
+            const nextMetric = prev[imageId];
+            if (nextMetric && nextMetric.base === baseKey) {
+              return prev;
+            }
+            return {
+              ...prev,
+              [imageId]: {
+                ...dimensions,
+                base: baseKey,
+              },
+            };
+          });
+        })
+        .catch((err) => {
+          console.warn("Collage 圖像尺寸讀取失敗", imageId, err);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedImages, imagesBase, imageMetrics]);
 
   const edgesReady = useMemo(
     () => pieces.every((piece) => edgeLookup.has(edgeKeyForPiece(piece))),
@@ -1070,8 +1142,12 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
           selectedImages.map((imageId) => {
             const tilePieces = piecesByImage.get(imageId) || [];
             const imageUrl = buildImageUrl(imagesBase, imageId);
+            const baseKey = imagesBase ?? "";
+            const metric = imageMetrics[imageId];
+            const tileRatio = metric && metric.base === baseKey ? metric.ratio : null;
+            const tileStyle = tileRatio ? { aspectRatio: tileRatio } : undefined;
             return (
-              <div key={imageId} className="collage-tile">
+              <div key={imageId} className="collage-tile" style={tileStyle}>
                 {tilePieces.map((piece) => {
                   const widthPercent = 100 / cols;
                   const heightPercent = 100 / rows;
