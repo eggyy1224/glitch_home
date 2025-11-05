@@ -448,6 +448,13 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
         backgroundColor: "#050508",
         logging: false,
         useCORS: true,
+        onclone: (doc) => {
+          doc.querySelectorAll(".collage-piece").forEach((el) => {
+            el.style.animation = "none";
+            el.style.opacity = "1";
+            el.style.transform = "none";
+          });
+        },
       });
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
