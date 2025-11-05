@@ -229,10 +229,18 @@
   cursor: nwse-resize;
   backdrop-filter: blur(2px);
   transition: transform 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .collage-resize-handle:hover {
   transform: scale(1.05);
+}
+
+.collage-mix-surface:hover .collage-resize-handle,
+.collage-resize-handle:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 @keyframes collage-piece-enter {
