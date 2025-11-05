@@ -1022,10 +1022,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
         {!loading && selectedImages.length === 0 && !error && (
           <div className="collage-status">沒有圖像可顯示，請確認網址參數。</div>
         )}
-        {!loading && !error && mixPieces && edgeStatus === "loading" && !edgesReady && (
-          <div className="collage-status">拼貼接縫分析中…</div>
-        )}
-
         {!loading && !error && mixPieces && (
           <>
             <div
