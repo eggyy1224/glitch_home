@@ -366,11 +366,10 @@ const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
     piecesPool.push(...pieces.map((piece) => ({ ...piece })));
   }
   const availablePieces = piecesPool.slice(0, capacity);
-  
+
   const rand = mulberry32(seed ^ 0xabcdef);
   const available = availablePieces.map((piece) => ({ piece }));
   const placedMatrix = Array.from({ length: rows }, () => Array(cols).fill(null));
-  const results = [];
 
   const slotOrder = Array.from({ length: capacity }, (_, index) => ({
     row: Math.floor(index / cols),
@@ -428,16 +427,138 @@ const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
     }
 
     placedMatrix[row][col] = chosen;
-    const slotIndex = row * cols + col;
-    results.push({
-      ...chosen,
-      row,
-      col,
-      key: `${row}-${col}-${chosen.key}-${slotIndex}`,
-    });
   });
 
+  optimizeBottomRightPlacement(placedMatrix, rows, cols, edgeLookup);
+
+  const results = [];
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const chosen = placedMatrix[row][col];
+      if (!chosen) continue;
+      results.push({
+        ...chosen,
+        row,
+        col,
+        key: `${row}-${col}-${chosen.key}-${row * cols + col}`,
+      });
+    }
+  }
+
   return results;
+};
+
+const evaluateSlotScore = (matrix, row, col, rows, cols, edgeLookup) => {
+  const piece = matrix[row][col];
+  if (!piece) return Number.POSITIVE_INFINITY;
+  const edges = edgeLookup.get(edgeKeyForPiece(piece));
+  if (!edges) return Number.POSITIVE_INFINITY;
+
+  let total = 0;
+  let matches = 0;
+
+  const accumulate = (neighborRow, neighborCol, selfEdgeKey, neighborEdgeKey) => {
+    const neighbor = matrix[neighborRow][neighborCol];
+    if (!neighbor) return;
+    const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
+    if (!neighborEdges) return;
+    total += colorDistance(edges[selfEdgeKey], neighborEdges[neighborEdgeKey]);
+    matches += 1;
+  };
+
+  if (col > 0) accumulate(row, col - 1, "left", "right");
+  if (col < cols - 1) accumulate(row, col + 1, "right", "left");
+  if (row > 0) accumulate(row - 1, col, "top", "bottom");
+  if (row < rows - 1) accumulate(row + 1, col, "bottom", "top");
+
+  if (!matches) return 0;
+  return total / matches;
+};
+
+const optimizeBottomRightPlacement = (matrix, rows, cols, edgeLookup) => {
+  if (!rows || !cols) return;
+  const targetRow = rows - 1;
+  const targetCol = cols - 1;
+
+  const gatherPositions = (row, col) => {
+    const positions = [[row, col]];
+    if (col > 0) positions.push([row, col - 1]);
+    if (col < cols - 1) positions.push([row, col + 1]);
+    if (row > 0) positions.push([row - 1, col]);
+    if (row < rows - 1) positions.push([row + 1, col]);
+    return positions;
+  };
+
+  const unionPositions = (positionsA, positionsB) => {
+    const seen = new Set();
+    const merged = [];
+    [...positionsA, ...positionsB].forEach(([row, col]) => {
+      const key = `${row}:${col}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push([row, col]);
+    });
+    return merged;
+  };
+
+  const regionScore = (positions) => {
+    let sum = 0;
+    for (let i = 0; i < positions.length; i += 1) {
+      const [row, col] = positions[i];
+      const value = evaluateSlotScore(matrix, row, col, rows, cols, edgeLookup);
+      if (!Number.isFinite(value)) {
+        return Number.POSITIVE_INFINITY;
+      }
+      sum += value;
+    }
+    return sum;
+  };
+
+  const targetPositions = gatherPositions(targetRow, targetCol);
+  const baseScore = regionScore(targetPositions);
+  if (!Number.isFinite(baseScore) || baseScore === 0) {
+    return;
+  }
+
+  let bestImprovement = 0;
+  let bestSwap = null;
+  const totalSlots = rows * cols;
+
+  for (let index = 0; index < totalSlots - 1; index += 1) {
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    if (row === targetRow && col === targetCol) continue;
+
+    const candidatePositions = gatherPositions(row, col);
+    const affected = unionPositions(targetPositions, candidatePositions);
+    const beforeScore = regionScore(affected);
+    if (!Number.isFinite(beforeScore)) continue;
+
+    const targetPiece = matrix[targetRow][targetCol];
+    const candidatePiece = matrix[row][col];
+    matrix[targetRow][targetCol] = candidatePiece;
+    matrix[row][col] = targetPiece;
+
+    const afterScore = regionScore(affected);
+
+    matrix[row][col] = candidatePiece;
+    matrix[targetRow][targetCol] = targetPiece;
+
+    if (!Number.isFinite(afterScore)) continue;
+
+    const improvement = beforeScore - afterScore;
+    if (improvement > bestImprovement + 0.5) {
+      bestImprovement = improvement;
+      bestSwap = { row, col };
+    }
+  }
+
+  if (bestSwap && bestImprovement > 1.5) {
+    const { row, col } = bestSwap;
+    const targetPiece = matrix[targetRow][targetCol];
+    matrix[targetRow][targetCol] = matrix[row][col];
+    matrix[row][col] = targetPiece;
+  }
 };
 
 export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = null }) {
