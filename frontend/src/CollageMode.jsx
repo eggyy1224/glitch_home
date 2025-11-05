@@ -7,8 +7,8 @@ const DEFAULT_IMAGE_COUNT = 4;
 const DEFAULT_ROWS = 3;
 const DEFAULT_COLS = 3;
 const MAX_IMAGES = 30;
-const MAX_ROWS = 48;
-const MAX_COLS = 48;
+const MAX_ROWS = 96;
+const MAX_COLS = 96;
 const DEFAULT_STAGE_WIDTH = 960;
 const STAGE_MIN_WIDTH = 360;
 const STAGE_MAX_WIDTH = 3840;
@@ -145,7 +145,7 @@ const computeBoardLayout = (count, targetRatio) => {
     return { rows: 1, cols: 1 };
   }
   const ratio = clamp(Number.isFinite(targetRatio) && targetRatio > 0 ? targetRatio : 1, RATIO_MIN, RATIO_MAX);
-  const maxRows = Math.min(count, 64);
+  const maxRows = Math.min(count, MAX_ROWS);
   let bestRows = 1;
   let bestCols = count;
   let bestScore = Number.POSITIVE_INFINITY;
