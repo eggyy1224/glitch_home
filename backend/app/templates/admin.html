@@ -441,6 +441,42 @@
           </div>
         </section>
 
+        <!-- Iframe 模式控制 -->
+        <section id="iframe-controls" style="display: none;">
+          <h3>Iframe 多格設定</h3>
+          <div class="control-group">
+            <label>佈局模式</label>
+            <select id="iframe-layout">
+              <option value="grid">網格 (Grid)</option>
+              <option value="horizontal">水平排列</option>
+              <option value="vertical">垂直排列</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>間距 (Gap)</label>
+            <div class="slider-control">
+              <input type="range" id="iframe-gap" min="0" max="50" value="12" />
+              <input type="number" id="iframe-gap-num" min="0" max="50" value="12" />
+            </div>
+          </div>
+          <div class="control-group" id="iframe-columns-group">
+            <label>欄數 (Columns，僅 Grid 模式)</label>
+            <div class="slider-control">
+              <input type="range" id="iframe-columns" min="1" max="8" value="2" />
+              <input type="number" id="iframe-columns-num" min="1" max="8" value="2" />
+            </div>
+          </div>
+          <div class="control-group">
+            <label>面板列表 (Panels)</label>
+            <div id="iframe-panels-list"></div>
+            <button type="button" id="add-iframe-panel" style="margin-top: 8px;">+ 新增面板</button>
+          </div>
+          <div class="button-group">
+            <button class="primary" id="apply-iframe">套用 Iframe</button>
+            <button id="load-iframe-config">讀取 Iframe 配置</button>
+          </div>
+        </section>
+
         <!-- 其他模式控制 -->
         <section id="other-controls" style="display: none;">
           <h3>顯示狀態控制</h3>
@@ -603,6 +639,8 @@
           const mode = result.state?.mode;
           if (mode === "collage") {
             showCollageControls(result.state.params || {});
+          } else if (mode === "iframe") {
+            await loadIframeConfig();
           } else {
             showOtherControls(result.state);
           }
@@ -638,9 +676,227 @@
         document.getElementById("collage-mix").checked = params.mix || false;
       }
 
+      // 顯示 Iframe 控制項
+      function showIframeControls(config) {
+        document.getElementById("collage-controls").style.display = "none";
+        document.getElementById("iframe-controls").style.display = "block";
+        document.getElementById("other-controls").style.display = "none";
+
+        if (config) {
+          document.getElementById("iframe-layout").value = config.layout || "grid";
+          document.getElementById("iframe-gap").value = config.gap ?? 12;
+          document.getElementById("iframe-gap-num").value = config.gap ?? 12;
+          document.getElementById("iframe-columns").value = config.columns ?? 2;
+          document.getElementById("iframe-columns-num").value = config.columns ?? 2;
+          
+          // 更新欄數顯示（僅 grid 模式顯示）
+          updateIframeColumnsVisibility();
+          
+          // 顯示面板列表
+          renderIframePanels(config.panels || []);
+        } else {
+          renderIframePanels([]);
+        }
+      }
+
+      // 更新欄數顯示
+      function updateIframeColumnsVisibility() {
+        const layout = document.getElementById("iframe-layout").value;
+        const columnsGroup = document.getElementById("iframe-columns-group");
+        columnsGroup.style.display = layout === "grid" ? "block" : "none";
+        // 重新渲染面板列表以顯示/隱藏 col_span 和 row_span
+        renderIframePanels(currentPanelsData);
+      }
+
+      // 渲染面板列表
+      let currentPanelsData = [];
+      function renderIframePanels(panels) {
+        currentPanelsData = panels || [];
+        const container = document.getElementById("iframe-panels-list");
+        const layout = document.getElementById("iframe-layout").value;
+        
+        if (!panels || panels.length === 0) {
+          container.innerHTML = '<div style="opacity: 0.6; padding: 12px;">尚無面板，點擊「+ 新增面板」來添加</div>';
+          return;
+        }
+        
+        container.innerHTML = panels.map((panel, index) => {
+          const panelId = panel.id || `panel_${index + 1}`;
+          return `
+            <div class="control-group" style="border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong>面板 ${index + 1}: ${panelId}</strong>
+                <button type="button" class="remove-panel-btn" data-index="${index}" style="background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);">刪除</button>
+              </div>
+              <div class="control-group">
+                <label>ID</label>
+                <input type="text" class="panel-id" data-index="${index}" value="${panelId}" placeholder="panel_1" />
+              </div>
+              <div class="control-group">
+                <label>圖像檔名 (image)</label>
+                <input type="text" class="panel-image" data-index="${index}" value="${panel.image || ""}" placeholder="offspring_xxx.png" />
+              </div>
+              <div class="control-group">
+                <label>或直接 URL (url)</label>
+                <input type="text" class="panel-url" data-index="${index}" value="${panel.url || ""}" placeholder="https://example.com" />
+              </div>
+              <div class="control-group">
+                <label>標籤 (label)</label>
+                <input type="text" class="panel-label" data-index="${index}" value="${panel.label || ""}" placeholder="面板標籤" />
+              </div>
+              <div class="control-group">
+                <label>比例 (ratio)</label>
+                <input type="number" class="panel-ratio" data-index="${index}" value="${panel.ratio || 1}" min="0.1" step="0.1" />
+              </div>
+              ${layout === "grid" ? `
+              <div class="control-group">
+                <label>欄跨度 (col_span)</label>
+                <input type="number" class="panel-col-span" data-index="${index}" value="${panel.col_span || panel.colSpan || ""}" min="1" placeholder="1" />
+              </div>
+              <div class="control-group">
+                <label>列跨度 (row_span)</label>
+                <input type="number" class="panel-row-span" data-index="${index}" value="${panel.row_span || panel.rowSpan || ""}" min="1" placeholder="1" />
+              </div>
+              ` : ""}
+              <div class="control-group">
+                <label>參數 (params JSON)</label>
+                <textarea class="panel-params" data-index="${index}" placeholder='{"slide_mode": "true"}' style="min-height: 60px;">${JSON.stringify(panel.params || {}, null, 2)}</textarea>
+              </div>
+            </div>
+          `;
+        }).join("");
+        
+        // 綁定刪除按鈕
+        container.querySelectorAll(".remove-panel-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const index = parseInt(btn.dataset.index);
+            currentPanelsData.splice(index, 1);
+            renderIframePanels(currentPanelsData);
+          });
+        });
+      }
+
+      // 載入 Iframe 配置
+      async function loadIframeConfig() {
+        try {
+          let url = `${apiBase}/api/iframe-config`;
+          if (currentClientId) {
+            url += `?client=${encodeURIComponent(currentClientId)}`;
+          }
+          const result = await fetch(url).then((res) => res.json());
+          
+          // result 可能是 resolved config，需要從 raw 取得原始配置
+          const config = result.raw || result;
+          showIframeControls(config);
+          
+          logEvent(`讀取 ${currentClientId || "<全域>"} iframe_config`);
+        } catch (err) {
+          logEvent(`讀取 iframe_config 失敗: ${err.message}`, "error");
+          showIframeControls(null);
+        }
+      }
+
+      // 套用 Iframe 配置
+      async function applyIframe() {
+        const layout = document.getElementById("iframe-layout").value;
+        const gap = Number(document.getElementById("iframe-gap").value);
+        const columns = Number(document.getElementById("iframe-columns").value);
+        
+        // 收集所有面板
+        const panels = [];
+        const panelElements = document.querySelectorAll('.panel-id');
+        panelElements.forEach((idInput, index) => {
+          const panelId = idInput.value.trim() || `panel_${index + 1}`;
+          const imageInput = document.querySelector(`.panel-image[data-index="${index}"]`);
+          const urlInput = document.querySelector(`.panel-url[data-index="${index}"]`);
+          const labelInput = document.querySelector(`.panel-label[data-index="${index}"]`);
+          const ratioInput = document.querySelector(`.panel-ratio[data-index="${index}"]`);
+          const colSpanInput = document.querySelector(`.panel-col-span[data-index="${index}"]`);
+          const rowSpanInput = document.querySelector(`.panel-row-span[data-index="${index}"]`);
+          const paramsInput = document.querySelector(`.panel-params[data-index="${index}"]`);
+          
+          const image = imageInput?.value.trim() || null;
+          const url = urlInput?.value.trim() || null;
+          const label = labelInput?.value.trim() || null;
+          const ratio = ratioInput?.value ? Number(ratioInput.value) : 1;
+          const colSpan = colSpanInput?.value ? Number(colSpanInput.value) : undefined;
+          const rowSpan = rowSpanInput?.value ? Number(rowSpanInput.value) : undefined;
+          
+          let params = {};
+          try {
+            if (paramsInput?.value.trim()) {
+              params = JSON.parse(paramsInput.value);
+            }
+          } catch (e) {
+            alert(`面板 ${index + 1} 的 params JSON 格式錯誤: ${e.message}`);
+            return;
+          }
+          
+          if (!image && !url) {
+            return; // 跳過沒有 image 或 url 的面板
+          }
+          
+          const panel = {
+            id: panelId,
+            ratio: ratio,
+          };
+          if (image) panel.image = image;
+          if (url) panel.url = url;
+          if (label) panel.label = label;
+          if (Object.keys(params).length > 0) panel.params = params;
+          if (layout === "grid") {
+            if (colSpan) panel.col_span = colSpan;
+            if (rowSpan) panel.row_span = rowSpan;
+          }
+          
+          panels.push(panel);
+        });
+        
+        if (panels.length === 0) {
+          alert("請至少添加一個面板（需有 image 或 url）");
+          return;
+        }
+        
+        const payload = {
+          layout,
+          gap,
+          columns,
+          panels,
+        };
+        
+        if (currentClientId) {
+          payload.target_client_id = currentClientId;
+        }
+        
+        try {
+          // 先設定 display_state 為 iframe 模式
+          const displayUrl = currentClientId
+            ? `${apiBase}/api/clients/${encodeURIComponent(currentClientId)}/display`
+            : `${apiBase}/api/display`;
+          await requestJSON(displayUrl, {
+            method: "POST",
+            body: JSON.stringify({ mode: "iframe", params: {} }),
+          });
+          
+          // 再設定 iframe 配置
+          const result = await requestJSON(`${apiBase}/api/iframe-config`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          });
+          
+          logEvent(`套用 iframe 至 ${currentClientId || "<全域>"}`);
+          await loadIframeConfig();
+          await loadDisplayState();
+        } catch (err) {
+          alert(err.message);
+          logEvent(`Iframe 設定失敗: ${err.message}`, "error");
+        }
+      }
+
       // 顯示其他模式控制項
       function showOtherControls(state) {
         document.getElementById("collage-controls").style.display = "none";
+        document.getElementById("iframe-controls").style.display = "none";
         document.getElementById("other-controls").style.display = "block";
 
         if (state) {
@@ -779,6 +1035,8 @@
           const mode = btn.dataset.mode;
           if (mode === "collage") {
             showCollageControls({});
+          } else if (mode === "iframe") {
+            loadIframeConfig();
           } else if (mode === "default") {
             showOtherControls(null);
           } else {
@@ -790,14 +1048,33 @@
       syncSliderNumber("collage-rows", "collage-rows-num");
       syncSliderNumber("collage-cols", "collage-cols-num");
       syncSliderNumber("collage-image-count", "collage-image-count-num");
+      syncSliderNumber("iframe-gap", "iframe-gap-num");
+      syncSliderNumber("iframe-columns", "iframe-columns-num");
 
       document.getElementById("collage-images").addEventListener("input", (e) => {
         const images = e.target.value.split(",").map((item) => item.trim()).filter(Boolean);
         updateImageList(images);
       });
 
+      document.getElementById("iframe-layout").addEventListener("change", updateIframeColumnsVisibility);
+
+      document.getElementById("add-iframe-panel").addEventListener("click", () => {
+        const newPanel = {
+          id: `panel_${currentPanelsData.length + 1}`,
+          image: "",
+          url: "",
+          label: "",
+          ratio: 1,
+          params: {},
+        };
+        currentPanelsData.push(newPanel);
+        renderIframePanels(currentPanelsData);
+      });
+
       document.getElementById("apply-collage").addEventListener("click", applyCollage);
       document.getElementById("shuffle-collage").addEventListener("click", shuffleCollage);
+      document.getElementById("apply-iframe").addEventListener("click", applyIframe);
+      document.getElementById("load-iframe-config").addEventListener("click", loadIframeConfig);
       document.getElementById("load-display-state").addEventListener("click", loadDisplayState);
       document.getElementById("clear-display-state").addEventListener("click", async () => {
         try {
