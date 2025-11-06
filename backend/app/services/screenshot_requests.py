@@ -9,6 +9,9 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import WebSocket
 
+from .display_state import display_state_manager
+from .iframe_config import config_payload_for_response, load_iframe_config
+
 
 def _utc_timestamp() -> str:
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
@@ -20,7 +23,7 @@ class ScreenshotRequestManager:
     def __init__(self) -> None:
         self._lock = asyncio.Lock()
         self._requests: Dict[str, Dict[str, Any]] = {}
-        self._connections: Dict[WebSocket, Dict[str, Optional[str]]] = {}
+        self._connections: Dict[WebSocket, Dict[str, Any]] = {}
 
     async def create_request(self, metadata: Dict[str, Any] | None = None) -> Dict[str, Any]:
         request_id = secrets.token_hex(8)
@@ -142,6 +145,19 @@ class ScreenshotRequestManager:
         }
         await self._broadcast(payload, target_client_id=target_client_id)
 
+    async def broadcast_display_state(
+        self,
+        target_client_id: Optional[str],
+        state: Optional[Dict[str, Any]],
+    ) -> None:
+        payload: Dict[str, Any] = {
+            "type": "display_state",
+            "state": state,
+        }
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        await self._broadcast(payload, target_client_id=target_client_id)
+
     async def broadcast_iframe_config(
         self,
         config_payload: Dict[str, Any],
@@ -149,6 +165,19 @@ class ScreenshotRequestManager:
     ) -> None:
         payload = {
             "type": "iframe_config",
+            "config": config_payload,
+        }
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        await self._broadcast(payload, target_client_id=target_client_id)
+
+    async def broadcast_container_layout(
+        self,
+        config_payload: Dict[str, Any],
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        payload = {
+            "type": "container_layout",
             "config": config_payload,
         }
         if target_client_id:
@@ -212,14 +241,29 @@ class ScreenshotRequestManager:
     async def add_connection(self, websocket: WebSocket) -> None:
         await websocket.accept()
         async with self._lock:
-            self._connections[websocket] = {"client_id": None}
+            self._connections[websocket] = {
+                "client_id": None,
+                "capabilities": [],
+                "metadata": {},
+                "last_seen": _utc_timestamp(),
+            }
 
-    async def register_client(self, websocket: WebSocket, client_id: Optional[str]) -> None:
+    async def register_client(
+        self,
+        websocket: WebSocket,
+        client_id: Optional[str],
+        capabilities: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         async with self._lock:
             info = self._connections.get(websocket)
             if info is None:
                 return
             info["client_id"] = client_id
+            info["capabilities"] = list(dict.fromkeys(capabilities or []))
+            if metadata is not None:
+                info["metadata"] = metadata
+            info["last_seen"] = _utc_timestamp()
             pending = [
                 dict(rec)
                 for rec in self._requests.values()
@@ -245,22 +289,88 @@ class ScreenshotRequestManager:
         async with self._lock:
             self._connections.pop(websocket, None)
 
-    async def list_clients(self) -> list[dict]:
-        """Return snapshot of registered clients with connection counts."""
+    async def touch_connection(
+        self,
+        websocket: WebSocket,
+        *,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         async with self._lock:
-            counts: dict[str | None, int] = {}
-            for info in self._connections.values():
-                client_id = info.get("client_id")
-                counts[client_id] = counts.get(client_id, 0) + 1
+            info = self._connections.get(websocket)
+            if info is None:
+                return
+            info["last_seen"] = _utc_timestamp()
+            if metadata is not None:
+                info["metadata"] = metadata
 
-        clients: list[dict] = []
-        for client_id, connection_count in counts.items():
-            clients.append(
+    async def list_clients(self) -> list[dict]:
+        """Return snapshot of registered clients, capabilities, and cached states."""
+
+        async with self._lock:
+            snapshot = list(self._connections.values())
+
+        grouped: dict[Optional[str], dict[str, Any]] = {}
+        for info in snapshot:
+            client_id = info.get("client_id")
+            record = grouped.setdefault(
+                client_id,
                 {
                     "client_id": client_id,
-                    "connections": connection_count,
-                }
+                    "connections": 0,
+                    "capabilities": set(),
+                    "last_heartbeat": None,
+                    "metadata_samples": [],
+                },
             )
+            record["connections"] += 1
+
+            caps = info.get("capabilities") or []
+            if isinstance(caps, (list, tuple, set)):
+                record["capabilities"].update(str(cap) for cap in caps if cap)
+            elif isinstance(caps, str) and caps:
+                record["capabilities"].add(caps)
+
+            last_seen = info.get("last_seen")
+            if last_seen:
+                if record["last_heartbeat"] is None or str(last_seen) > str(record["last_heartbeat"]):
+                    record["last_heartbeat"] = last_seen
+
+            metadata = info.get("metadata")
+            if metadata:
+                record["metadata_samples"].append(metadata)
+
+        clients: list[dict] = []
+        for client_id, record in grouped.items():
+            payload: dict[str, Any] = {
+                "client_id": client_id,
+                "connections": record["connections"],
+                "capabilities": sorted(record["capabilities"]),
+                "last_heartbeat": record["last_heartbeat"],
+            }
+            if record["metadata_samples"]:
+                payload["sample_metadata"] = record["metadata_samples"][:5]
+
+            display_snapshot = await display_state_manager.get_state(client_id)
+            state = display_snapshot.get("state")
+            if state is not None:
+                payload["display_state"] = {
+                    "mode": state.mode,
+                    "params": state.params,
+                    "frames": [frame.model_dump() for frame in state.frames],
+                    "updated_at": display_snapshot.get("updated_at"),
+                    "expires_at": display_snapshot.get("expires_at"),
+                }
+            else:
+                payload["display_state"] = None
+
+            try:
+                config = load_iframe_config(client_id)
+                payload["container_layout"] = config_payload_for_response(config, client_id)
+            except ValueError:
+                payload["container_layout"] = None
+
+            clients.append(payload)
+
         clients.sort(key=lambda item: (item["client_id"] is None, item["client_id"] or ""))
         return clients
 

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import media_router, realtime_router, storage_router
+from .api import admin_router, display_router, media_router, realtime_router, storage_router
 from .config import settings
 
 app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
@@ -34,8 +34,10 @@ app.mount(
 )
 
 app.include_router(storage_router)
+app.include_router(display_router)
 app.include_router(media_router)
 app.include_router(realtime_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")

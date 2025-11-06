@@ -128,7 +128,31 @@ async def websocket_screenshots(websocket: WebSocket) -> None:
                 client_id = None
                 if isinstance(client_id_raw, str):
                     client_id = client_id_raw.strip() or None
-                await screenshot_requests_manager.register_client(websocket, client_id)
+                capabilities: list[str] = []
+                raw_caps = message.get("capabilities")
+                if isinstance(raw_caps, (list, tuple, set)):
+                    capabilities.extend(str(item) for item in raw_caps if item)
+                elif isinstance(raw_caps, str) and raw_caps.strip():
+                    capabilities.append(raw_caps.strip())
+                raw_modes = message.get("modes")
+                if isinstance(raw_modes, (list, tuple, set)):
+                    for item in raw_modes:
+                        text = str(item).strip()
+                        if text and text not in capabilities:
+                            capabilities.append(text)
+                await screenshot_requests_manager.register_client(
+                    websocket,
+                    client_id,
+                    capabilities=capabilities,
+                    metadata=message.get("metadata") or message.get("info") or message.get("screen"),
+                )
+            elif msg_type == "heartbeat":
+                await screenshot_requests_manager.touch_connection(
+                    websocket,
+                    metadata=message.get("metadata") or message.get("info"),
+                )
+            else:
+                await screenshot_requests_manager.touch_connection(websocket)
     except WebSocketDisconnect:
         await screenshot_requests_manager.remove_connection(websocket)
     except Exception:

@@ -28,6 +28,12 @@ def api_get_iframe_config(client: str | None = Query(default=None)) -> dict:
     return config_payload_for_response(config, client)
 
 
+@router.get("/api/container-layout")
+def api_get_container_layout(client: str | None = Query(default=None)) -> dict:
+    """Alias for iframe-config，方便新的控制台語意。"""
+    return api_get_iframe_config(client)
+
+
 @router.put("/api/iframe-config")
 async def api_put_iframe_config(body: dict = Body(...)) -> dict:
     if not isinstance(body, dict):
@@ -41,7 +47,14 @@ async def api_put_iframe_config(body: dict = Body(...)) -> dict:
 
     payload = config_payload_for_response(config, target_client_id)
     await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
+    await screenshot_requests_manager.broadcast_container_layout(payload, target_client_id=target_client_id)
     return payload
+
+
+@router.put("/api/container-layout")
+async def api_put_container_layout(body: dict = Body(...)) -> dict:
+    """Alias for iframe-config 更新，維持新命名語意。"""
+    return await api_put_iframe_config(body)
 
 
 @router.get("/api/camera-presets", response_model=list[CameraPreset])
