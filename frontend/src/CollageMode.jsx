@@ -593,7 +593,7 @@ const optimizeBottomRightPlacement = (matrix, rows, cols, edgeLookup) => {
   }
 };
 
-export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = null }) {
+export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = null, displayStateParams = null }) {
   const rootRef = useRef(null);
   const resizeHandleRef = useRef(null);
   const initialStageWidth = readInitialParam("collage_width", DEFAULT_STAGE_WIDTH, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH);
@@ -608,18 +608,72 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [seed, setSeed] = useState(() => Date.now());
-  const [imageCount, setImageCount] = useState(() =>
-    readInitialParam("collage_images", DEFAULT_IMAGE_COUNT, 1, MAX_IMAGES),
-  );
-  const [rows, setRows] = useState(() => readInitialParam("collage_rows", DEFAULT_ROWS, 1, MAX_ROWS));
-  const [cols, setCols] = useState(() => readInitialParam("collage_cols", DEFAULT_COLS, 1, MAX_COLS));
-  const [mixPieces, setMixPieces] = useState(() => readInitialBooleanParam("collage_mix", false));
+  
+  // 優先使用 displayStateParams，否則使用 URL 參數
+  const getInitialRows = () => {
+    if (displayStateParams?.rows) return displayStateParams.rows;
+    return readInitialParam("collage_rows", DEFAULT_ROWS, 1, MAX_ROWS);
+  };
+  const getInitialCols = () => {
+    if (displayStateParams?.cols) return displayStateParams.cols;
+    return readInitialParam("collage_cols", DEFAULT_COLS, 1, MAX_COLS);
+  };
+  const getInitialMix = () => {
+    if (displayStateParams?.mix !== undefined) return displayStateParams.mix;
+    return readInitialBooleanParam("collage_mix", false);
+  };
+  const getInitialImageCount = () => {
+    if (displayStateParams?.images?.length) return displayStateParams.images.length;
+    return readInitialParam("collage_images", DEFAULT_IMAGE_COUNT, 1, MAX_IMAGES);
+  };
+  
+  const [imageCount, setImageCount] = useState(() => getInitialImageCount());
+  const [rows, setRows] = useState(() => getInitialRows());
+  const [cols, setCols] = useState(() => getInitialCols());
+  const [mixPieces, setMixPieces] = useState(() => getInitialMix());
   const [edgeLookup, setEdgeLookup] = useState(() => new Map());
   const [edgeStatus, setEdgeStatus] = useState("idle");
   const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [imageMetrics, setImageMetrics] = useState(() => ({}));
+  
+  // 當 displayStateParams 變化時，更新狀態
+  useEffect(() => {
+    if (displayStateParams) {
+      if (displayStateParams.rows !== undefined) {
+        setRows(displayStateParams.rows);
+      }
+      if (displayStateParams.cols !== undefined) {
+        setCols(displayStateParams.cols);
+      }
+      if (displayStateParams.mix !== undefined) {
+        setMixPieces(displayStateParams.mix);
+      }
+      if (displayStateParams.images?.length) {
+        setImageCount(displayStateParams.images.length);
+      }
+      if (displayStateParams.shuffle_seed !== undefined) {
+        setSeed(displayStateParams.shuffle_seed);
+      }
+
+      // 套用遠端提供的舞台尺寸（混合拼貼用）
+      const hasWidth = Number.isFinite(displayStateParams.stage_width);
+      const hasHeight = Number.isFinite(displayStateParams.stage_height);
+      if (hasWidth || hasHeight) {
+        const nextWidth = hasWidth
+          ? clamp(displayStateParams.stage_width, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH)
+          : stageWidth;
+        const nextHeight = hasHeight
+          ? clamp(displayStateParams.stage_height, STAGE_MIN_HEIGHT, STAGE_MAX_HEIGHT)
+          : Math.round(nextWidth * (desiredRatio || (DEFAULT_STAGE_HEIGHT / DEFAULT_STAGE_WIDTH)));
+
+        const nextRatio = clamp(nextHeight / Math.max(nextWidth, 1), RATIO_MIN, RATIO_MAX);
+        setStageWidth(nextWidth);
+        setDesiredRatio(nextRatio);
+      }
+    }
+  }, [displayStateParams]);
 
   useEffect(() => {
     if (onCaptureReady == null) return undefined;
@@ -661,6 +715,15 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
 
   useEffect(() => {
     let cancelled = false;
+    
+    // 如果 displayStateParams 有指定 images，直接使用它們
+    if (displayStateParams?.images && Array.isArray(displayStateParams.images) && displayStateParams.images.length > 0) {
+      setImagePool(displayStateParams.images);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    
     const cleanAnchor = cleanId(anchorImage);
 
     if (!cleanAnchor) {
@@ -700,7 +763,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     return () => {
       cancelled = true;
     };
-  }, [anchorImage]);
+  }, [anchorImage, displayStateParams]);
 
   const maxSelectableImages = useMemo(() => {
     if (!imagePool.length) return 1;

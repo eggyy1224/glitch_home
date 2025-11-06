@@ -8,6 +8,7 @@ export function useControlSocket({
   onSubtitleUpdate,
   onCaptionUpdate,
   onIframeConfig,
+  onDisplayStateUpdate,
 }) {
   const wsRef = useRef(null);
 
@@ -89,6 +90,8 @@ export function useControlSocket({
           onCaptionUpdate?.(payload);
         } else if (payload?.type === "iframe_config" && payload?.config) {
           onIframeConfig?.(payload);
+        } else if (payload?.type === "display_state") {
+          onDisplayStateUpdate?.(payload);
         }
       };
 
@@ -114,5 +117,5 @@ export function useControlSocket({
       }
       cleanupSocket();
     };
-  }, [clientId, onScreenshotRequest, onScreenshotLifecycle, onSoundPlay, onSubtitleUpdate, onCaptionUpdate, onIframeConfig]);
+  }, [clientId, onScreenshotRequest, onScreenshotLifecycle, onSoundPlay, onSubtitleUpdate, onCaptionUpdate, onIframeConfig, onDisplayStateUpdate]);
 }

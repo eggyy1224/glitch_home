@@ -153,3 +153,14 @@ export async function fetchCaptionState(clientId = null) {
     caption: data?.caption ?? null,
   };
 }
+
+export async function fetchDisplayState(clientId = null) {
+  let url = `${API_BASE}/api/display`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}

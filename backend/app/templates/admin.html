@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
-    <title>後端控制台 MVP</title>
+    <title>後端控制台</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -12,6 +12,11 @@
         --border: rgba(255, 255, 255, 0.08);
         --text: #f8fafc;
         --accent: #38bdf8;
+        --accent-hover: #0ea5e9;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
@@ -25,6 +30,9 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         background: rgba(15, 23, 42, 0.82);
         backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
       header h1 {
@@ -33,11 +41,115 @@
         letter-spacing: 0.05em;
       }
 
+      .back-btn {
+        display: none;
+        padding: 8px 16px;
+        font-size: 14px;
+        background: rgba(56, 189, 248, 0.15);
+        color: var(--text);
+        border: 1px solid rgba(56, 189, 248, 0.45);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .back-btn:hover {
+        background: rgba(56, 189, 248, 0.35);
+      }
+
+      .back-btn.visible {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
       main {
         padding: 24px 32px 48px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* 主頁面：Client 列表 */
+      #client-list-view {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .client-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
+      }
+
+      .client-card:hover {
+        border-color: rgba(56, 189, 248, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.5);
+      }
+
+      .client-card h3 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        color: var(--accent);
+      }
+
+      .client-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 13px;
+        opacity: 0.8;
+        margin-bottom: 12px;
+      }
+
+      .client-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .client-status {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        margin-right: 6px;
+      }
+
+      .client-status.offline {
+        background: #ef4444;
+      }
+
+      /* 詳細頁面：Client 控制 */
+      #client-detail-view {
+        display: none;
+      }
+
+      #client-detail-view.active {
+        display: block;
+      }
+
+      .client-header {
+        margin-bottom: 24px;
+      }
+
+      .client-header h2 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+
+      .client-info {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        opacity: 0.7;
+        margin-bottom: 24px;
       }
 
       section {
@@ -45,52 +157,108 @@
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 20px;
+        margin-bottom: 20px;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
       }
 
-      section h2 {
-        margin: 0 0 12px;
-        font-size: 18px;
+      section h3 {
+        margin: 0 0 16px;
+        font-size: 16px;
+        color: var(--accent);
+      }
+
+      .control-group {
+        margin-bottom: 20px;
+      }
+
+      .control-group:last-child {
+        margin-bottom: 0;
       }
 
       label {
         display: block;
         font-size: 13px;
-        margin-top: 10px;
+        margin-bottom: 8px;
         opacity: 0.85;
       }
 
-      input[type="text"],
+      .slider-control {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      input[type="range"] {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        border: none;
+      }
+
       input[type="number"],
+      input[type="text"],
       textarea,
       select {
         width: 100%;
         padding: 8px 10px;
-        margin-top: 6px;
         border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         background: rgba(15, 23, 42, 0.6);
         color: var(--text);
         font-size: 13px;
-        resize: vertical;
+      }
+
+      input[type="number"] {
+        width: 80px;
+        flex-shrink: 0;
       }
 
       textarea {
         min-height: 90px;
         font-family: "JetBrains Mono", "Cascadia Code", "Menlo", monospace;
+        resize: vertical;
+      }
+
+      .checkbox-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
       }
 
       button {
-        margin-top: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 16px;
+        padding: 8px 16px;
         font-size: 13px;
         background: rgba(56, 189, 248, 0.15);
         color: var(--text);
         border: 1px solid rgba(56, 189, 248, 0.45);
-        border-radius: 999px;
+        border-radius: 8px;
         cursor: pointer;
         transition: background 0.2s ease, transform 0.2s ease;
       }
@@ -100,267 +268,229 @@
         transform: translateY(-1px);
       }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-        margin-top: 12px;
+      button.primary {
+        background: rgba(56, 189, 248, 0.3);
+        border-color: rgba(56, 189, 248, 0.6);
       }
 
-      th,
-      td {
-        padding: 6px 8px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        text-align: left;
+      button.primary:hover {
+        background: rgba(56, 189, 248, 0.5);
       }
 
-      pre {
+      .button-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .mode-selector {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .mode-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .mode-btn.active {
+        background: rgba(56, 189, 248, 0.2);
+        border-color: rgba(56, 189, 248, 0.5);
+        color: var(--accent);
+      }
+
+      .image-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .image-item {
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        font-size: 11px;
+        text-align: center;
+        word-break: break-all;
+      }
+
+      .status-display {
         background: rgba(15, 23, 42, 0.6);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         padding: 12px;
         font-size: 12px;
-        max-height: 180px;
+        font-family: "JetBrains Mono", "Cascadia Code", "Menlo", monospace;
+        max-height: 200px;
         overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
       }
 
-      .inline-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
+      .event-log {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 12px;
+        font-size: 11px;
+        font-family: "JetBrains Mono", "Cascadia Code", "Menlo", monospace;
+        max-height: 300px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
       }
 
-      .inline-controls label {
-        flex: 1 0 140px;
-        margin-top: 0;
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        opacity: 0.6;
       }
 
-      .inline-controls input,
-      .inline-controls select {
-        margin-top: 4px;
-      }
-
-      small {
+      .loading {
+        text-align: center;
+        padding: 20px;
         opacity: 0.7;
-        display: block;
-        margin-top: 4px;
-        font-size: 12px;
-      }
-
-      .hint {
-        font-size: 12px;
-        opacity: 0.65;
-        margin-top: 4px;
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>後端導播控制台 · MVP</h1>
-      <p class="hint">先求能動：所有操作直接呼叫 FastAPI，WebSocket 事件顯示於底部日誌。</p>
+      <h1>後端導播控制台</h1>
+      <button class="back-btn" id="back-btn">← 返回列表</button>
     </header>
+
     <main>
-      <section id="section-clients">
-        <h2>客戶端監控</h2>
-        <div class="inline-controls">
-          <label>
-            Client ID (查詢/套用)
-            <input type="text" id="client-focus" placeholder="desktop / integration_test" />
-          </label>
-          <label>
-            自動更新
-            <select id="auto-refresh">
-              <option value="off">手動</option>
-              <option value="5">每 5 秒</option>
-              <option value="15">每 15 秒</option>
-            </select>
-          </label>
-        </div>
-        <button id="refresh-clients">重新整理列表</button>
-        <table>
-          <thead>
-            <tr>
-              <th>client_id</th>
-              <th>連線數</th>
-              <th>能力</th>
-              <th>最後心跳</th>
-            </tr>
-          </thead>
-          <tbody id="clients-table-body"></tbody>
-        </table>
-        <pre id="client-details">選擇 client 後顯示詳細狀態...</pre>
-      </section>
+      <!-- 主頁面：Client 列表 -->
+      <div id="client-list-view">
+        <div class="loading">載入中...</div>
+      </div>
 
-      <section>
-        <h2>顯示狀態控制</h2>
-        <form id="display-form">
-          <label>
-            client_id
-            <input type="text" name="client_id" placeholder="desktop" />
-          </label>
-          <label>
-            mode
-            <input type="text" name="mode" placeholder="collage / iframe / slide" required />
-          </label>
-          <label>
-            params JSON
-            <textarea name="params" placeholder='{"images": ["img_001.png"]}'></textarea>
-          </label>
-          <label>
-            expires_in (秒，可省略)
-            <input type="number" name="expires_in" min="0" step="1" />
-          </label>
-          <button type="submit">套用顯示狀態</button>
-          <button type="button" id="load-display-state">讀取目前狀態</button>
-        </form>
-        <pre id="display-state-view">尚未讀取...</pre>
-      </section>
-
-      <section>
-        <h2>Collage 快捷</h2>
-        <form id="collage-form">
-          <label>
-            client_id
-            <input type="text" name="client_id" placeholder="desktop2" required />
-          </label>
-          <label>
-            圖像列表（以逗號分隔）
-            <input type="text" name="images" placeholder="offspring_xxx.png,offspring_yyy.png" />
-          </label>
-          <div class="inline-controls">
-            <label>
-              rows
-              <input type="number" name="rows" value="6" min="1" max="50" />
-            </label>
-            <label>
-              cols
-              <input type="number" name="cols" value="6" min="1" max="50" />
-            </label>
-            <label>
-              mix
-              <select name="mix">
-                <option value="false">false</option>
-                <option value="true">true</option>
-              </select>
-            </label>
+      <!-- 詳細頁面：Client 控制 -->
+      <div id="client-detail-view">
+        <div class="client-header">
+          <h2 id="detail-client-name">-</h2>
+          <div class="client-info">
+            <span>連線數: <span id="detail-connections">-</span></span>
+            <span>能力: <span id="detail-capabilities">-</span></span>
+            <span>最後心跳: <span id="detail-heartbeat">-</span></span>
           </div>
-          <div class="inline-controls">
-            <label>
-              stage_width
-              <input type="number" name="stage_width" min="100" step="10" />
-            </label>
-            <label>
-              stage_height
-              <input type="number" name="stage_height" min="100" step="10" />
-            </label>
-            <label>
-              shuffle_seed
-              <input type="number" name="shuffle_seed" step="1" />
-            </label>
-          </div>
-          <label>
-            其他參數 JSON
-            <textarea name="extra_params" placeholder='{"images_base": "generated_images"}'></textarea>
-          </label>
-          <button type="submit">套用 Collage</button>
-        </form>
-      </section>
-
-      <section>
-        <h2>容器佈局</h2>
-        <form id="layout-form">
-          <label>
-            target_client_id
-            <input type="text" name="target_client_id" placeholder="desktop" />
-          </label>
-          <label>
-            JSON 內容
-            <textarea name="layout_json" id="layout-json" placeholder='{ "layout": "grid", ... }'></textarea>
-          </label>
-          <button type="button" id="load-layout">讀取佈局</button>
-          <button type="submit">儲存並廣播</button>
-        </form>
-      </section>
-
-      <section>
-        <h2>字幕 / Caption</h2>
-        <form id="subtitle-form">
-          <label>
-            target_client_id
-            <input type="text" name="client_id" placeholder="desktop" />
-          </label>
-          <label>
-            文字內容
-            <textarea name="text" placeholder="字幕內容"></textarea>
-          </label>
-          <label>
-            語言（選填）
-            <input type="text" name="language" placeholder="zh-TW" />
-          </label>
-          <label>
-            顯示秒數（選填）
-            <input type="number" name="duration" min="0" step="1" />
-          </label>
-          <button type="submit">推送字幕</button>
-          <button type="button" id="clear-subtitle">清除字幕</button>
-        </form>
-        <div class="hint">Caption API 與字幕相同，可改 client_id 呼叫。</div>
-      </section>
-
-      <section>
-        <h2>音效 / TTS</h2>
-        <div class="inline-controls">
-          <label>
-            target_client_id
-            <input type="text" id="audio-client" placeholder="desktop" />
-          </label>
-          <label>
-            可用音效
-            <select id="sound-select"></select>
-          </label>
         </div>
-        <button id="refresh-sounds">重新載入音效清單</button>
-        <button id="play-sound">播放音效</button>
 
-        <form id="tts-form">
-          <label>
-            TTS 文字
-            <textarea name="text" placeholder="請輸入要轉成語音的文字"></textarea>
-          </label>
-          <label>
-            指示（選填，例如：zh-TW Mandarin, calm）
-            <input type="text" name="instructions" />
-          </label>
-          <label>
-            語音（選填，例如：alloy）
-            <input type="text" name="voice" />
-          </label>
-          <label>
-            自動播放
-            <select name="auto_play">
-              <option value="true">true</option>
-              <option value="false" selected>false</option>
-            </select>
-          </label>
-          <button type="submit">產生 TTS</button>
-        </form>
-      </section>
+        <!-- 顯示模式選擇 -->
+        <section>
+          <h3>顯示模式</h3>
+          <div class="mode-selector">
+            <button class="mode-btn" data-mode="collage">Collage</button>
+            <button class="mode-btn" data-mode="iframe">Iframe</button>
+            <button class="mode-btn" data-mode="slide">Slide</button>
+            <button class="mode-btn" data-mode="default">預設</button>
+          </div>
+        </section>
 
-      <section style="grid-column: 1 / -1">
-        <h2>即時事件日誌（WebSocket）</h2>
-        <pre id="event-log"></pre>
+        <!-- Collage 模式控制 -->
+        <section id="collage-controls" style="display: none;">
+          <h3>Collage 設定</h3>
+          <div class="control-group">
+            <label>圖片數量</label>
+            <div class="slider-control">
+              <input type="range" id="collage-image-count" min="1" max="30" value="4" />
+              <input type="number" id="collage-image-count-num" min="1" max="30" value="4" />
+            </div>
+          </div>
+          <div class="control-group">
+            <label>切片列數 (Rows)</label>
+            <div class="slider-control">
+              <input type="range" id="collage-rows" min="1" max="96" value="3" />
+              <input type="number" id="collage-rows-num" min="1" max="96" value="3" />
+            </div>
+          </div>
+          <div class="control-group">
+            <label>切片行數 (Cols)</label>
+            <div class="slider-control">
+              <input type="range" id="collage-cols" min="1" max="96" value="3" />
+              <input type="number" id="collage-cols-num" min="1" max="96" value="3" />
+            </div>
+          </div>
+          <div class="control-group">
+            <div class="checkbox-control">
+              <input type="checkbox" id="collage-mix" />
+              <label for="collage-mix" style="margin: 0;">混合拼貼</label>
+            </div>
+          </div>
+          <div class="control-group">
+            <label>圖像列表（以逗號分隔）</label>
+            <textarea id="collage-images" placeholder="offspring_xxx.png,offspring_yyy.png"></textarea>
+            <div class="image-list" id="collage-image-list"></div>
+          </div>
+          <div class="button-group">
+            <button class="primary" id="apply-collage">套用 Collage</button>
+            <button id="shuffle-collage">重新打散</button>
+          </div>
+        </section>
+
+        <!-- 其他模式控制 -->
+        <section id="other-controls" style="display: none;">
+          <h3>顯示狀態控制</h3>
+          <div class="control-group">
+            <label>mode</label>
+            <input type="text" id="display-mode" placeholder="collage / iframe / slide" />
+          </div>
+          <div class="control-group">
+            <label>params JSON</label>
+            <textarea id="display-params" placeholder='{"images": ["img_001.png"]}'></textarea>
+          </div>
+          <div class="button-group">
+            <button class="primary" id="apply-display-state">套用顯示狀態</button>
+            <button id="load-display-state">讀取目前狀態</button>
+          </div>
+        </section>
+
+        <!-- 目前狀態顯示 -->
+        <section>
+          <h3>目前狀態</h3>
+          <div class="status-display" id="current-state">尚未讀取...</div>
+        </section>
+
+        <!-- 其他功能 -->
+        <section>
+          <h3>其他功能</h3>
+          <div class="button-group">
+            <button id="load-layout">讀取容器佈局</button>
+            <button id="clear-display-state">清除顯示狀態</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- 事件日誌 -->
+      <section style="grid-column: 1 / -1; margin-top: 24px;">
+        <h3>即時事件日誌（WebSocket）</h3>
+        <div class="event-log" id="event-log"></div>
       </section>
     </main>
 
     <script>
       const apiBase = window.location.origin;
+      let currentClientId = null;
+      let autoRefreshTimer = null;
 
       function logEvent(message, type = "info") {
         const logEl = document.getElementById("event-log");
         const stamp = new Date().toISOString();
         const line = `[${stamp}] (${type}) ${message}`;
-        logEl.textContent = `${line}\n${logEl.textContent}`.slice(0, 8000);
+        logEl.textContent = `${line}\n${logEl.textContent}`.slice(0, 10000);
       }
 
       async function requestJSON(url, options = {}) {
@@ -387,297 +517,232 @@
         }
       }
 
-      function updateClientDetails(client) {
-        const view = document.getElementById("client-details");
-        if (!client) {
-          view.textContent = "尚未選擇 client";
-          return;
-        }
-        view.textContent = JSON.stringify(client, null, 2);
-      }
-
-      async function refreshClients() {
+      // 載入 Client 列表
+      async function loadClientList() {
         try {
           const data = await fetch(`${apiBase}/api/clients`).then((res) => res.json());
-          const tbody = document.getElementById("clients-table-body");
-          tbody.innerHTML = "";
-          const focus = document.getElementById("client-focus").value.trim();
-          let focusRecord = null;
-          data.clients.forEach((client) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${client.client_id ?? "<全域>"}</td>
-              <td>${client.connections}</td>
-              <td>${(client.capabilities || []).join(", ")}</td>
-              <td>${client.last_heartbeat ?? "-"}</td>
-            `;
-            tr.addEventListener("click", () => {
-              document.getElementById("client-focus").value = client.client_id ?? "";
-              updateClientDetails(client);
-            });
-            tbody.appendChild(tr);
-            if (focus && client.client_id === focus) {
-              focusRecord = client;
-            }
-          });
-          if (!focus && data.clients.length) {
-            updateClientDetails(data.clients[0]);
-          } else if (focusRecord) {
-            updateClientDetails(focusRecord);
+          const container = document.getElementById("client-list-view");
+          
+          if (!data.clients || data.clients.length === 0) {
+            container.innerHTML = '<div class="empty-state">目前沒有連線的客戶端</div>';
+            return;
           }
+
+          container.innerHTML = data.clients
+            .map(
+              (client) => `
+            <div class="client-card" data-client-id="${client.client_id || ""}">
+              <h3>${client.client_id || "<全域>"}</h3>
+              <div class="client-meta">
+                <span><span class="client-status"></span>連線中</span>
+                <span>連線數: ${client.connections}</span>
+                <span>能力: ${(client.capabilities || []).join(", ") || "無"}</span>
+                <span>最後心跳: ${client.last_heartbeat || "-"}</span>
+              </div>
+            </div>
+          `,
+            )
+            .join("");
+
+          // 綁定點擊事件
+          container.querySelectorAll(".client-card").forEach((card) => {
+            card.addEventListener("click", () => {
+              const clientId = card.dataset.clientId || null;
+              showClientDetail(clientId);
+            });
+          });
         } catch (err) {
           logEvent(`載入 clients 失敗: ${err.message}`, "error");
+          document.getElementById("client-list-view").innerHTML = `<div class="empty-state">載入失敗: ${err.message}</div>`;
         }
       }
 
-      document.getElementById("refresh-clients").addEventListener("click", refreshClients);
+      // 顯示 Client 詳細頁面
+      async function showClientDetail(clientId) {
+        currentClientId = clientId;
+        document.getElementById("client-list-view").style.display = "none";
+        document.getElementById("client-detail-view").classList.add("active");
+        document.getElementById("back-btn").classList.add("visible");
 
-      document.getElementById("auto-refresh").addEventListener("change", (event) => {
-        if (window.__autoTimer) {
-          clearInterval(window.__autoTimer);
-          window.__autoTimer = null;
-        }
-        const value = event.target.value;
-        if (value !== "off") {
-          const interval = Number(value) * 1000;
-          window.__autoTimer = setInterval(refreshClients, interval);
-        }
-      });
-
-      document.getElementById("display-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const clientId = form.client_id.value.trim();
-        if (!clientId) {
-          alert("請輸入 client_id");
-          return;
-        }
-        let params;
+        // 載入 client 資訊
         try {
-          params = parseJSON(form.params.value, {});
+          const data = await fetch(`${apiBase}/api/clients`).then((res) => res.json());
+          const client = data.clients.find((c) => (c.client_id || null) === clientId) || {};
+          
+          document.getElementById("detail-client-name").textContent = clientId || "<全域>";
+          document.getElementById("detail-connections").textContent = client.connections || 0;
+          document.getElementById("detail-capabilities").textContent = (client.capabilities || []).join(", ") || "無";
+          document.getElementById("detail-heartbeat").textContent = client.last_heartbeat || "-";
         } catch (err) {
-          alert(err.message);
-          return;
+          logEvent(`載入 client 資訊失敗: ${err.message}`, "error");
         }
-        const payload = {
-          mode: form.mode.value.trim(),
-          params,
-          frames: [],
-        };
-        const expiresIn = form.expires_in.value;
-        if (expiresIn) {
-          payload.expires_in = Number(expiresIn);
-        }
-        try {
-          const result = await requestJSON(`${apiBase}/api/clients/${encodeURIComponent(clientId)}/display`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-          document.getElementById("display-state-view").textContent = JSON.stringify(result, null, 2);
-          logEvent(`更新 ${clientId} display_state 成功`);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`更新 display_state 失敗: ${err.message}`, "error");
-        }
-      });
 
-      document.getElementById("load-display-state").addEventListener("click", async () => {
-        const clientId = document.getElementById("client-focus").value.trim();
+        // 載入顯示狀態
+        await loadDisplayState();
+      }
+
+      // 返回列表
+      function showClientList() {
+        currentClientId = null;
+        document.getElementById("client-list-view").style.display = "grid";
+        document.getElementById("client-detail-view").classList.remove("active");
+        document.getElementById("back-btn").classList.remove("visible");
+      }
+
+      // 載入顯示狀態
+      async function loadDisplayState() {
         try {
-          const url = clientId
-            ? `${apiBase}/api/clients/${encodeURIComponent(clientId)}/display`
+          const url = currentClientId
+            ? `${apiBase}/api/clients/${encodeURIComponent(currentClientId)}/display`
             : `${apiBase}/api/display`;
           const result = await fetch(url).then((res) => res.json());
-          document.getElementById("display-state-view").textContent = JSON.stringify(result, null, 2);
-          logEvent(`讀取 ${clientId || "<全域>"} display_state`);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`讀取 display_state 失敗: ${err.message}`, "error");
-        }
-      });
+          
+          document.getElementById("current-state").textContent = JSON.stringify(result, null, 2);
+          
+          // 根據 mode 顯示對應的控制項
+          const mode = result.state?.mode;
+          if (mode === "collage") {
+            showCollageControls(result.state.params || {});
+          } else {
+            showOtherControls(result.state);
+          }
 
-      document.getElementById("collage-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const clientId = form.client_id.value.trim();
-        if (!clientId) {
-          alert("請輸入 client_id");
+          // 更新模式選擇按鈕
+          document.querySelectorAll(".mode-btn").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.mode === (mode || "default"));
+          });
+
+          logEvent(`讀取 ${currentClientId || "<全域>"} display_state`);
+        } catch (err) {
+          logEvent(`讀取 display_state 失敗: ${err.message}`, "error");
+          document.getElementById("current-state").textContent = `錯誤: ${err.message}`;
+        }
+      }
+
+      // 顯示 Collage 控制項
+      function showCollageControls(params) {
+        document.getElementById("collage-controls").style.display = "block";
+        document.getElementById("other-controls").style.display = "none";
+
+        // 設定值
+        if (params.images) {
+          const images = Array.isArray(params.images) ? params.images : [];
+          document.getElementById("collage-images").value = images.join(", ");
+          updateImageList(images);
+        }
+
+        document.getElementById("collage-rows").value = params.rows || 3;
+        document.getElementById("collage-rows-num").value = params.rows || 3;
+        document.getElementById("collage-cols").value = params.cols || 3;
+        document.getElementById("collage-cols-num").value = params.cols || 3;
+        document.getElementById("collage-mix").checked = params.mix || false;
+      }
+
+      // 顯示其他模式控制項
+      function showOtherControls(state) {
+        document.getElementById("collage-controls").style.display = "none";
+        document.getElementById("other-controls").style.display = "block";
+
+        if (state) {
+          document.getElementById("display-mode").value = state.mode || "";
+          document.getElementById("display-params").value = JSON.stringify(state.params || {}, null, 2);
+        }
+      }
+
+      // 更新圖像列表顯示
+      function updateImageList(images) {
+        const container = document.getElementById("collage-image-list");
+        if (!images || images.length === 0) {
+          container.innerHTML = "";
           return;
         }
-        const images = form.images.value
+        container.innerHTML = images.map((img) => `<div class="image-item">${img}</div>`).join("");
+      }
+
+      // 同步 slider 和 number input
+      function syncSliderNumber(sliderId, numberId) {
+        const slider = document.getElementById(sliderId);
+        const number = document.getElementById(numberId);
+        slider.addEventListener("input", () => {
+          number.value = slider.value;
+        });
+        number.addEventListener("input", () => {
+          slider.value = number.value;
+        });
+      }
+
+      // 套用 Collage
+      async function applyCollage() {
+        const images = document.getElementById("collage-images").value
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean);
-        let extraParams = {};
-        try {
-          extraParams = parseJSON(form.extra_params.value, {});
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
+        
         const payload = {
           images,
-          rows: Number(form.rows.value || 6),
-          cols: Number(form.cols.value || 6),
-          mix: form.mix.value === "true",
-          shuffle_seed: form.shuffle_seed.value ? Number(form.shuffle_seed.value) : null,
-          stage_width: form.stage_width.value ? Number(form.stage_width.value) : null,
-          stage_height: form.stage_height.value ? Number(form.stage_height.value) : null,
-          params: extraParams,
+          rows: Number(document.getElementById("collage-rows").value),
+          cols: Number(document.getElementById("collage-cols").value),
+          mix: document.getElementById("collage-mix").checked,
         };
+
         try {
-          const result = await requestJSON(`${apiBase}/api/clients/${encodeURIComponent(clientId)}/collage`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-          document.getElementById("display-state-view").textContent = JSON.stringify(result, null, 2);
-          logEvent(`套用 collage 至 ${clientId}`);
+          const result = currentClientId
+            ? await requestJSON(
+                `${apiBase}/api/clients/${encodeURIComponent(currentClientId)}/collage`,
+                {
+                  method: "POST",
+                  body: JSON.stringify(payload),
+                },
+              )
+            : await requestJSON(`${apiBase}/api/display`, {
+                method: "POST",
+                body: JSON.stringify({ mode: "collage", params: payload }),
+              });
+          document.getElementById("current-state").textContent = JSON.stringify(result, null, 2);
+          logEvent(`套用 collage 至 ${currentClientId}`);
+          await loadDisplayState();
         } catch (err) {
           alert(err.message);
           logEvent(`Collage 設定失敗: ${err.message}`, "error");
         }
-      });
+      }
 
-      document.getElementById("layout-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const clientId = form.target_client_id.value.trim();
-        let payload;
-        try {
-          payload = parseJSON(form.layout_json.value, {});
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
-        if (clientId) {
-          payload.target_client_id = clientId;
-        }
-        try {
-          const result = await requestJSON(`${apiBase}/api/container-layout`, {
-            method: "PUT",
-            body: JSON.stringify(payload),
-          });
-          document.getElementById("layout-json").value = JSON.stringify(result.raw ?? result, null, 2);
-          logEvent(`更新 container_layout (${clientId || "全域"}) 成功`);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`更新 container_layout 失敗: ${err.message}`, "error");
-        }
-      });
-
-      document.getElementById("load-layout").addEventListener("click", async () => {
-        const clientId = document.getElementById("client-focus").value.trim() || null;
-        const url = clientId
-          ? `${apiBase}/api/container-layout?client=${encodeURIComponent(clientId)}`
-          : `${apiBase}/api/container-layout`;
-        try {
-          const result = await fetch(url).then((res) => res.json());
-          document.getElementById("layout-json").value = JSON.stringify(result.raw ?? result, null, 2);
-          logEvent(`讀取 container_layout (${clientId || "全域"})`);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`讀取 container_layout 失敗: ${err.message}`, "error");
-        }
-      });
-
-      document.getElementById("subtitle-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const clientId = form.client_id.value.trim();
+      // 重新打散
+      async function shuffleCollage() {
         const payload = {
-          text: form.text.value,
-          language: form.language.value || null,
-          duration_seconds: form.duration.value ? Number(form.duration.value) : null,
+          images: document.getElementById("collage-images").value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+          rows: Number(document.getElementById("collage-rows").value),
+          cols: Number(document.getElementById("collage-cols").value),
+          mix: document.getElementById("collage-mix").checked,
+          shuffle_seed: Date.now(),
         };
+
         try {
-          await requestJSON(`${apiBase}/api/subtitles?target_client_id=${encodeURIComponent(clientId)}`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-          logEvent(`推送字幕給 ${clientId || "全部"}`);
+          const result = currentClientId
+            ? await requestJSON(
+                `${apiBase}/api/clients/${encodeURIComponent(currentClientId)}/collage`,
+                {
+                  method: "POST",
+                  body: JSON.stringify(payload),
+                },
+              )
+            : await requestJSON(`${apiBase}/api/display`, {
+                method: "POST",
+                body: JSON.stringify({ mode: "collage", params: payload }),
+              });
+          document.getElementById("current-state").textContent = JSON.stringify(result, null, 2);
+          logEvent(`重新打散 collage (${currentClientId})`);
+          await loadDisplayState();
         } catch (err) {
           alert(err.message);
-          logEvent(`字幕推送失敗: ${err.message}`, "error");
-        }
-      });
-
-      document.getElementById("clear-subtitle").addEventListener("click", async () => {
-        const clientId = document.getElementById("subtitle-form").client_id.value.trim();
-        try {
-          await fetch(`${apiBase}/api/subtitles?target_client_id=${encodeURIComponent(clientId)}`, {
-            method: "DELETE",
-          });
-          logEvent(`已清除字幕 (${clientId || "全部"})`);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`清除字幕失敗: ${err.message}`, "error");
-        }
-      });
-
-      async function refreshSoundList() {
-        try {
-          const res = await fetch(`${apiBase}/api/sound-files`);
-          const data = await res.json();
-          const select = document.getElementById("sound-select");
-          select.innerHTML = "";
-          (data.files || []).forEach((file) => {
-            const option = document.createElement("option");
-            option.value = file.filename;
-            option.textContent = file.filename;
-            select.appendChild(option);
-          });
-          logEvent("重新載入音效清單");
-        } catch (err) {
-          logEvent(`讀取音效清單失敗: ${err.message}`, "error");
+          logEvent(`重新打散失敗: ${err.message}`, "error");
         }
       }
 
-      document.getElementById("refresh-sounds").addEventListener("click", refreshSoundList);
-
-      document.getElementById("play-sound").addEventListener("click", async () => {
-        const filename = document.getElementById("sound-select").value;
-        if (!filename) {
-          alert("請先選擇音效");
-          return;
-        }
-        const clientId = document.getElementById("audio-client").value.trim();
-        try {
-          await requestJSON(`${apiBase}/api/sound-play`, {
-            method: "POST",
-            body: JSON.stringify({ filename, target_client_id: clientId || null }),
-          });
-          logEvent(`音效 ${filename} 佇列成功 (${clientId || "全部"})`);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`音效播放失敗: ${err.message}`, "error");
-        }
-      });
-
-      document.getElementById("tts-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const clientId = document.getElementById("audio-client").value.trim();
-        const payload = {
-          text: form.text.value,
-          instructions: form.instructions.value || null,
-          voice: form.voice.value || null,
-          auto_play: form.auto_play.value === "true",
-          target_client_id: clientId || null,
-        };
-        try {
-          const result = await requestJSON(`${apiBase}/api/tts`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-          logEvent(`TTS 已產生${payload.auto_play ? "並播放" : ""}`);
-          alert("TTS 完成，詳見日誌與返回 JSON");
-          console.info(result);
-        } catch (err) {
-          alert(err.message);
-          logEvent(`TTS 失敗: ${err.message}`, "error");
-        }
-      });
-
+      // WebSocket 連線
       function setupWebSocket() {
         const base = apiBase.replace(/^http/, "ws");
         const socket = new WebSocket(`${base}/ws/screenshots`);
@@ -703,9 +768,57 @@
         });
       }
 
-      refreshClients();
-      refreshSoundList();
+      // 事件綁定
+      document.getElementById("back-btn").addEventListener("click", showClientList);
+
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          
+          const mode = btn.dataset.mode;
+          if (mode === "collage") {
+            showCollageControls({});
+          } else if (mode === "default") {
+            showOtherControls(null);
+          } else {
+            showOtherControls({ mode });
+          }
+        });
+      });
+
+      syncSliderNumber("collage-rows", "collage-rows-num");
+      syncSliderNumber("collage-cols", "collage-cols-num");
+      syncSliderNumber("collage-image-count", "collage-image-count-num");
+
+      document.getElementById("collage-images").addEventListener("input", (e) => {
+        const images = e.target.value.split(",").map((item) => item.trim()).filter(Boolean);
+        updateImageList(images);
+      });
+
+      document.getElementById("apply-collage").addEventListener("click", applyCollage);
+      document.getElementById("shuffle-collage").addEventListener("click", shuffleCollage);
+      document.getElementById("load-display-state").addEventListener("click", loadDisplayState);
+      document.getElementById("clear-display-state").addEventListener("click", async () => {
+        try {
+          const url = currentClientId
+            ? `${apiBase}/api/clients/${encodeURIComponent(currentClientId)}/display`
+            : `${apiBase}/api/display`;
+          await fetch(url, { method: "DELETE" });
+          logEvent(`清除 ${currentClientId} display_state`);
+          await loadDisplayState();
+        } catch (err) {
+          alert(err.message);
+          logEvent(`清除失敗: ${err.message}`, "error");
+        }
+      });
+
+      // 初始化
+      loadClientList();
       setupWebSocket();
+
+      // 自動刷新列表
+      setInterval(loadClientList, 5000);
     </script>
   </body>
 </html>

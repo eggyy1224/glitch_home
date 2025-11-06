@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchKinship, fetchCameraPresets, saveCameraPreset, deleteCameraPreset } from "./api.js";
+import { fetchKinship, fetchCameraPresets, saveCameraPreset, deleteCameraPreset, fetchDisplayState } from "./api.js";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
@@ -63,23 +63,34 @@ export default function App() {
   const [presetMessage, setPresetMessage] = useState(null);
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
   const messageTimerRef = useRef(null);
-  const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
+  const [displayState, setDisplayState] = useState(null); // 儲存後端的 display_state
   const soundPlayerEnabled = (readParams().get("sound_player") ?? "false") === "true";
-  const iframeMode = !incubatorMode && (readParams().get("iframe_mode") ?? "false") === "true";
-  const slideMode = !incubatorMode && !iframeMode && (readParams().get("slide_mode") ?? "false") === "true";
-  const organicMode =
-    !incubatorMode && !iframeMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
-  const phylogenyMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
-  const searchMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
-    (readParams().get("search_mode") ?? "false") === "true";
-  const collageMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode &&
-    (readParams().get("collage_mode") ?? "false") === "true";
-  const captionMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
-    (readParams().get("caption_mode") ?? "false") === "true";
+  
+  // 以後端的 display_state 為最高優先權；若沒有，才從 URL 參數推導模式
+  const urlParams = readParams();
+  const urlHasTrue = (key) => (urlParams.get(key) ?? "false") === "true";
+  const urlMode = (() => {
+    if (urlHasTrue("incubator")) return "incubator";
+    if (urlHasTrue("iframe_mode")) return "iframe";
+    if (urlHasTrue("slide_mode")) return "slide";
+    if (urlHasTrue("organic_mode")) return "organic";
+    if (urlHasTrue("phylogeny")) return "phylogeny";
+    if (urlHasTrue("search_mode")) return "search";
+    if (urlHasTrue("collage_mode")) return "collage";
+    if (urlHasTrue("caption_mode")) return "caption";
+    return "kinship"; // 預設 3D 視圖
+  })();
+  const effectiveMode = (displayState?.mode && String(displayState.mode).trim()) || urlMode;
+  
+  // 由單一 effectiveMode 推導各布林旗標（互斥）
+  const incubatorMode = effectiveMode === "incubator";
+  const iframeMode = effectiveMode === "iframe";
+  const slideMode = effectiveMode === "slide";
+  const organicMode = effectiveMode === "organic";
+  const phylogenyMode = effectiveMode === "phylogeny";
+  const searchMode = effectiveMode === "search";
+  const collageMode = effectiveMode === "collage";
+  const captionMode = effectiveMode === "caption";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -168,6 +179,28 @@ export default function App() {
       }
     };
   }, []);
+
+  // 初始化時讀取 display_state
+  useEffect(() => {
+    let cancelled = false;
+    
+    async function loadDisplayState() {
+      try {
+        const result = await fetchDisplayState(clientId);
+        if (cancelled) return;
+        setDisplayState(result?.state || null);
+      } catch (err) {
+        console.error("載入 display_state 失敗:", err);
+        setDisplayState(null);
+      }
+    }
+
+    loadDisplayState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId]);
 
   const handleSavePreset = useCallback(async () => {
     if (!cameraInfo) {
@@ -349,6 +382,18 @@ export default function App() {
     [clientId, applyRemoteIframeConfig],
   );
 
+  const handleDisplayStateMessage = useCallback(
+    (payload) => {
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      // 直接更新 state，不修改 URL
+      setDisplayState(payload?.state || null);
+    },
+    [clientId],
+  );
+
   useControlSocket({
     clientId,
     onScreenshotRequest: enqueueScreenshotRequest,
@@ -357,6 +402,7 @@ export default function App() {
     onSubtitleUpdate: handleSubtitleMessage,
     onCaptionUpdate: handleCaptionMessage,
     onIframeConfig: handleIframeConfigMessage,
+    onDisplayStateUpdate: handleDisplayStateMessage,
   });
 
   const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
@@ -452,6 +498,7 @@ export default function App() {
           imagesBase={IMAGES_BASE}
           anchorImage={imgId}
           onCaptureReady={handleCaptureReady}
+          displayStateParams={displayState?.params}
         />
         {soundPlayerEnabled && (
           <SoundPlayer
