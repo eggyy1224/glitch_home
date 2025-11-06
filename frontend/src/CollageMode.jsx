@@ -1089,7 +1089,6 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
       )}
 
       <div className={stageClassName} ref={rootRef}>
-        {loading && <div className="collage-status">載入圖像中...</div>}
         {!loading && error && <div className="collage-status collage-status-error">{error}</div>}
         {!loading && selectedImages.length === 0 && !error && (
           <div className="collage-status">沒有圖像可顯示，請確認網址參數。</div>
