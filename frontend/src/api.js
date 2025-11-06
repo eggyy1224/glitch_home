@@ -31,6 +31,28 @@ export async function deleteCameraPreset(name) {
   return true;
 }
 
+export async function fetchCollageConfig(clientId = null) {
+  let url = `${API_BASE}/api/collage-config`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function saveCollageConfig(config) {
+  const url = `${API_BASE}/api/collage-config`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
 export async function uploadScreenshot(blob, requestId = null, clientId = null) {
   const url = `${API_BASE}/api/screenshots`;
   const form = new FormData();

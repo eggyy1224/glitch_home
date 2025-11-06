@@ -8,8 +8,13 @@ from fastapi import APIRouter, Body, File, Form, HTTPException, Query, UploadFil
 
 from ..models.schemas import CameraPreset, SaveCameraPresetRequest
 from ..services.camera_presets import delete_camera_preset, list_camera_presets, upsert_camera_preset
+from ..services.collage_config import (
+    config_payload_for_response as collage_config_payload_for_response,
+    load_collage_config,
+    save_collage_config,
+)
 from ..services.iframe_config import (
-    config_payload_for_response,
+    config_payload_for_response as iframe_config_payload_for_response,
     load_iframe_config,
     save_iframe_config,
 )
@@ -25,7 +30,7 @@ def api_get_iframe_config(client: str | None = Query(default=None)) -> dict:
         config = load_iframe_config(client)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return config_payload_for_response(config, client)
+    return iframe_config_payload_for_response(config, client)
 
 
 @router.put("/api/iframe-config")
@@ -39,8 +44,33 @@ async def api_put_iframe_config(body: dict = Body(...)) -> dict:
     except Exception as exc:  # noqa: BLE001 - surface as 500
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    payload = config_payload_for_response(config, target_client_id)
+    payload = iframe_config_payload_for_response(config, target_client_id)
     await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
+    return payload
+
+
+@router.get("/api/collage-config")
+def api_get_collage_config(client: str | None = Query(default=None)) -> dict:
+    try:
+        config, source, owner_client_id, path = load_collage_config(client)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return collage_config_payload_for_response(config, source, owner_client_id, path)
+
+
+@router.put("/api/collage-config")
+async def api_put_collage_config(body: dict = Body(...)) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    try:
+        config, source, target_client_id, path = save_collage_config(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - surface as 500
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    payload = collage_config_payload_for_response(config, source, target_client_id, path)
+    await screenshot_requests_manager.broadcast_collage_config(payload, target_client_id=target_client_id)
     return payload
 
 

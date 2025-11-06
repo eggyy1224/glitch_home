@@ -2,25 +2,25 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./CollageMode.css";
 import { fetchKinship } from "./api.js";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
-
-const DEFAULT_IMAGE_COUNT = 4;
-const DEFAULT_ROWS = 3;
-const DEFAULT_COLS = 3;
-const MAX_IMAGES = 30;
-const MAX_ROWS = 96;
-const MAX_COLS = 96;
-const DEFAULT_STAGE_WIDTH = 960;
-const STAGE_MIN_WIDTH = 360;
-const STAGE_MAX_WIDTH = 3840;
-const STAGE_MIN_HEIGHT = 240;
-const STAGE_MAX_HEIGHT = 2160;
-const DEFAULT_STAGE_HEIGHT = 540;
-const PIECE_OVERLAP_PX = 1;
+import {
+  COLLAGE_DEFAULT_IMAGE_COUNT as DEFAULT_IMAGE_COUNT,
+  COLLAGE_DEFAULT_ROWS as DEFAULT_ROWS,
+  COLLAGE_DEFAULT_COLS as DEFAULT_COLS,
+  COLLAGE_MAX_IMAGES as MAX_IMAGES,
+  COLLAGE_MAX_ROWS as MAX_ROWS,
+  COLLAGE_MAX_COLS as MAX_COLS,
+  COLLAGE_DEFAULT_STAGE_WIDTH as DEFAULT_STAGE_WIDTH,
+  COLLAGE_DEFAULT_STAGE_HEIGHT as DEFAULT_STAGE_HEIGHT,
+  COLLAGE_STAGE_MIN_WIDTH as STAGE_MIN_WIDTH,
+  COLLAGE_STAGE_MAX_WIDTH as STAGE_MAX_WIDTH,
+  COLLAGE_STAGE_MIN_HEIGHT as STAGE_MIN_HEIGHT,
+  COLLAGE_STAGE_MAX_HEIGHT as STAGE_MAX_HEIGHT,
+  COLLAGE_RATIO_MIN as RATIO_MIN,
+  COLLAGE_RATIO_MAX as RATIO_MAX,
+  COLLAGE_PIECE_OVERLAP_PX as PIECE_OVERLAP_PX,
+} from "./constants/collage.js";
 const PERSIST_COLLAGE_QUERY =
   String(import.meta.env.VITE_COLLAGE_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
-const RATIO_MIN = STAGE_MIN_HEIGHT / STAGE_MAX_WIDTH;
-const RATIO_MAX = STAGE_MAX_HEIGHT / STAGE_MIN_WIDTH;
-
 const cleanId = (value) => (value ? value.replace(/:(en|zh)$/, "") : value);
 
 const clamp = (value, min, max) => {
@@ -593,7 +593,14 @@ const optimizeBottomRightPlacement = (matrix, rows, cols, edgeLookup) => {
   }
 };
 
-export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = null }) {
+export default function CollageMode({
+  imagesBase,
+  anchorImage,
+  onCaptureReady = null,
+  remoteConfig = null,
+  controlsEnabled = true,
+  remoteSource = null,
+}) {
   const rootRef = useRef(null);
   const resizeHandleRef = useRef(null);
   const initialStageWidth = readInitialParam("collage_width", DEFAULT_STAGE_WIDTH, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH);
@@ -620,6 +627,13 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [imageMetrics, setImageMetrics] = useState(() => ({}));
+  const fetchedPoolRef = useRef([]);
+  const remoteOverrideRef = useRef(false);
+  const [remoteOverrideActive, setRemoteOverrideActive] = useState(false);
+
+  useEffect(() => {
+    remoteOverrideRef.current = remoteOverrideActive;
+  }, [remoteOverrideActive]);
 
   useEffect(() => {
     if (onCaptureReady == null) return undefined;
@@ -664,8 +678,12 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     const cleanAnchor = cleanId(anchorImage);
 
     if (!cleanAnchor) {
-      setImagePool([]);
-      setError("請在網址加上 ?img=檔名 以啟動拼貼模式。");
+      if (!remoteOverrideRef.current) {
+        setImagePool([]);
+        setError("請在網址加上 ?img=檔名 以啟動拼貼模式。");
+      } else {
+        setError(null);
+      }
       setLoading(false);
       return () => {
         cancelled = true;
@@ -680,14 +698,24 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
         const data = await fetchKinship(cleanAnchor, -1);
         if (cancelled) return;
         const pool = buildImagePool(data, cleanAnchor);
-        setImagePool(pool.length ? pool : [cleanAnchor]);
-        if (!pool.length) {
+        const nextPool = pool.length ? pool : [cleanAnchor];
+        fetchedPoolRef.current = nextPool;
+        if (!remoteOverrideRef.current) {
+          setImagePool(nextPool);
+          if (!pool.length) {
+            setError("沒有找到關聯圖像，改以原圖拼貼。");
+          }
+        } else if (!pool.length) {
           setError("沒有找到關聯圖像，改以原圖拼貼。");
         }
       } catch (err) {
         if (cancelled) return;
+        const fallbackPool = cleanAnchor ? [cleanAnchor] : [];
+        fetchedPoolRef.current = fallbackPool;
+        if (!remoteOverrideRef.current) {
+          setImagePool(fallbackPool);
+        }
         setError(err?.message || "載入圖像清單失敗");
-        setImagePool(cleanAnchor ? [cleanAnchor] : []);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -700,7 +728,71 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
     return () => {
       cancelled = true;
     };
-  }, [anchorImage]);
+  }, [anchorImage, remoteOverrideRef]);
+
+  useEffect(() => {
+    if (!remoteConfig) {
+      if (remoteOverrideRef.current) {
+        setRemoteOverrideActive(false);
+        setImagePool(fetchedPoolRef.current);
+      }
+      return;
+    }
+
+    const nextImages = Array.isArray(remoteConfig.images) ? remoteConfig.images : [];
+    if (nextImages.length) {
+      setRemoteOverrideActive(true);
+      setImagePool(nextImages);
+      setError(null);
+      setLoading(false);
+    } else if (remoteOverrideRef.current) {
+      setRemoteOverrideActive(false);
+      setImagePool(fetchedPoolRef.current);
+    }
+
+    if (typeof remoteConfig.image_count === "number") {
+      const targetCount = clamp(remoteConfig.image_count, 1, MAX_IMAGES);
+      setImageCount((prev) => (prev === targetCount ? prev : targetCount));
+    }
+
+    if (typeof remoteConfig.rows === "number") {
+      const targetRows = clamp(remoteConfig.rows, 1, MAX_ROWS);
+      setRows((prev) => (prev === targetRows ? prev : targetRows));
+    }
+
+    if (typeof remoteConfig.cols === "number") {
+      const targetCols = clamp(remoteConfig.cols, 1, MAX_COLS);
+      setCols((prev) => (prev === targetCols ? prev : targetCols));
+    }
+
+    if (typeof remoteConfig.mix === "boolean") {
+      const mixValue = Boolean(remoteConfig.mix);
+      setMixPieces((prev) => (prev === mixValue ? prev : mixValue));
+    }
+
+    if (remoteConfig.seed !== undefined && remoteConfig.seed !== null) {
+      const targetSeed = Math.floor(remoteConfig.seed);
+      setSeed((prev) => (prev === targetSeed ? prev : targetSeed));
+    }
+
+    if (typeof remoteConfig.stage_width === "number") {
+      const clampedWidth = clamp(remoteConfig.stage_width, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH);
+      setStageWidth((prev) => (Math.abs(prev - clampedWidth) < 0.5 ? prev : clampedWidth));
+    }
+
+    if (
+      typeof remoteConfig.stage_width === "number" &&
+      typeof remoteConfig.stage_height === "number" &&
+      remoteConfig.stage_width > 0
+    ) {
+      const nextRatio = clamp(
+        remoteConfig.stage_height / Math.max(remoteConfig.stage_width, 1),
+        RATIO_MIN,
+        RATIO_MAX,
+      );
+      setDesiredRatio((prev) => (Math.abs(prev - nextRatio) < 0.001 ? prev : nextRatio));
+    }
+  }, [remoteConfig]);
 
   const maxSelectableImages = useMemo(() => {
     if (!imagePool.length) return 1;
@@ -921,6 +1013,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   }, [mixPieces, selectedImages, rows, cols, imagesBase]);
 
   const handleImageCountChange = (value) => {
+    if (!controlsEnabled) return;
     const parsed = Number.parseInt(value, 10);
     if (Number.isNaN(parsed)) return;
     setImageCount(clamp(parsed, 1, maxSelectableImages));
@@ -928,6 +1021,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   };
 
   const handleRowsChange = (value) => {
+    if (!controlsEnabled) return;
     const parsed = Number.parseInt(value, 10);
     if (Number.isNaN(parsed)) return;
     setRows(clamp(parsed, 1, MAX_ROWS));
@@ -935,6 +1029,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   };
 
   const handleColsChange = (value) => {
+    if (!controlsEnabled) return;
     const parsed = Number.parseInt(value, 10);
     if (Number.isNaN(parsed)) return;
     setCols(clamp(parsed, 1, MAX_COLS));
@@ -942,11 +1037,13 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   };
 
   const toggleMixPieces = () => {
+    if (!controlsEnabled) return;
     setMixPieces((prev) => !prev);
     setSeed(Date.now());
   };
 
   const handleShuffle = () => {
+    if (!controlsEnabled) return;
     setSeed(Date.now());
   };
 
@@ -956,6 +1053,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
   }, [stageWidthBounds]);
 
   const handleResizePointerDown = (event) => {
+    if (!controlsEnabled) return;
     if (event.button !== 0) return;
     event.preventDefault();
     const startX = event.clientX;
@@ -1001,7 +1099,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 value={imageCount}
                 onChange={(e) => handleImageCountChange(e.target.value)}
                 className="collage-slider"
-                disabled={!imagePool.length}
+                disabled={!controlsEnabled || !imagePool.length}
               />
               <input
                 type="number"
@@ -1010,7 +1108,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 value={imageCount}
                 onChange={(e) => handleImageCountChange(e.target.value)}
                 className="collage-number"
-                disabled={!imagePool.length}
+                disabled={!controlsEnabled || !imagePool.length}
               />
             </div>
           </div>
@@ -1024,6 +1122,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 value={rows}
                 onChange={(e) => handleRowsChange(e.target.value)}
                 className="collage-slider"
+                disabled={!controlsEnabled}
               />
               <input
                 type="number"
@@ -1032,6 +1131,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 value={rows}
                 onChange={(e) => handleRowsChange(e.target.value)}
                 className="collage-number"
+                disabled={!controlsEnabled}
               />
             </div>
           </div>
@@ -1045,6 +1145,7 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 value={cols}
                 onChange={(e) => handleColsChange(e.target.value)}
                 className="collage-slider"
+                disabled={!controlsEnabled}
               />
               <input
                 type="number"
@@ -1053,18 +1154,22 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
                 value={cols}
                 onChange={(e) => handleColsChange(e.target.value)}
                 className="collage-number"
+                disabled={!controlsEnabled}
               />
             </div>
           </div>
           <label className="collage-toggle">
-            <input type="checkbox" checked={mixPieces} onChange={toggleMixPieces} />
+            <input type="checkbox" checked={mixPieces} onChange={toggleMixPieces} disabled={!controlsEnabled} />
             <span>混合拼貼</span>
           </label>
-          <button type="button" className="collage-button" onClick={handleShuffle}>
+          <button type="button" className="collage-button" onClick={handleShuffle} disabled={!controlsEnabled}>
             重新打散
           </button>
         </div>
         <div className="collage-meta">
+          {!controlsEnabled && (
+            <span>遠端設定：{remoteSource === "client" ? "指定 client" : "全域"}</span>
+          )}
           <span>可用圖像：{imagePool.length}</span>
           <span>每張切片：{rows * cols}</span>
           <span>總片數：{totalPieces}</span>
@@ -1127,12 +1232,14 @@ export default function CollageMode({ imagesBase, anchorImage, onCaptureReady = 
 
                 return <div key={piece.key} className="collage-piece collage-piece--mixed" style={style} />;
               })}
-              <div
-                ref={resizeHandleRef}
-                className="collage-resize-handle"
-                onPointerDown={handleResizePointerDown}
-                role="presentation"
-              />
+              {controlsEnabled && (
+                <div
+                  ref={resizeHandleRef}
+                  className="collage-resize-handle"
+                  onPointerDown={handleResizePointerDown}
+                  role="presentation"
+                />
+              )}
             </div>
           </>
         )}

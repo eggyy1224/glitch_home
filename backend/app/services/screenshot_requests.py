@@ -155,6 +155,28 @@ class ScreenshotRequestManager:
             payload["target_client_id"] = target_client_id
         await self._broadcast(payload, target_client_id=target_client_id)
 
+    async def broadcast_collage_config(
+        self,
+        config_payload: Dict[str, Any],
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        owner_client_id = None
+        if isinstance(config_payload, dict):
+            owner_candidate = config_payload.get("target_client_id")
+            if isinstance(owner_candidate, str):
+                owner_client_id = owner_candidate
+        payload = {
+            "type": "collage_config",
+            "config": config_payload.get("config") if isinstance(config_payload, dict) else None,
+            "source": config_payload.get("source") if isinstance(config_payload, dict) else None,
+            "updated_at": config_payload.get("updated_at") if isinstance(config_payload, dict) else None,
+        }
+        if owner_client_id:
+            payload["owner_client_id"] = owner_client_id
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        await self._broadcast(payload, target_client_id=target_client_id)
+
     async def broadcast_subtitle(
         self,
         subtitle_payload: Optional[Dict[str, Any]],

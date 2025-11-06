@@ -13,6 +13,7 @@ import { clampInt } from "./utils/iframeConfig.js";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
 import { useIframeConfig } from "./hooks/useIframeConfig.js";
+import { useCollageConfig } from "./hooks/useCollageConfig.js";
 import { useControlSocket } from "./hooks/useControlSocket.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
@@ -108,6 +109,16 @@ export default function App() {
     iframeMode,
     clientId,
     defaultConfig: IFRAME_DEFAULT_CONFIG,
+  });
+
+  const {
+    remoteConfig: collageRemoteConfig,
+    remoteSource: collageRemoteSource,
+    controlsEnabled: collageControlsEnabled,
+    applyRemoteConfig: applyRemoteCollageConfig,
+  } = useCollageConfig({
+    collageMode,
+    clientId,
   });
 
 
@@ -349,6 +360,18 @@ export default function App() {
     [clientId, applyRemoteIframeConfig],
   );
 
+  const handleCollageConfigMessage = useCallback(
+    (payload) => {
+      if (!payload?.config) return;
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      applyRemoteCollageConfig(payload);
+    },
+    [clientId, applyRemoteCollageConfig],
+  );
+
   useControlSocket({
     clientId,
     onScreenshotRequest: enqueueScreenshotRequest,
@@ -357,6 +380,7 @@ export default function App() {
     onSubtitleUpdate: handleSubtitleMessage,
     onCaptionUpdate: handleCaptionMessage,
     onIframeConfig: handleIframeConfigMessage,
+    onCollageConfig: handleCollageConfigMessage,
   });
 
   const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
@@ -452,6 +476,9 @@ export default function App() {
           imagesBase={IMAGES_BASE}
           anchorImage={imgId}
           onCaptureReady={handleCaptureReady}
+          remoteConfig={collageRemoteConfig}
+          controlsEnabled={collageControlsEnabled}
+          remoteSource={collageRemoteSource}
         />
         {soundPlayerEnabled && (
           <SoundPlayer
