@@ -154,13 +154,24 @@ export async function fetchCaptionState(clientId = null) {
   };
 }
 
-export async function fetchDisplayState(clientId = null) {
-  let url = `${API_BASE}/api/display`;
+export async function fetchDisplayState(clientId = null, { fallbackToGlobal = true } = {}) {
+  const baseUrl = `${API_BASE}/api/display`;
+  // 若提供 clientId，先嘗試抓取該 client 的狀態；若為 null 且允許 fallback，再抓全域
   if (clientId) {
     const params = new URLSearchParams({ client: clientId });
-    url = `${url}?${params.toString()}`;
+    const targetedUrl = `${baseUrl}?${params.toString()}`;
+    const res = await fetch(targetedUrl);
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const json = await res.json();
+    if (fallbackToGlobal && (json?.state == null)) {
+      const res2 = await fetch(baseUrl);
+      if (!res2.ok) throw new Error(`API ${res2.status}`);
+      return res2.json();
+    }
+    return json;
   }
-  const res = await fetch(url);
+  // 未提供 clientId → 直接抓全域
+  const res = await fetch(baseUrl);
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }

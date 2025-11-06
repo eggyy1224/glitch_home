@@ -285,6 +285,32 @@ class ScreenshotRequestManager:
                 },
             )
 
+        # 連線註冊完成後，回放目前有效的 display_state：
+        # 1) 先取該 client 專屬狀態
+        # 2) 若無則回退到全域（client_id=None）
+        # 僅針對當前連線單播，不做廣播
+        try:
+            display_snapshot = await display_state_manager.get_state(client_id)
+            state_model = display_snapshot.get("state")
+            is_client_specific = state_model is not None
+            if state_model is None:
+                # 回退到全域預設
+                display_snapshot = await display_state_manager.get_state(None)
+                state_model = display_snapshot.get("state")
+
+            if state_model is not None:
+                message: Dict[str, Any] = {
+                    "type": "display_state",
+                    "state": state_model.model_dump(),
+                }
+                # 若為 client 專屬狀態，附帶 target，避免其他 client 誤用
+                if is_client_specific and client_id:
+                    message["target_client_id"] = client_id
+                await self._send(websocket, message)
+        except Exception:
+            # 保守處理：任何錯誤都不阻斷註冊流程
+            pass
+
     async def remove_connection(self, websocket: WebSocket) -> None:
         async with self._lock:
             self._connections.pop(websocket, None)
