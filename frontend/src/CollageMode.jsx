@@ -218,6 +218,17 @@ const edgeKeyForPiece = (piece) => `${piece.imageId}|${piece.sourceRow}|${piece.
 const EDGE_SAMPLE_CACHE = new Map();
 const IMAGE_DIMENSION_CACHE = new Map();
 
+// 限制 cache 大小，防止記憶體洩漏
+const MAX_CACHE_SIZE = 50;
+const cleanupCache = (cache) => {
+  if (cache.size > MAX_CACHE_SIZE) {
+    // 刪除最舊的 25% entries（簡單的 FIFO 清理）
+    const entriesToDelete = Math.floor(cache.size * 0.25);
+    const keysToDelete = Array.from(cache.keys()).slice(0, entriesToDelete);
+    keysToDelete.forEach((key) => cache.delete(key));
+  }
+};
+
 const loadImageElement = (url) =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -245,6 +256,7 @@ const ensureImageDimensions = (imageUrl) => {
       }
       const payload = { width, height, ratio: width / height };
       IMAGE_DIMENSION_CACHE.set(imageUrl, payload);
+      cleanupCache(IMAGE_DIMENSION_CACHE);
       return payload;
     })
     .catch((err) => {
@@ -352,6 +364,7 @@ const computeEdgesForImage = async (imageId, imageUrl, rows, cols) => {
   }
 
   EDGE_SAMPLE_CACHE.set(cacheKey, result);
+  cleanupCache(EDGE_SAMPLE_CACHE);
   return result;
 };
 
@@ -643,11 +656,176 @@ export default function CollageMode({
       if (!root) {
         throw new Error("Collage 模式尚未準備好");
       }
+      
+      // 檢查是否有 collage pieces 存在，最多等待 3 秒
+      const maxWaitTime = 3000;
+      const checkInterval = 100;
+      let waited = 0;
+      let pieces = root.querySelectorAll(".collage-piece");
+      
+      while (pieces.length === 0 && waited < maxWaitTime) {
+        await new Promise((resolve) => setTimeout(resolve, checkInterval));
+        waited += checkInterval;
+        pieces = root.querySelectorAll(".collage-piece");
+      }
+      
+      if (pieces.length === 0) {
+        // 檢查是否在 loading 狀態
+        const isLoading = root.querySelector(".collage-status")?.textContent?.includes("載入中");
+        const hasError = root.querySelector(".collage-status-error");
+        const noImages = root.querySelector(".collage-status")?.textContent?.includes("沒有圖像");
+        
+        if (isLoading) {
+          throw new Error("Collage 仍在載入中，請稍後再試");
+        }
+        if (hasError) {
+          throw new Error(`Collage 載入錯誤: ${hasError.textContent}`);
+        }
+        if (noImages) {
+          throw new Error("Collage 沒有可用的圖像");
+        }
+        throw new Error(`Collage 碎片尚未渲染完成（等待 ${waited}ms 後仍無碎片），請稍後再試`);
+      }
+      
+      // 確保至少有一些碎片已經載入圖片
+      let loadedCount = 0;
+      pieces.forEach((el) => {
+        const bgImage = window.getComputedStyle(el).backgroundImage;
+        if (bgImage && bgImage !== "none" && !bgImage.includes("data:")) {
+          loadedCount += 1;
+        }
+      });
+      
+      if (loadedCount === 0) {
+        // 再等待一下讓圖片載入
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        pieces = root.querySelectorAll(".collage-piece");
+        loadedCount = 0;
+        pieces.forEach((el) => {
+          const bgImage = window.getComputedStyle(el).backgroundImage;
+          if (bgImage && bgImage !== "none" && !bgImage.includes("data:")) {
+            loadedCount += 1;
+          }
+        });
+      }
+      
       const html2canvas = await ensureHtml2Canvas();
-      const canvas = await html2canvas(root, {
+      
+      // 根據片數和畫布尺寸動態調整配置，避免記憶體和性能問題
+      const pieceCount = pieces.length;
+      const rootRect = root.getBoundingClientRect();
+      
+      // 找到實際包含 collage pieces 的容器
+      const mixSurface = root.querySelector(".collage-mix-surface");
+      const tiles = root.querySelectorAll(".collage-tile");
+      
+      let targetElement = root;
+      let rootWidth = rootRect.width;
+      let rootHeight = rootRect.height;
+      
+      // 如果有 mix surface，使用它的尺寸（這是混合模式的主要容器）
+      if (mixSurface) {
+        const mixRect = mixSurface.getBoundingClientRect();
+        // 使用 style.width/height 或 getBoundingClientRect，因為 mix surface 有明確的尺寸
+        const styleWidth = mixSurface.style.width;
+        const styleHeight = mixSurface.style.height;
+        if (styleWidth && styleHeight) {
+          const widthMatch = styleWidth.match(/(\d+)px/);
+          const heightMatch = styleHeight.match(/(\d+)px/);
+          if (widthMatch && heightMatch) {
+            rootWidth = parseInt(widthMatch[1], 10);
+            rootHeight = parseInt(heightMatch[1], 10);
+            targetElement = mixSurface;
+          } else {
+            // fallback 到 getBoundingClientRect
+            rootWidth = mixRect.width;
+            rootHeight = mixRect.height;
+            targetElement = mixSurface;
+          }
+        } else {
+          rootWidth = mixRect.width;
+          rootHeight = mixRect.height;
+          targetElement = mixSurface;
+        }
+      } else if (tiles.length > 0) {
+        // 如果有 tiles，使用 root 的尺寸（tiles 是垂直排列的）
+        const scrollWidth = root.scrollWidth;
+        const scrollHeight = root.scrollHeight;
+        if (scrollWidth > 0 && scrollHeight > 0) {
+          rootWidth = scrollWidth;
+          rootHeight = scrollHeight;
+        }
+      }
+      
+      // 確保尺寸有效
+      if (rootWidth <= 0 || rootHeight <= 0 || !Number.isFinite(rootWidth) || !Number.isFinite(rootHeight)) {
+        rootWidth = rootRect.width || 1920;
+        rootHeight = rootRect.height || 1080;
+      }
+      
+      // 計算畫布面積（像素數）
+      const canvasArea = rootWidth * rootHeight;
+      
+      let scale = 1;
+      let timeout = 30000; // 30 秒預設超時
+      
+      // 當畫布面積很大時（滿版），需要大幅降低 scale
+      // 滿版 3840×2160 = 8,294,400 像素，需要更激進的縮放
+      if (canvasArea > 8000000) { // 滿版或更大
+        scale = 0.3; // 更激進的縮放
+        timeout = 120000;
+      } else if (canvasArea > 5000000) { // 約 2236×2236 或更大
+        scale = 0.4;
+        timeout = 90000;
+      } else if (canvasArea > 3000000) { // 約 1732×1732 或更大
+        scale = 0.5;
+        timeout = 60000;
+      } else if (canvasArea > 2000000) { // 約 1414×1414 或更大
+        scale = 0.6;
+        timeout = 45000;
+      }
+      
+      // 當片數很多時，進一步降低 scale
+      // 但不要低於畫布面積設定的 scale
+      if (pieceCount > 2000) {
+        scale = Math.min(scale, 0.7);
+        timeout = Math.max(timeout, 60000);
+      }
+      if (pieceCount > 3000) {
+        scale = Math.min(scale, 0.5);
+        timeout = Math.max(timeout, 90000);
+      }
+      if (pieceCount > 5000) {
+        scale = Math.min(scale, 0.4);
+        timeout = Math.max(timeout, 120000);
+      }
+      
+      // 計算 canvas 的最大尺寸，避免瀏覽器限制
+      // 考慮 scale 後，實際 canvas 尺寸 = rootSize * scale
+      // 我們要確保實際尺寸不超過瀏覽器限制
+      const maxCanvasSize = 16384; // 大多數瀏覽器的 canvas 最大尺寸
+      const scaledWidth = rootWidth * scale;
+      const scaledHeight = rootHeight * scale;
+      
+      // 如果縮放後的尺寸仍然太大，進一步降低 scale
+      if (scaledWidth > maxCanvasSize || scaledHeight > maxCanvasSize) {
+        const widthScale = maxCanvasSize / rootWidth;
+        const heightScale = maxCanvasSize / rootHeight;
+        scale = Math.min(scale, widthScale, heightScale) * 0.95; // 留一點餘地
+      }
+      
+      const maxWidth = Math.min(rootWidth * scale, maxCanvasSize);
+      const maxHeight = Math.min(rootHeight * scale, maxCanvasSize);
+      
+      const canvas = await html2canvas(targetElement, {
         backgroundColor: "#050508",
         logging: false,
         useCORS: true,
+        allowTaint: false,
+        scale: scale,
+        timeout: timeout,
+        width: maxWidth,
+        height: maxHeight,
         onclone: (doc) => {
           doc.querySelectorAll(".collage-piece").forEach((el) => {
             el.style.animation = "none";
@@ -906,8 +1084,15 @@ export default function CollageMode({
             if (nextMetric && nextMetric.base === baseKey) {
               return prev;
             }
+            // 清理不在 selectedImages 中的舊 metrics，防止記憶體累積
+            const cleaned = { ...prev };
+            Object.keys(cleaned).forEach((key) => {
+              if (!selectedImages.includes(key) && cleaned[key].base === baseKey) {
+                delete cleaned[key];
+              }
+            });
             return {
-              ...prev,
+              ...cleaned,
               [imageId]: {
                 ...dimensions,
                 base: baseKey,

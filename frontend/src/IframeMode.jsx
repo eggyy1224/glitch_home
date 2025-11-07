@@ -216,6 +216,25 @@ export default function IframeMode({
               }
             }
 
+            // 最後備援：使用外層 html2canvas 直接截取 iframe 元素
+            if (!drawable) {
+              try {
+                const outerHtml2canvas = await ensureHtml2Canvas();
+                if (outerHtml2canvas && iframe) {
+                  const innerCanvas = await outerHtml2canvas(iframe, {
+                    backgroundColor: "#000000",
+                    logging: false,
+                    useCORS: true,
+                  });
+                  if (innerCanvas) {
+                    drawable = { kind: "image", value: innerCanvas };
+                  }
+                }
+              } catch (err) {
+                console.warn(`iframe 外層截圖失敗 (${iframe.title || "unknown"}):`, err);
+              }
+            }
+
             // 將 iframe 截圖疊到主 canvas 上（覆蓋 html2canvas 產生的低品質 iframe 區域）
             if (drawable) {
               try {
