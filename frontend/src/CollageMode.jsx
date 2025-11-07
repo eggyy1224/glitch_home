@@ -625,7 +625,7 @@ export default function CollageMode({
   const [edgeStatus, setEdgeStatus] = useState("idle");
   const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  const [controlsVisible, setControlsVisible] = useState(false);
   const [imageMetrics, setImageMetrics] = useState(() => ({}));
   const fetchedPoolRef = useRef([]);
   const remoteOverrideRef = useRef(false);
