@@ -314,53 +314,62 @@ const computeEdgesForImage = async (imageId, imageUrl, rows, cols) => {
 
   const result = new Map();
 
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      const key = `${imageId}|${row}|${col}`;
-      const sourceX = col * pieceSourceWidth;
-      const sourceY = row * pieceSourceHeight;
-      const drawWidth = Math.max(1, Math.round(pieceSourceWidth));
-      const drawHeight = Math.max(1, Math.round(pieceSourceHeight));
+  try {
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const key = `${imageId}|${row}|${col}`;
+        const sourceX = col * pieceSourceWidth;
+        const sourceY = row * pieceSourceHeight;
+        const drawWidth = Math.max(1, Math.round(pieceSourceWidth));
+        const drawHeight = Math.max(1, Math.round(pieceSourceHeight));
 
-      workCanvas.width = drawWidth;
-      workCanvas.height = drawHeight;
-      workCtx.clearRect(0, 0, drawWidth, drawHeight);
-      workCtx.drawImage(img, sourceX, sourceY, pieceSourceWidth, pieceSourceHeight, 0, 0, drawWidth, drawHeight);
+        workCanvas.width = drawWidth;
+        workCanvas.height = drawHeight;
+        workCtx.clearRect(0, 0, drawWidth, drawHeight);
+        workCtx.drawImage(img, sourceX, sourceY, pieceSourceWidth, pieceSourceHeight, 0, 0, drawWidth, drawHeight);
 
-      const imageData = workCtx.getImageData(0, 0, drawWidth, drawHeight);
-      const data = imageData.data;
+        const imageData = workCtx.getImageData(0, 0, drawWidth, drawHeight);
+        const data = imageData.data;
 
-      const stripWidth = Math.max(1, Math.round(drawWidth * 0.12));
-      const stripHeight = Math.max(1, Math.round(drawHeight * 0.12));
-      const centerWidth = Math.max(1, Math.round(drawWidth * 0.5));
-      const centerHeight = Math.max(1, Math.round(drawHeight * 0.5));
-      const centerStartX = Math.max(0, Math.round((drawWidth - centerWidth) / 2));
-      const centerStartY = Math.max(0, Math.round((drawHeight - centerHeight) / 2));
+        const stripWidth = Math.max(1, Math.round(drawWidth * 0.12));
+        const stripHeight = Math.max(1, Math.round(drawHeight * 0.12));
+        const centerWidth = Math.max(1, Math.round(drawWidth * 0.5));
+        const centerHeight = Math.max(1, Math.round(drawHeight * 0.5));
+        const centerStartX = Math.max(0, Math.round((drawWidth - centerWidth) / 2));
+        const centerStartY = Math.max(0, Math.round((drawHeight - centerHeight) / 2));
 
-      result.set(key, {
-        top: averageRectColor(data, drawWidth, drawHeight, 0, 0, drawWidth, stripHeight),
-        bottom: averageRectColor(
-          data,
-          drawWidth,
-          drawHeight,
-          0,
-          Math.max(0, drawHeight - stripHeight),
-          drawWidth,
-          stripHeight,
-        ),
-        left: averageRectColor(data, drawWidth, drawHeight, 0, 0, stripWidth, drawHeight),
-        right: averageRectColor(
-          data,
-          drawWidth,
-          drawHeight,
-          Math.max(0, drawWidth - stripWidth),
-          0,
-          stripWidth,
-          drawHeight,
-        ),
-        center: averageRectColor(data, drawWidth, drawHeight, centerStartX, centerStartY, centerWidth, centerHeight),
-      });
+        result.set(key, {
+          top: averageRectColor(data, drawWidth, drawHeight, 0, 0, drawWidth, stripHeight),
+          bottom: averageRectColor(
+            data,
+            drawWidth,
+            drawHeight,
+            0,
+            Math.max(0, drawHeight - stripHeight),
+            drawWidth,
+            stripHeight,
+          ),
+          left: averageRectColor(data, drawWidth, drawHeight, 0, 0, stripWidth, drawHeight),
+          right: averageRectColor(
+            data,
+            drawWidth,
+            drawHeight,
+            Math.max(0, drawWidth - stripWidth),
+            0,
+            stripWidth,
+            drawHeight,
+          ),
+          center: averageRectColor(data, drawWidth, drawHeight, centerStartX, centerStartY, centerWidth, centerHeight),
+        });
+      }
     }
+  } finally {
+    // 清理 canvas 和圖片資源，防止記憶體洩漏
+    workCanvas.width = 0;
+    workCanvas.height = 0;
+    workCtx.clearRect(0, 0, 0, 0);
+    // 清除圖片引用，幫助 GC
+    img.src = "";
   }
 
   EDGE_SAMPLE_CACHE.set(cacheKey, result);
@@ -637,7 +646,9 @@ export default function CollageMode({
   const [edgeLookup, setEdgeLookup] = useState(() => new Map());
   const [edgeStatus, setEdgeStatus] = useState("idle");
   const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
+  const [stageHeight, setStageHeight] = useState(() => initialStageHeight);
   const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
+  const [remoteStageHeightSet, setRemoteStageHeightSet] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [imageMetrics, setImageMetrics] = useState(() => ({}));
   const fetchedPoolRef = useRef([]);
@@ -951,6 +962,7 @@ export default function CollageMode({
         setRemoteOverrideActive(false);
         setImagePool(fetchedPoolRef.current);
       }
+      setRemoteStageHeightSet(false);
       return;
     }
 
@@ -995,6 +1007,15 @@ export default function CollageMode({
       setStageWidth((prev) => (Math.abs(prev - clampedWidth) < 0.5 ? prev : clampedWidth));
     }
 
+    if (typeof remoteConfig.stage_height === "number") {
+      const clampedHeight = clamp(remoteConfig.stage_height, STAGE_MIN_HEIGHT, STAGE_MAX_HEIGHT);
+      setStageHeight((prev) => (Math.abs(prev - clampedHeight) < 0.5 ? prev : clampedHeight));
+      setRemoteStageHeightSet(true);
+    } else if (remoteConfig.stage_height === null || remoteConfig.stage_height === undefined) {
+      // 如果遠端配置中沒有 stage_height，恢復為自動計算
+      setRemoteStageHeightSet(false);
+    }
+
     if (
       typeof remoteConfig.stage_width === "number" &&
       typeof remoteConfig.stage_height === "number" &&
@@ -1036,7 +1057,10 @@ export default function CollageMode({
   }, [mixBoard.rows, mixBoard.cols]);
 
   const stageWidthBounds = useMemo(() => computeStageWidthBounds(boardRatio), [boardRatio]);
-  const stageHeight = useMemo(() => stageWidth * boardRatio, [stageWidth, boardRatio]);
+  // stageHeight 現在是獨立的 state，當沒有遠端設定時才根據 boardRatio 計算
+  const computedStageHeight = useMemo(() => stageWidth * boardRatio, [stageWidth, boardRatio]);
+  // 如果有遠端設定 stage_height，優先使用設定的值；否則使用計算的值
+  const finalStageHeight = remoteStageHeightSet ? stageHeight : computedStageHeight;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1076,7 +1100,7 @@ export default function CollageMode({
 
     if (mixPieces) {
       applyParam("collage_width", Math.round(stageWidth), DEFAULT_STAGE_WIDTH);
-      applyParam("collage_height", Math.round(stageHeight), DEFAULT_STAGE_HEIGHT);
+      applyParam("collage_height", Math.round(finalStageHeight), DEFAULT_STAGE_HEIGHT);
     } else {
       if (params.has("collage_width")) params.delete("collage_width");
       if (params.has("collage_height")) params.delete("collage_height");
@@ -1086,7 +1110,7 @@ export default function CollageMode({
     if (after !== before) {
       window.history.replaceState(null, "", after ? `${url.pathname}?${after}` : url.pathname);
     }
-  }, [imageCount, rows, cols, mixPieces, stageWidth, stageHeight]);
+  }, [imageCount, rows, cols, mixPieces, stageWidth, finalStageHeight]);
 
   const piecesByImage = useMemo(() => {
     const map = new Map();
@@ -1144,7 +1168,7 @@ export default function CollageMode({
     return () => {
       cancelled = true;
     };
-  }, [selectedImages, imagesBase, imageMetrics]);
+  }, [selectedImages, imagesBase]); // 移除 imageMetrics 依賴，避免循環更新
 
   const edgesReady = useMemo(
     () => pieces.every((piece) => edgeLookup.has(edgeKeyForPiece(piece))),
@@ -1282,7 +1306,7 @@ export default function CollageMode({
     const startY = event.clientY;
     const bounds = latestBoundsRef.current;
     const startWidth = stageWidth;
-    const startHeight = stageHeight;
+    const startHeight = finalStageHeight;
 
     const onPointerMove = (moveEvent) => {
       const deltaX = moveEvent.clientX - startX;
@@ -1408,7 +1432,7 @@ export default function CollageMode({
           )}
           {mixPieces && (
             <span>
-              畫布尺寸：{Math.round(stageWidth)} × {Math.round(stageHeight)}
+              畫布尺寸：{Math.round(stageWidth)} × {Math.round(finalStageHeight)}
             </span>
           )}
         </div>
@@ -1426,7 +1450,7 @@ export default function CollageMode({
               className="collage-mix-surface"
               style={{
                 width: `${stageWidth}px`,
-                height: `${stageHeight}px`,
+                height: `${finalStageHeight}px`,
               }}
             >
               {mixedPieces.map((piece) => {
