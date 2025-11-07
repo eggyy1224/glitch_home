@@ -391,6 +391,93 @@ DEFAULT_CLIENT_ID = "default"
 
 ---
 
+## 🧩 Collage 拼貼遠端配置 API
+
+前端在 `/?collage_mode=true&client=<client_id>` 時，會從後端載入該 client 的 collage 設定。可以用下列 API 即時調整拼貼牆：
+
+### 1. 取得目前設定
+```
+GET /api/collage-config
+GET /api/collage-config?client=<client_id>        # 指定 client
+```
+- `client` 參數：可選。給 client id（例如 `client=desktop_wall`）就能讀取專屬設定；省略則回傳全域/default 配置。
+- 回傳欄位：
+  - `config`: 實際參數（images、image_count、rows、cols、mix、stage_width、stage_height、seed）
+  - `source`: `client` 代表已載入 client 專屬檔案、`global` 代表沿用全域檔案、`default` 則表示目前尚未有任何保存檔案（使用程式內建預設值）
+  - `target_client_id`: 如果是 client 專屬設定會帶出此欄位
+  - `updated_at`: 後端檔案最後修改時間（ISO 字串）
+
+### 2. 更新全域或指定 client
+```
+PUT /api/collage-config
+Content-Type: application/json
+```
+JSON 負載可包含：
+```jsonc
+{
+  "target_client_id": "<client_id>",          // 可選。指定 client，不填則更新全域
+  "images": ["offspring_20250923_161624_066.png", "..."],
+  "image_count": 20,
+  "rows": 5,
+  "cols": 8,
+  "mix": true,
+  "stage_width": 2048,
+  "stage_height": 1152,
+  "seed": 987123
+}
+```
+- `images` 只需要檔名（不可含路徑）；後端會自動去重與驗證。
+- `image_count`, `rows`, `cols`、stage 尺寸都有上下限，超出會被 clamp。
+- `mix=true` 時 stage 尺寸＋ seed 會影響混排結果；調整 seed 可固定亂數。
+
+PUT 成功後，若有指定 `target_client_id` 會寫入 `backend/metadata/collage_config__<client>.json`，否則寫入全域的 `backend/metadata/collage_config.json`。更新完成會透過 websocket 廣播 `type: "collage_config"`；前端的 `useCollageConfig` hook 會立即接收並套用。
+
+### 3. cURL 範例
+```bash
+curl -s -X PUT http://localhost:8000/api/collage-config \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "target_client_id": "<client_id>",
+        "images": [
+          "offspring_20250923_161624_066.png",
+          "offspring_20250923_161704_451.png",
+          "offspring_20250923_161747_194.png"
+        ],
+        "image_count": 20,
+        "rows": 5,
+        "cols": 8,
+        "mix": true,
+        "stage_width": 2048,
+        "stage_height": 1152,
+        "seed": 987123
+      }'
+```
+更新完畢後，只要前端網址含 `collage_mode=true` 並且 `client=<client_id>`，畫面就會自動切換到最新設定。
+
+#### 調整畫布比例（直／橫幅）
+`stage_width` 與 `stage_height` 控制拼貼畫布的實際比例。只要在 payload 裡修改這兩個值，就能把版面拉成橫向或直向：
+
+```bash
+# 直式拼貼（寬 1152 × 高 2048）
+curl -s -X PUT http://localhost:8000/api/collage-config \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "target_client_id": "<client_id>",
+        "images": ["offspring_20250923_161624_066.png", "..."],
+        "image_count": 6,
+        "rows": 12,
+        "cols": 18,
+        "mix": true,
+        "stage_width": 1152,
+        "stage_height": 2048,
+        "seed": 555777
+      }'
+```
+
+只要保持 `stage_width` 在 360–3840、`stage_height` 在 240–2160 內，前端會依據新比例重新計算盤面（mix=true 時特別明顯），可依展示需求快速切換橫幅或直幅。
+
+---
+
 ## 📱 前端客戶端 URL 參數速查表
 
 ### 基本形式
