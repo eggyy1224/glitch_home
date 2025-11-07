@@ -319,79 +319,78 @@ if echo "${clients_json}" | jq -e --arg client "${TARGET_CLIENT_ID}" '.clients |
   done
   
   echo ""
-  echo "=== Phase 6: 壓力測試 - 四格平行世界 (總共約6000片) ==="
-  set_subtitle "💪 壓力測試 - 四格平行世界，每個約38x38 (總共約6000片)" 20
+  echo "=== Phase 6: 壓力測試 - 多模式展示 (同一張圖片) ==="
+  set_subtitle "💪 壓力測試 - 不同模式展示同一張圖片" 20
   
-  # 計算：6000片 / 4格 = 1500片/格，sqrt(1500) ≈ 38.7，使用 39x39 = 1521片/格，總共約6084片
-  PRESSURE_GRID_SIZE=39
-  PIECES_PER_PANEL=$((PRESSURE_GRID_SIZE * PRESSURE_GRID_SIZE))
-  TOTAL_PIECES=$((PIECES_PER_PANEL * 4))
+  # 使用同一張圖片
+  TEST_IMG="${IMG1}"
   
-  echo "➜ Setting up 4-panel stress test..."
-  echo "   Grid size: ${PRESSURE_GRID_SIZE}x${PRESSURE_GRID_SIZE} per panel"
-  echo "   Pieces per panel: ${PIECES_PER_PANEL}"
-  echo "   Total pieces: ${TOTAL_PIECES}"
+  # 計算 collage mode 的網格大小：約 1500片/格，sqrt(1500) ≈ 38.7，使用 39x39 = 1521片
+  COLLAGE_GRID_SIZE=39
+  COLLAGE_PIECES=$((COLLAGE_GRID_SIZE * COLLAGE_GRID_SIZE))
   
-  # 設定四個世界的 collage config
-  for i in 1 2 3 4; do
-    client_var="CLIENT_WORLD${i}"
-    img_var="IMG${i}"
-    client_id="${!client_var}"
-    img="${!img_var}"
-    
-    config_json="$(jq -n \
-      --arg client_id "${client_id}" \
-      --arg img "${img}" \
-      --argjson seed $((i * 100)) \
-      --argjson size "${PRESSURE_GRID_SIZE}" \
-      '{
-        target_client_id: $client_id,
-        images: [$img],
-        image_count: 1,
-        rows: $size,
-        cols: $size,
-        mix: true,
-        stage_width: 1920,
-        stage_height: 1080,
-        seed: $seed
-      }')"
-    
-    set_collage_config "${client_id}" "${config_json}"
-  done
+  echo "➜ Setting up multi-mode display test..."
+  echo "   Using image: ${TEST_IMG}"
+  echo "   Collage mode grid: ${COLLAGE_GRID_SIZE}x${COLLAGE_GRID_SIZE} (${COLLAGE_PIECES} pieces)"
   
-  # 設定 iframe config 顯示四個平行世界
-  echo "➜ Setting up 4-panel iframe layout..."
+  # 設定 collage mode 的 config（使用 CLIENT_WORLD1）
+  config_json="$(jq -n \
+    --arg client_id "${CLIENT_WORLD1}" \
+    --arg img "${TEST_IMG}" \
+    --argjson size "${COLLAGE_GRID_SIZE}" \
+    '{
+      target_client_id: $client_id,
+      images: [$img],
+      image_count: 1,
+      rows: $size,
+      cols: $size,
+      mix: true,
+      stage_width: 1920,
+      stage_height: 1080,
+      seed: 100
+    }')"
+  
+  set_collage_config "${CLIENT_WORLD1}" "${config_json}"
+  
+  # 設定 iframe config 顯示不同模式
+  echo "➜ Setting up 5-panel iframe layout with different modes..."
   iframe_config="$(curl -fsS -X PUT "${API_BASE}/api/iframe-config" \
     -H "Content-Type: application/json" \
     -d "{
       \"target_client_id\": \"${TARGET_CLIENT_ID}\",
       \"layout\": \"horizontal\",
       \"gap\": 12,
-      \"columns\": 4,
+      \"columns\": 5,
       \"panels\": [
         {
-          \"id\": \"world1\",
-          \"url\": \"/?client=${CLIENT_WORLD1}&collage_mode=true&img=${IMG1}\",
+          \"id\": \"mode_default\",
+          \"url\": \"/?img=${TEST_IMG}\",
           \"ratio\": 1,
-          \"label\": \"平行世界 1\"
+          \"label\": \"預設 3D 景觀\"
         },
         {
-          \"id\": \"world2\",
-          \"url\": \"/?client=${CLIENT_WORLD2}&collage_mode=true&img=${IMG2}\",
+          \"id\": \"mode_incubator\",
+          \"url\": \"/?incubator=true&img=${TEST_IMG}\",
           \"ratio\": 1,
-          \"label\": \"平行世界 2\"
+          \"label\": \"孵化室模式\"
         },
         {
-          \"id\": \"world3\",
-          \"url\": \"/?client=${CLIENT_WORLD3}&collage_mode=true&img=${IMG3}\",
+          \"id\": \"mode_phylogeny\",
+          \"url\": \"/?phylogeny=true&img=${TEST_IMG}\",
           \"ratio\": 1,
-          \"label\": \"平行世界 3\"
+          \"label\": \"親緣圖 2D\"
         },
         {
-          \"id\": \"world4\",
-          \"url\": \"/?client=${CLIENT_WORLD4}&collage_mode=true&img=${IMG4}\",
+          \"id\": \"mode_collage\",
+          \"url\": \"/?client=${CLIENT_WORLD1}&collage_mode=true&img=${TEST_IMG}\",
           \"ratio\": 1,
-          \"label\": \"平行世界 4\"
+          \"label\": \"拼貼模式 (${COLLAGE_GRID_SIZE}x${COLLAGE_GRID_SIZE})\"
+        },
+        {
+          \"id\": \"mode_slide\",
+          \"url\": \"/?slide_mode=true&img=${TEST_IMG}\",
+          \"ratio\": 1,
+          \"label\": \"幻燈片模式\"
         }
       ]
     }")"
@@ -399,8 +398,9 @@ if echo "${clients_json}" | jq -e --arg client "${TARGET_CLIENT_ID}" '.clients |
   if echo "${iframe_config}" | jq -e '.panels[0]' >/dev/null 2>&1; then
     panel_count=$(echo "${iframe_config}" | jq '.panels | length')
     echo "✓ Iframe configured with ${panel_count} panels"
-    echo "⏳ Stress test: Displaying 4-panel collage (${TOTAL_PIECES} total pieces) for 15 seconds..."
-    sleep 15
+    echo "⏳ Stress test: Displaying ${panel_count} different modes with same image for 20 seconds..."
+    echo "   Modes: Default 3D, Incubator, Phylogeny 2D, Collage (${COLLAGE_PIECES} pieces), Slide"
+    sleep 20
   else
     echo "✗ Failed to configure iframe for stress test."
     exit 1
@@ -416,9 +416,12 @@ if echo "${clients_json}" | jq -e --arg client "${TARGET_CLIENT_ID}" '.clients |
   echo "  • Mix mode toggle (true/false)"
   echo "  • Multiple image mixing (2, 5, 10 images)"
   echo "  • Different seed values (100-500)"
-  echo "  • Stress test: 4-panel layout (${TOTAL_PIECES} total pieces)"
-  echo ""
-  echo "Total pieces in stress test: ${TOTAL_PIECES} (~6000 limit)"
+  echo "  • Stress test: Multi-mode display (5 panels with same image)"
+  echo "    - Default 3D Scene"
+  echo "    - Incubator Mode"
+  echo "    - Phylogeny 2D"
+  echo "    - Collage Mode (${COLLAGE_GRID_SIZE}x${COLLAGE_GRID_SIZE} = ${COLLAGE_PIECES} pieces)"
+  echo "    - Slide Mode"
   exit 0
 else
   echo "✗ Client '${TARGET_CLIENT_ID}' is not connected."
