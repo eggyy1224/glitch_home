@@ -129,8 +129,9 @@ export default function IframeMode({
         }
 
         const containerRect = container.getBoundingClientRect();
-        const containerWidth = containerRect.width || container.scrollWidth || window.innerWidth;
-        const containerHeight = containerRect.height || container.scrollHeight || window.innerHeight;
+        // 使用 scrollWidth/scrollHeight 確保截取完整內容，而不只是可見區域
+        const containerWidth = container.scrollWidth || containerRect.width || window.innerWidth;
+        const containerHeight = container.scrollHeight || containerRect.height || window.innerHeight;
 
         // 明確設定 scale: 1 以避免 devicePixelRatio 造成的尺寸問題
         // 並指定精確的寬高以確保 canvas 尺寸正確
@@ -147,9 +148,13 @@ export default function IframeMode({
 
         const ctx = canvas.getContext("2d");
         
+        // 使用實際的 canvas 尺寸，而不是預設的容器尺寸
+        const actualWidth = canvas.width;
+        const actualHeight = canvas.height;
+        
         // 如果 html2canvas 產生的 canvas 尺寸不對，強制重新設定
         let finalCanvas = canvas;
-        if (canvas.width !== containerWidth || canvas.height !== containerHeight) {
+        if (actualWidth !== containerWidth || actualHeight !== containerHeight) {
           const correctedCanvas = document.createElement("canvas");
           correctedCanvas.width = containerWidth;
           correctedCanvas.height = containerHeight;

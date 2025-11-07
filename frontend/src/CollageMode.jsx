@@ -725,26 +725,48 @@ export default function CollageMode({
       
       // 如果有 mix surface，使用它的尺寸（這是混合模式的主要容器）
       if (mixSurface) {
+        // 先獲取 mixSurface 的位置和尺寸
         const mixRect = mixSurface.getBoundingClientRect();
-        // 使用 style.width/height 或 getBoundingClientRect，因為 mix surface 有明確的尺寸
+        // 優先使用 offsetWidth/offsetHeight 獲取完整內容尺寸（包括 overflow）
+        const offsetWidth = mixSurface.offsetWidth;
+        const offsetHeight = mixSurface.offsetHeight;
+        // 也檢查 scrollWidth/scrollHeight
+        const scrollWidth = mixSurface.scrollWidth;
+        const scrollHeight = mixSurface.scrollHeight;
+        
+        // 優先使用 style.width/height（這是 mixSurface 的實際設定尺寸）
         const styleWidth = mixSurface.style.width;
         const styleHeight = mixSurface.style.height;
+        let actualWidth = mixRect.width;
+        let actualHeight = mixRect.height;
+        
         if (styleWidth && styleHeight) {
           const widthMatch = styleWidth.match(/(\d+)px/);
           const heightMatch = styleHeight.match(/(\d+)px/);
           if (widthMatch && heightMatch) {
-            rootWidth = parseInt(widthMatch[1], 10);
-            rootHeight = parseInt(heightMatch[1], 10);
-            targetElement = mixSurface;
-          } else {
-            // fallback 到 getBoundingClientRect
-            rootWidth = mixRect.width;
-            rootHeight = mixRect.height;
-            targetElement = mixSurface;
+            actualWidth = parseInt(widthMatch[1], 10);
+            actualHeight = parseInt(heightMatch[1], 10);
           }
+        }
+        
+        // 使用最大的尺寸（style 尺寸、offset 尺寸、scroll 尺寸、或 getBoundingClientRect）
+        // 注意：不計算 bounding box，因為當 pieces 很多時會導致瀏覽器卡死
+        actualWidth = Math.max(actualWidth, offsetWidth, scrollWidth, mixRect.width);
+        actualHeight = Math.max(actualHeight, offsetHeight, scrollHeight, mixRect.height);
+        
+        // 增加更大的邊距（200px），確保能截取到所有 pieces，包括那些因為 overlap 而超出邊界的
+        // 特別是底部，因為 pieces 可能會因為 overlap 而超出 mixSurface 的底部邊界
+        const margin = 200;
+        
+        if (actualWidth > 0 && actualHeight > 0) {
+          rootWidth = actualWidth + margin * 2;
+          rootHeight = actualHeight + margin * 2;
+          targetElement = mixSurface;
+          console.log(`[CollageMode] 計算尺寸: style=${styleWidth}×${styleHeight}, offset=${offsetWidth}×${offsetHeight}, scroll=${scrollWidth}×${scrollHeight}, mixRect=${mixRect.width}×${mixRect.height}, 最終=${rootWidth}×${rootHeight}`);
         } else {
-          rootWidth = mixRect.width;
-          rootHeight = mixRect.height;
+          // fallback: 使用 getBoundingClientRect
+          rootWidth = mixRect.width + margin * 2;
+          rootHeight = mixRect.height + margin * 2;
           targetElement = mixSurface;
         }
       } else if (tiles.length > 0) {
@@ -814,9 +836,10 @@ export default function CollageMode({
         scale = Math.min(scale, widthScale, heightScale) * 0.95; // 留一點餘地
       }
       
-      const maxWidth = Math.min(rootWidth * scale, maxCanvasSize);
-      const maxHeight = Math.min(rootHeight * scale, maxCanvasSize);
+      console.log(`[CollageMode] 截圖尺寸: ${rootWidth}×${rootHeight} (scale: ${scale})`);
       
+      // 不設定 width 和 height，讓 html2canvas 自動計算完整內容
+      // 只在 onclone 中強制設定 mixSurface 的尺寸，確保內容不被裁剪
       const canvas = await html2canvas(targetElement, {
         backgroundColor: "#050508",
         logging: false,
@@ -824,14 +847,28 @@ export default function CollageMode({
         allowTaint: false,
         scale: scale,
         timeout: timeout,
-        width: maxWidth,
-        height: maxHeight,
+        removeContainer: false,
+        foreignObjectRendering: false,
         onclone: (doc) => {
+          // 確保所有 collage pieces 都可見
           doc.querySelectorAll(".collage-piece").forEach((el) => {
             el.style.animation = "none";
             el.style.opacity = "1";
             el.style.transform = "none";
+            el.style.visibility = "visible";
+            el.style.display = "";
           });
+          // 確保 mix surface 使用完整尺寸，不被裁剪
+          const clonedMixSurface = doc.querySelector(".collage-mix-surface");
+          if (clonedMixSurface) {
+            clonedMixSurface.style.overflow = "visible";
+            clonedMixSurface.style.position = "relative";
+            // 強制設定 mix surface 的尺寸為計算出的完整尺寸
+            clonedMixSurface.style.width = `${rootWidth}px`;
+            clonedMixSurface.style.height = `${rootHeight}px`;
+            clonedMixSurface.style.maxWidth = "none";
+            clonedMixSurface.style.maxHeight = "none";
+          }
         },
       });
       return new Promise((resolve, reject) => {
