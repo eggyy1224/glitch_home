@@ -185,11 +185,12 @@ class GenerateCollageVersionRequest(BaseModel):
 class GenerateCollageVersionResponse(BaseModel):
     """Response for collage version generation."""
     model_config = ConfigDict(protected_namespaces=())
-    output_image_path: str
-    metadata_path: str
-    output_image: str
-    parents: List[str]
-    output_format: str
-    width: int
-    height: int
+    task_id: str = Field(description="任務 ID，用於查詢進度")
+    output_image_path: Optional[str] = Field(default=None, description="輸出圖片路徑（完成後才有）")
+    metadata_path: Optional[str] = Field(default=None, description="Metadata 路徑（完成後才有）")
+    output_image: Optional[str] = Field(default=None, description="輸出圖片檔名（完成後才有）")
+    parents: Optional[List[str]] = Field(default=None, description="親代圖片列表（完成後才有）")
+    output_format: Optional[str] = Field(default=None, description="輸出格式（完成後才有）")
+    width: Optional[int] = Field(default=None, description="圖片寬度（完成後才有）")
+    height: Optional[int] = Field(default=None, description="圖片高度（完成後才有）")
     tile_mapping: Optional[List[dict]] = Field(default=None, description="Tile 對應關係（當 return_map=true 時）")

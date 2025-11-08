@@ -234,11 +234,17 @@ export async function generateCollageVersionFromNames(imageNames, params) {
   
   const result = await res.json();
   
-  // Build image URL
-  const imageUrl = `${API_BASE}/generated_images/${result.output_image}`;
+  return result;
+}
+
+export async function getCollageProgress(taskId) {
+  const url = `${API_BASE}/api/collage-version/${taskId}/progress`;
+  const res = await fetch(url);
   
-  return {
-    ...result,
-    imageUrl,
-  };
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`API ${res.status}: ${errorText}`);
+  }
+  
+  return res.json();
 }

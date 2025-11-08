@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import glob
 import json
 import mimetypes
@@ -39,7 +40,7 @@ from ..services.kinship_index import kinship_index
 from ..services.screenshot_requests import screenshot_requests_manager
 from ..services.sound_effects import generate_sound_effect
 from ..services.tts_openai import synthesize_speech_openai
-from ..services.collage_version import generate_collage_version
+from ..services.collage_version import generate_collage_version, task_manager
 
 router = APIRouter()
 
@@ -589,7 +590,7 @@ def api_list_offspring_images() -> dict:
     return {"images": images}
 
 
-@router.post("/api/generate-collage-version", response_model=GenerateCollageVersionResponse, status_code=201)
+@router.post("/api/generate-collage-version", response_model=GenerateCollageVersionResponse, status_code=202)
 async def api_generate_collage_version(
     body: dict = Body(...),
 ) -> JSONResponse:
@@ -618,28 +619,80 @@ async def api_generate_collage_version(
             raise HTTPException(status_code=404, detail=f"圖片不存在: {safe_name}")
         image_paths.append(str(image_path))
     
-    # Generate collage
-    try:
-        result = await run_in_threadpool(
-            generate_collage_version,
-            image_paths=image_paths,
-            rows=request_params.rows,
-            cols=request_params.cols,
-            mode=request_params.mode,
-            base=request_params.base,
-            allow_self=request_params.allow_self,
-            resize_w=request_params.resize_w,
-            pad_px=request_params.pad_px,
-            jitter_px=request_params.jitter_px,
-            rotate_deg=request_params.rotate_deg,
-            format=request_params.format,
-            quality=request_params.quality,
-            seed=request_params.seed,
-            return_map=request_params.return_map,
-        )
+    # Create task
+    task_id = task_manager.create_task()
+    
+    # Launch generation in the background without blocking the request worker
+    async def run_generation_task() -> None:
+        def progress_callback(progress: int, stage: str, message: str):
+            task_manager.update_progress(task_id, progress, stage, message)
         
-        return JSONResponse(status_code=201, content=result)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:  # noqa: BLE001 - surface as 500
-        raise HTTPException(status_code=500, detail=f"生成失敗: {exc}") from exc
+        try:
+            result = await run_in_threadpool(
+                generate_collage_version,
+                image_paths,
+                request_params.rows,
+                request_params.cols,
+                request_params.mode,
+                request_params.base,
+                request_params.allow_self,
+                request_params.resize_w,
+                request_params.pad_px,
+                request_params.jitter_px,
+                request_params.rotate_deg,
+                request_params.format,
+                request_params.quality,
+                request_params.seed,
+                request_params.return_map,
+                progress_callback,
+            )
+            task_manager.complete_task(task_id, result)
+        except ValueError as exc:
+            task_manager.fail_task(task_id, str(exc))
+        except Exception as exc:  # noqa: BLE001
+            task_manager.fail_task(task_id, str(exc))
+
+    asyncio.create_task(run_generation_task())
+    
+    # Return task_id immediately
+    return JSONResponse(
+        status_code=202,
+        content={
+            "task_id": task_id,
+            "output_image_path": None,
+            "metadata_path": None,
+            "output_image": None,
+            "parents": None,
+            "output_format": None,
+            "width": None,
+            "height": None,
+            "tile_mapping": None,
+        }
+    )
+
+
+@router.get("/api/collage-version/{task_id}/progress")
+async def api_get_collage_progress(task_id: str) -> dict:
+    """Get progress of collage generation task."""
+    task = task_manager.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任務不存在或已過期")
+    
+    response = {
+        "task_id": task_id,
+        "progress": task["progress"],
+        "stage": task["stage"],
+        "message": task["message"],
+        "completed": task["completed"],
+    }
+    
+    if task["completed"]:
+        if task["error"]:
+            response["error"] = task["error"]
+        else:
+            # Include result when completed
+            result = task["result"]
+            if result:
+                response.update(result)
+    
+    return response

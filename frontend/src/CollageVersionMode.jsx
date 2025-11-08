@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./CollageVersionMode.css";
-import { generateCollageVersionFromNames, listOffspringImages } from "./api.js";
+import { generateCollageVersionFromNames, listOffspringImages, searchImagesByText, searchImagesByImage, getCollageProgress } from "./api.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 export default function CollageVersionMode() {
   const [availableImages, setAvailableImages] = useState([]);
@@ -11,6 +12,23 @@ export default function CollageVersionMode() {
   const [loadingImages, setLoadingImages] = useState(true);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  
+  // Progress tracking
+  const [taskId, setTaskId] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [progressStage, setProgressStage] = useState("");
+  const [progressMessage, setProgressMessage] = useState("");
+  const progressIntervalRef = useRef(null);
+  
+  // Search states
+  const [searchType, setSearchType] = useState("text"); // "text" | "image"
+  const [textQuery, setTextQuery] = useState("");
+  const [searchFile, setSearchFile] = useState(null);
+  const [searchPreview, setSearchPreview] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [displayMode, setDisplayMode] = useState("all"); // "all" | "search"
+  const fileInputRef = useRef(null);
   
   // Parameters
   const [rows, setRows] = useState(12);
@@ -51,6 +69,171 @@ export default function CollageVersionMode() {
     setError(null);
   };
   
+  // Search handlers
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setSearchFile(file);
+    setError(null);
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSearchPreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const handleImageSearch = async () => {
+    if (!searchFile) {
+      setError("請先選擇圖片");
+      return;
+    }
+    
+    setSearching(true);
+    setError(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append("file", searchFile);
+      
+      const uploadUrl = `${API_BASE}/api/screenshots`;
+      
+      const uploadRes = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        throw new Error(`圖片上傳失敗 (${uploadRes.status}): ${errorText}`);
+      }
+      
+      const uploadData = await uploadRes.json();
+      const uploadedPath = uploadData.absolute_path || uploadData.relative_path;
+      
+      if (!uploadedPath) {
+        throw new Error("上傳成功但無法取得檔案路徑");
+      }
+      
+      let searchPath = uploadedPath;
+      if (uploadData.original_filename) {
+        searchPath = `backend/offspring_images/${uploadData.original_filename}`;
+      }
+      
+      try {
+        const searchResultsData = await searchImagesByImage(searchPath, 50);
+        const resultList = searchResultsData.results || [];
+        
+        if (resultList.length === 0) {
+          setError("搜尋完成，但沒有找到相似的圖像");
+          setDisplayMode("all");
+        } else {
+          // Convert search results to image format
+          const convertedResults = resultList.map((result) => {
+            const cleanId = result.id.replace(/:(en|zh)$/, "");
+            return {
+              filename: cleanId,
+              url: `${IMAGES_BASE}${cleanId}`,
+            };
+          });
+          setSearchResults(convertedResults);
+          setDisplayMode("search");
+        }
+      } catch (searchErr) {
+        if (searchPath !== uploadedPath) {
+          const searchResultsData = await searchImagesByImage(uploadedPath, 50);
+          const resultList = searchResultsData.results || [];
+          if (resultList.length === 0) {
+            setError("搜尋完成，但沒有找到相似的圖像");
+            setDisplayMode("all");
+          } else {
+            const convertedResults = resultList.map((result) => {
+              const cleanId = result.id.replace(/:(en|zh)$/, "");
+              return {
+                filename: cleanId,
+                url: `${IMAGES_BASE}${cleanId}`,
+              };
+            });
+            setSearchResults(convertedResults);
+            setDisplayMode("search");
+          }
+        } else {
+          throw searchErr;
+        }
+      }
+    } catch (err) {
+      setError(err.message || "搜尋出錯");
+    } finally {
+      setSearching(false);
+    }
+  };
+  
+  const handleTextSearch = async () => {
+    if (!textQuery.trim()) {
+      setError("請輸入搜尋詞");
+      return;
+    }
+    
+    setSearching(true);
+    setError(null);
+    
+    try {
+      const searchResultsData = await searchImagesByText(textQuery, 50);
+      const resultList = searchResultsData.results || [];
+      
+      if (resultList.length === 0) {
+        setError(`未找到與「${textQuery}」相關的圖像`);
+        setDisplayMode("all");
+      } else {
+        // Convert search results to image format
+        const convertedResults = resultList.map((result) => {
+          const cleanId = result.id.replace(/:(en|zh)$/, "");
+          return {
+            filename: cleanId,
+            url: `${IMAGES_BASE}${cleanId}`,
+          };
+        });
+        setSearchResults(convertedResults);
+        setDisplayMode("search");
+      }
+    } catch (err) {
+      setError(err.message || "搜尋出錯");
+    } finally {
+      setSearching(false);
+    }
+  };
+  
+  const handleSearchClear = () => {
+    setTextQuery("");
+    setSearchFile(null);
+    setSearchPreview(null);
+    setSearchResults([]);
+    setDisplayMode("all");
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+  
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleTextSearch();
+    }
+  };
+  
+  // Get images to display
+  const displayImages = displayMode === "search" ? searchResults : availableImages;
+  
+  // Cleanup progress polling on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+  
   const handleGenerate = async () => {
     if (selectedImages.length < 2) {
       setError("至少需要選擇 2 張圖片");
@@ -60,6 +243,14 @@ export default function CollageVersionMode() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setProgress(0);
+    setProgressStage("");
+    setProgressMessage("");
+    
+    // Clear any existing interval
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
     
     try {
       const params = {
@@ -76,12 +267,49 @@ export default function CollageVersionMode() {
         return_map: false,
       };
       
-      const result = await generateCollageVersionFromNames(selectedImages, params);
-      setResult(result);
+      const response = await generateCollageVersionFromNames(selectedImages, params);
+      const newTaskId = response.task_id;
+      setTaskId(newTaskId);
+      
+      // Start polling for progress
+      progressIntervalRef.current = setInterval(async () => {
+        try {
+          const progressData = await getCollageProgress(newTaskId);
+          setProgress(progressData.progress || 0);
+          setProgressStage(progressData.stage || "");
+          setProgressMessage(progressData.message || "");
+          
+          if (progressData.completed) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+            
+            if (progressData.error) {
+              setError(progressData.error);
+              setLoading(false);
+            } else {
+              // Build image URL
+              const imageUrl = `${API_BASE}/generated_images/${progressData.output_image}`;
+              setResult({
+                ...progressData,
+                imageUrl,
+              });
+              setLoading(false);
+              setProgress(100);
+            }
+          }
+        } catch (err) {
+          console.error("Progress polling error:", err);
+          // Don't stop polling on error, just log it
+        }
+      }, 500); // Poll every 500ms
+      
     } catch (err) {
       setError(err.message || "生成失敗");
-    } finally {
       setLoading(false);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
     }
   };
   
@@ -94,6 +322,119 @@ export default function CollageVersionMode() {
           {/* Image Selection */}
           <div className="collage-version-section">
             <h3>選擇圖片（至少 2 張）</h3>
+            
+            {/* Search Bar */}
+            <div className="collage-version-search">
+              <div className="collage-version-search-mode">
+                <button
+                  type="button"
+                  className={`collage-version-search-mode-btn ${searchType === "text" ? "active" : ""}`}
+                  onClick={() => setSearchType("text")}
+                >
+                  📝 文字搜尋
+                </button>
+                <button
+                  type="button"
+                  className={`collage-version-search-mode-btn ${searchType === "image" ? "active" : ""}`}
+                  onClick={() => setSearchType("image")}
+                >
+                  📸 圖片搜尋
+                </button>
+              </div>
+              
+              {searchType === "text" ? (
+                <div className="collage-version-search-text">
+                  <input
+                    type="text"
+                    value={textQuery}
+                    onChange={(e) => setTextQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="輸入搜尋詞... 例如：白馬、夜晚、人物"
+                    className="collage-version-search-input"
+                  />
+                  <div className="collage-version-search-controls">
+                    <button
+                      type="button"
+                      onClick={handleTextSearch}
+                      disabled={!textQuery.trim() || searching}
+                      className="collage-version-search-btn"
+                    >
+                      {searching ? "搜尋中..." : "搜尋"}
+                    </button>
+                    {textQuery && (
+                      <button
+                        type="button"
+                        onClick={handleSearchClear}
+                        disabled={searching}
+                        className="collage-version-search-clear"
+                      >
+                        清除
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="collage-version-search-image">
+                  {searchPreview ? (
+                    <div className="collage-version-search-preview">
+                      <img src={searchPreview} alt="預覽" />
+                      <p>{searchFile.name}</p>
+                    </div>
+                  ) : (
+                    <div
+                      className="collage-version-search-upload"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <div className="collage-version-search-upload-icon">📸</div>
+                      <p>點擊上傳圖片或拖放</p>
+                      <p className="collage-version-search-upload-hint">支援 PNG, JPG, JPEG</p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleFileSelect}
+                    style={{ display: "none" }}
+                  />
+                  <div className="collage-version-search-controls">
+                    <button
+                      type="button"
+                      onClick={handleImageSearch}
+                      disabled={!searchFile || searching}
+                      className="collage-version-search-btn"
+                    >
+                      {searching ? "搜尋中..." : "搜尋"}
+                    </button>
+                    {searchFile && (
+                      <button
+                        type="button"
+                        onClick={handleSearchClear}
+                        disabled={searching}
+                        className="collage-version-search-clear"
+                      >
+                        清除
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Display Mode Toggle */}
+            {displayMode === "search" && (
+              <div className="collage-version-display-mode">
+                <span className="collage-version-display-mode-label">顯示：搜尋結果 ({searchResults.length} 張)</span>
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode("all")}
+                  className="collage-version-display-mode-btn"
+                >
+                  返回全部
+                </button>
+              </div>
+            )}
+            
             {loadingImages ? (
               <div className="collage-version-loading">
                 <div className="collage-version-spinner"></div>
@@ -102,7 +443,7 @@ export default function CollageVersionMode() {
             ) : (
               <>
                 <div className="collage-version-image-grid">
-                  {availableImages.map((image) => {
+                  {displayImages.map((image) => {
                     const isSelected = selectedImages.includes(image.filename);
                     return (
                       <div
@@ -110,7 +451,7 @@ export default function CollageVersionMode() {
                         className={`collage-version-image-item ${isSelected ? "selected" : ""}`}
                         onClick={() => handleImageToggle(image.filename)}
                       >
-                        <img src={`${IMAGES_BASE}${image.filename}`} alt={image.filename} />
+                        <img src={image.url || `${IMAGES_BASE}${image.filename}`} alt={image.filename} />
                         <div className="collage-version-image-overlay">
                           {isSelected && <span className="collage-version-check">✓</span>}
                         </div>
@@ -240,6 +581,37 @@ export default function CollageVersionMode() {
             >
               {loading ? "生成中..." : "生成拼貼"}
             </button>
+            
+            {/* Progress Bar */}
+            {loading && (
+              <div className="collage-version-progress">
+                <div className="collage-version-progress-bar-container">
+                  <div
+                    className="collage-version-progress-bar"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="collage-version-progress-info">
+                  <span className="collage-version-progress-stage">
+                    {progressStage === "loading" && "載入中"}
+                    {progressStage === "standardizing" && "標準化"}
+                    {progressStage === "tiling" && "切片"}
+                    {progressStage === "matching" && "匹配"}
+                    {progressStage === "reassembling" && "重組"}
+                    {progressStage === "saving" && "儲存"}
+                    {progressStage === "completed" && "完成"}
+                    {progressStage === "failed" && "失敗"}
+                    {!progressStage && "準備中"}
+                  </span>
+                  <span className="collage-version-progress-percent">{progress}%</span>
+                </div>
+                {progressMessage && (
+                  <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
+                    {progressMessage}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Error Message */}

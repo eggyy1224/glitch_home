@@ -5,9 +5,10 @@ from __future__ import annotations
 import os
 import random
 import time
+import uuid
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image, ImageOps
@@ -15,6 +16,70 @@ from PIL import Image, ImageOps
 from ..config import settings
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import write_metadata
+
+
+# Task manager for progress tracking
+class CollageTaskManager:
+    """Simple in-memory task manager for tracking collage generation progress."""
+    
+    def __init__(self):
+        self.tasks: Dict[str, Dict[str, Any]] = {}
+        self._cleanup_interval = 300  # Clean up completed tasks after 5 minutes
+    
+    def create_task(self) -> str:
+        """Create a new task and return task_id."""
+        self.cleanup_old_tasks()
+        task_id = str(uuid.uuid4())
+        self.tasks[task_id] = {
+            "progress": 0,
+            "stage": "initializing",
+            "message": "準備開始生成...",
+            "completed": False,
+            "result": None,
+            "error": None,
+            "created_at": time.time(),
+        }
+        return task_id
+    
+    def update_progress(self, task_id: str, progress: int, stage: str, message: str):
+        """Update task progress."""
+        if task_id in self.tasks:
+            self.tasks[task_id]["progress"] = progress
+            self.tasks[task_id]["stage"] = stage
+            self.tasks[task_id]["message"] = message
+    
+    def complete_task(self, task_id: str, result: Dict[str, Any]):
+        """Mark task as completed with result."""
+        if task_id in self.tasks:
+            self.tasks[task_id]["progress"] = 100
+            self.tasks[task_id]["stage"] = "completed"
+            self.tasks[task_id]["message"] = "生成完成"
+            self.tasks[task_id]["completed"] = True
+            self.tasks[task_id]["result"] = result
+    
+    def fail_task(self, task_id: str, error: str):
+        """Mark task as failed."""
+        if task_id in self.tasks:
+            self.tasks[task_id]["completed"] = True
+            self.tasks[task_id]["error"] = error
+            self.tasks[task_id]["stage"] = "failed"
+            self.tasks[task_id]["message"] = f"生成失敗: {error}"
+    
+    def get_task(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """Get task status."""
+        self.cleanup_old_tasks()
+        return self.tasks.get(task_id)
+    
+    def cleanup_old_tasks(self):
+        """Remove completed tasks older than cleanup_interval."""
+        current_time = time.time()
+        for task_id, task_data in list(self.tasks.items()):
+            if task_data.get("completed") and (current_time - task_data["created_at"]) > self._cleanup_interval:
+                del self.tasks[task_id]
+
+
+# Global task manager instance
+task_manager = CollageTaskManager()
 
 
 def standardize_image(img: Image.Image, target_w: int, rows: int, cols: int) -> Image.Image:
@@ -339,6 +404,7 @@ def generate_collage_version(
     quality: int = 92,
     seed: Optional[int] = None,
     return_map: bool = False,
+    progress_callback: Optional[Callable[[int, str, str], None]] = None,
 ) -> Dict[str, Any]:
     """Generate collage version from multiple images."""
     if len(image_paths) < 2:
@@ -350,14 +416,25 @@ def generate_collage_version(
     if seed is None:
         seed = int(time.time())
     
+    def report_progress(progress: int, stage: str, message: str):
+        if progress_callback:
+            progress_callback(progress, stage, message)
+    
+    report_progress(0, "loading", "開始載入圖片...")
     ensure_dirs([settings.offspring_dir, settings.metadata_dir])
     
     # Load and standardize images
     images = []
-    for path in image_paths:
+    total_images = len(image_paths)
+    for idx, path in enumerate(image_paths):
+        progress = 5 + int((idx / total_images) * 25)  # 5-30%
+        report_progress(progress, "loading", f"載入圖片 {idx + 1}/{total_images}: {os.path.basename(path)}")
         img = Image.open(path)
+        report_progress(progress + 2, "standardizing", f"標準化圖片 {idx + 1}/{total_images}")
         img = standardize_image(img, resize_w, rows, cols)
         images.append(img)
+    
+    report_progress(35, "tiling", "開始切片...")
     
     # Select base image
     if base == "first":
@@ -390,6 +467,8 @@ def generate_collage_version(
     if not candidate_tiles:
         raise ValueError("候選 tile 池為空，請檢查 allow_self 參數")
     
+    report_progress(40, "matching", "開始匹配 tiles...")
+    
     # Match tiles
     if mode == "kinship":
         mapping = match_tiles_greedy(base_tiles, candidate_tiles, rows, cols, seed)
@@ -397,6 +476,8 @@ def generate_collage_version(
         mapping = match_tiles_random(base_tiles, candidate_tiles, rows, cols, seed)
     else:
         raise ValueError(f"未知的 mode: {mode}")
+    
+    report_progress(80, "reassembling", "匹配完成，開始重組...")
     
     # Reassemble collage
     output_img = reassemble_collage(
@@ -410,6 +491,8 @@ def generate_collage_version(
         rotate_deg,
         seed,
     )
+    
+    report_progress(90, "saving", "儲存輸出檔案...")
     
     # Save output
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -472,6 +555,8 @@ def generate_collage_version(
     
     metadata_path = write_metadata(metadata, base_name=os.path.splitext(filename)[0])
     
+    report_progress(100, "completed", "生成完成")
+    
     result = {
         "output_image_path": output_path,
         "metadata_path": metadata_path,
@@ -486,4 +571,3 @@ def generate_collage_version(
         result["tile_mapping"] = metadata["tile_mapping"]
     
     return result
-
