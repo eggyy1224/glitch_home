@@ -162,14 +162,14 @@ def average_rect_color(img: Image.Image, start_x: int, start_y: int, width: int,
 def compute_edge_colors(tile: Image.Image) -> Dict[str, List[float]]:
     """Compute edge colors for a tile (top, bottom, left, right, center)."""
     w, h = tile.size
-    
+
     strip_w = max(1, int(w * 0.12))
     strip_h = max(1, int(h * 0.12))
     center_w = max(1, int(w * 0.5))
     center_h = max(1, int(h * 0.5))
     center_x = max(0, (w - center_w) // 2)
     center_y = max(0, (h - center_h) // 2)
-    
+
     return {
         "top": average_rect_color(tile, 0, 0, w, strip_h),
         "bottom": average_rect_color(tile, 0, max(0, h - strip_h), w, strip_h),
@@ -177,6 +177,19 @@ def compute_edge_colors(tile: Image.Image) -> Dict[str, List[float]]:
         "right": average_rect_color(tile, max(0, w - strip_w), 0, strip_w, h),
         "center": average_rect_color(tile, center_x, center_y, center_w, center_h),
     }
+
+
+def compute_tile_luminance(tile: Image.Image) -> float:
+    """計算 tile 的平均亮度（轉為灰階後回傳 0-255 的平均值）。"""
+    if tile.mode != "L":
+        gray = tile.convert("L")
+    else:
+        gray = tile
+
+    arr = np.asarray(gray, dtype=np.float32)
+    if arr.size == 0:
+        return 0.0
+    return float(arr.mean())
 
 
 def color_distance(color1: List[float], color2: List[float]) -> float:
@@ -439,6 +452,84 @@ def match_tiles_wave(
     return result
 
 
+def match_tiles_luminance(
+    base_tiles: List[Image.Image],
+    candidate_tiles: List[Tuple[Image.Image, int, int, int]],
+    rows: int,
+    cols: int,
+    seed: int,
+) -> List[Tuple[int, int, int]]:
+    """Match tiles by minimizing luminance difference with neighbors (left/top)."""
+    random.seed(seed)
+    np.random.seed(seed)
+
+    base_luminance = [compute_tile_luminance(tile) for tile in base_tiles]
+    candidate_luminance = [compute_tile_luminance(tile) for tile, _, _, _ in candidate_tiles]
+
+    placed_matrix: List[List[Optional[int]]] = [[None] * cols for _ in range(rows)]
+    used_candidates = set()
+    slot_order = [(r, c) for r in range(rows) for c in range(cols)]
+
+    for row, col in slot_order:
+        base_idx = row * cols + col
+        if base_idx >= len(base_tiles):
+            continue
+
+        best_idx = -1
+        best_score = float("inf")
+
+        for i in range(len(candidate_tiles)):
+            if i in used_candidates:
+                continue
+
+            candidate_lum = candidate_luminance[i] if i < len(candidate_luminance) else 0.0
+            neighbor_diffs = []
+
+            if col > 0 and placed_matrix[row][col - 1] is not None:
+                neighbor_idx = placed_matrix[row][col - 1]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_luminance):
+                    neighbor_diffs.append(abs(candidate_luminance[neighbor_idx] - candidate_lum))
+
+            if row > 0 and placed_matrix[row - 1][col] is not None:
+                neighbor_idx = placed_matrix[row - 1][col]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_luminance):
+                    neighbor_diffs.append(abs(candidate_luminance[neighbor_idx] - candidate_lum))
+
+            if neighbor_diffs:
+                score = sum(neighbor_diffs) / len(neighbor_diffs)
+            else:
+                base_lum = base_luminance[base_idx] if base_idx < len(base_luminance) else 128.0
+                score = abs(base_lum - candidate_lum)
+
+            score += random.random() * 0.01
+
+            if score < best_score:
+                best_score = score
+                best_idx = i
+
+        if best_idx >= 0:
+            placed_matrix[row][col] = best_idx
+            used_candidates.add(best_idx)
+        else:
+            for i in range(len(candidate_tiles)):
+                if i not in used_candidates:
+                    placed_matrix[row][col] = i
+                    used_candidates.add(i)
+                    break
+
+    result = []
+    for row in range(rows):
+        for col in range(cols):
+            candidate_idx = placed_matrix[row][col]
+            if candidate_idx is not None and candidate_idx < len(candidate_tiles):
+                _, source_idx, source_row, source_col = candidate_tiles[candidate_idx]
+                result.append((source_idx, source_row, source_col))
+            else:
+                result.append((0, 0, 0))
+
+    return result
+
+
 def reassemble_collage(
     base_img: Image.Image,
     candidate_tiles: List[Tuple[Image.Image, int, int, int]],
@@ -601,6 +692,8 @@ def generate_collage_version(
         mapping = match_tiles_random(base_tiles, candidate_tiles, rows, cols, seed)
     elif mode == "wave":
         mapping = match_tiles_wave(base_tiles, candidate_tiles, rows, cols, seed)
+    elif mode == "luminance":
+        mapping = match_tiles_luminance(base_tiles, candidate_tiles, rows, cols, seed)
     else:
         raise ValueError(f"未知的 mode: {mode}")
     

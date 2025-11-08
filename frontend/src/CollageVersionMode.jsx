@@ -506,6 +506,7 @@ export default function CollageVersionMode() {
                   <option value="kinship">親緣匹配 (kinship)</option>
                   <option value="random">隨機 (random)</option>
                   <option value="wave">波紋擴散 (wave)</option>
+                  <option value="luminance">亮度匹配 (luminance)</option>
                 </select>
               </div>
               <div className="collage-version-param">
