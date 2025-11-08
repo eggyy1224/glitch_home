@@ -248,3 +248,30 @@ export async function getCollageProgress(taskId) {
   
   return res.json();
 }
+
+export async function generateMixTwo(params) {
+  const url = `${API_BASE}/api/generate/mix-two`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`API ${res.status}: ${errorText}`);
+  }
+  
+  const result = await res.json();
+  
+  // Build image URL from output_image_path
+  // output_image_path is a full path like "backend/offspring_images/offspring_xxx.png"
+  // We need to extract just the filename
+  const imageFilename = result.output_image_path?.split("/").pop() || result.output_image;
+  const imageUrl = imageFilename ? `${API_BASE}/generated_images/${imageFilename}` : null;
+  
+  return {
+    ...result,
+    imageUrl,
+  };
+}

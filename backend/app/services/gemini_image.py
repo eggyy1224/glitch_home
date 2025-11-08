@@ -148,37 +148,45 @@ def _resolve_parent_paths(explicit: List[str]) -> List[str]:
     """Resolve provided parent file identifiers to absolute paths.
 
     Accepts either absolute paths, relative paths under configured genes_pool_dirs,
-    or basenames that exist under these directories. Returns a list of absolute
+    or basenames that exist under these directories or offspring_dir. Returns a list of absolute
     paths in the same order as input. Raises ValueError if any cannot be resolved
     or is not an image file.
     """
     pool_dirs: List[str] = getattr(settings, "genes_pool_dirs", [settings.genes_pool_dir])
+    # Also search in offspring_dir for images selected from the frontend
+    search_dirs = pool_dirs + [settings.offspring_dir]
     resolved: List[str] = []
     for item in explicit:
         candidate_paths: List[str] = []
         # Absolute path
         if os.path.isabs(item) and os.path.isfile(item):
             candidate_paths.append(item)
-        # Try interpret as relative under each pool dir
-        for d in pool_dirs:
+        # Try interpret as relative under each search dir
+        for d in search_dirs:
             p = os.path.join(d, item)
             if os.path.isfile(p):
                 candidate_paths.append(p)
         # If still not found, try search by basename
         base = os.path.basename(item)
         if not candidate_paths:
-            for d in pool_dirs:
+            for d in search_dirs:
                 try:
+                    if not os.path.isdir(d):
+                        continue
                     for f in os.listdir(d):
                         if f == base:
                             p = os.path.join(d, f)
                             if os.path.isfile(p):
                                 candidate_paths.append(p)
                                 break
-                except FileNotFoundError:
+                except (FileNotFoundError, PermissionError) as e:
                     continue
         if not candidate_paths:
-            raise ValueError(f"指定的父圖無法解析：{item}")
+            # Provide more helpful error message
+            searched_dirs_str = ", ".join([str(d) for d in search_dirs])
+            raise ValueError(
+                f"指定的父圖無法解析：{item}。已搜尋目錄：{searched_dirs_str}"
+            )
         # Prefer the first found (respecting dirs order)
         chosen = candidate_paths[0]
         if not chosen.lower().endswith((".png", ".jpg", ".jpeg")):
