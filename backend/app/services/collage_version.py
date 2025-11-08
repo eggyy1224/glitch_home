@@ -530,6 +530,234 @@ def match_tiles_luminance(
     return result
 
 
+def match_tiles_source_cluster(
+    base_tiles: List[Image.Image],
+    candidate_tiles: List[Tuple[Image.Image, int, int, int]],  # (tile, source_idx, row, col)
+    rows: int,
+    cols: int,
+    seed: int,
+) -> List[Tuple[int, int, int]]:  # List of (source_idx, source_row, source_col)
+    """Source cluster matching: group tiles by source image, match from seed points outward."""
+    random.seed(seed)
+    np.random.seed(seed)
+    
+    # Compute edge colors for all tiles
+    base_edges = [compute_edge_colors(tile) for tile in base_tiles]
+    candidate_edges = [compute_edge_colors(tile) for tile, _, _, _ in candidate_tiles]
+    
+    # Group candidate tiles by source_idx
+    source_groups: Dict[int, List[int]] = {}  # source_idx -> list of candidate indices
+    for i, (_, source_idx, _, _) in enumerate(candidate_tiles):
+        if source_idx not in source_groups:
+            source_groups[source_idx] = []
+        source_groups[source_idx].append(i)
+    
+    # Get all unique source indices
+    source_indices = sorted(source_groups.keys())
+    num_sources = len(source_indices)
+    
+    if num_sources == 0:
+        raise ValueError("沒有找到任何來源圖")
+    
+    # Select seed points for each source (evenly distributed)
+    # Try to place seeds in different regions of the grid
+    seed_points: Dict[int, Tuple[int, int]] = {}  # source_idx -> (row, col)
+    used_seed_positions = set()
+    
+    # Calculate seed positions - distribute evenly across the grid
+    for idx, source_idx in enumerate(source_indices):
+        # Try to find a good seed position
+        attempts = 0
+        max_attempts = rows * cols
+        while attempts < max_attempts:
+            # Distribute seeds: divide grid into regions
+            if num_sources == 1:
+                seed_row = rows // 2
+                seed_col = cols // 2
+            elif num_sources == 2:
+                # Left and right halves
+                seed_row = rows // 2
+                seed_col = (cols * (idx + 1)) // (num_sources + 1)
+            else:
+                # More complex distribution
+                grid_size = int(np.ceil(np.sqrt(num_sources)))
+                region_row = idx // grid_size
+                region_col = idx % grid_size
+                seed_row = (rows * (region_row + 1)) // (grid_size + 1)
+                seed_col = (cols * (region_col + 1)) // (grid_size + 1)
+            
+            # Add some randomness
+            seed_row = max(0, min(rows - 1, seed_row + random.randint(-rows // 4, rows // 4)))
+            seed_col = max(0, min(cols - 1, seed_col + random.randint(-cols // 4, cols // 4)))
+            
+            seed_pos = (seed_row, seed_col)
+            if seed_pos not in used_seed_positions:
+                seed_points[source_idx] = seed_pos
+                used_seed_positions.add(seed_pos)
+                break
+            attempts += 1
+        
+        # Fallback: if we couldn't find a unique position, just use the calculated one
+        if source_idx not in seed_points:
+            seed_row = rows // 2 if idx == 0 else (rows * (idx + 1)) // (num_sources + 1)
+            seed_col = cols // 2 if idx == 0 else (cols * (idx + 1)) // (num_sources + 1)
+            seed_points[source_idx] = (seed_row, seed_col)
+    
+    # Calculate Manhattan distance
+    def manhattan_distance(r1: int, c1: int, r2: int, c2: int) -> int:
+        return abs(r1 - r2) + abs(c1 - c2)
+    
+    # For each position, calculate distance to its "assigned" source seed
+    # We assign each position to the nearest source seed
+    slots_with_info = []
+    for row in range(rows):
+        for col in range(cols):
+            # Find nearest source seed
+            min_dist = float('inf')
+            assigned_source = source_indices[0]  # default
+            
+            for source_idx in source_indices:
+                if source_idx in seed_points:
+                    seed_row, seed_col = seed_points[source_idx]
+                    dist = manhattan_distance(row, col, seed_row, seed_col)
+                    if dist < min_dist:
+                        min_dist = dist
+                        assigned_source = source_idx
+            
+            slots_with_info.append((min_dist, assigned_source, row, col))
+    
+    # Sort by distance, then by source_idx, then by row, then by col
+    slots_with_info.sort(key=lambda x: (x[0], x[1], x[2], x[3]))
+    
+    # Placement matrix
+    placed_matrix: List[List[Optional[int]]] = [[None] * cols for _ in range(rows)]
+    used_candidates = set()
+    
+    # Track available tiles per source
+    available_by_source: Dict[int, List[int]] = {}
+    for source_idx in source_indices:
+        available_by_source[source_idx] = source_groups[source_idx].copy()
+    
+    # Process slots in order
+    for dist, assigned_source, row, col in slots_with_info:
+        base_idx = row * cols + col
+        if base_idx >= len(base_tiles):
+            continue
+        
+        base_edge = base_edges[base_idx]
+        best_idx = -1
+        best_score = float('inf')
+        
+        # First, try to find best match from the assigned source
+        candidates_to_check = []
+        
+        # Priority 1: Same source tiles
+        if assigned_source in available_by_source and len(available_by_source[assigned_source]) > 0:
+            candidates_to_check.extend(available_by_source[assigned_source])
+        
+        # Priority 2: Other source tiles (if same source is exhausted)
+        for source_idx in source_indices:
+            if source_idx != assigned_source and source_idx in available_by_source:
+                if len(available_by_source[source_idx]) > 0:
+                    candidates_to_check.extend(available_by_source[source_idx])
+        
+        # If still no candidates, check all unused candidates
+        if not candidates_to_check:
+            for i in range(len(candidate_tiles)):
+                if i not in used_candidates:
+                    candidates_to_check.append(i)
+        
+        # Find best matching candidate
+        for i in candidates_to_check:
+            if i in used_candidates:
+                continue
+            
+            candidate_edge = candidate_edges[i]
+            score = 0.0
+            matches = 0
+            
+            # Check left neighbor
+            if col > 0 and placed_matrix[row][col - 1] is not None:
+                neighbor_idx = placed_matrix[row][col - 1]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["right"], candidate_edge["left"])
+                    matches += 1
+            
+            # Check right neighbor (if already placed)
+            if col < cols - 1 and placed_matrix[row][col + 1] is not None:
+                neighbor_idx = placed_matrix[row][col + 1]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["left"], candidate_edge["right"])
+                    matches += 1
+            
+            # Check top neighbor
+            if row > 0 and placed_matrix[row - 1][col] is not None:
+                neighbor_idx = placed_matrix[row - 1][col]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["bottom"], candidate_edge["top"])
+                    matches += 1
+            
+            # Check bottom neighbor (if already placed)
+            if row < rows - 1 and placed_matrix[row + 1][col] is not None:
+                neighbor_idx = placed_matrix[row + 1][col]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["top"], candidate_edge["bottom"])
+                    matches += 1
+            
+            # Bonus for same source
+            _, candidate_source_idx, _, _ = candidate_tiles[i]
+            if candidate_source_idx == assigned_source:
+                score *= 0.5  # Prefer same source
+            
+            # If no neighbors, use center color vs gray with some randomness
+            if matches == 0:
+                score = color_distance(candidate_edge["center"], [128.0, 128.0, 128.0]) + random.random() * 5.0
+            else:
+                score = score / matches + random.random() * 0.1
+            
+            if score < best_score:
+                best_score = score
+                best_idx = i
+        
+        # Place best candidate
+        if best_idx >= 0:
+            placed_matrix[row][col] = best_idx
+            used_candidates.add(best_idx)
+            
+            # Remove from available list
+            _, placed_source_idx, _, _ = candidate_tiles[best_idx]
+            if placed_source_idx in available_by_source and best_idx in available_by_source[placed_source_idx]:
+                available_by_source[placed_source_idx].remove(best_idx)
+        else:
+            # Fallback: use first available
+            for i in range(len(candidate_tiles)):
+                if i not in used_candidates:
+                    placed_matrix[row][col] = i
+                    used_candidates.add(i)
+                    _, placed_source_idx, _, _ = candidate_tiles[i]
+                    if placed_source_idx in available_by_source and i in available_by_source[placed_source_idx]:
+                        available_by_source[placed_source_idx].remove(i)
+                    break
+    
+    # Build result mapping
+    result = []
+    for row in range(rows):
+        for col in range(cols):
+            candidate_idx = placed_matrix[row][col]
+            if candidate_idx is not None and candidate_idx < len(candidate_tiles):
+                _, source_idx, source_row, source_col = candidate_tiles[candidate_idx]
+                result.append((source_idx, source_row, source_col))
+            else:
+                # Fallback
+                result.append((0, 0, 0))
+    
+    return result
+
+
 def reassemble_collage(
     base_img: Image.Image,
     candidate_tiles: List[Tuple[Image.Image, int, int, int]],
@@ -694,6 +922,8 @@ def generate_collage_version(
         mapping = match_tiles_wave(base_tiles, candidate_tiles, rows, cols, seed)
     elif mode == "luminance":
         mapping = match_tiles_luminance(base_tiles, candidate_tiles, rows, cols, seed)
+    elif mode == "source-cluster":
+        mapping = match_tiles_source_cluster(base_tiles, candidate_tiles, rows, cols, seed)
     else:
         raise ValueError(f"未知的 mode: {mode}")
     
