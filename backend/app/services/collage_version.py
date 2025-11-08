@@ -314,6 +314,131 @@ def match_tiles_random(
     return result
 
 
+def match_tiles_wave(
+    base_tiles: List[Image.Image],
+    candidate_tiles: List[Tuple[Image.Image, int, int, int]],  # (tile, source_idx, row, col)
+    rows: int,
+    cols: int,
+    seed: int,
+) -> List[Tuple[int, int, int]]:  # List of (source_idx, source_row, source_col)
+    """Wave propagation matching: match tiles from center outward using BFS-like approach."""
+    random.seed(seed)
+    np.random.seed(seed)
+    
+    # Compute edge colors for all tiles
+    base_edges = [compute_edge_colors(tile) for tile in base_tiles]
+    candidate_edges = [compute_edge_colors(tile) for tile, _, _, _ in candidate_tiles]
+    
+    # Calculate center point
+    center_row = rows // 2
+    center_col = cols // 2
+    
+    # Calculate Manhattan distance from center for each position
+    def manhattan_distance(r1: int, c1: int, r2: int, c2: int) -> int:
+        return abs(r1 - r2) + abs(c1 - c2)
+    
+    # Build distance-sorted slot order
+    slots_with_distance = []
+    for row in range(rows):
+        for col in range(cols):
+            dist = manhattan_distance(row, col, center_row, center_col)
+            slots_with_distance.append((dist, row, col))
+    
+    # Sort by distance, then by row, then by col (for same distance)
+    slots_with_distance.sort(key=lambda x: (x[0], x[1], x[2]))
+    
+    # Placement matrix
+    placed_matrix: List[List[Optional[int]]] = [[None] * cols for _ in range(rows)]
+    used_candidates = set()
+    
+    # Process slots in wave order (from center outward)
+    for dist, row, col in slots_with_distance:
+        base_idx = row * cols + col
+        if base_idx >= len(base_tiles):
+            continue
+        
+        base_edge = base_edges[base_idx]
+        best_idx = -1
+        best_score = float('inf')
+        
+        # Find best matching candidate
+        for i, (candidate_tile, source_idx, source_row, source_col) in enumerate(candidate_tiles):
+            if i in used_candidates:
+                continue
+            
+            candidate_edge = candidate_edges[i]
+            score = 0.0
+            matches = 0
+            
+            # Check left neighbor
+            if col > 0 and placed_matrix[row][col - 1] is not None:
+                neighbor_idx = placed_matrix[row][col - 1]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["right"], candidate_edge["left"])
+                    matches += 1
+            
+            # Check right neighbor (if already placed)
+            if col < cols - 1 and placed_matrix[row][col + 1] is not None:
+                neighbor_idx = placed_matrix[row][col + 1]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["left"], candidate_edge["right"])
+                    matches += 1
+            
+            # Check top neighbor
+            if row > 0 and placed_matrix[row - 1][col] is not None:
+                neighbor_idx = placed_matrix[row - 1][col]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["bottom"], candidate_edge["top"])
+                    matches += 1
+            
+            # Check bottom neighbor (if already placed)
+            if row < rows - 1 and placed_matrix[row + 1][col] is not None:
+                neighbor_idx = placed_matrix[row + 1][col]
+                if neighbor_idx is not None and neighbor_idx < len(candidate_tiles):
+                    neighbor_edge = candidate_edges[neighbor_idx]
+                    score += color_distance(neighbor_edge["top"], candidate_edge["bottom"])
+                    matches += 1
+            
+            # If no neighbors, use center color vs gray with some randomness
+            if matches == 0:
+                score = color_distance(candidate_edge["center"], [128.0, 128.0, 128.0]) + random.random() * 5.0
+            else:
+                score = score / matches + random.random() * 0.1
+            
+            if score < best_score:
+                best_score = score
+                best_idx = i
+        
+        # Place best candidate
+        if best_idx >= 0:
+            placed_matrix[row][col] = best_idx
+            used_candidates.add(best_idx)
+        else:
+            # Fallback: use first available
+            for i in range(len(candidate_tiles)):
+                if i not in used_candidates:
+                    placed_matrix[row][col] = i
+                    used_candidates.add(i)
+                    break
+    
+    # Build result mapping
+    result = []
+    for row in range(rows):
+        for col in range(cols):
+            candidate_idx = placed_matrix[row][col]
+            if candidate_idx is not None and candidate_idx < len(candidate_tiles):
+                _, source_idx, source_row, source_col = candidate_tiles[candidate_idx]
+                result.append((source_idx, source_row, source_col))
+            else:
+                # Fallback
+                result.append((0, 0, 0))
+    
+    return result
+
+
 def reassemble_collage(
     base_img: Image.Image,
     candidate_tiles: List[Tuple[Image.Image, int, int, int]],
@@ -474,6 +599,8 @@ def generate_collage_version(
         mapping = match_tiles_greedy(base_tiles, candidate_tiles, rows, cols, seed)
     elif mode == "random":
         mapping = match_tiles_random(base_tiles, candidate_tiles, rows, cols, seed)
+    elif mode == "wave":
+        mapping = match_tiles_wave(base_tiles, candidate_tiles, rows, cols, seed)
     else:
         raise ValueError(f"未知的 mode: {mode}")
     

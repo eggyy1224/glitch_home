@@ -498,6 +498,7 @@ export default function CollageVersionMode() {
                 <select value={mode} onChange={(e) => setMode(e.target.value)}>
                   <option value="kinship">親緣匹配 (kinship)</option>
                   <option value="random">隨機 (random)</option>
+                  <option value="wave">波紋擴散 (wave)</option>
                 </select>
               </div>
               <div className="collage-version-param">
