@@ -175,3 +175,70 @@ export async function fetchCaptionState(clientId = null) {
     caption: data?.caption ?? null,
   };
 }
+
+export async function generateCollageVersion(files, params) {
+  const url = `${API_BASE}/api/generate-collage-version`;
+  const formData = new FormData();
+  
+  // Add files
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  
+  // Add params as JSON string
+  formData.append("params", JSON.stringify(params));
+  
+  const res = await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`API ${res.status}: ${errorText}`);
+  }
+  
+  const result = await res.json();
+  
+  // Build image URL
+  const imageUrl = `${API_BASE}/generated_images/${result.output_image}`;
+  
+  return {
+    ...result,
+    imageUrl,
+  };
+}
+
+export async function listOffspringImages() {
+  const url = `${API_BASE}/api/offspring-images`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function generateCollageVersionFromNames(imageNames, params) {
+  const url = `${API_BASE}/api/generate-collage-version`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      image_names: imageNames,
+      ...params,
+    }),
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`API ${res.status}: ${errorText}`);
+  }
+  
+  const result = await res.json();
+  
+  // Build image URL
+  const imageUrl = `${API_BASE}/generated_images/${result.output_image}`;
+  
+  return {
+    ...result,
+    imageUrl,
+  };
+}

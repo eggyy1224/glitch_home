@@ -1,0 +1,252 @@
+.collage-version-mode {
+  padding: 20px;
+  min-height: 100vh;
+  background: #050508;
+  color: #fff;
+}
+
+.collage-version-container {
+  display: flex;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.collage-version-left {
+  flex: 1;
+  max-width: 500px;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.collage-version-right {
+  flex: 1;
+  min-height: 400px;
+}
+
+.collage-version-section {
+  margin-bottom: 24px;
+}
+
+.collage-version-section h3 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: #fff;
+}
+
+.collage-version-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.collage-version-image-item {
+  position: relative;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.collage-version-image-item:hover {
+  border-color: #4a90e2;
+}
+
+.collage-version-image-item.selected {
+  border-color: #4a90e2;
+  background: rgba(74, 144, 226, 0.2);
+}
+
+.collage-version-image-item img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.collage-version-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.collage-version-image-item.selected .collage-version-image-overlay {
+  opacity: 1;
+}
+
+.collage-version-check {
+  font-size: 32px;
+  color: #4a90e2;
+  font-weight: bold;
+}
+
+.collage-version-image-name {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.collage-version-selected-count {
+  margin-top: 12px;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  text-align: center;
+  color: #4a90e2;
+  font-weight: bold;
+}
+
+.collage-version-button,
+.collage-version-generate {
+  padding: 10px 20px;
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.collage-version-button:hover,
+.collage-version-generate:hover:not(:disabled) {
+  background: #357abd;
+}
+
+.collage-version-generate:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+.collage-version-params {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.collage-version-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.collage-version-param label {
+  font-size: 14px;
+  color: #ccc;
+}
+
+.collage-version-param input,
+.collage-version-param select {
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.collage-version-param input:focus,
+.collage-version-param select:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.collage-version-error {
+  padding: 12px;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 4px;
+  margin-top: 12px;
+}
+
+.collage-version-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.collage-version-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #333;
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.collage-version-result {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.collage-version-result img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  border: 1px solid #333;
+}
+
+.collage-version-result-info {
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.collage-version-result-info p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.collage-version-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  color: #666;
+}
+
+@media (max-width: 1024px) {
+  .collage-version-container {
+    flex-direction: column;
+  }
+  
+  .collage-version-left {
+    max-width: 100%;
+  }
+  
+  .collage-version-params {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -163,3 +163,33 @@ class TTSRequest(BaseModel):
     speed: Optional[float] = Field(default=None, ge=0.25, le=4.0, description="語速（0.25–4.0），預設 1.0")
     auto_play: bool = Field(default=False, description="產生後自動播放（透過 WebSocket 廣播）")
     target_client_id: Optional[str] = Field(default=None, description="指定自動播放目標客戶端 id")
+
+
+class GenerateCollageVersionRequest(BaseModel):
+    """Request parameters for collage version generation."""
+    rows: int = Field(default=12, ge=1, le=100, description="切片列數")
+    cols: int = Field(default=16, ge=1, le=100, description="切片行數")
+    mode: str = Field(default="kinship", description="匹配模式：kinship（邊緣顏色匹配）或 random（隨機）")
+    base: str = Field(default="first", description="基準圖選擇：first（第一張）或 mean（平均，目前實作為 first）")
+    allow_self: bool = Field(default=False, description="是否允許使用基準圖自己的 tile")
+    resize_w: int = Field(default=2048, ge=256, le=8192, description="目標寬度（像素）")
+    pad_px: int = Field(default=0, ge=0, le=100, description="tile 間距（像素）")
+    jitter_px: int = Field(default=0, ge=0, le=50, description="隨機位移（像素）")
+    rotate_deg: int = Field(default=0, ge=0, le=45, description="最大旋轉角度（度）")
+    format: str = Field(default="png", description="輸出格式：png、jpg、webp")
+    quality: int = Field(default=92, ge=1, le=100, description="輸出品質（僅適用於 jpg/webp）")
+    seed: Optional[int] = Field(default=None, ge=0, le=2**31-1, description="隨機種子，省略則使用當前時間戳")
+    return_map: bool = Field(default=False, description="是否返回 tile 對應關係")
+
+
+class GenerateCollageVersionResponse(BaseModel):
+    """Response for collage version generation."""
+    model_config = ConfigDict(protected_namespaces=())
+    output_image_path: str
+    metadata_path: str
+    output_image: str
+    parents: List[str]
+    output_format: str
+    width: int
+    height: int
+    tile_mapping: Optional[List[dict]] = Field(default=None, description="Tile 對應關係（當 return_map=true 時）")

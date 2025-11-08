@@ -13,6 +13,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi import File, Form, UploadFile
 
 from ..config import settings
 from ..models.schemas import (
@@ -21,6 +22,8 @@ from ..models.schemas import (
     GenerateMixTwoRequest,
     GenerateMixTwoResponse,
     GenerateSoundRequest,
+    GenerateCollageVersionRequest,
+    GenerateCollageVersionResponse,
     ImageSearchRequest,
     IndexBatchRequest,
     IndexOffspringRequest,
@@ -36,6 +39,7 @@ from ..services.kinship_index import kinship_index
 from ..services.screenshot_requests import screenshot_requests_manager
 from ..services.sound_effects import generate_sound_effect
 from ..services.tts_openai import synthesize_speech_openai
+from ..services.collage_version import generate_collage_version
 
 router = APIRouter()
 
@@ -565,3 +569,77 @@ def api_kinship_stats() -> dict:
         return kinship_index.stats()
     except Exception as exc:  # noqa: BLE001 - surface as 500
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {exc}") from exc
+
+
+@router.get("/api/offspring-images")
+def api_list_offspring_images() -> dict:
+    """List all images in offspring_images directory."""
+    image_dir = Path(settings.offspring_dir)
+    if not image_dir.exists():
+        return {"images": []}
+    
+    images = []
+    for path in sorted(image_dir.iterdir()):
+        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
+            images.append({
+                "filename": path.name,
+                "url": f"/generated_images/{path.name}",
+            })
+    
+    return {"images": images}
+
+
+@router.post("/api/generate-collage-version", response_model=GenerateCollageVersionResponse, status_code=201)
+async def api_generate_collage_version(
+    body: dict = Body(...),
+) -> JSONResponse:
+    """Generate collage version from multiple images by filename."""
+    # Extract image_names and params from body
+    image_names = body.get("image_names", [])
+    params_dict = {k: v for k, v in body.items() if k != "image_names"}
+    
+    # Validate images
+    if not image_names or len(image_names) < 2:
+        raise HTTPException(status_code=400, detail="至少需要 2 張圖片")
+    
+    # Validate and create request model
+    try:
+        request_params = GenerateCollageVersionRequest(**params_dict)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"參數驗證失敗: {exc}") from exc
+    
+    # Resolve image paths
+    image_paths = []
+    for name in image_names:
+        # Sanitize filename
+        safe_name = os.path.basename(name)
+        image_path = Path(settings.offspring_dir) / safe_name
+        if not image_path.exists():
+            raise HTTPException(status_code=404, detail=f"圖片不存在: {safe_name}")
+        image_paths.append(str(image_path))
+    
+    # Generate collage
+    try:
+        result = await run_in_threadpool(
+            generate_collage_version,
+            image_paths=image_paths,
+            rows=request_params.rows,
+            cols=request_params.cols,
+            mode=request_params.mode,
+            base=request_params.base,
+            allow_self=request_params.allow_self,
+            resize_w=request_params.resize_w,
+            pad_px=request_params.pad_px,
+            jitter_px=request_params.jitter_px,
+            rotate_deg=request_params.rotate_deg,
+            format=request_params.format,
+            quality=request_params.quality,
+            seed=request_params.seed,
+            return_map=request_params.return_map,
+        )
+        
+        return JSONResponse(status_code=201, content=result)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - surface as 500
+        raise HTTPException(status_code=500, detail=f"生成失敗: {exc}") from exc

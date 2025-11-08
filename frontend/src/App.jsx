@@ -9,6 +9,7 @@ import IframeMode from "./IframeMode.jsx";
 import SubtitleOverlay from "./SubtitleOverlay.jsx";
 import CaptionMode from "./CaptionMode.jsx";
 import CollageMode from "./CollageMode.jsx";
+import CollageVersionMode from "./CollageVersionMode.jsx";
 import { clampInt } from "./utils/iframeConfig.js";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
@@ -81,6 +82,9 @@ export default function App() {
   const captionMode =
     !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
     (readParams().get("caption_mode") ?? "false") === "true";
+  const collageVersionMode =
+    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode &&
+    (readParams().get("collage_version_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -496,6 +500,22 @@ export default function App() {
     return (
       <>
         <CaptionMode caption={caption} />
+        {soundPlayerEnabled && (
+          <SoundPlayer
+            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
+            onPlayHandled={() => setSoundPlayRequest(null)}
+            visible={showInfo}
+          />
+        )}
+        {subtitleOverlay}
+      </>
+    );
+  }
+
+  if (collageVersionMode) {
+    return (
+      <>
+        <CollageVersionMode />
         {soundPlayerEnabled && (
           <SoundPlayer
             playRequest={soundPlayerEnabled ? soundPlayRequest : null}
