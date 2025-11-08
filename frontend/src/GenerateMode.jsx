@@ -5,6 +5,40 @@ import { generateMixTwo, listOffspringImages, searchImagesByText, searchImagesBy
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
+const ensureTrailingSlash = (value) => {
+  if (!value) return "/";
+  return value.endsWith("/") ? value : `${value}/`;
+};
+
+const buildImageUrl = (base, identifier) => {
+  if (!identifier) return "";
+  const normalizedIdentifier = identifier.replace(/^\/+/, "");
+  if (!base) {
+    return `/${normalizedIdentifier}`;
+  }
+  return `${ensureTrailingSlash(base)}${normalizedIdentifier}`;
+};
+
+const extractImageIdentifier = (value) => {
+  if (!value) return "";
+  const sanitized = String(value).split("?")[0];
+  const parts = sanitized.split("/");
+  return parts[parts.length - 1] || "";
+};
+
+const resolveImageIdentifier = (image) => {
+  if (!image) return "";
+  return image.filename || extractImageIdentifier(image.url) || "";
+};
+
+const resolveImageUrl = (image) => {
+  const identifier = resolveImageIdentifier(image);
+  if (!identifier) {
+    return image?.url || "";
+  }
+  return buildImageUrl(IMAGES_BASE, identifier);
+};
+
 export default function GenerateMode() {
   const [availableImages, setAvailableImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -125,7 +159,7 @@ export default function GenerateMode() {
             const cleanId = result.id.replace(/:(en|zh)$/, "");
             return {
               filename: cleanId,
-              url: `${IMAGES_BASE}${cleanId}`,
+              url: buildImageUrl(IMAGES_BASE, cleanId),
             };
           });
           setSearchResults(convertedResults);
@@ -143,7 +177,7 @@ export default function GenerateMode() {
               const cleanId = result.id.replace(/:(en|zh)$/, "");
               return {
                 filename: cleanId,
-                url: `${IMAGES_BASE}${cleanId}`,
+                url: buildImageUrl(IMAGES_BASE, cleanId),
               };
             });
             setSearchResults(convertedResults);
@@ -182,7 +216,7 @@ export default function GenerateMode() {
           const cleanId = result.id.replace(/:(en|zh)$/, "");
           return {
             filename: cleanId,
-            url: `${IMAGES_BASE}${cleanId}`,
+            url: buildImageUrl(IMAGES_BASE, cleanId),
           };
         });
         setSearchResults(convertedResults);
@@ -261,10 +295,17 @@ export default function GenerateMode() {
       }
       
       const response = await generateMixTwo(params);
+      const imageIdentifier =
+        extractImageIdentifier(response.output_image) ||
+        extractImageIdentifier(response.output_image_path) ||
+        extractImageIdentifier(response.imageUrl);
+      const resolvedImageUrl = imageIdentifier
+        ? buildImageUrl(IMAGES_BASE, imageIdentifier)
+        : response.imageUrl || "";
       
       setResult({
         ...response,
-        imageUrl: response.imageUrl || `${API_BASE}/generated_images/${response.output_image_path?.split("/").pop()}`,
+        imageUrl: resolvedImageUrl,
       });
       setLoading(false);
     } catch (err) {
@@ -405,13 +446,14 @@ export default function GenerateMode() {
                 <div className="generate-image-grid">
                   {displayImages.map((image) => {
                     const isSelected = selectedImages.includes(image.filename);
+                    const imageSrc = resolveImageUrl(image);
                     return (
                       <div
                         key={image.filename}
                         className={`generate-image-item ${isSelected ? "selected" : ""}`}
                         onClick={() => handleImageToggle(image.filename)}
                       >
-                        <img src={image.url || `${IMAGES_BASE}${image.filename}`} alt={image.filename} />
+                        <img src={imageSrc} alt={image.filename} />
                         <div className="generate-image-overlay">
                           {isSelected && <span className="generate-check">✓</span>}
                         </div>
@@ -576,4 +618,3 @@ export default function GenerateMode() {
     </div>
   );
 }
-

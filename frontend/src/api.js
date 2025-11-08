@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "";
+const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 export async function fetchKinship(img, depth = -1) {
   const url = `${API_BASE}/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
   const res = await fetch(url);
@@ -268,7 +269,8 @@ export async function generateMixTwo(params) {
   // output_image_path is a full path like "backend/offspring_images/offspring_xxx.png"
   // We need to extract just the filename
   const imageFilename = result.output_image_path?.split("/").pop() || result.output_image;
-  const imageUrl = imageFilename ? `${API_BASE}/generated_images/${imageFilename}` : null;
+  const normalizedBase = IMAGES_BASE.endsWith("/") ? IMAGES_BASE : `${IMAGES_BASE}/`;
+  const imageUrl = imageFilename ? `${normalizedBase}${imageFilename}` : null;
   
   return {
     ...result,
