@@ -169,7 +169,13 @@ class GenerateCollageVersionRequest(BaseModel):
     """Request parameters for collage version generation."""
     rows: int = Field(default=12, ge=1, le=300, description="切片列數")
     cols: int = Field(default=16, ge=1, le=300, description="切片行數")
-    mode: str = Field(default="kinship", description="匹配模式：kinship（邊緣顏色匹配）或 random（隨機）")
+    mode: str = Field(
+        default="kinship",
+        description=(
+            "匹配/處理模式：kinship（邊緣顏色匹配）、random（隨機）、wave、luminance、"
+            "source-cluster、weave、rotate-90（單圖，將每個格子旋轉 90°）"
+        ),
+    )
     base: str = Field(default="first", description="基準圖選擇：first（第一張）或 mean（平均，目前實作為 first）")
     allow_self: bool = Field(default=False, description="是否允許使用基準圖自己的 tile")
     resize_w: int = Field(default=2048, ge=256, le=8192, description="目標寬度（像素）")

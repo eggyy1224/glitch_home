@@ -911,6 +911,52 @@ def reassemble_collage(
     return output
 
 
+def reassemble_collage_rotate_90(
+    base_img: Image.Image,
+    rows: int,
+    cols: int,
+    pad_px: int = 0,
+) -> Image.Image:
+    """Rotate each tile of base image 90 degrees clockwise and paste back at original slot.
+
+    Notes:
+    - Each tile's content is rotated by 90° CW independently.
+    - Position stays aligned to the original grid (no jitter). Optional pad is applied uniformly.
+    - Because a 90° rotation swaps width/height, we rotate with expand=True then center-crop
+      back to the original tile size to avoid distortion.
+    """
+    w, h = base_img.size
+    tile_w = w // cols
+    tile_h = h // rows
+
+    output_w = w + pad_px * 2
+    output_h = h + pad_px * 2
+    output = Image.new("RGB", (output_w, output_h), (0, 0, 0))
+
+    for row in range(rows):
+        for col in range(cols):
+            x = col * tile_w
+            y = row * tile_h
+            tile = base_img.crop((x, y, x + tile_w, y + tile_h))
+
+            # Rotate 90 degrees clockwise (Pillow rotates CCW for positive angles)
+            rotated = tile.rotate(-90, expand=True)
+
+            # Fit rotated tile back into the original slot size so rectangular grids stay filled
+            rotated_cropped = ImageOps.fit(
+                rotated,
+                (tile_w, tile_h),
+                method=Image.Resampling.LANCZOS,
+                centering=(0.5, 0.5),
+            )
+
+            out_x = pad_px + x
+            out_y = pad_px + y
+            output.paste(rotated_cropped, (out_x, out_y))
+
+    return output
+
+
 def generate_collage_version(
     image_paths: List[str],
     rows: int = 12,
@@ -928,12 +974,28 @@ def generate_collage_version(
     return_map: bool = False,
     progress_callback: Optional[Callable[[int, str, str], None]] = None,
 ) -> Dict[str, Any]:
-    """Generate collage version from multiple images."""
-    if len(image_paths) < 2:
-        raise ValueError("至少需要 2 張圖片")
-    
-    if not allow_self and len(image_paths) == 1:
+    """Generate collage version from multiple images.
+
+    Notes on input requirements:
+    - For most modes (e.g. kinship, random, wave, luminance, source-cluster, weave),
+      at least two images are required unless `allow_self=True` (in which case a
+      single image may be reused as candidate tiles).
+    - For the special mode `rotate-90`, a single base image is sufficient and
+      `allow_self` is not relevant.
+    """
+    # Determine whether single image is acceptable for the requested mode
+    single_image_allowed = (mode == "rotate-90") or allow_self
+
+    # Basic length validations aligned with mode semantics
+    if len(image_paths) == 0:
+        raise ValueError("至少需要 1 張圖片")
+    # When exactly one image is provided for non-rotate modes and allow_self=False,
+    # surface a clearer error (prior code intended this case).
+    if len(image_paths) == 1 and mode != "rotate-90" and not allow_self:
         raise ValueError("單張圖片且 allow_self=false 時無法生成拼貼")
+    if len(image_paths) < 2 and not single_image_allowed:
+        # Keep existing message for backward compatibility
+        raise ValueError("至少需要 2 張圖片")
     
     if seed is None:
         seed = int(time.time())
@@ -972,55 +1034,71 @@ def generate_collage_version(
     
     # Tile base image
     base_tiles = tile_image(base_img, rows, cols)
-    
-    # Build candidate pool
-    candidate_tiles = []
-    for img_idx, img in enumerate(images):
-        tiles = tile_image(img, rows, cols)
-        for tile_row in range(rows):
-            for tile_col in range(cols):
-                tile_idx = tile_row * cols + tile_col
-                if tile_idx < len(tiles):
-                    # Skip base image tiles if allow_self=False (except for weave mode)
-                    if not allow_self and img_idx == base_idx and mode != "weave":
-                        continue
-                    candidate_tiles.append((tiles[tile_idx], img_idx, tile_row, tile_col))
-    
-    if not candidate_tiles:
-        raise ValueError("候選 tile 池為空，請檢查 allow_self 參數")
-    
-    report_progress(40, "matching", "開始匹配 tiles...")
-    
-    # Match tiles
-    if mode == "kinship":
-        mapping = match_tiles_greedy(base_tiles, candidate_tiles, rows, cols, seed)
-    elif mode == "random":
-        mapping = match_tiles_random(base_tiles, candidate_tiles, rows, cols, seed)
-    elif mode == "wave":
-        mapping = match_tiles_wave(base_tiles, candidate_tiles, rows, cols, seed)
-    elif mode == "luminance":
-        mapping = match_tiles_luminance(base_tiles, candidate_tiles, rows, cols, seed)
-    elif mode == "source-cluster":
-        mapping = match_tiles_source_cluster(base_tiles, candidate_tiles, rows, cols, seed)
-    elif mode == "weave":
-        mapping = match_tiles_weave(base_tiles, candidate_tiles, rows, cols, seed, len(images))
+
+    # Special mode: rotate each base tile 90° clockwise in-place
+    if mode == "rotate-90":
+        # Identity mapping to the first image for metadata (if return_map)
+        mapping = []
+        for r in range(rows):
+            for c in range(cols):
+                mapping.append((0, r, c))
+
+        report_progress(80, "reassembling", "旋轉每個切片 90°，保持原位...")
+        output_img = reassemble_collage_rotate_90(
+            base_img,
+            rows,
+            cols,
+            pad_px,
+        )
     else:
-        raise ValueError(f"未知的 mode: {mode}")
-    
-    report_progress(80, "reassembling", "匹配完成，開始重組...")
-    
-    # Reassemble collage
-    output_img = reassemble_collage(
-        base_img,
-        candidate_tiles,
-        mapping,
-        rows,
-        cols,
-        pad_px,
-        jitter_px,
-        rotate_deg,
-        seed,
-    )
+        # Build candidate pool
+        candidate_tiles = []
+        for img_idx, img in enumerate(images):
+            tiles = tile_image(img, rows, cols)
+            for tile_row in range(rows):
+                for tile_col in range(cols):
+                    tile_idx = tile_row * cols + tile_col
+                    if tile_idx < len(tiles):
+                        # Skip base image tiles if allow_self=False (except for weave mode)
+                        if not allow_self and img_idx == base_idx and mode != "weave":
+                            continue
+                        candidate_tiles.append((tiles[tile_idx], img_idx, tile_row, tile_col))
+
+        if not candidate_tiles:
+            raise ValueError("候選 tile 池為空，請檢查 allow_self 參數")
+
+        report_progress(40, "matching", "開始匹配 tiles...")
+
+        # Match tiles
+        if mode == "kinship":
+            mapping = match_tiles_greedy(base_tiles, candidate_tiles, rows, cols, seed)
+        elif mode == "random":
+            mapping = match_tiles_random(base_tiles, candidate_tiles, rows, cols, seed)
+        elif mode == "wave":
+            mapping = match_tiles_wave(base_tiles, candidate_tiles, rows, cols, seed)
+        elif mode == "luminance":
+            mapping = match_tiles_luminance(base_tiles, candidate_tiles, rows, cols, seed)
+        elif mode == "source-cluster":
+            mapping = match_tiles_source_cluster(base_tiles, candidate_tiles, rows, cols, seed)
+        elif mode == "weave":
+            mapping = match_tiles_weave(base_tiles, candidate_tiles, rows, cols, seed, len(images))
+        else:
+            raise ValueError(f"未知的 mode: {mode}")
+
+        report_progress(80, "reassembling", "匹配完成，開始重組...")
+
+        # Reassemble collage
+        output_img = reassemble_collage(
+            base_img,
+            candidate_tiles,
+            mapping,
+            rows,
+            cols,
+            pad_px,
+            jitter_px,
+            rotate_deg,
+            seed,
+        )
     
     report_progress(90, "saving", "儲存輸出檔案...")
     

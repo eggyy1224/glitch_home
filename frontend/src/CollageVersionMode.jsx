@@ -41,6 +41,9 @@ export default function CollageVersionMode() {
   const [rotateDeg, setRotateDeg] = useState(0);
   const [format, setFormat] = useState("png");
   const [quality, setQuality] = useState(92);
+
+  // Mode-specific requirements
+  const minRequired = React.useMemo(() => (mode === "rotate-90" ? 1 : 2), [mode]);
   
   // Load available images
   useEffect(() => {
@@ -235,8 +238,8 @@ export default function CollageVersionMode() {
   }, []);
   
   const handleGenerate = async () => {
-    if (selectedImages.length < 2) {
-      setError("至少需要選擇 2 張圖片");
+    if (selectedImages.length < minRequired) {
+      setError(`至少需要選擇 ${minRequired} 張圖片`);
       return;
     }
     
@@ -321,7 +324,7 @@ export default function CollageVersionMode() {
           
           {/* Image Selection */}
           <div className="collage-version-section">
-            <h3>選擇圖片（至少 2 張）</h3>
+            <h3>選擇圖片（至少 {minRequired} 張）</h3>
             
             {/* Search Bar */}
             <div className="collage-version-search">
@@ -509,6 +512,7 @@ export default function CollageVersionMode() {
                   <option value="luminance">亮度匹配 (luminance)</option>
                   <option value="source-cluster">來源聚類 (source-cluster)</option>
                   <option value="weave">編織模式 (weave)</option>
+                  <option value="rotate-90">每格右轉 90° (rotate-90)</option>
                 </select>
               </div>
               <div className="collage-version-param">
@@ -587,7 +591,7 @@ export default function CollageVersionMode() {
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={loading || selectedImages.length < 2}
+              disabled={loading || selectedImages.length < minRequired}
               className="collage-version-generate"
             >
               {loading ? "生成中..." : "生成拼貼"}

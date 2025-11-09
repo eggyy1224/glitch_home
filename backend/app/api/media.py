@@ -598,16 +598,20 @@ async def api_generate_collage_version(
     # Extract image_names and params from body
     image_names = body.get("image_names", [])
     params_dict = {k: v for k, v in body.items() if k != "image_names"}
-    
-    # Validate images
-    if not image_names or len(image_names) < 2:
-        raise HTTPException(status_code=400, detail="至少需要 2 張圖片")
-    
-    # Validate and create request model
+
+    # Validate and create request model first so we can gate image-count rules by mode
     try:
         request_params = GenerateCollageVersionRequest(**params_dict)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"參數驗證失敗: {exc}") from exc
+
+    # Validate images with awareness of mode/allow_self semantics
+    if not image_names:
+        raise HTTPException(status_code=400, detail="至少需要 1 張圖片")
+    single_image_allowed = (request_params.mode == "rotate-90") or request_params.allow_self
+    if len(image_names) < 2 and not single_image_allowed:
+        # Keep message consistent with existing UI copy
+        raise HTTPException(status_code=400, detail="至少需要 2 張圖片")
     
     # Resolve image paths
     image_paths = []
