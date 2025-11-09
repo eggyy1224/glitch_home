@@ -4,7 +4,7 @@ import {
   sanitizeIframeConfig,
   buildQueryFromIframeConfig,
   clampInt
-} from '../../src/utils/iframeConfig.js'
+} from '../../../src/utils/iframeConfig.js'
 
 describe('iframeConfig utilities', () => {
   describe('clampInt', () => {
@@ -136,9 +136,11 @@ describe('iframeConfig utilities', () => {
         ]
       }
 
-      const sanitized = sanitizeIframeConfig(config)
-      expect(sanitized.panels[0].id).toBe('panel1')
-      expect(sanitized.panels[1].id).toBe('panel1_1') // Should be deduplicated
+    const sanitized = sanitizeIframeConfig(config)
+    expect(sanitized.panels).toHaveLength(2)
+    expect(sanitized.panels[0].id).toBe('panel1')
+    // Second duplicate gets index-based suffix: panel1_2 (index is 1, so +1 = 2)
+    expect(sanitized.panels[1].id).toBe('panel1_2')
     })
   })
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
-import { useCollageConfig } from '../../src/hooks/useCollageConfig.js'
+import { renderHook, waitFor, act } from '@testing-library/react'
+import { useCollageConfig } from '../../../src/hooks/useCollageConfig.js'
 
 // Mock fetch
 global.fetch = vi.fn()
@@ -46,7 +46,10 @@ describe('useCollageConfig', () => {
       expect(result.current.remoteConfig).not.toBeNull()
     })
 
-    expect(result.current.remoteConfig).toEqual(mockConfig.config)
+    // sanitizeCollageConfig adds default values, so check key fields
+    expect(result.current.remoteConfig.images).toEqual(['img1.png'])
+    expect(result.current.remoteConfig.rows).toBe(10)
+    expect(result.current.remoteConfig.cols).toBe(10)
     expect(result.current.remoteSource).toBe('global')
   })
 
@@ -84,19 +87,39 @@ describe('useCollageConfig', () => {
     expect(result.current.remoteConfig).toBeNull()
   })
 
-  it('should apply remote config via applyRemoteConfig', () => {
+  it('should apply remote config via applyRemoteConfig', async () => {
+    // Mock fetch to avoid actual API call
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ config: {}, source: 'global' })
+    })
+
     const { result } = renderHook(() =>
       useCollageConfig({ collageMode: true, clientId: null })
     )
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled()
+    })
 
     const remotePayload = {
       config: { images: ['img1.png'], rows: 5, cols: 5 },
       source: 'client'
     }
 
-    result.current.applyRemoteConfig(remotePayload)
+    act(() => {
+      result.current.applyRemoteConfig(remotePayload)
+    })
 
-    expect(result.current.remoteConfig).toEqual(remotePayload.config)
+    // Check that config is applied (may have additional default fields)
+    await waitFor(() => {
+      expect(result.current.remoteConfig).not.toBeNull()
+    })
+    
+    expect(result.current.remoteConfig.images).toEqual(['img1.png'])
+    expect(result.current.remoteConfig.rows).toBe(5)
+    expect(result.current.remoteConfig.cols).toBe(5)
     expect(result.current.remoteSource).toBe('client')
   })
 })
