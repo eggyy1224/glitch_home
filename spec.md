@@ -1,7 +1,7 @@
 # 圖像系譜學：AI 圖像循環生成與視覺化系統 - 系統規格文件
 
-> **版本**: 2.0  
-> **最後更新**: 2025-10-23  
+> **版本**: 2.1  
+> **最後更新**: 2025-11-04  
 > **狀態**: 基於實際程式碼重新撰寫
 
 ---
@@ -32,10 +32,14 @@
 - **圖像循環演化**: 自動從基因池抽取圖像，透過 AI 生成新後代
 - **多維度親緣追溯**: 記錄並視覺化父母、子代、兄弟姊妹、祖先關係
 - **向量語意搜尋**: 使用 OpenAI embeddings + ChromaDB 進行圖像相似度搜尋
-- **多種視覺化模式**: 3D 景觀、2D 親緣圖、孵化室、有機房間、幻燈片等 7 種模式
+- **多種視覺化模式**: 3D 景觀、2D 親緣圖、孵化室、有機房間、幻燈片、拼貼、拼貼版本等 10+ 種模式
 - **實時截圖系統**: WebSocket 驅動的遠端截圖請求與管理
 - **AI 音效生成**: 從圖像分析自動產生配樂（透過 ElevenLabs）
+- **TTS 旁白系統**: 整合 OpenAI TTS 產生語音旁白
+- **拼貼生成系統**: 支援多種拼貼模式（kinship、luminance、wave、source-cluster、random）
 - **Iframe 組合模式**: 支援多視窗組合展示
+- **多客戶端協調**: 支援多個前端客戶端同時連線與協調
+- **字幕與說明文字**: 支援即時字幕與說明文字顯示
 
 ---
 
@@ -61,8 +65,10 @@
 │  │  API Endpoints                                       │   │
 │  │  • Image Generation  • Vector Search                │   │
 │  │  • Kinship Tracking  • Screenshot Management        │   │
-│  │  • Sound Generation  • Camera Presets               │   │
-│  │  • Iframe Config     • WebSocket Broadcast          │   │
+│  │  • Sound Generation  • TTS Narration                │   │
+│  │  • Collage Generation • Camera Presets               │   │
+│  │  • Iframe Config     • Multi-Client Coordination    │   │
+│  │  • Subtitles/Captions • WebSocket Broadcast         │   │
 │  └──────────────────────────────────────────────────────┘   │
 └───────────────────────┬─────────────────────────────────────┘
                         │
@@ -74,7 +80,8 @@
 │  Gemini API  │ │  (Embeddings)│ │  (Sounds)    │
 │              │ │              │ │              │
 │  OpenAI API  │ │  Filesystem  │ │              │
-│  (Embeddings)│ │  Storage     │ │              │
+│  (Embeddings │ │  Storage     │ │              │
+│   & TTS)     │ │              │ │              │
 └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
@@ -83,6 +90,9 @@
 2. **親緣查詢流程**: metadata JSON → 關係計算 → lineage_graph
 3. **向量搜尋流程**: 圖像 → OpenAI Embedding → ChromaDB → 相似度排序
 4. **截圖流程**: WebSocket 請求 → 前端截圖 → 上傳 → 分析/音效生成
+5. **拼貼生成流程**: 多張圖像 → 切片與匹配算法 → 拼貼圖像 + metadata
+6. **TTS 流程**: 文字 → OpenAI TTS API → 音訊檔案 → WebSocket 廣播播放
+7. **多客戶端協調**: WebSocket 連線 → 客戶端註冊 → 定向訊息推送
 
 ---
 
@@ -244,6 +254,26 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
 - **前端播放器**: `SoundPlayer` 元件自動接收並播放
 - **API 觸發**: `POST /api/sound-play` + `{"filename": "...", "target_client_id": "..."}`
 
+#### 4.6 TTS 旁白系統 (tts_openai.py)
+- **服務**: OpenAI Audio Speech API
+- **模型**: `gpt-4o-mini-tts`（預設，可配置）
+- **語音選項**: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`（預設 `alloy`）
+- **輸出格式**: `mp3`（預設）、`wav`、`opus`、`aac`、`flac`
+- **參數**:
+  - `text`: 要合成的文字（必要）
+  - `instructions`: 語氣/口音/說話風格描述（可選）
+  - `voice`: 語音選項（可選）
+  - `model`: TTS 模型（可選）
+  - `output_format`: 輸出格式（可選）
+  - `speed`: 語速（0.25-4.0，預設 1.0）
+  - `filename_base`: 自訂檔名前綴（可選）
+  - `auto_play`: 是否自動播放（可選）
+  - `target_client_id`: 指定播放目標客戶端（可選）
+- **儲存位置**: `backend/generated_sounds/`
+- **命名規則**: `narration_YYYYMMDDTHHMMSS_XXXX.{format}` 或自訂前綴
+- **API 端點**: `POST /api/tts`
+- **自動播放**: 若 `auto_play=true`，會透過 WebSocket 廣播 `sound_play` 訊息
+
 ---
 
 ### 5. 視角與場景管理
@@ -295,6 +325,10 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
 /?img=xxx.png&slide_mode=true          → 幻燈片模式
 /?search_mode=true                     → 搜尋模式
 /?iframe_mode=true                     → Iframe 組合模式
+/?collage_mode=true                    → 拼貼模式
+/?collage_version_mode=true            → 拼貼版本生成模式
+/?generate_mode=true                   → 圖像生成模式
+/?caption_mode=true                    → 說明文字模式
 ```
 
 ---
@@ -487,6 +521,97 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
 
 ---
 
+### 模式 8: 拼貼模式 (Collage Mode)
+**檔案**: `CollageMode.jsx`
+
+**特色**:
+- 將多張圖像以網格方式拼貼成單一畫面
+- 支援遠端配置（透過 `/api/collage-config`）
+- 可設定網格行列數、圖像列表、混合模式
+- 支援客戶端專屬配置
+- 預設採 4 張圖、3×3 網格、960×540 畫布與 `mix=false`，並有明確上下限方便大螢幕調整
+
+**配置參數**（與 `backend/app/models/collage.py` 的驗證一致）:
+- `images`: 圖像檔名列表（會自動去重、移除路徑）
+- `image_count`: 圖像數量（1-30，預設 4，若大於圖像數會自動壓回）
+- `rows`: 行數（1-96，預設 3）
+- `cols`: 列數（1-96，預設 3）
+- `mix`: 是否混合排列（預設 `false`）
+- `stage_width`: 畫布寬度（360-3840 px，預設 960）
+- `stage_height`: 畫布高度（240-2160 px，預設 540）
+- `seed`: 隨機種子（非必填，僅 `mix=true` 時影響結果）
+
+**API**:
+- `GET /api/collage-config?client=<id>`: 取得配置
+- `PUT /api/collage-config`: 更新配置（會透過 WebSocket 推送）
+
+---
+
+### 模式 9: 拼貼版本生成模式 (Collage Version Mode)
+**檔案**: `CollageVersionMode.jsx`
+
+**特色**:
+- 將多張圖像切片後重新組合，產生新的拼貼版本
+- 支援多種匹配 / 排列模式：
+  - `kinship`: 以邊緣顏色距離匹配（局部縫合最佳）
+  - `luminance`: 最小化亮度差（產生明暗節律）
+  - `wave`: 由中心向外的 BFS 順序（形成方向性條帶）
+  - `source-cluster`: 以來源圖為單位聚塊（語義連續）
+  - `random`: 隨機排列（基準對照）
+  - `weave`: 交錯取樣不同來源圖，形成編織質感
+  - `rotate-90`: 單張圖像，對每個切片旋轉 90° 後原位組回
+- `allow_self=true` 或 `mode=rotate-90` 時可以只提供單一圖像，其他模式至少 2 張
+- `base` 參數用來指定基準圖選擇策略（`first` 或 `mean`，目前等同 `first`）
+- 支援進度追蹤（非同步生成）
+
+**參數**（對齊 `GenerateCollageVersionRequest`）:
+- `image_names`: 圖像檔名列表（一般模式需 ≥2；`rotate-90` 或 `allow_self=true` 可用 1 張）
+- `rows`: 切片行數（1-300，預設 12）
+- `cols`: 切片列數（1-300，預設 16）
+- `mode`: 匹配模式（預設 `kinship`；可選 `kinship/luminance/wave/source-cluster/random/weave/rotate-90`）
+- `base`: 基準圖策略（`first`、`mean`）
+- `allow_self`: 是否允許重用基準圖的 tiles（預設 `false`，`weave` 模式不會排除）
+- `seed`: 隨機種子（預設使用時間戳）
+- `resize_w`: 輸出寬度（256-8192 px，預設 2048）
+- `pad_px`: 填充像素（0-100，預設 0）
+- `jitter_px`: 抖動像素（0-50，預設 0）
+- `rotate_deg`: 旋轉角度（0-45°，預設 0）
+- `format`: 輸出格式（`png`、`jpg`、`webp`，預設 `png`）
+- `quality`: 輸出品質（1-100，僅 `jpg/webp` 時使用，預設 92）
+- `return_map`: 是否返回 tile 對應關係（預設 `false`）
+
+**API**:
+- `POST /api/generate-collage-version`: 建立生成任務（返回 `task_id`）
+- `GET /api/collage-version/{task_id}/progress`: 查詢進度與結果
+
+---
+
+### 模式 10: 圖像生成模式 (Generate Mode)
+**檔案**: `GenerateMode.jsx`
+
+**特色**:
+- 提供圖形化介面進行圖像生成
+- 可選擇父圖、設定參數
+- 即時顯示生成結果
+
+---
+
+### 模式 11: 說明文字模式 (Caption Mode)
+**檔案**: `CaptionMode.jsx`
+
+**特色**:
+- 顯示說明文字覆蓋層
+- 支援多語言
+- 可設定顯示時間
+- 透過 WebSocket 即時更新
+
+**API**:
+- `GET /api/captions?client=<id>`: 取得說明文字
+- `POST /api/captions`: 設定說明文字
+- `DELETE /api/captions`: 清除說明文字
+
+---
+
 ## 後端 API 規格
 
 ### 基礎資訊
@@ -534,6 +659,30 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
 | GET | `/api/sound-files` | 列出所有音效檔案 | 200 |
 | GET | `/api/sound-files/{filename}` | 下載音效檔案 | 200 |
 | POST | `/api/sound-play` | 廣播音效播放請求 | 202 |
+| POST | `/api/tts` | 產生 TTS 旁白 | 201 |
+
+#### 拼貼生成
+| 方法 | 端點 | 功能 | 狀態碼 |
+|------|------|------|--------|
+| POST | `/api/generate-collage-version` | 生成拼貼版本 | 202 |
+| GET | `/api/collage-version/{task_id}/progress` | 查詢拼貼生成進度 | 200 |
+| GET | `/api/collage-config` | 取得拼貼配置 | 200 |
+| PUT | `/api/collage-config` | 更新拼貼配置 | 200 |
+
+#### 字幕與說明文字
+| 方法 | 端點 | 功能 | 狀態碼 |
+|------|------|------|--------|
+| GET | `/api/subtitles` | 取得字幕 | 200 |
+| POST | `/api/subtitles` | 設定字幕 | 202 |
+| DELETE | `/api/subtitles` | 清除字幕 | 204 |
+| GET | `/api/captions` | 取得說明文字 | 200 |
+| POST | `/api/captions` | 設定說明文字 | 202 |
+| DELETE | `/api/captions` | 清除說明文字 | 204 |
+
+#### 多客戶端管理
+| 方法 | 端點 | 功能 | 狀態碼 |
+|------|------|------|--------|
+| GET | `/api/clients` | 列出在線客戶端 | 200 |
 
 #### 相機與配置
 | 方法 | 端點 | 功能 | 狀態碼 |
@@ -742,6 +891,244 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
 
 ---
 
+#### POST /api/tts
+**請求 Body**:
+```json
+{
+  "text": "各位好，歡迎來到圖像系譜學現場展示。",
+  "instructions": "zh-TW Mandarin, calm, low pitch, slower pace, intimate",  // 可選
+  "voice": "alloy",                                                              // 可選：alloy, echo, fable, onyx, nova, shimmer
+  "model": "gpt-4o-mini-tts",                                                    // 可選
+  "output_format": "mp3",                                                       // 可選：mp3, opus, aac, flac
+  "filename_base": "narration",                                                 // 可選
+  "speed": 0.95,                                                                 // 可選：0.25-4.0，預設 1.0
+  "auto_play": true,                                                             // 可選：是否自動播放
+  "target_client_id": "mobile"                                                   // 可選：指定播放目標
+}
+```
+
+**回應**:
+```json
+{
+  "tts": {
+    "text": "各位好，歡迎來到圖像系譜學現場展示。",
+    "model": "gpt-4o-mini-tts",
+    "voice": "alloy",
+    "format": "mp3",
+    "filename": "narration_20251104_123456_ab12cd34.mp3",
+    "absolute_path": "/abs/path/to/backend/generated_sounds/narration_...mp3",
+    "relative_path": "backend/generated_sounds/narration_...mp3"
+  },
+  "url": "http://localhost:8000/api/sound-files/narration_...mp3",
+  "playback": {
+    "status": "queued",
+    "target_client_id": "mobile"
+  }
+}
+```
+
+**流程**:
+1. 呼叫此 API 產生 TTS 音訊檔案
+2. 若 `auto_play=true`，會透過 WebSocket 廣播 `sound_play` 訊息給指定客戶端
+3. 前端 `SoundPlayer` 元件自動接收並播放
+
+---
+
+#### POST /api/generate-collage-version
+**請求 Body**:
+```json
+{
+  "image_names": [
+    "offspring_20250929_114940_017.png",
+    "offspring_20250923_161624_066.png",
+    "offspring_20250927_141336_787.png"
+  ],
+  "rows": 12,
+  "cols": 16,
+  "mode": "kinship",                    // kinship, luminance, wave, source-cluster, random
+  "base": null,                         // 可選：基礎圖像檔名
+  "allow_self": false,                  // 可選：是否允許單張圖像
+  "resize_w": 2048,                     // 可選：輸出寬度
+  "pad_px": 0,                          // 可選：填充像素
+  "jitter_px": 0,                       // 可選：抖動像素
+  "rotate_deg": 0,                      // 可選：旋轉角度
+  "format": "png",                      // 可選：png, jpeg
+  "quality": 92,                        // 可選：JPEG 品質（1-100）
+  "seed": 123456,                       // 可選：隨機種子
+  "return_map": false                   // 可選：是否返回 tile 對應關係
+}
+```
+
+**回應**:
+```json
+{
+  "task_id": "uuid-task-id",
+  "output_image_path": null,
+  "metadata_path": null,
+  "output_image": null,
+  "parents": null,
+  "output_format": null,
+  "width": null,
+  "height": null,
+  "tile_mapping": null
+}
+```
+
+**流程**:
+1. 呼叫此 API 建立非同步生成任務，立即返回 `task_id`
+2. 使用 `GET /api/collage-version/{task_id}/progress` 查詢進度
+3. 完成後從 progress API 取得結果
+
+---
+
+#### GET /api/collage-version/{task_id}/progress
+**回應** (進行中):
+```json
+{
+  "task_id": "uuid-task-id",
+  "progress": 45,
+  "stage": "matching",
+  "message": "正在匹配切片...",
+  "completed": false
+}
+```
+
+**回應** (完成):
+```json
+{
+  "task_id": "uuid-task-id",
+  "progress": 100,
+  "stage": "completed",
+  "message": "生成完成",
+  "completed": true,
+  "output_image_path": "/abs/path/to/offspring_xxx.png",
+  "metadata_path": "/abs/path/to/metadata/offspring_xxx.json",
+  "output_image": "offspring_xxx.png",
+  "parents": ["offspring_20250929_114940_017.png", ...],
+  "output_format": "png",
+  "width": 2048,
+  "height": 1536,
+  "tile_mapping": [...]  // 若 return_map=true
+}
+```
+
+---
+
+#### GET /api/collage-config
+**查詢參數**:
+- `client` (可選): 客戶端 ID，取得專屬配置
+
+**回應**:
+```json
+{
+  "config": {
+    "images": ["offspring_xxx.png", "offspring_yyy.png", ...],
+    "image_count": 20,
+    "rows": 5,
+    "cols": 8,
+    "mix": true,
+    "stage_width": 2048,
+    "stage_height": 1152,
+    "seed": 987123
+  },
+  "source": "client",              // client, global, default
+  "target_client_id": "desktop_wall",
+  "updated_at": "2025-11-04T12:34:56Z"
+}
+```
+
+---
+
+#### PUT /api/collage-config
+**請求 Body**:
+```json
+{
+  "target_client_id": "desktop_wall",  // 可選：指定客戶端，不填則更新全域
+  "images": ["offspring_xxx.png", "offspring_yyy.png", ...],
+  "image_count": 20,
+  "rows": 5,
+  "cols": 8,
+  "mix": true,
+  "stage_width": 2048,
+  "stage_height": 1152,
+  "seed": 987123
+}
+```
+
+**回應**: 同 `GET /api/collage-config`
+
+**流程**:
+1. 更新配置（客戶端專屬或全域）
+2. 透過 WebSocket 廣播 `collage_config` 訊息
+3. 前端自動接收並套用新配置
+
+---
+
+#### GET /api/clients
+**回應**:
+```json
+{
+  "clients": [
+    {"client_id": "desktop", "connections": 1},
+    {"client_id": "mobile", "connections": 1},
+    {"client_id": "default", "connections": 42}
+  ]
+}
+```
+
+---
+
+#### GET /api/subtitles
+**查詢參數**:
+- `client` (可選): 客戶端 ID
+
+**回應**:
+```json
+{
+  "subtitle": {
+    "text": "歡迎來到圖像系譜學",
+    "language": "zh-TW",
+    "expires_at": "2025-11-04T12:40:00Z"
+  }
+}
+```
+
+---
+
+#### POST /api/subtitles
+**查詢參數**:
+- `target_client_id` (可選): 目標客戶端 ID
+
+**請求 Body**:
+```json
+{
+  "text": "歡迎來到圖像系譜學",
+  "language": "zh-TW",              // 可選
+  "duration_seconds": 10           // 可選：顯示時間（秒）
+}
+```
+
+**回應**: 同 `GET /api/subtitles`
+
+**流程**:
+1. 設定字幕
+2. 透過 WebSocket 廣播 `subtitle_update` 訊息
+3. 前端自動顯示字幕
+
+---
+
+#### POST /api/captions
+**查詢參數**:
+- `target_client_id` (可選): 目標客戶端 ID
+
+**請求 Body**: 同 `POST /api/subtitles`
+
+**回應**: 同 `GET /api/subtitles`（但欄位名為 `caption`）
+
+**流程**: 同字幕，但透過 `caption_update` 訊息推送
+
+---
+
 ### WebSocket 訊息格式
 
 #### Client → Server
@@ -791,15 +1178,41 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
   "url": "/api/sound-files/offspring_xxx.mp3"
 }
 
-// Iframe 配置更新
+// Collage 配置更新
 {
-  "type": "iframe_config",
-  "target_client_id": "display_01",  // 可為 null（廣播給所有）
+  "type": "collage_config",
+  "target_client_id": "desktop_wall",  // 可為 null（廣播給所有）
   "config": {
-    "layout": "grid",
-    "gap": 12,
-    "columns": 2,
-    "panels": [...]
+    "images": [...],
+    "image_count": 20,
+    "rows": 5,
+    "cols": 8,
+    "mix": true,
+    "stage_width": 2048,
+    "stage_height": 1152,
+    "seed": 987123
+  }
+}
+
+// 字幕更新
+{
+  "type": "subtitle_update",
+  "target_client_id": "mobile",  // 可為 null（廣播給所有）
+  "subtitle": {
+    "text": "歡迎來到圖像系譜學",
+    "language": "zh-TW",
+    "expires_at": "2025-11-04T12:40:00Z"
+  }
+}
+
+// 說明文字更新
+{
+  "type": "caption_update",
+  "target_client_id": "mobile",  // 可為 null（廣播給所有）
+  "caption": {
+    "text": "這是一張由 AI 生成的圖像",
+    "language": "zh-TW",
+    "expires_at": "2025-11-04T12:40:00Z"
   }
 }
 ```
@@ -855,7 +1268,12 @@ project_root/
 │   │   ├── SlideMode.jsx                   # 幻燈片
 │   │   ├── SearchMode.jsx                  # 搜尋
 │   │   ├── IframeMode.jsx                  # Iframe 組合
+│   │   ├── CollageMode.jsx                 # 拼貼模式
+│   │   ├── CollageVersionMode.jsx          # 拼貼版本生成
+│   │   ├── GenerateMode.jsx                 # 圖像生成
+│   │   ├── CaptionMode.jsx                 # 說明文字
 │   │   ├── SoundPlayer.jsx                 # 音效播放器
+│   │   ├── SubtitleOverlay.jsx             # 字幕覆蓋層
 │   │   ├── api.js                          # API 封裝
 │   │   └── styles.css
 │   ├── dist/                               # Build 輸出
@@ -946,6 +1364,9 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key_here  # 若使用音效功能
 MODEL_NAME=gemini-2.5-flash-image-preview
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 OPENAI_VISION_MODEL=gpt-4o-mini
+OPENAI_TTS_MODEL=gpt-4o-mini-tts
+OPENAI_TTS_VOICE=alloy
+OPENAI_TTS_FORMAT=mp3
 GOOGLE_EMBEDDING_MODEL=text-embedding-004
 GOOGLE_IMAGE_EMBEDDING_MODEL=multimodalembedding
 

@@ -1,7 +1,7 @@
 # 圖像系譜學系統 - API 快速上手指南（For AI Agents）
 
-> **版本**: 1.0  
-> **最後更新**: 2025-10-24  
+> **版本**: 1.1  
+> **最後更新**: 2025-11-04  
 > **目標讀者**: AI Assistant / Agent
 
 ---
@@ -478,6 +478,79 @@ curl -s -X PUT http://localhost:8000/api/collage-config \
 
 ---
 
+### 任務 9: 生成拼貼版本 (Collage Version)
+
+拼貼版本功能將多張圖像切片後重新組合，產生新的拼貼圖像。
+
+```bash
+# 步驟 1: 建立生成任務
+TASK_ID=$(curl -X POST http://localhost:8000/api/generate-collage-version \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image_names": [
+      "offspring_20250929_114940_017.png",
+      "offspring_20250923_161624_066.png",
+      "offspring_20250927_141336_787.png"
+    ],
+    "rows": 12,
+    "cols": 16,
+    "mode": "kinship",
+    "seed": 123456,
+    "resize_w": 2048,
+    "format": "png"
+  }' | jq -r '.task_id')
+
+echo "任務已建立: $TASK_ID"
+
+# 步驟 2: 查詢進度（輪詢）
+while true; do
+  PROGRESS=$(curl -s "http://localhost:8000/api/collage-version/$TASK_ID/progress")
+  COMPLETED=$(echo $PROGRESS | jq -r '.completed')
+  STAGE=$(echo $PROGRESS | jq -r '.stage')
+  PERCENT=$(echo $PROGRESS | jq -r '.progress')
+  
+  echo "進度: $PERCENT% - $STAGE"
+  
+  if [ "$COMPLETED" = "true" ]; then
+    if [ "$(echo $PROGRESS | jq -r '.error')" != "null" ]; then
+      echo "❌ 生成失敗: $(echo $PROGRESS | jq -r '.error')"
+    else
+      OUTPUT=$(echo $PROGRESS | jq -r '.output_image')
+      echo "✅ 生成完成: $OUTPUT"
+    fi
+    break
+  fi
+  
+  sleep 2
+done
+```
+
+**匹配 / 處理模式**:
+- `kinship`: 以邊緣顏色距離匹配（局部縫合最佳）
+- `luminance`: 最小化亮度差（產生明暗節律）
+- `wave`: 由中心向外的 BFS 順序（形成方向性條帶）
+- `source-cluster`: 以來源圖為單位聚塊（語義連續）
+- `random`: 隨機排列（基準對照）
+- `weave`: 不同來源圖交錯編織，形成條帶效果
+- `rotate-90`: 單張圖像，對每個切片旋轉 90° 後原位重組
+
+**參數說明（`GenerateCollageVersionRequest`）**:
+- `image_names`: 圖像檔名列表。一般模式需 ≥2；`rotate-90` 或 `allow_self=true` 時可以只帶一張。
+- `rows` / `cols`: 切片行、列數（1-300，預設 12×16）。
+- `mode`: 匹配模式（見上表，預設 `kinship`）。
+- `base`: 基準圖策略（`first` 或 `mean`，目前 `mean` 仍等價 `first`）。
+- `allow_self`: 是否允許重用基準圖的 tiles（預設 `false`，`weave` 模式自動允許）。
+- `seed`: 隨機種子（預設使用時間戳，便於重現）。
+- `resize_w`: 輸出寬度 256-8192 px（預設 2048）。
+- `pad_px`: 填充像素 0-100（預設 0）。
+- `jitter_px`: 抖動像素 0-50（預設 0）。
+- `rotate_deg`: 旋轉角度 0-45 度（預設 0）。
+- `format`: 輸出格式 `png`/`jpg`/`webp`（預設 `png`）。
+- `quality`: 1-100，僅 `jpg/webp` 會使用（預設 92）。
+- `return_map`: 是否回傳 tile mapping（預設 `false`）。
+
+---
+
 ## 📱 前端客戶端 URL 參數速查表
 
 ### 基本形式
@@ -496,6 +569,10 @@ http://localhost:5173/?img=<filename>&<mode>&<options>&client=<id>&sound_player=
 | **幻燈片** | `/?img=xxx.png&slide_mode=true` | 全螢幕單圖輪播 |
 | **搜尋模式** | `/?search_mode=true` | 以圖/文字搜尋 |
 | **Iframe 組合** | `/?iframe_mode=true&iframe_panels=...` | 多面板展示 |
+| **拼貼模式** | `/?collage_mode=true&client=<id>` | 拼貼牆展示 |
+| **拼貼版本生成** | `/?collage_version_mode=true` | 拼貼版本生成介面 |
+| **圖像生成** | `/?generate_mode=true` | 圖像生成介面 |
+| **說明文字** | `/?caption_mode=true` | 說明文字模式 |
 
 ### 高級參數
 
@@ -514,6 +591,12 @@ http://localhost:5173/?img=<filename>&<mode>&<options>&client=<id>&sound_player=
 
 // 幻燈片：改用親緣關係而非向量搜尋
 ?img=xxx.png&slide_mode=true&slide_source=kinship
+
+// 拼貼模式：啟用拼貼牆
+?collage_mode=true&client=desktop_wall
+
+// 拼貼版本生成：啟用生成介面
+?collage_version_mode=true
 ```
 
 ---
