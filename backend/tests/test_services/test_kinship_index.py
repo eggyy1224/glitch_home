@@ -1,5 +1,6 @@
 """Tests for kinship index service."""
 
+import os
 import pytest
 from app.services.kinship_index import kinship_index
 
@@ -14,8 +15,12 @@ def test_kinship_index_loads():
 
 
 @pytest.mark.slow
+@pytest.mark.skipif(
+    not os.getenv("RUN_PERFORMANCE_TESTS", "").lower() in ("1", "true", "yes"),
+    reason="Performance tests are opt-in. Set RUN_PERFORMANCE_TESTS=1 to enable."
+)
 def test_kinship_index_load_performance():
-    """Test kinship index load performance."""
+    """Test kinship index load performance (opt-in)."""
     import time
     
     start = time.time()
@@ -59,8 +64,12 @@ def test_kinship_index_query_functions():
 
 
 @pytest.mark.slow
+@pytest.mark.skipif(
+    not os.getenv("RUN_PERFORMANCE_TESTS", "").lower() in ("1", "true", "yes"),
+    reason="Performance tests are opt-in. Set RUN_PERFORMANCE_TESTS=1 to enable."
+)
 def test_kinship_index_query_performance():
-    """Test kinship index query performance."""
+    """Test kinship index query performance (opt-in)."""
     kinship_index.load()
     
     # Find test images

@@ -47,19 +47,58 @@ def test_collage_task_manager():
 
 
 @pytest.mark.slow
-@patch('app.services.collage_config.Path')
-def test_collage_config_load_save(mock_path: MagicMock, temp_dir: Path):
-    """Test collage config load and save."""
+def test_collage_config_load_save(temp_dir: Path, monkeypatch):
+    """Test collage config load and save with actual round-trip."""
     from app.services.collage_config import load_collage_config, save_collage_config
     
-    # Mock config file path
-    config_file = temp_dir / "collage_config.json"
-    config_file.write_text('{"images": ["img1.png"], "rows": 10, "cols": 10}')
+    # Temporarily override metadata_dir to use temp_dir
+    import app.services.collage_config as collage_config_module
+    original_base_dir = collage_config_module._BASE_DIR
     
-    # Test loading (would need proper mocking of file system)
-    # For now, test that functions exist and are callable
-    assert callable(load_collage_config)
-    assert callable(save_collage_config)
+    try:
+        # Replace _BASE_DIR with temp_dir
+        collage_config_module._BASE_DIR = temp_dir
+        collage_config_module._GLOBAL_CONFIG_PATH = temp_dir / "collage_config.json"
+        
+        # Test save
+        payload = {
+            "images": ["img1.png", "img2.png"],
+            "rows": 10,
+            "cols": 10,
+            "image_count": 2
+        }
+        config, source, owner_id, path = save_collage_config(payload)
+        assert source == "global"
+        assert path.exists()
+        assert config.rows == 10
+        assert config.cols == 10
+        
+        # Test load
+        loaded_config, loaded_source, loaded_owner, loaded_path = load_collage_config(None)
+        assert loaded_source == "global"
+        assert loaded_config.rows == 10
+        assert loaded_config.cols == 10
+        assert set(loaded_config.images) == {"img1.png", "img2.png"}
+        
+        # Test client-specific config
+        client_payload = {
+            "target_client_id": "test_client",
+            "images": ["client_img.png"],
+            "rows": 5,
+            "cols": 5
+        }
+        client_config, client_source, client_owner, client_path = save_collage_config(client_payload)
+        assert client_source == "client"
+        assert client_owner == "test_client"
+        
+        loaded_client_config, loaded_client_source, _, _ = load_collage_config("test_client")
+        assert loaded_client_source == "client"
+        assert loaded_client_config.rows == 5
+        
+    finally:
+        # Restore original
+        collage_config_module._BASE_DIR = original_base_dir
+        collage_config_module._GLOBAL_CONFIG_PATH = original_base_dir / "collage_config.json"
 
 
 @patch('app.services.tts_openai.httpx.post')

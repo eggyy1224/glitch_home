@@ -5,6 +5,28 @@ import tempfile
 from pathlib import Path
 from typing import Generator
 
+# CRITICAL: Set environment variables BEFORE any imports that use settings
+# This ensures all modules use the mocked settings
+_temp_test_dir = tempfile.mkdtemp()
+_temp_path = Path(_temp_test_dir)
+
+os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
+os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
+os.environ.setdefault("ELEVENLABS_API_KEY", "test-elevenlabs-key")
+os.environ.setdefault("OFFSPRING_DIR", str(_temp_path / "offspring_images"))
+os.environ.setdefault("METADATA_DIR", str(_temp_path / "metadata"))
+os.environ.setdefault("SCREENSHOT_DIR", str(_temp_path / "screen_shots"))
+os.environ.setdefault("GENERATED_SOUNDS_DIR", str(_temp_path / "generated_sounds"))
+os.environ.setdefault("CHROMA_DB_PATH", str(_temp_path / "chroma_db"))
+
+# Create directories
+(_temp_path / "offspring_images").mkdir(parents=True)
+(_temp_path / "metadata").mkdir(parents=True)
+(_temp_path / "screen_shots").mkdir(parents=True)
+(_temp_path / "generated_sounds").mkdir(parents=True)
+(_temp_path / "chroma_db").mkdir(parents=True)
+
+# Now import app after settings are mocked
 import pytest
 from fastapi.testclient import TestClient
 
@@ -32,32 +54,11 @@ def temp_dir() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def mock_settings(monkeypatch) -> Settings:
-    """Create mock settings for testing."""
-    # Create temporary directories
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = Path(tmpdir)
-        
-        # Mock environment variables
-        monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
-        monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
-        monkeypatch.setenv("ELEVENLABS_API_KEY", "test-elevenlabs-key")
-        monkeypatch.setenv("OFFSPRING_DIR", str(tmp_path / "offspring_images"))
-        monkeypatch.setenv("METADATA_DIR", str(tmp_path / "metadata"))
-        monkeypatch.setenv("SCREENSHOT_DIR", str(tmp_path / "screen_shots"))
-        monkeypatch.setenv("GENERATED_SOUNDS_DIR", str(tmp_path / "generated_sounds"))
-        monkeypatch.setenv("CHROMA_DB_PATH", str(tmp_path / "chroma_db"))
-        
-        # Create directories
-        (tmp_path / "offspring_images").mkdir(parents=True)
-        (tmp_path / "metadata").mkdir(parents=True)
-        (tmp_path / "screen_shots").mkdir(parents=True)
-        (tmp_path / "generated_sounds").mkdir(parents=True)
-        (tmp_path / "chroma_db").mkdir(parents=True)
-        
-        # Create new settings instance with mocked env
-        settings = Settings()
-        yield settings
+def mock_settings() -> Settings:
+    """Create mock settings for testing (for direct Settings access)."""
+    # Settings are already mocked at module level, but this provides
+    # a fixture for tests that need direct Settings access
+    return Settings()
 
 
 @pytest.fixture

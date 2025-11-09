@@ -115,20 +115,18 @@ def test_save_camera_preset(client: TestClient):
     """Test saving a camera preset."""
     preset = {
         "name": "test_preset",
-        "position": [0, 0, 5],
-        "rotation": [0, 0, 0],
-        "fov": 50
+        "position": {"x": 0, "y": 0, "z": 5},
+        "target": {"x": 0, "y": 0, "z": 0}
     }
     
     response = client.post("/api/camera-presets", json=preset)
-    # May return 422 if validation fails, or 201 if successful
-    assert response.status_code in [201, 422]
+    assert response.status_code == 201
     
-    if response.status_code == 201:
-        data = response.json()
-        assert data["name"] == "test_preset"
-        # Clean up
-        client.delete(f"/api/camera-presets/{preset['name']}")
+    data = response.json()
+    assert data["name"] == "test_preset"
+    
+    # Clean up
+    client.delete(f"/api/camera-presets/{preset['name']}")
 
 
 @pytest.mark.api
@@ -145,20 +143,15 @@ def test_delete_camera_preset(client: TestClient):
     # First create one
     preset = {
         "name": "temp_preset",
-        "position": [0, 0, 5],
-        "rotation": [0, 0, 0],
-        "fov": 50
+        "position": {"x": 0, "y": 0, "z": 5},
+        "target": {"x": 0, "y": 0, "z": 0}
     }
     create_response = client.post("/api/camera-presets", json=preset)
+    assert create_response.status_code == 201
     
-    # Only delete if creation was successful
-    if create_response.status_code == 201:
-        # Then delete it
-        response = client.delete("/api/camera-presets/temp_preset")
-        assert response.status_code == 204
-    else:
-        # If creation failed, skip deletion test
-        pytest.skip("Preset creation failed, skipping deletion test")
+    # Then delete it
+    response = client.delete("/api/camera-presets/temp_preset")
+    assert response.status_code == 204
 
 
 @pytest.mark.api
