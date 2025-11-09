@@ -485,7 +485,7 @@ export default function CollageVersionMode() {
                 <input
                   type="number"
                   min="1"
-                  max="100"
+                  max="300"
                   value={rows}
                   onChange={(e) => setRows(parseInt(e.target.value) || 12)}
                 />
@@ -495,7 +495,7 @@ export default function CollageVersionMode() {
                 <input
                   type="number"
                   min="1"
-                  max="100"
+                  max="300"
                   value={cols}
                   onChange={(e) => setCols(parseInt(e.target.value) || 16)}
                 />
@@ -508,6 +508,7 @@ export default function CollageVersionMode() {
                   <option value="wave">波紋擴散 (wave)</option>
                   <option value="luminance">亮度匹配 (luminance)</option>
                   <option value="source-cluster">來源聚類 (source-cluster)</option>
+                  <option value="weave">編織模式 (weave)</option>
                 </select>
               </div>
               <div className="collage-version-param">

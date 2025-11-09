@@ -83,31 +83,51 @@ task_manager = CollageTaskManager()
 
 
 def standardize_image(img: Image.Image, target_w: int, rows: int, cols: int) -> Image.Image:
-    """Standardize image: scale to target width, center crop to ensure divisible by rows×cols."""
+    """Standardize image: scale to target width, center crop to ensure divisible by rows×cols.
+
+    Important: With UI allowing rows/cols up to 300, guard against zero-sized tiles
+    by validating that after resize we still have at least 1px per tile.
+    """
     img = ImageOps.exif_transpose(img)
     if img.mode not in ("RGB", "RGBA"):
         img = img.convert("RGB")
-    
+
+    if rows <= 0 or cols <= 0:
+        raise ValueError("rows/cols 需為正整數")
+
     # Calculate aspect ratio
     orig_w, orig_h = img.size
+    if orig_w <= 0 or orig_h <= 0:
+        raise ValueError("來源圖片尺寸不合法")
     aspect = orig_w / orig_h
-    
+
     # Scale to target width
-    target_h = int(target_w / aspect)
+    # Ensure target_h >= 1 to avoid PIL errors on extreme aspect ratios
+    target_h = max(1, int(target_w / aspect))
     img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
-    
-    # Calculate tile size
+
+    # Validate that requested grid is feasible after resize (at least 1px per tile)
+    if cols > target_w or rows > target_h:
+        # Provide clear, actionable error message
+        raise ValueError(
+            (
+                f"rows/cols 與縮放後尺寸不相容：resize_w={target_w}, resize_h≈{target_h}，"
+                f"最大允許 cols={target_w}、rows={target_h}。請降低 rows/cols 或提高 resize_w。"
+            )
+        )
+
+    # Calculate tile size (now guaranteed >= 1)
     tile_w = target_w // cols
     tile_h = target_h // rows
-    
-    # Ensure divisible
+
+    # Ensure divisible area for clean tiling
     final_w = tile_w * cols
     final_h = tile_h * rows
-    
+
     # Center crop
     crop_x = (target_w - final_w) // 2
     crop_y = (target_h - final_h) // 2
-    
+
     return img.crop((crop_x, crop_y, crop_x + final_w, crop_y + final_h))
 
 
@@ -115,8 +135,17 @@ def tile_image(img: Image.Image, rows: int, cols: int) -> List[Image.Image]:
     """Split image into rows × cols tiles."""
     tiles = []
     w, h = img.size
+    if rows <= 0 or cols <= 0:
+        raise ValueError("rows/cols 需為正整數")
     tile_w = w // cols
     tile_h = h // rows
+    if tile_w <= 0 or tile_h <= 0:
+        raise ValueError(
+            (
+                f"rows/cols 太大導致切片為 0 像素：圖片 {w}×{h}、rows={rows}、cols={cols}。"
+                "請降低 rows/cols 或提高縮放尺寸。"
+            )
+        )
     
     for row in range(rows):
         for col in range(cols):
@@ -129,7 +158,7 @@ def tile_image(img: Image.Image, rows: int, cols: int) -> List[Image.Image]:
 
 
 def average_rect_color(img: Image.Image, start_x: int, start_y: int, width: int, height: int) -> List[float]:
-    """Calculate average RGB color of a rectangular region (sampling approach like CollageMode)."""
+    """Calculate average RGB color of a rectangular region (optimized with NumPy)."""
     if width <= 0 or height <= 0:
         return [0.0, 0.0, 0.0]
     
@@ -137,26 +166,30 @@ def average_rect_color(img: Image.Image, start_x: int, start_y: int, width: int,
     max_x = min(w, start_x + width)
     max_y = min(h, start_y + height)
     
-    # Sample every 6th pixel (similar to CollageMode)
+    # Use NumPy for faster pixel sampling and averaging
+    # Convert image region to numpy array
+    region = img.crop((start_x, start_y, max_x, max_y))
+    
+    # Sample every 6th pixel (similar to CollageMode) for performance
     step_x = max(1, width // 6)
     step_y = max(1, height // 6)
     
-    pixels = []
-    for y in range(start_y, max_y, step_y):
-        for x in range(start_x, max_x, step_x):
-            if x < w and y < h:
-                pixel = img.getpixel((x, y))
-                if isinstance(pixel, tuple) and len(pixel) >= 3:
-                    pixels.append(pixel[:3])
+    # Convert to numpy array
+    arr = np.array(region)
     
-    if not pixels:
-        return [0.0, 0.0, 0.0]
+    # Sample pixels using slicing
+    if arr.size > 0:
+        sampled = arr[::step_y, ::step_x]
+        # Calculate mean for each channel (RGB)
+        if len(sampled.shape) == 3:
+            mean_rgb = sampled.mean(axis=(0, 1))
+            return [float(mean_rgb[0]), float(mean_rgb[1]), float(mean_rgb[2])]
+        elif len(sampled.shape) == 2:
+            # Grayscale
+            mean_val = float(sampled.mean())
+            return [mean_val, mean_val, mean_val]
     
-    r = sum(p[0] for p in pixels) / len(pixels)
-    g = sum(p[1] for p in pixels) / len(pixels)
-    b = sum(p[2] for p in pixels) / len(pixels)
-    
-    return [r, g, b]
+    return [0.0, 0.0, 0.0]
 
 
 def compute_edge_colors(tile: Image.Image) -> Dict[str, List[float]]:
@@ -193,15 +226,17 @@ def compute_tile_luminance(tile: Image.Image) -> float:
 
 
 def color_distance(color1: List[float], color2: List[float]) -> float:
-    """Calculate Euclidean distance between two RGB colors (like CollageMode)."""
+    """Calculate Euclidean distance between two RGB colors (optimized with NumPy)."""
     if not color1 or not color2:
         return 255.0 * 5.0
     
-    dr = color1[0] - color2[0]
-    dg = color1[1] - color2[1]
-    db = color1[2] - color2[2]
+    # Convert to numpy array for vectorized computation
+    c1 = np.array(color1[:3], dtype=np.float32)
+    c2 = np.array(color2[:3], dtype=np.float32)
     
-    return np.sqrt(dr * dr + dg * dg + db * db)
+    # Vectorized distance calculation
+    diff = c1 - c2
+    return float(np.sqrt(np.sum(diff * diff)))
 
 
 def match_tiles_greedy(
@@ -223,6 +258,9 @@ def match_tiles_greedy(
     placed_matrix: List[List[Optional[int]]] = [[None] * cols for _ in range(rows)]
     used_candidates = set()
     
+    # Maintain list of available candidate indices for faster iteration
+    available_candidates = list(range(len(candidate_tiles)))
+    
     # Slot order (left to right, top to bottom)
     slot_order = [(r, c) for r in range(rows) for c in range(cols)]
     
@@ -235,8 +273,8 @@ def match_tiles_greedy(
         best_idx = -1
         best_score = float('inf')
         
-        # Find best matching candidate
-        for i, (candidate_tile, source_idx, source_row, source_col) in enumerate(candidate_tiles):
+        # Find best matching candidate (only check available ones)
+        for i in available_candidates:
             if i in used_candidates:
                 continue
             
@@ -276,7 +314,7 @@ def match_tiles_greedy(
             used_candidates.add(best_idx)
         else:
             # Fallback: use first available
-            for i in range(len(candidate_tiles)):
+            for i in available_candidates:
                 if i not in used_candidates:
                     placed_matrix[row][col] = i
                     used_candidates.add(i)
@@ -758,6 +796,44 @@ def match_tiles_source_cluster(
     return result
 
 
+def match_tiles_weave(
+    base_tiles: List[Image.Image],
+    candidate_tiles: List[Tuple[Image.Image, int, int, int]],  # (tile, source_idx, row, col)
+    rows: int,
+    cols: int,
+    seed: int,
+    num_images: int,  # Total number of source images
+) -> List[Tuple[int, int, int]]:  # List of (source_idx, source_row, source_col)
+    """Weave matching: alternate rows between source images.
+    
+    For vertical strips (columns), each row alternates between source images.
+    - Row 0, 2, 4... uses images[0]
+    - Row 1, 3, 5... uses images[1]
+    - For 3+ images, cycles through: images[row % num_images]
+    
+    Note: This mode uses all images regardless of allow_self setting.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    
+    if num_images == 0:
+        raise ValueError("至少需要 1 張來源圖")
+    
+    # Build result mapping - use all images in sequence
+    result = []
+    for row in range(rows):
+        for col in range(cols):
+            # Determine source image index based on row
+            # This cycles through all images: 0, 1, 2, ..., num_images-1, 0, 1, ...
+            source_idx = row % num_images
+            
+            # For weave mode, we use the same row and col from the source image
+            # This creates vertical strips that alternate between images
+            result.append((source_idx, row, col))
+    
+    return result
+
+
 def reassemble_collage(
     base_img: Image.Image,
     candidate_tiles: List[Tuple[Image.Image, int, int, int]],
@@ -782,6 +858,15 @@ def reassemble_collage(
     output_h = h + pad_px * 2
     output = Image.new("RGB", (output_w, output_h), (0, 0, 0))
     
+    # Build lookup dictionary for O(1) tile access instead of O(n) linear search
+    tile_lookup: Dict[Tuple[int, int, int], Image.Image] = {}
+    for tile, source_idx, source_row, source_col in candidate_tiles:
+        key = (source_idx, source_row, source_col)
+        tile_lookup[key] = tile
+    
+    # Fallback tile (first candidate)
+    fallback_tile = candidate_tiles[0][0] if candidate_tiles else None
+    
     for row in range(rows):
         for col in range(cols):
             idx = row * cols + col
@@ -790,19 +875,12 @@ def reassemble_collage(
             
             target_source_idx, target_source_row, target_source_col = mapping[idx]
             
-            # Find matching candidate tile
-            candidate_tile = None
-            for tile, source_idx, source_row, source_col in candidate_tiles:
-                if source_idx == target_source_idx and source_row == target_source_row and source_col == target_source_col:
-                    candidate_tile = tile
-                    break
+            # Find matching candidate tile using dictionary lookup (O(1) instead of O(n))
+            key = (target_source_idx, target_source_row, target_source_col)
+            candidate_tile = tile_lookup.get(key, fallback_tile)
             
             if candidate_tile is None:
-                # Fallback: use first candidate if no match found
-                if candidate_tiles:
-                    candidate_tile, _, _, _ = candidate_tiles[0]
-                else:
-                    continue
+                continue
             
             # Resize tile to match base tile size
             tile_resized = candidate_tile.resize((tile_w, tile_h), Image.Resampling.LANCZOS)
@@ -903,8 +981,8 @@ def generate_collage_version(
             for tile_col in range(cols):
                 tile_idx = tile_row * cols + tile_col
                 if tile_idx < len(tiles):
-                    # Skip base image tiles if allow_self=False
-                    if not allow_self and img_idx == base_idx:
+                    # Skip base image tiles if allow_self=False (except for weave mode)
+                    if not allow_self and img_idx == base_idx and mode != "weave":
                         continue
                     candidate_tiles.append((tiles[tile_idx], img_idx, tile_row, tile_col))
     
@@ -924,6 +1002,8 @@ def generate_collage_version(
         mapping = match_tiles_luminance(base_tiles, candidate_tiles, rows, cols, seed)
     elif mode == "source-cluster":
         mapping = match_tiles_source_cluster(base_tiles, candidate_tiles, rows, cols, seed)
+    elif mode == "weave":
+        mapping = match_tiles_weave(base_tiles, candidate_tiles, rows, cols, seed, len(images))
     else:
         raise ValueError(f"未知的 mode: {mode}")
     
