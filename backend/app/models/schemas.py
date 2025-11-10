@@ -165,6 +165,29 @@ class TTSRequest(BaseModel):
     target_client_id: Optional[str] = Field(default=None, description="指定自動播放目標客戶端 id")
 
 
+class SpeakWithSubtitleRequest(BaseModel):
+    """Request for TTS with subtitle display."""
+    # TTS 相關參數
+    text: str = Field(..., min_length=1, description="要轉語音的文字內容")
+    instructions: Optional[str] = Field(default=None, description="說話風格/語氣指示，例：zh-TW Mandarin, calm, low pitch")
+    voice: Optional[str] = Field(default=None, description="TTS 語音（例如 alloy）")
+    model: Optional[str] = Field(default=None, description="OpenAI TTS 模型，預設 gpt-4o-mini-tts")
+    output_format: Optional[str] = Field(default=None, description="輸出格式：mp3|wav|opus|aac|flac，預設 mp3")
+    filename_base: Optional[str] = Field(default=None, description="自訂輸出檔名基底（系統會自動去重）")
+    speed: Optional[float] = Field(default=None, ge=0.25, le=4.0, description="語速（0.25–4.0），預設 1.0")
+    # Subtitle 相關參數
+    subtitle_text: Optional[str] = Field(default=None, description="字幕文字，若未提供則使用 text")
+    subtitle_language: Optional[str] = Field(default=None, max_length=32, description="可選語言標籤（例：zh-TW）")
+    subtitle_duration_seconds: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        description="希望顯示的秒數，省略則持續顯示直到手動清除",
+    )
+    # 播放控制
+    auto_play: bool = Field(default=False, description="產生後自動播放（透過 WebSocket 廣播）")
+    target_client_id: Optional[str] = Field(default=None, description="指定自動播放和字幕目標客戶端 id")
+
+
 class GenerateCollageVersionRequest(BaseModel):
     """Request parameters for collage version generation."""
     rows: int = Field(default=12, ge=1, le=300, description="切片列數")

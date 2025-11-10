@@ -30,6 +30,7 @@ from ..models.schemas import (
     IndexOffspringRequest,
     IndexOneImageRequest,
     SoundPlayRequest,
+    SpeakWithSubtitleRequest,
     TextSearchRequest,
     TTSRequest,
 )
@@ -39,6 +40,7 @@ from ..services.image_analysis import analyze_screenshot
 from ..services.kinship_index import kinship_index
 from ..services.screenshot_requests import screenshot_requests_manager
 from ..services.sound_effects import generate_sound_effect
+from ..services.subtitles import subtitle_manager
 from ..services.tts_openai import synthesize_speech_openai
 from ..services.collage_version import generate_collage_version, task_manager
 
@@ -220,6 +222,68 @@ async def api_tts_generate(body: TTSRequest, request: Request) -> dict:
         await screenshot_requests_manager.broadcast_sound_play(safe_name, url, body.target_client_id)
         payload["playback"] = {"status": "queued", "target_client_id": body.target_client_id}
 
+    return payload
+
+
+@router.post("/api/speak-with-subtitle", status_code=201)
+async def api_speak_with_subtitle(body: SpeakWithSubtitleRequest, request: Request) -> dict:
+    """Generate TTS audio and set subtitle simultaneously."""
+    # Step 1: Generate TTS audio
+    try:
+        tts_result = await run_in_threadpool(
+            synthesize_speech_openai,
+            text=body.text,
+            instructions=body.instructions,
+            voice=body.voice,
+            model=body.model,
+            output_format=body.output_format,
+            filename_base=body.filename_base,
+            speed=body.speed,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - surface as 500
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    safe_name = os.path.basename(tts_result.get("filename"))
+    url = str(request.url_for("api_sound_file", filename=safe_name))
+    
+    # Step 2: Set subtitle (use subtitle_text if provided, otherwise use text)
+    subtitle_text = body.subtitle_text if body.subtitle_text else body.text
+    subtitle_result = None
+    subtitle_error = None
+    
+    try:
+        subtitle_result = await subtitle_manager.set_subtitle(
+            subtitle_text,
+            language=body.subtitle_language,
+            duration_seconds=body.subtitle_duration_seconds,
+            target_client_id=body.target_client_id,
+        )
+        await screenshot_requests_manager.broadcast_subtitle(
+            subtitle_result, target_client_id=body.target_client_id
+        )
+    except ValueError as exc:
+        subtitle_error = str(exc)
+    except Exception as exc:  # noqa: BLE001
+        subtitle_error = f"Subtitle error: {str(exc)}"
+    
+    # Step 3: Build response payload
+    payload = {
+        "tts": tts_result,
+        "url": url,
+    }
+    
+    if subtitle_result:
+        payload["subtitle"] = subtitle_result
+    elif subtitle_error:
+        payload["subtitle_error"] = subtitle_error
+    
+    # Step 4: Auto-play if requested
+    if body.auto_play:
+        await screenshot_requests_manager.broadcast_sound_play(safe_name, url, body.target_client_id)
+        payload["playback"] = {"status": "queued", "target_client_id": body.target_client_id}
+    
     return payload
 
 
