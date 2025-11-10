@@ -67,7 +67,7 @@ export default function App() {
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
   const messageTimerRef = useRef(null);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
-  const soundPlayerEnabled = (readParams().get("sound_player") ?? "false") === "true";
+  const soundPlayerEnabled = (readParams().get("sound_player") ?? "true") !== "false";
   const iframeMode = !incubatorMode && (readParams().get("iframe_mode") ?? "false") === "true";
   const slideMode = !incubatorMode && !iframeMode && (readParams().get("slide_mode") ?? "false") === "true";
   const organicMode =
