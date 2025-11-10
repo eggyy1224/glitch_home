@@ -3,9 +3,13 @@
 This is a minimal local MCP (Model Context Protocol) server that exposes a
 curated set of tools to control the backend via a stable interface.
 
-v1 exposes only:
+v1 exposes:
 - `health_check()` → GET `/health`
 - `list_clients()` → GET `/api/clients`
+- `get_iframe_config(client_id)` → GET `/api/iframe-config`
+- `update_iframe_config(config, target_client_id)` → PUT `/api/iframe-config`
+- `get_collage_config(client_id)` → GET `/api/collage-config`
+- `update_collage_config(config, target_client_id)` → PUT `/api/collage-config`
 
 Transport: stdio (local-only). No TCP port opened by default.
 
@@ -36,8 +40,66 @@ pip install httpx model-context-protocol
 pip install httpx mcp
 ```
 
+## Tools
+
+### Health & Clients
+
+- **`health_check()`**: Check backend health status
+- **`list_clients()`**: List all connected frontend clients
+
+### Iframe Configuration
+
+- **`get_iframe_config(client_id: str | None = None)`**: Get iframe multi-panel configuration
+  - `client_id`: Optional client ID for client-specific config. If omitted, returns global config.
+  - Returns: Configuration dict with `layout`, `gap`, `columns`, `panels`, `updated_at`, etc.
+
+- **`update_iframe_config(config: Dict[str, Any], target_client_id: str | None = None)`**: Update iframe configuration
+  - `config`: Configuration dict with `layout`, `gap`, `columns`, `panels`, etc.
+  - `target_client_id`: Optional client ID to update client-specific config. If omitted, updates global config.
+  - Returns: Updated configuration dict.
+
+Example:
+```python
+update_iframe_config({
+    "layout": "grid",
+    "gap": 12,
+    "columns": 2,
+    "panels": [
+        {"id": "p1", "image": "offspring_xxx.png", "params": {}},
+        {"id": "p2", "image": "offspring_yyy.png", "params": {"slide_mode": "true"}}
+    ]
+}, target_client_id="desktop")
+```
+
+### Collage Configuration
+
+- **`get_collage_config(client_id: str | None = None)`**: Get collage configuration
+  - `client_id`: Optional client ID for client-specific config. If omitted, returns global config.
+  - Returns: Configuration dict with `config`, `source`, `target_client_id`, `updated_at`, etc.
+
+- **`update_collage_config(config: Dict[str, Any], target_client_id: str | None = None)`**: Update collage configuration
+  - `config`: Configuration dict with `images`, `image_count`, `rows`, `cols`, `mix`, `stage_width`, `stage_height`, `seed`, etc.
+  - `target_client_id`: Optional client ID to update client-specific config. If omitted, updates global config.
+  - Returns: Updated configuration dict.
+
+Example:
+```python
+update_collage_config({
+    "images": ["offspring_xxx.png", "offspring_yyy.png"],
+    "image_count": 20,
+    "rows": 5,
+    "cols": 8,
+    "mix": True,
+    "stage_width": 2048,
+    "stage_height": 1152,
+    "seed": 987123
+}, target_client_id="desktop_collage")
+```
+
 ## Notes
+
 - Errors from the backend are returned as structured JSON with `ok=false` and
   an `error` message and optional `status_code`.
-- The tool list is intentionally small for v1. Extend incrementally.
-
+- All tools return `{"ok": True, "data": ...}` on success or `{"ok": False, "error": ..., "status_code": ...}` on error.
+- Configuration updates are automatically broadcasted to connected clients via WebSocket.
+- The tool list is intentionally curated. Extend incrementally as needed.

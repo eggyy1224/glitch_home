@@ -41,3 +41,17 @@ class BackendClient:
         except Exception as e:  # noqa: BLE001
             return self._format_error(e)
 
+    def put(self, path: str, json_body: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        try:
+            r = self._client.put(path, json=json_body, params=params)
+            if r.status_code >= 400:
+                return self._format_error(Exception(r.text), r.status_code)
+            # Some endpoints may return non-JSON; try to parse then fallback to text
+            try:
+                content = r.json()
+            except json.JSONDecodeError:
+                content = {"raw": r.text}
+            return {"ok": True, "data": content}
+        except Exception as e:  # noqa: BLE001
+            return self._format_error(e)
+
