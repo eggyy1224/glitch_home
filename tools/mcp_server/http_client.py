@@ -55,3 +55,20 @@ class BackendClient:
         except Exception as e:  # noqa: BLE001
             return self._format_error(e)
 
+    def delete(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        try:
+            r = self._client.delete(path, params=params)
+            if r.status_code >= 400:
+                return self._format_error(Exception(r.text), r.status_code)
+            # DELETE endpoints may return 204 No Content
+            if r.status_code == 204:
+                return {"ok": True, "data": {"status": "deleted"}}
+            # Some endpoints may return non-JSON; try to parse then fallback to text
+            try:
+                content = r.json()
+            except json.JSONDecodeError:
+                content = {"raw": r.text}
+            return {"ok": True, "data": content}
+        except Exception as e:  # noqa: BLE001
+            return self._format_error(e)
+

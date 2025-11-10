@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
 
@@ -144,6 +144,20 @@ def speak_with_subtitle(
         payload["target_client_id"] = target_client_id
     
     return client.post("/api/speak-with-subtitle", json_body=payload)
+
+
+@app.tool()
+def clear_subtitle(target_client_id: Optional[str] = None) -> Dict[str, Any]:
+    """Clear subtitle for a specific client or all clients (DELETE /api/subtitles).
+    
+    Args:
+        target_client_id: Optional client ID to clear subtitle for specific client. If not provided, clears for all clients.
+    
+    Returns:
+        Dict containing operation status.
+    """
+    params = {"target_client_id": target_client_id} if target_client_id else None
+    return client.delete("/api/subtitles", params=params)
 
 
 def run_stdio() -> None:
