@@ -50,6 +50,12 @@ class SubtitleManager:
         duration_seconds: Optional[float] = None,
         target_client_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        """Set subtitle with optional duration.
+        
+        If duration_seconds is None (not specified), it defaults to 30 seconds
+        to ensure subtitles automatically expire and don't remain on screen indefinitely.
+        If duration_seconds is explicitly provided, that value is used.
+        """
         cleaned = text.strip()
         if not cleaned:
             raise ValueError("subtitle text cannot be empty")
@@ -62,7 +68,12 @@ class SubtitleManager:
 
         expires_at = None
         duration_value: Optional[float] = None
-        if duration_seconds is not None:
+        
+        # Apply default duration of 30 seconds if not specified
+        if duration_seconds is None:
+            duration_value = 30.0
+            expires_at = _now() + timedelta(seconds=duration_value)
+        else:
             try:
                 duration_value = float(duration_seconds)
             except (TypeError, ValueError) as exc:

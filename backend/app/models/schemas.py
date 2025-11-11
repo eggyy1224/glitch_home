@@ -144,7 +144,7 @@ class SubtitleUpdateRequest(BaseModel):
     duration_seconds: Optional[float] = Field(
         default=None,
         ge=0.0,
-        description="希望顯示的秒數，省略則持續顯示直到手動清除",
+        description="希望顯示的秒數，省略則預設為 30 秒後自動消失",
     )
 
 
@@ -181,7 +181,7 @@ class SpeakWithSubtitleRequest(BaseModel):
     subtitle_duration_seconds: Optional[float] = Field(
         default=None,
         ge=0.0,
-        description="希望顯示的秒數，省略則持續顯示直到手動清除",
+        description="希望顯示的秒數，省略則預設為 30 秒後自動消失",
     )
     # 播放控制
     auto_play: bool = Field(default=False, description="產生後自動播放（透過 WebSocket 廣播）")
