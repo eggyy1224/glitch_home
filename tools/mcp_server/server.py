@@ -2,11 +2,13 @@ from typing import Any, Dict, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
 
+from .assets import AssetLister
 from .http_client import BackendClient
 
 
 app = FastMCP("glitch-home-local-mcp")
 client = BackendClient()
+asset_lister = AssetLister()
 
 
 @app.tool()
@@ -19,6 +21,30 @@ def health_check() -> Dict[str, Any]:
 def list_clients() -> Dict[str, Any]:
     """List connected frontend clients (GET /api/clients)."""
     return client.get("/api/clients")
+
+
+@app.tool()
+def list_assets(
+    source: str,
+    limit: Optional[int] = 100,
+    offset: int = 0,
+    recursive: Optional[bool] = None,
+    include_metadata: bool = True,
+) -> Dict[str, Any]:
+    """List curated asset folders (videos, offspring images, generated sounds)."""
+    try:
+        assets = asset_lister.list_assets(
+            source_key=source,
+            limit=limit,
+            offset=offset,
+            recursive=recursive,
+            include_metadata=include_metadata,
+        )
+        return {"ok": True, "data": assets}
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"Failed to list assets: {exc}"}
 
 
 @app.tool()
@@ -163,4 +189,3 @@ def clear_subtitle(target_client_id: Optional[str] = None) -> Dict[str, Any]:
 def run_stdio() -> None:
     """Run the MCP server over stdio."""
     app.run(transport="stdio")
-

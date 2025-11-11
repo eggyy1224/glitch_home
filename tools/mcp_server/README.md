@@ -6,6 +6,7 @@ curated set of tools to control the backend via a stable interface.
 v1 exposes:
 - `health_check()` → GET `/health`
 - `list_clients()` → GET `/api/clients`
+- `list_assets(source, limit, offset)` → Scan curated local asset folders
 - `get_iframe_config(client_id)` → GET `/api/iframe-config`
 - `update_iframe_config(config, target_client_id)` → PUT `/api/iframe-config`
 - `get_collage_config(client_id)` → GET `/api/collage-config`
@@ -46,6 +47,21 @@ pip install httpx mcp
 
 - **`health_check()`**: Check backend health status
 - **`list_clients()`**: List all connected frontend clients
+
+### Asset Library
+
+- **`list_assets(source: Literal["videos", "offspring_images", "generated_sounds"], limit: int = 100, offset: int = 0, recursive: bool | None = None, include_metadata: bool = True)`**
+  - Sources are currently pinned to:
+    - `videos` → `frontend/public/videos/圖像系譜學Video` (served at `/videos/圖像系譜學Video`)
+    - `offspring_images` → `backend/offspring_images` (served at `/generated_images`)
+    - `generated_sounds` → `backend/generated_sounds` (served at `/generated_sounds`)
+  - Returns entries with `name`, `relative_path`, `public_url`, `size_bytes`, `modified_at`, `mime_type`, and optional `metadata`.
+  - Image entries include the existing metadata JSON (if any). Video/audio metadata (duration, resolution, etc.) is **TODO** and currently omitted—use the `metadata` field being `null` as a placeholder.
+  - Example:
+    ```python
+    list_assets("videos", limit=50, include_metadata=True)
+    # → {"ok": True, "data": [{"name": "BirdmanTalk.mp4", "public_url": "/videos/圖像系譜學Video/BirdmanTalk.mp4", ...}]}
+    ```
 
 ### Iframe Configuration
 
