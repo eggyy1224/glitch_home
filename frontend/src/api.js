@@ -1,4 +1,16 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "";
+
+function buildTargetQuery(targetClientId, paramName = "target_client_id") {
+  if (targetClientId == null) {
+    return "";
+  }
+  const trimmed = `${targetClientId}`.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return `?${paramName}=${encodeURIComponent(trimmed)}`;
+}
+
 export async function fetchKinship(img, depth = -1) {
   const url = `${API_BASE}/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
   const res = await fetch(url);
@@ -174,4 +186,117 @@ export async function fetchDisplayState(clientId = null, { fallbackToGlobal = tr
   const res = await fetch(baseUrl);
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
+}
+
+export async function fetchClients() {
+  const url = `${API_BASE}/api/clients`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function pushDisplayState(payload, targetClientId = null) {
+  if (!payload || typeof payload.mode !== "string") {
+    throw new Error("display payload 需包含 mode");
+  }
+  const body = {
+    mode: payload.mode,
+    params: payload.params ?? {},
+    frames: Array.isArray(payload.frames)
+      ? payload.frames.map((frame) => ({
+          id: frame.id,
+          label: frame.label ?? null,
+          mode: frame.mode ?? null,
+          params: frame.params ?? {},
+        }))
+      : [],
+  };
+  if (payload.expires_in != null) {
+    body.expires_in = payload.expires_in;
+  }
+  const query = buildTargetQuery(targetClientId);
+  const url = `${API_BASE}/api/display${query}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function pushContainerLayout(rawConfig, targetClientId = null) {
+  if (!rawConfig || typeof rawConfig !== "object") {
+    throw new Error("container layout payload 必須為物件");
+  }
+  const payload = {
+    ...rawConfig,
+  };
+  const queryTarget = targetClientId == null ? null : `${targetClientId}`.trim();
+  if (queryTarget) {
+    payload.target_client_id = queryTarget;
+  } else {
+    delete payload.target_client_id;
+  }
+  const url = `${API_BASE}/api/container-layout`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+function sanitizeSubtitlePayload(payload) {
+  if (!payload || typeof payload.text !== "string" || !payload.text.trim()) {
+    throw new Error("字幕內容不可為空");
+  }
+  return {
+    text: payload.text,
+    language: payload.language ?? null,
+    duration_seconds: payload.duration_seconds ?? null,
+  };
+}
+
+export async function pushSubtitle(payload, targetClientId = null) {
+  const body = sanitizeSubtitlePayload(payload);
+  const query = buildTargetQuery(targetClientId, "target_client_id");
+  const url = `${API_BASE}/api/subtitles${query}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function clearSubtitle(targetClientId = null) {
+  const query = buildTargetQuery(targetClientId, "target_client_id");
+  const url = `${API_BASE}/api/subtitles${query}`;
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return true;
+}
+
+export async function pushCaption(payload, targetClientId = null) {
+  const body = sanitizeSubtitlePayload(payload);
+  const query = buildTargetQuery(targetClientId, "target_client_id");
+  const url = `${API_BASE}/api/captions${query}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function clearCaption(targetClientId = null) {
+  const query = buildTargetQuery(targetClientId, "target_client_id");
+  const url = `${API_BASE}/api/captions${query}`;
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return true;
 }

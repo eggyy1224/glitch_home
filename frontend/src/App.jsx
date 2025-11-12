@@ -9,6 +9,7 @@ import IframeMode from "./IframeMode.jsx";
 import SubtitleOverlay from "./SubtitleOverlay.jsx";
 import CaptionMode from "./CaptionMode.jsx";
 import CollageMode from "./CollageMode.jsx";
+import AdminDashboard from "./AdminDashboard.jsx";
 import { clampInt } from "./utils/iframeConfig.js";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
@@ -65,7 +66,31 @@ export default function App() {
   const messageTimerRef = useRef(null);
   const [displayState, setDisplayState] = useState(null); // 儲存後端的 display_state
   const soundPlayerEnabled = (readParams().get("sound_player") ?? "false") === "true";
-  
+
+  const showDashboard = useMemo(() => {
+    const truthyValues = new Set(["1", "true", "yes", "on"]);
+    const candidates = [
+      initialParams.get("admin_dashboard"),
+      initialParams.get("dashboard"),
+      initialParams.get("control_panel"),
+    ];
+    for (const raw of candidates) {
+      if (!raw) continue;
+      const normalized = raw.trim().toLowerCase();
+      if (truthyValues.has(normalized)) return true;
+      if (normalized === "admin" || normalized === "dashboard") return true;
+    }
+    const modeParam = initialParams.get("mode");
+    if (modeParam && ["admin", "dashboard"].includes(modeParam.trim().toLowerCase())) {
+      return true;
+    }
+    return false;
+  }, [initialParams]);
+
+  if (showDashboard) {
+    return <AdminDashboard />;
+  }
+
   // 以後端的 display_state 為最高優先權；若沒有，才從 URL 參數推導模式
   const urlParams = readParams();
   const urlHasTrue = (key) => (urlParams.get(key) ?? "false") === "true";
