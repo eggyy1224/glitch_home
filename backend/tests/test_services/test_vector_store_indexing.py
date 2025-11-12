@@ -7,20 +7,12 @@ from app.services import vector_store
 
 
 @pytest.fixture(autouse=True)
-def _clean_offspring_dir():
-    """Ensure offspring directory is empty before each test."""
-    offspring_dir = Path(vector_store.settings.offspring_dir)
-    if offspring_dir.exists():
-        for entry in offspring_dir.iterdir():
-            if entry.is_file():
-                entry.unlink()
-            elif entry.is_dir():
-                # The directory should only contain files, but clean defensively
-                for nested in entry.rglob("*"):
-                    if nested.is_file():
-                        nested.unlink()
-                entry.rmdir()
-    yield
+def _isolated_offspring_dir(tmp_path, monkeypatch):
+    """Point settings.offspring_dir to a temp directory for each test."""
+    temp_dir = tmp_path / "offspring"
+    temp_dir.mkdir()
+    monkeypatch.setattr(vector_store.settings, "offspring_dir", str(temp_dir))
+    yield temp_dir
 
 
 def _create_files(names: List[str]) -> None:
