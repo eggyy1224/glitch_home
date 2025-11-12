@@ -29,6 +29,7 @@ import os
 
 
 _client: chromadb.ClientAPI | None = None
+_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 
 
 def get_client() -> chromadb.ClientAPI:
@@ -133,34 +134,62 @@ def index_offspring_image(basename: str, *, force: bool = False) -> Dict[str, An
     return {"id": doc_id, "status": "indexed", "dim": len(vec)}
 
 
-def sweep_and_index_offspring(limit: Optional[int] = None, *, force: bool = False) -> Dict[str, Any]:
-    """Index all offspring images found on disk."""
+def _iter_offspring_images(limit: Optional[int] = None) -> Optional[List[Path]]:
+    """Return filtered offspring image paths in sorted order.
+
+    None is returned when the offspring directory is missing so that callers can
+    preserve their historical return structure (which skipped the results list).
+    """
+
     image_dir = Path(settings.offspring_dir)
     if not image_dir.exists():
-        return {"indexed": 0, "skipped": 0, "errors": 0}
+        return None
 
-    files = [p for p in image_dir.iterdir() if p.suffix.lower() in {".png", ".jpg", ".jpeg"}]
-    files.sort()
+    files = sorted(
+        p
+        for p in image_dir.iterdir()
+        if p.is_file() and p.suffix.lower() in _IMAGE_EXTENSIONS
+    )
+
     if limit is not None:
-        files = files[:limit]
+        if limit <= 0:
+            return []
+        return files[:limit]
+
+    return files
+
+
+def _index_files(files: Iterable[Path], *, force: bool) -> Dict[str, Any]:
+    """Index files while accumulating shared statistics and error handling."""
 
     indexed = 0
     skipped = 0
     errors = 0
     results: List[Dict[str, Any]] = []
-    for p in files:
+
+    for item in files:
+        path = Path(item)
         try:
-            res = index_offspring_image(p.name, force=force)
-            if res["status"] == "indexed":
+            res = index_offspring_image(path.name, force=force)
+            if res.get("status") == "indexed":
                 indexed += 1
             else:
                 skipped += 1
             results.append(res)
         except Exception as exc:  # noqa: BLE001
             errors += 1
-            results.append({"id": p.name, "status": "error", "error": str(exc)})
+            results.append({"id": path.name, "status": "error", "error": str(exc)})
 
     return {"indexed": indexed, "skipped": skipped, "errors": errors, "results": results}
+
+
+def sweep_and_index_offspring(limit: Optional[int] = None, *, force: bool = False) -> Dict[str, Any]:
+    """Index all offspring images found on disk."""
+    files = _iter_offspring_images(limit=limit)
+    if files is None:
+        return {"indexed": 0, "skipped": 0, "errors": 0}
+
+    return _index_files(files, force=force)
 
 
 def index_offspring_batch(batch_size: int = 50, offset: int = 0, *, force: bool = False) -> Dict[str, Any]:
@@ -174,46 +203,32 @@ def index_offspring_batch(batch_size: int = 50, offset: int = 0, *, force: bool 
     Returns:
         Dictionary with indexed, skipped, errors counts and results list
     """
-    image_dir = Path(settings.offspring_dir)
-    if not image_dir.exists():
-        return {"indexed": 0, "skipped": 0, "errors": 0, "results": []}
-
-    # Get all images sorted by name (ensures consistent ordering by creation time)
-    files = [p for p in image_dir.iterdir() if p.suffix.lower() in {".png", ".jpg", ".jpeg"}]
-    files.sort()
-    
-    # Get the batch
-    batch_files = files[offset:offset + batch_size]
-    
-    indexed = 0
-    skipped = 0
-    errors = 0
-    results: List[Dict[str, Any]] = []
-    
-    for p in batch_files:
-        try:
-            res = index_offspring_image(p.name, force=force)
-            if res["status"] == "indexed":
-                indexed += 1
-            else:
-                skipped += 1
-            results.append(res)
-        except Exception as exc:  # noqa: BLE001
-            errors += 1
-            results.append({"id": p.name, "status": "error", "error": str(exc)})
-
-    return {
-        "indexed": indexed,
-        "skipped": skipped,
-        "errors": errors,
-        "results": results,
-        "batch_info": {
-            "batch_size": batch_size,
-            "offset": offset,
-            "total_files": len(files),
-            "next_offset": offset + batch_size
+    files = _iter_offspring_images()
+    if files is None:
+        return {
+            "indexed": 0,
+            "skipped": 0,
+            "errors": 0,
+            "results": [],
+            "batch_info": {
+                "batch_size": batch_size,
+                "offset": offset,
+                "total_files": 0,
+                "next_offset": offset + batch_size,
+            },
         }
+
+    total_files = len(files)
+    batch_files = files[offset:offset + batch_size]
+    stats = _index_files(batch_files, force=force)
+
+    stats["batch_info"] = {
+        "batch_size": batch_size,
+        "offset": offset,
+        "total_files": total_files,
+        "next_offset": offset + batch_size,
     }
+    return stats
 
 
 def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
