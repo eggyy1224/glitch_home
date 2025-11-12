@@ -1,8 +1,27 @@
 """Tests for media-related API endpoints (generate, search, index, tts, kinship)."""
 
+import json
+from pathlib import Path
+
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
+
+
+def _mock_tts_payload() -> dict:
+    return {
+        "filename": "test_narration.mp3",
+        "text": "測試文字",
+        "model": "gpt-4o-mini-tts",
+        "voice": "alloy",
+        "format": "mp3",
+        "speed": 1.0,
+        "absolute_path": "/generated_sounds/test_narration.mp3",
+        "relative_path": "generated_sounds/test_narration.mp3",
+        "size_bytes": 1234,
+        "checksum_sha256": "deadbeef",
+        "metadata_path": "/metadata/test_narration.mp3.json",
+    }
 
 
 @pytest.mark.api
@@ -74,12 +93,7 @@ def test_get_kinship_with_depth(client: TestClient):
 def test_tts_generate(mock_tts: MagicMock, client: TestClient):
     """Test TTS generation endpoint."""
     # Mock TTS response
-    mock_tts.return_value = {
-        "filename": "test_narration.mp3",
-        "text": "測試文字",
-        "model": "gpt-4o-mini-tts",
-        "voice": "alloy"
-    }
+    mock_tts.return_value = _mock_tts_payload()
     
     response = client.post(
         "/api/tts",
@@ -97,6 +111,7 @@ def test_tts_generate(mock_tts: MagicMock, client: TestClient):
         data = response.json()
         assert "tts" in data
         assert "url" in data
+        assert "metadata_path" in data["tts"]
 
 
 @pytest.mark.api
@@ -104,12 +119,7 @@ def test_tts_generate(mock_tts: MagicMock, client: TestClient):
 @patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_sound_play')
 def test_tts_generate_with_auto_play(mock_broadcast: MagicMock, mock_tts: MagicMock, client: TestClient):
     """Test TTS generation with auto-play."""
-    mock_tts.return_value = {
-        "filename": "test_narration.mp3",
-        "text": "測試文字",
-        "model": "gpt-4o-mini-tts",
-        "voice": "alloy"
-    }
+    mock_tts.return_value = _mock_tts_payload()
     
     response = client.post(
         "/api/tts",
@@ -126,6 +136,8 @@ def test_tts_generate_with_auto_play(mock_broadcast: MagicMock, mock_tts: MagicM
     assert response.status_code in [201, 400, 500]
     if response.status_code == 201:
         data = response.json()
+        assert "tts" in data
+        assert "metadata_path" in data["tts"]
         assert "playback" in data
         assert data["playback"]["status"] == "queued"
 
@@ -136,6 +148,37 @@ def test_tts_generate_validation(client: TestClient):
     # Missing text should fail
     response = client.post("/api/tts", json={})
     assert response.status_code in [400, 422]
+
+
+@pytest.mark.api
+def test_sound_files_with_metadata(client: TestClient):
+    """Ensure sound file listing can include metadata details."""
+    from app.config import settings
+
+    sounds_dir = Path(settings.generated_sounds_dir)
+    metadata_dir = Path(settings.metadata_dir)
+
+    audio_path = sounds_dir / "sample_audio.mp3"
+    audio_path.write_bytes(b"dummy audio content")
+
+    metadata_payload = {
+        "kind": "tts",
+        "provider": "openai",
+        "output_audio": "sample_audio.mp3",
+        "text": "hello",
+    }
+    meta_path = metadata_dir / "sample_audio.mp3.json"
+    meta_path.write_text(json.dumps(metadata_payload))
+
+    response = client.get("/api/sound-files?with_metadata=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert "files" in data
+    entry = next((f for f in data["files"] if f["filename"] == "sample_audio.mp3"), None)
+    assert entry is not None
+    assert "metadata" in entry
+    assert entry["metadata"]["output_audio"] == "sample_audio.mp3"
+    assert entry.get("metadata_path", "").endswith("sample_audio.mp3.json")
 
 
 @pytest.mark.api
@@ -150,12 +193,7 @@ def test_speak_with_subtitle_basic(
 ):
     """Test speak with subtitle basic functionality."""
     # Mock TTS response
-    mock_tts.return_value = {
-        "filename": "test_narration.mp3",
-        "text": "測試文字",
-        "model": "gpt-4o-mini-tts",
-        "voice": "alloy"
-    }
+    mock_tts.return_value = _mock_tts_payload()
     
     # Mock subtitle response
     mock_set_subtitle.return_value = {
@@ -180,6 +218,7 @@ def test_speak_with_subtitle_basic(
         assert "tts" in data
         assert "subtitle" in data
         assert "url" in data
+        assert "metadata_path" in data["tts"]
         mock_set_subtitle.assert_called_once()
         mock_broadcast_subtitle.assert_called_once()
 
@@ -197,12 +236,7 @@ def test_speak_with_subtitle_with_auto_play(
     client: TestClient
 ):
     """Test speak with subtitle with auto-play."""
-    mock_tts.return_value = {
-        "filename": "test_narration.mp3",
-        "text": "測試文字",
-        "model": "gpt-4o-mini-tts",
-        "voice": "alloy"
-    }
+    mock_tts.return_value = _mock_tts_payload()
     
     mock_set_subtitle.return_value = {
         "text": "測試文字",
@@ -224,6 +258,8 @@ def test_speak_with_subtitle_with_auto_play(
     assert response.status_code in [201, 400, 500]
     if response.status_code == 201:
         data = response.json()
+        assert "tts" in data
+        assert "metadata_path" in data["tts"]
         assert "playback" in data
         assert data["playback"]["status"] == "queued"
         mock_broadcast_sound.assert_called_once()
@@ -240,12 +276,7 @@ def test_speak_with_subtitle_custom_subtitle_text(
     client: TestClient
 ):
     """Test speak with subtitle with custom subtitle text."""
-    mock_tts.return_value = {
-        "filename": "test_narration.mp3",
-        "text": "測試文字",
-        "model": "gpt-4o-mini-tts",
-        "voice": "alloy"
-    }
+    mock_tts.return_value = _mock_tts_payload()
     
     mock_set_subtitle.return_value = {
         "text": "自訂字幕",
@@ -267,7 +298,9 @@ def test_speak_with_subtitle_custom_subtitle_text(
     assert response.status_code in [201, 400, 500]
     if response.status_code == 201:
         data = response.json()
+        assert "tts" in data
         assert "subtitle" in data
+        assert "metadata_path" in data["tts"]
         # Verify that subtitle_text was used instead of text
         mock_set_subtitle.assert_called_once()
         call_args = mock_set_subtitle.call_args
@@ -303,12 +336,7 @@ def test_speak_with_subtitle_subtitle_failure(
     client: TestClient
 ):
     """Test speak with subtitle when subtitle setting fails."""
-    mock_tts.return_value = {
-        "filename": "test_narration.mp3",
-        "text": "測試文字",
-        "model": "gpt-4o-mini-tts",
-        "voice": "alloy"
-    }
+    mock_tts.return_value = _mock_tts_payload()
     
     # Mock subtitle to raise an error
     mock_set_subtitle.side_effect = ValueError("subtitle text cannot be empty")
@@ -328,6 +356,7 @@ def test_speak_with_subtitle_subtitle_failure(
         assert "tts" in data
         assert "subtitle_error" in data
         assert "subtitle" not in data
+        assert "metadata_path" in data["tts"]
 
 
 @pytest.mark.api
@@ -481,4 +510,3 @@ def test_get_collage_version_progress_not_found(client: TestClient):
     # Use real task_manager which should return None for non-existent task
     response = client.get("/api/collage-version/non_existent_task/progress")
     assert response.status_code == 404
-

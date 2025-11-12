@@ -142,25 +142,46 @@ def api_search_image(body: ImageSearchRequest) -> dict:
 
 
 @router.get("/api/sound-files")
-def api_sound_files() -> dict:
+def api_sound_files(
+    with_metadata: bool = Query(
+        False, description="Include metadata (if available) for each sound file."
+    )
+) -> dict:
     directory = Path(settings.generated_sounds_dir)
     if not directory.exists():
         return {"files": []}
 
     allowed_exts = {".mp3", ".wav", ".opus", ".ulaw", ".alaw", ".aac", ".flac"}
+    metadata_dir = Path(settings.metadata_dir)
     files: list[dict] = []
     for path in sorted(directory.iterdir()):
         if not path.is_file() or path.suffix.lower() not in allowed_exts:
             continue
         stat = path.stat()
-        files.append(
-            {
-                "filename": path.name,
-                "url": f"/api/sound-files/{quote(path.name)}",
-                "size": stat.st_size,
-                "modified_at": _format_iso(stat.st_mtime),
-            }
-        )
+        entry: dict = {
+            "filename": path.name,
+            "url": f"/api/sound-files/{quote(path.name)}",
+            "size": stat.st_size,
+            "modified_at": _format_iso(stat.st_mtime),
+        }
+        if with_metadata:
+            meta_candidates = [
+                metadata_dir / f"{path.stem}.json",
+                metadata_dir / f"{path.name}.json",
+            ]
+            for meta_path in meta_candidates:
+                if not meta_path.exists():
+                    continue
+                try:
+                    with open(meta_path, "r", encoding="utf-8") as f:
+                        metadata = json.load(f)
+                    if metadata.get("output_audio") == path.name:
+                        entry["metadata"] = metadata
+                        entry["metadata_path"] = str(meta_path)
+                        break
+                except Exception:
+                    continue
+        files.append(entry)
 
     return {"files": files}
 

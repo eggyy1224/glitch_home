@@ -19,6 +19,7 @@ import httpx
 
 from ..config import settings
 from ..utils.fs import ensure_dirs
+from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z
 
 
 DEFAULT_TTS_MODEL = "gpt-4o-mini-tts"
@@ -201,6 +202,25 @@ def synthesize_speech_openai(
     except ValueError:
         relative_path = str(output_path)
 
+    stat = output_path.stat()
+    metadata = {
+        "kind": "tts",
+        "provider": "openai",
+        "created_at": utc_now_iso_z(),
+        "text": cleaned,
+        "instructions": payload.get("instructions"),
+        "model": target_model,
+        "voice": tts_voice,
+        "format": fmt,
+        "speed": payload.get("speed"),
+        "output_audio": output_path.name,
+        "absolute_path": str(output_path),
+        "relative_path": relative_path,
+        "size_bytes": stat.st_size,
+        "checksum_sha256": compute_sha256(output_path),
+    }
+    metadata_path = write_metadata(metadata, base_name=output_path.name)
+
     return {
         "text": cleaned,
         "instructions": payload.get("instructions"),
@@ -211,4 +231,7 @@ def synthesize_speech_openai(
         "filename": output_path.name,
         "absolute_path": str(output_path),
         "relative_path": relative_path,
+        "size_bytes": stat.st_size,
+        "checksum_sha256": metadata["checksum_sha256"],
+        "metadata_path": metadata_path,
     }
