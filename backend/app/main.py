@@ -3,10 +3,19 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from .api import media_router, realtime_router, storage_router
+from .api import (
+    collage_router,
+    generation_router,
+    indexing_router,
+    kinship_router,
+    realtime_router,
+    screenshot_router,
+    sound_router,
+    storage_router,
+)
 from .config import settings
 
 app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
@@ -34,7 +43,12 @@ app.mount(
 )
 
 app.include_router(storage_router)
-app.include_router(media_router)
+app.include_router(generation_router)
+app.include_router(indexing_router)
+app.include_router(sound_router)
+app.include_router(screenshot_router)
+app.include_router(kinship_router)
+app.include_router(collage_router)
 app.include_router(realtime_router)
 
 
