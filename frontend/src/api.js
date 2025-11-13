@@ -7,6 +7,13 @@ export async function fetchKinship(img, depth = -1) {
   return res.json();
 }
 
+export async function fetchClients() {
+  const url = `${API_BASE}/api/clients`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
 export async function fetchCameraPresets() {
   const url = `${API_BASE}/api/camera-presets`;
   const res = await fetch(url);
@@ -32,6 +39,17 @@ export async function deleteCameraPreset(name) {
   return true;
 }
 
+export async function fetchIframeConfigSnapshot(clientId = null) {
+  let url = `${API_BASE}/api/iframe-config`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
 export async function fetchCollageConfig(clientId = null) {
   let url = `${API_BASE}/api/collage-config`;
   if (clientId) {
@@ -39,6 +57,40 @@ export async function fetchCollageConfig(clientId = null) {
     url = `${url}?${params.toString()}`;
   }
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function pushIframeConfig(rawConfig, targetClientId = null) {
+  if (!rawConfig || typeof rawConfig !== "object") {
+    throw new Error("缺少 iframe 設定內容");
+  }
+  const payload = { ...rawConfig };
+  if (targetClientId) {
+    payload.target_client_id = targetClientId;
+  }
+  const res = await fetch(`${API_BASE}/api/iframe-config`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function pushCollageConfig(config, targetClientId = null) {
+  if (!config || typeof config !== "object") {
+    throw new Error("缺少拼貼設定內容");
+  }
+  const payload = { ...config };
+  if (targetClientId) {
+    payload.target_client_id = targetClientId;
+  }
+  const res = await fetch(`${API_BASE}/api/collage-config`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
@@ -163,6 +215,33 @@ export async function fetchSubtitleState(clientId = null) {
   };
 }
 
+export async function pushSubtitleState(subtitle, targetClientId) {
+  if (!subtitle || !subtitle.text) {
+    throw new Error("目前沒有可推播的字幕");
+  }
+  let url = `${API_BASE}/api/subtitles`;
+  if (targetClientId) {
+    const params = new URLSearchParams({ target_client_id: targetClientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const payload = {
+    text: subtitle.text,
+  };
+  if (subtitle.language) {
+    payload.language = subtitle.language;
+  }
+  if (typeof subtitle.duration_seconds === "number") {
+    payload.duration_seconds = subtitle.duration_seconds;
+  }
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
 export async function fetchCaptionState(clientId = null) {
   let url = `${API_BASE}/api/captions`;
   if (clientId) {
@@ -175,6 +254,33 @@ export async function fetchCaptionState(clientId = null) {
   return {
     caption: data?.caption ?? null,
   };
+}
+
+export async function pushCaptionState(caption, targetClientId) {
+  if (!caption || !caption.text) {
+    throw new Error("目前沒有可推播的字幕標題");
+  }
+  let url = `${API_BASE}/api/captions`;
+  if (targetClientId) {
+    const params = new URLSearchParams({ target_client_id: targetClientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const payload = {
+    text: caption.text,
+  };
+  if (caption.language) {
+    payload.language = caption.language;
+  }
+  if (typeof caption.duration_seconds === "number") {
+    payload.duration_seconds = caption.duration_seconds;
+  }
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
 }
 
 export async function generateCollageVersion(files, params) {

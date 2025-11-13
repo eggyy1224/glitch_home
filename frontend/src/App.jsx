@@ -13,6 +13,7 @@ import CollageVersionMode from "./CollageVersionMode.jsx";
 import GenerateMode from "./GenerateMode.jsx";
 import StaticMode from "./StaticMode.jsx";
 import VideoMode from "./VideoMode.jsx";
+import DashboardMode from "./DashboardMode.jsx";
 import { clampInt } from "./utils/iframeConfig.js";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
@@ -70,32 +71,41 @@ export default function App() {
   const messageTimerRef = useRef(null);
   const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
   const soundPlayerEnabled = (readParams().get("sound_player") ?? "true") !== "false";
-  const iframeMode = !incubatorMode && (readParams().get("iframe_mode") ?? "false") === "true";
-  const slideMode = !incubatorMode && !iframeMode && (readParams().get("slide_mode") ?? "false") === "true";
+  const dashboardMode =
+    !incubatorMode && (readParams().get("dashboard_mode") ?? "false") === "true";
+  const iframeMode =
+    !incubatorMode && !dashboardMode && (readParams().get("iframe_mode") ?? "false") === "true";
+  const slideMode =
+    !incubatorMode && !dashboardMode && !iframeMode && (readParams().get("slide_mode") ?? "false") === "true";
   const organicMode =
-    !incubatorMode && !iframeMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode &&
+    (readParams().get("organic_mode") ?? "false") === "true";
   const phylogenyMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode &&
+    (readParams().get("phylogeny") ?? "false") === "true";
   const searchMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
     (readParams().get("search_mode") ?? "false") === "true";
   const collageMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode &&
     (readParams().get("collage_mode") ?? "false") === "true";
   const captionMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
     (readParams().get("caption_mode") ?? "false") === "true";
   const collageVersionMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode &&
     (readParams().get("collage_version_mode") ?? "false") === "true";
   const generateMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode && !collageVersionMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
+    !captionMode && !collageVersionMode &&
     (readParams().get("generate_mode") ?? "false") === "true";
   const staticMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode && !collageVersionMode && !generateMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
+    !captionMode && !collageVersionMode && !generateMode &&
     (readParams().get("static_mode") ?? "false") === "true";
   const videoMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode && !collageVersionMode && !generateMode && !staticMode &&
+    !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
+    !captionMode && !collageVersionMode && !generateMode && !staticMode &&
     (readParams().get("video_mode") ?? "false") === "true";
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -243,7 +253,7 @@ export default function App() {
   }, [selectedPresetName, removePresetInState, pushPresetMessage]);
 
   useEffect(() => {
-    if (!imgId || organicMode || slideMode || iframeMode || staticMode || videoMode) return;
+    if (!imgId || organicMode || slideMode || iframeMode || staticMode || videoMode || dashboardMode) return;
     let cancelled = false;
     setErr(null);
     fetchKinship(imgId, -1)
@@ -275,7 +285,17 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId, phylogenyMode, incubatorMode, organicMode, slideMode, iframeMode, staticMode, videoMode]);
+  }, [
+    imgId,
+    phylogenyMode,
+    incubatorMode,
+    organicMode,
+    slideMode,
+    iframeMode,
+    staticMode,
+    videoMode,
+    dashboardMode,
+  ]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -287,7 +307,7 @@ export default function App() {
 
   // 自動向子代/兄弟/父母切換
   useEffect(() => {
-    if (!data || organicMode || slideMode || iframeMode || staticMode || videoMode) return;
+    if (!data || organicMode || slideMode || iframeMode || staticMode || videoMode || dashboardMode) return;
     const params = readParams();
     // 新增：continuous=true 時，不自動切換
     const continuous = (params.get("continuous") ?? "false") === "true";
@@ -314,7 +334,7 @@ export default function App() {
       navigateToImage(next);
     }, stepSec * 1000);
     return () => clearTimeout(t);
-  }, [data, organicMode, slideMode, iframeMode, staticMode, videoMode]);
+  }, [data, organicMode, slideMode, iframeMode, staticMode, videoMode, dashboardMode]);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
@@ -400,6 +420,10 @@ export default function App() {
   });
 
   const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
+
+  if (dashboardMode) {
+    return <DashboardMode />;
+  }
 
   if (iframeMode) {
     return (
