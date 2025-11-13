@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
 
@@ -25,13 +25,53 @@ def list_clients() -> Dict[str, Any]:
 
 @app.tool()
 def list_assets(
-    source: str,
+    source: Literal["videos", "offspring_images", "generated_sounds"],
     limit: Optional[int] = 100,
     offset: int = 0,
     recursive: Optional[bool] = None,
     include_metadata: bool = True,
 ) -> Dict[str, Any]:
-    """List curated asset folders (videos, offspring images, generated sounds)."""
+    """List curated asset folders (videos, offspring images, generated sounds).
+    
+    Args:
+        source: Asset source type. Must be one of:
+            - "videos": Video files from frontend/public/videos/圖像系譜學Video (served at /videos/圖像系譜學Video)
+            - "offspring_images": Generated image files from backend/offspring_images (served at /generated_images)
+            - "generated_sounds": Audio files from backend/generated_sounds (served at /generated_sounds)
+        limit: Maximum number of assets to return (default: 100). Set to None to return all.
+        offset: Number of assets to skip for pagination (default: 0).
+        recursive: Whether to search subdirectories recursively (default: None, uses source-specific default).
+            - "offspring_images" allows recursive search by default
+            - "videos" and "generated_sounds" do not allow recursive search
+        include_metadata: Whether to include metadata in the response (default: True).
+            For images, includes JSON metadata if available. For videos/audio, metadata is currently not implemented.
+    
+    Returns:
+        Dict with "ok" key indicating success/failure:
+        - On success: {"ok": True, "data": [asset_entries]}
+          Each asset entry contains:
+          - name: File name (e.g., "offspring_20250923_172635_239.png")
+          - relative_path: Path relative to repository root
+          - relative_to_source: Path relative to source root
+          - public_url: URL path for accessing the asset (e.g., "/generated_images/offspring_xxx.png")
+          - category: Asset category ("image", "video", or "audio")
+          - size_bytes: File size in bytes
+          - modified_at: ISO format timestamp of last modification
+          - mime_type: MIME type of the file
+          - source: Source key (same as input source parameter)
+          - metadata: Optional metadata dict (for images, includes JSON metadata if available)
+        - On error: {"ok": False, "error": "error message"}
+    
+    Example:
+        # List offspring images (commonly used for collage/iframe config)
+        result = list_assets("offspring_images", limit=50)
+        if result["ok"]:
+            images = result["data"]
+            # Use images[0]["name"] or images[0]["public_url"] in configs
+        
+        # List videos with pagination
+        result = list_assets("videos", limit=20, offset=0)
+    """
     try:
         assets = asset_lister.list_assets(
             source_key=source,
