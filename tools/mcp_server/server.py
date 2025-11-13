@@ -88,6 +88,36 @@ def list_assets(
 
 
 @app.tool()
+def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
+    """Search images using a natural-language query (POST /api/search/text).
+    
+    Args:
+        query: Natural language search phrase (e.g., "抽象 霓虹夜景").
+        top_k: Maximum number of matches to return (default: 10).
+    
+    Returns:
+        Dict following backend search response with `matches` and metadata.
+    """
+    payload = {"query": query, "top_k": top_k}
+    return client.post("/api/search/text", json_body=payload)
+
+
+@app.tool()
+def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
+    """Search similar images using an existing image path (POST /api/search/image).
+    
+    Args:
+        image_path: Repository-relative file path (e.g., "backend/offspring_images/foo.png").
+        top_k: Maximum number of matches to return (default: 10).
+    
+    Returns:
+        Dict following backend search response with `matches` and metadata.
+    """
+    payload = {"image_path": image_path, "top_k": top_k}
+    return client.post("/api/search/image", json_body=payload)
+
+
+@app.tool()
 def get_iframe_config(client_id: Union[str, None] = None) -> Dict[str, Any]:
     """Get iframe configuration (GET /api/iframe-config).
     

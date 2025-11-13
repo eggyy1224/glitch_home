@@ -7,6 +7,8 @@ v1 exposes:
 - `health_check()` → GET `/health`
 - `list_clients()` → GET `/api/clients`
 - `list_assets(source, limit, offset)` → Scan curated local asset folders
+- `search_images_by_text(query, top_k)` → POST `/api/search/text`
+- `search_images_by_image(image_path, top_k)` → POST `/api/search/image`
 - `get_iframe_config(client_id)` → GET `/api/iframe-config`
 - `update_iframe_config(config, target_client_id)` → PUT `/api/iframe-config`
 - `get_collage_config(client_id)` → GET `/api/collage-config`
@@ -62,6 +64,11 @@ pip install httpx mcp
     list_assets("videos", limit=50, include_metadata=True)
     # → {"ok": True, "data": [{"name": "BirdmanTalk.mp4", "public_url": "/videos/圖像系譜學Video/BirdmanTalk.mp4", ...}]}
     ```
+
+### Search
+
+- **`search_images_by_text(query: str, top_k: int = 10)`**: Semantic text-to-image search (POST `/api/search/text`). Returns the backend search payload with `matches`, scoring metadata, etc.
+- **`search_images_by_image(image_path: str, top_k: int = 10)`**: Image-to-image similarity search (POST `/api/search/image`). `image_path` should be repository-relative (e.g., `backend/offspring_images/foo.png`).
 
 ### Iframe Configuration
 
