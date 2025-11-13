@@ -107,6 +107,7 @@ export default function App() {
     !incubatorMode && !dashboardMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
     !captionMode && !collageVersionMode && !generateMode && !staticMode &&
     (readParams().get("video_mode") ?? "false") === "true";
+  const controlSocketEnabled = !dashboardMode;
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -410,6 +411,7 @@ export default function App() {
 
   useControlSocket({
     clientId,
+    enabled: controlSocketEnabled,
     onScreenshotRequest: enqueueScreenshotRequest,
     onScreenshotLifecycle: handleScreenshotLifecycle,
     onSoundPlay: handleSoundPlayMessage,
