@@ -464,7 +464,14 @@ export default function GenerateMode() {
                 </div>
                 {selectedImages.length > 0 && (
                   <div className="generate-selected-count">
-                    已選擇 {selectedImages.length} 張圖片
+                    <span>已選擇 {selectedImages.length} 張圖片</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedImages([])}
+                      className="generate-clear-selection"
+                    >
+                      清除選擇
+                    </button>
                   </div>
                 )}
               </>
