@@ -125,11 +125,13 @@ class IndexOneImageRequest(BaseModel):
 class TextSearchRequest(BaseModel):
     query: str = Field(..., min_length=1)
     top_k: int = Field(default=10, ge=1, le=200)
+    include_deprecated: bool = Field(default=False, description="是否包含 deprecated 圖片（預設：False，排除 deprecated）")
 
 
 class ImageSearchRequest(BaseModel):
     image_path: str = Field(..., min_length=1, description="Absolute or relative path to an image")
     top_k: int = Field(default=10, ge=1, le=200)
+    include_deprecated: bool = Field(default=False, description="是否包含 deprecated 圖片（預設：False，排除 deprecated）")
 
 
 class IndexBatchRequest(BaseModel):

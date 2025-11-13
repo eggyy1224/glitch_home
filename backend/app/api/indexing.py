@@ -53,7 +53,11 @@ def api_index_batch(body: IndexBatchRequest) -> dict:
 @router.post("/api/search/text")
 def api_search_text(body: TextSearchRequest) -> dict:
     try:
-        res = vector_store.search_images_by_text(body.query, top_k=body.top_k)
+        res = vector_store.search_images_by_text(
+            body.query, 
+            top_k=body.top_k,
+            include_deprecated=body.include_deprecated,
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return res
@@ -62,9 +66,26 @@ def api_search_text(body: TextSearchRequest) -> dict:
 @router.post("/api/search/image")
 def api_search_image(body: ImageSearchRequest) -> dict:
     try:
-        res = vector_store.search_images_by_image(body.image_path, top_k=body.top_k)
+        res = vector_store.search_images_by_image(
+            body.image_path, 
+            top_k=body.top_k,
+            include_deprecated=body.include_deprecated,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=400, detail=f"圖像不存在或無法索引: {str(exc)}") from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return res
+
+
+@router.post("/api/index/mark-deprecated")
+def api_mark_deprecated() -> dict:
+    """批量標記所有 deprecated 圖片為 deprecated=True。
+    
+    掃描 offspring_images/deprecated/ 目錄，更新 ChromaDB 中對應圖片的 metadata。
+    """
+    try:
+        res = vector_store.mark_deprecated_images()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     return res

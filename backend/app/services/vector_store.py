@@ -104,6 +104,7 @@ def index_offspring_image(basename: str, *, force: bool = False) -> Dict[str, An
 
     # Prepare metadata by reading companion JSON if available
     meta: Dict[str, Any] = {"path": str(image_path)}
+    
     meta_json = Path(settings.metadata_dir) / f"{image_path.stem}.json"
     if meta_json.exists():
         try:
@@ -112,6 +113,11 @@ def index_offspring_image(basename: str, *, force: bool = False) -> Dict[str, An
             meta.update(json.loads(meta_json.read_text(encoding="utf-8")))
         except Exception:
             pass
+    
+    # 檢查圖片是否在 deprecated 目錄中，如果是則標記為 deprecated（覆蓋 metadata JSON 中的設定）
+    deprecated_dir = Path(settings.offspring_dir) / "deprecated"
+    if deprecated_dir.exists() and str(image_path).startswith(str(deprecated_dir)):
+        meta["deprecated"] = True
 
     def _sanitize(value: Any) -> Any:
         # Chroma requires scalar types (str, int, float, bool, None)
@@ -145,10 +151,12 @@ def _iter_offspring_images(limit: Optional[int] = None) -> Optional[List[Path]]:
     if not image_dir.exists():
         return None
 
+    # 大小寫不敏感的副檔名檢查
+    ext_lower = {ext.lower() for ext in _IMAGE_EXTENSIONS}
     files = sorted(
         p
         for p in image_dir.iterdir()
-        if p.is_file() and p.suffix.lower() in _IMAGE_EXTENSIONS
+        if p.is_file() and p.suffix.lower() in ext_lower
     )
 
     if limit is not None:
@@ -192,6 +200,87 @@ def sweep_and_index_offspring(limit: Optional[int] = None, *, force: bool = Fals
     return _index_files(files, force=force)
 
 
+def mark_deprecated_images() -> Dict[str, Any]:
+    """標記所有 deprecated 圖片為 deprecated=True。
+    
+    掃描 offspring_images/deprecated/ 目錄，更新 ChromaDB 中對應圖片的 metadata。
+    如果圖片不在資料庫中，會跳過（不強制索引）。
+    
+    Returns:
+        包含統計資訊的字典：marked（已標記數量）、not_found（不在資料庫中的數量）、errors（錯誤數量）
+    """
+    deprecated_dir = Path(settings.offspring_dir) / "deprecated"
+    if not deprecated_dir.exists():
+        return {
+            "marked": 0,
+            "not_found": 0,
+            "errors": 0,
+            "message": "deprecated 目錄不存在",
+        }
+    
+    col = get_images_collection()
+    marked = 0
+    not_found = 0
+    errors = 0
+    error_details: List[str] = []
+    
+    # 收集所有 deprecated 圖片的檔名（大小寫不敏感）
+    deprecated_images: List[str] = []
+    # 建立大小寫不敏感的副檔名集合
+    ext_lower = {ext.lower() for ext in _IMAGE_EXTENSIONS}
+    
+    # 掃描所有檔案，檢查副檔名（大小寫不敏感）
+    for img_path in deprecated_dir.iterdir():
+        if img_path.is_file():
+            suffix_lower = img_path.suffix.lower()
+            if suffix_lower in ext_lower:
+                deprecated_images.append(img_path.name)
+    
+    for basename in deprecated_images:
+        try:
+            # 檢查圖片是否在資料庫中
+            existing = col.get(ids=[basename], include=["metadatas"])
+            
+            if not existing or len(existing.get("ids", [])) == 0:
+                # 圖片不在資料庫中，跳過
+                not_found += 1
+                continue
+            
+            # 取得現有的 metadata
+            existing_metas = existing.get("metadatas", [[]])
+            if not existing_metas or len(existing_metas) == 0:
+                not_found += 1
+                continue
+            
+            current_meta = existing_metas[0] or {}
+            
+            # 更新 metadata，添加 deprecated 標記
+            updated_meta = dict(current_meta)
+            updated_meta["deprecated"] = True
+            
+            # 更新資料庫
+            col.update(
+                ids=[basename],
+                metadatas=[updated_meta],
+            )
+            marked += 1
+        except Exception as exc:  # noqa: BLE001
+            errors += 1
+            error_details.append(f"{basename}: {str(exc)}")
+    
+    result = {
+        "marked": marked,
+        "not_found": not_found,
+        "errors": errors,
+        "total_scanned": len(deprecated_images),
+    }
+    
+    if error_details:
+        result["error_details"] = error_details[:10]  # 只保留前10個錯誤
+    
+    return result
+
+
 def index_offspring_batch(batch_size: int = 50, offset: int = 0, *, force: bool = False) -> Dict[str, Any]:
     """Index a batch of offspring images starting from offset.
     
@@ -231,12 +320,25 @@ def index_offspring_batch(batch_size: int = 50, offset: int = 0, *, force: bool 
     return stats
 
 
-def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
-    """Search the image collection with a text query using OpenAI embeddings."""
+def search_images_by_text(query: str, top_k: int = 10, include_deprecated: bool = False) -> Dict[str, Any]:
+    """Search the image collection with a text query using OpenAI embeddings.
+    
+    Args:
+        query: Text query string
+        top_k: Number of results to return
+        include_deprecated: If True, include deprecated images in results (default: False)
+    """
     # 用 OpenAI text-embedding-3-small 進行查詢
     vec = _cached_embed_text(query)
     col = get_images_collection()
-    res = col.query(query_embeddings=[vec], n_results=top_k)
+    
+    # 過濾 deprecated 圖片（除非明確要求包含）
+    where_clause = None
+    if not include_deprecated:
+        # ChromaDB 過濾：deprecated 欄位不存在或不等於 True
+        where_clause = {"deprecated": {"$ne": True}}
+    
+    res = col.query(query_embeddings=[vec], n_results=top_k, where=where_clause)
     # Standardise output
     out: List[Dict[str, Any]] = []
     ids = res.get("ids", [[]])[0] if res else []
@@ -251,12 +353,17 @@ def search_images_by_text(query: str, top_k: int = 10) -> Dict[str, Any]:
     return {"results": out}
 
 
-def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
+def search_images_by_image(image_path: str, top_k: int = 10, include_deprecated: bool = False) -> Dict[str, Any]:
     """搜尋類似圖像。
     
     優化邏輯：
     1. 如果搜尋的圖像已在資料庫中，直接從資料庫取得向量（不重複 embedding）
     2. 如果圖像不在資料庫中，才進行 embedding（發送 API 呼叫）
+    
+    Args:
+        image_path: Path to the image file
+        top_k: Number of results to return
+        include_deprecated: If True, include deprecated images in results (default: False)
     """
     # Resolve flexible paths: absolute, relative, or just basename under offspring_dir
     path = image_path
@@ -324,8 +431,14 @@ def search_images_by_image(image_path: str, top_k: int = 10) -> Dict[str, Any]:
         
         vec = _cached_embed_image_for_search(path)
     
+    # 過濾 deprecated 圖片（除非明確要求包含）
+    where_clause = None
+    if not include_deprecated:
+        # ChromaDB 過濾：deprecated 欄位不存在或不等於 True
+        where_clause = {"deprecated": {"$ne": True}}
+    
     # 使用獲得的向量進行搜尋
-    res = col.query(query_embeddings=[vec], n_results=top_k)
+    res = col.query(query_embeddings=[vec], n_results=top_k, where=where_clause)
     out: List[Dict[str, Any]] = []
     ids = res.get("ids", [[]])[0] if res else []
     dists = res.get("distances", [[]])[0] if res else []
