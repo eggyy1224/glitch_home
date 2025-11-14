@@ -286,6 +286,34 @@ curl -X PUT http://localhost:8000/api/iframe-config \
   - 重複沿用舊 payload，未清空 `params` 導致意外套用 `slide_mode=false`、`incubator=true` 等。
   - 在 PUT 時提供了不存在的圖片名稱，後端會傳回 400；可先 `ls backend/offspring_images` 確認。
 
+#### Snapshot / Restore Iframe 配置
+
+需要保存特定 client 的 iframe 排版時，可使用 snapshot API 保存 JSON 並在需要時恢復：
+
+```bash
+# 儲存 snapshot（client=function_test）
+SNAPSHOT_NAME="function_test_$(date +%Y%m%d%H%M%S)"
+curl -X POST http://localhost:8000/api/iframe-config/snapshot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "function_test",
+    "snapshot_name": "'$SNAPSHOT_NAME'"
+  }'
+
+# 列出某 client 所有 snapshot（新到舊排序）
+curl -X GET "http://localhost:8000/api/iframe-config/snapshots?client=function_test"
+
+# 從 snapshot 還原
+curl -X POST http://localhost:8000/api/iframe-config/restore \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "function_test",
+    "snapshot_name": "'$SNAPSHOT_NAME'"
+  }'
+```
+
+> `snapshot_name` 和 `client_id` 只允許字母、數字、底線、連字號；名稱存在時會收到 400，可挑新的名稱重試。
+
 ### 任務 8: 查詢目前在線客戶端
 
 ```bash

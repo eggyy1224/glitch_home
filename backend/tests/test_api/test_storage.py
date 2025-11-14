@@ -1,5 +1,9 @@
 """Tests for storage-related API endpoints (iframe-config, collage-config, camera-presets)."""
 
+import os
+from pathlib import Path
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -52,6 +56,105 @@ def test_put_iframe_config_validation(client: TestClient):
     # Invalid payload - FastAPI returns 422 for validation errors
     response = client.put("/api/iframe-config", json="invalid")
     assert response.status_code in [400, 422]
+
+
+@pytest.mark.api
+def test_snapshot_iframe_config_creates_file(client: TestClient):
+    """Ensure snapshot endpoint stores config on disk."""
+    client_id = f"pytest_snapshot_{uuid.uuid4().hex[:6]}"
+    snapshot_name = f"snapshot_{uuid.uuid4().hex[:8]}"
+
+    response = client.post(
+        "/api/iframe-config/snapshot",
+        json={"client_id": client_id, "snapshot_name": snapshot_name},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["client_id"] == client_id
+    assert data["snapshot"]["name"] == snapshot_name
+
+    metadata_dir = Path(os.environ["METADATA_DIR"])
+    snapshot_path = metadata_dir / "snapshots" / "iframe_config" / client_id / f"{snapshot_name}.json"
+    assert snapshot_path.exists()
+
+
+@pytest.mark.api
+def test_list_iframe_config_snapshots(client: TestClient):
+    """Ensure snapshot listing returns recently created entry."""
+    client_id = f"pytest_snapshot_list_{uuid.uuid4().hex[:5]}"
+    snapshot_name = f"snapshot_{uuid.uuid4().hex[:8]}"
+    create_response = client.post(
+        "/api/iframe-config/snapshot",
+        json={"client_id": client_id, "snapshot_name": snapshot_name},
+    )
+    assert create_response.status_code == 201
+
+    response = client.get(f"/api/iframe-config/snapshots?client={client_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["client_id"] == client_id
+    names = [item["name"] for item in data.get("snapshots", [])]
+    assert snapshot_name in names
+
+
+@pytest.mark.api
+def test_restore_iframe_config_snapshot(client: TestClient):
+    """Restoring a snapshot should revert iframe config for the client."""
+    client_id = f"pytest_restore_{uuid.uuid4().hex[:5]}"
+    base_config = {
+        "target_client_id": client_id,
+        "layout": "grid",
+        "gap": 14,
+        "columns": 1,
+        "panels": [
+            {
+                "id": "restore_panel",
+                "url": "/?mode=base",
+                "label": "original",
+            }
+        ],
+    }
+
+    put_response = client.put("/api/iframe-config", json=base_config)
+    assert put_response.status_code == 200
+
+    snapshot_name = f"snapshot_{uuid.uuid4().hex[:8]}"
+    snapshot_response = client.post(
+        "/api/iframe-config/snapshot",
+        json={"client_id": client_id, "snapshot_name": snapshot_name},
+    )
+    assert snapshot_response.status_code == 201
+
+    mutated_config = {
+        "target_client_id": client_id,
+        "layout": "grid",
+        "gap": 1,
+        "columns": 1,
+        "panels": [
+            {
+                "id": "restore_panel",
+                "url": "/?mode=mutated",
+                "label": "updated",
+            }
+        ],
+    }
+    mutated_response = client.put("/api/iframe-config", json=mutated_config)
+    assert mutated_response.status_code == 200
+    assert mutated_response.json()["raw"]["gap"] == 1
+
+    restore_response = client.post(
+        "/api/iframe-config/restore",
+        json={"client_id": client_id, "snapshot_name": snapshot_name},
+    )
+    assert restore_response.status_code == 200
+    payload = restore_response.json()
+    assert payload["target_client_id"] == client_id
+    assert payload["raw"]["gap"] == base_config["gap"]
+    assert payload["raw"]["panels"][0]["label"] == "original"
+
+    final_get = client.get(f"/api/iframe-config?client={client_id}")
+    assert final_get.status_code == 200
+    assert final_get.json()["raw"]["gap"] == base_config["gap"]
 
 
 @pytest.mark.api
@@ -167,4 +270,3 @@ def test_delete_camera_preset_invalid_name(client: TestClient):
     response = client.delete("/api/camera-presets/invalid/name")
     # Invalid name may return 400 or 404 depending on validation
     assert response.status_code in [400, 404]
-

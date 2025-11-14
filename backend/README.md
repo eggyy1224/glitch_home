@@ -175,4 +175,15 @@ Collage 系統提供兩種功能：
 
 詳細說明請參考：`docs/MULTI_CLIENT_COORDINATION.md`
 
+## 測試
+
+針對 iframe snapshot API 已新增 pytest 覆蓋，可在 backend 目錄執行：
+
+```bash
+cd backend
+pytest tests/test_api/test_storage.py -k snapshot -q
+```
+
+測試內容涵蓋 snapshot 建立、列表與還原流程（使用臨時 `METADATA_DIR`），可確保儲存檔案與 API 流程都正常。
+
 文件參考：[`Gemini Image Generation`](https://ai.google.dev/gemini-api/docs/image-generation)

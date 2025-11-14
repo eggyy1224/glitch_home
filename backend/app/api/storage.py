@@ -17,6 +17,9 @@ from ..services.iframe_config import (
     config_payload_for_response as iframe_config_payload_for_response,
     load_iframe_config,
     save_iframe_config,
+    save_iframe_config_snapshot,
+    list_iframe_config_snapshots,
+    restore_iframe_config_snapshot,
 )
 from ..services.screenshot_requests import screenshot_requests_manager
 from ..services.screenshots import save_screenshot
@@ -43,6 +46,67 @@ async def api_put_iframe_config(body: dict = Body(...)) -> dict:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001 - surface as 500
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    payload = iframe_config_payload_for_response(config, target_client_id)
+    await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
+    return payload
+
+
+@router.post("/api/iframe-config/snapshot", status_code=201)
+def api_snapshot_iframe_config(body: dict = Body(...)) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    snapshot_name = body.get("snapshot_name")
+    client_id = body.get("client_id")
+    if not isinstance(snapshot_name, str):
+        raise HTTPException(status_code=400, detail="snapshot_name 必須為字串")
+    if client_id is not None and not isinstance(client_id, str):
+        raise HTTPException(status_code=400, detail="client_id 必須為字串")
+
+    try:
+        snapshot = save_iframe_config_snapshot(client_id, snapshot_name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - surface as 500
+        raise HTTPException(status_code=500, detail="無法建立 snapshot") from exc
+
+    client_value = snapshot.get("client_id")
+    snapshot_payload = {
+        "name": snapshot.get("name"),
+        "created_at": snapshot.get("created_at"),
+        "size_bytes": snapshot.get("size_bytes"),
+    }
+    return {"client_id": client_value, "snapshot": snapshot_payload}
+
+
+@router.get("/api/iframe-config/snapshots")
+def api_list_iframe_config_snapshots(client: str | None = Query(default=None)) -> dict:
+    try:
+        target_client_id, snapshots = list_iframe_config_snapshots(client)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"client_id": target_client_id, "snapshots": snapshots}
+
+
+@router.post("/api/iframe-config/restore")
+async def api_restore_iframe_config(body: dict = Body(...)) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    snapshot_name = body.get("snapshot_name")
+    client_id = body.get("client_id")
+    if not isinstance(snapshot_name, str):
+        raise HTTPException(status_code=400, detail="snapshot_name 必須為字串")
+    if client_id is not None and not isinstance(client_id, str):
+        raise HTTPException(status_code=400, detail="client_id 必須為字串")
+
+    try:
+        config, target_client_id = restore_iframe_config_snapshot(client_id, snapshot_name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - surface as 500
+        raise HTTPException(status_code=500, detail="無法恢復 snapshot") from exc
 
     payload = iframe_config_payload_for_response(config, target_client_id)
     await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
