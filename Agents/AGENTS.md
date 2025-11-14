@@ -85,6 +85,10 @@
 4. 使用瀏覽器快照功能查看頁面狀態
 5. 使用瀏覽器截圖功能記錄效果
 
+**iframe 固定入口指引**：
+- 如果你要對內嵌畫面進行任何操作，請固定從 `http://localhost:5173/?client=<client_id>&iframe_mode=true`（例如 agent 代表 `client=agent&iframe_mode=true`）這個最外層入口進去。其他 collage、單圖或特殊參數都留在 iframe 內部的 panel url 中，這樣外層 URL 不會暴露參數，行為也一致。
+- 就算只有一個視窗，也始終把 collage 等模式放在唯一的 iframe 裡面操作；需要切換畫面時只要更新 iframe panel 的 url（例如設成 `/?collage_mode=true&client=agent&img=foo`），不用重新導向外層頁面。
+
 **❌ 錯誤範例**：
 - ❌ 導航到 `http://localhost:8000/api`（這是後端 API，不是前端頁面）
 - ❌ 導航到 `http://localhost:8000/generated_images/`（這是後端靜態檔案目錄）
@@ -297,4 +301,3 @@ update_collage_config({
 ---
 
 **記住**：你的角色是**創作助手**，專注於使用 MCP 工具創造視覺體驗、協調展示內容。當現有工具無法完成任務時，明確告知用戶需要什麼新工具，而不是嘗試自己寫代碼或修改系統。
-

@@ -134,11 +134,11 @@ def get_iframe_config(client_id: Union[str, None] = None) -> Dict[str, Any]:
 @app.tool()
 def update_iframe_config(config: Dict[str, Any], target_client_id: Union[str, None] = None) -> Dict[str, Any]:
     """Update iframe configuration (PUT /api/iframe-config).
-    
+
     Args:
         config: Configuration dict with layout, gap, columns, panels, etc.
         target_client_id: Optional client ID to update client-specific config. If not provided, updates global config.
-    
+
     Returns:
         Updated configuration dict.
     """
@@ -146,6 +146,54 @@ def update_iframe_config(config: Dict[str, Any], target_client_id: Union[str, No
     if target_client_id:
         payload["target_client_id"] = target_client_id
     return client.put("/api/iframe-config", json_body=payload)
+
+
+@app.tool()
+def create_iframe_snapshot(snapshot_name: str, client_id: Union[str, None] = None) -> Dict[str, Any]:
+    """Create a named iframe config snapshot (POST /api/iframe-config/snapshot).
+
+    Args:
+        snapshot_name: Name for this snapshot (letters, numbers, underscore, hyphen).
+        client_id: Optional client ID; when omitted, saves the global config snapshot.
+
+    Returns:
+        Response dict containing `client_id` and snapshot metadata (name, created_at, size_bytes).
+    """
+    payload: Dict[str, Any] = {"snapshot_name": snapshot_name}
+    if client_id:
+        payload["client_id"] = client_id
+    return client.post("/api/iframe-config/snapshot", json_body=payload)
+
+
+@app.tool()
+def list_iframe_snapshots(client_id: Union[str, None] = None) -> Dict[str, Any]:
+    """List iframe config snapshots (GET /api/iframe-config/snapshots).
+
+    Args:
+        client_id: Optional client ID to scope snapshots; defaults to global snapshots when omitted.
+
+    Returns:
+        Dict with `client_id` and `snapshots` array including name, created_at, size_bytes.
+    """
+    params = {"client": client_id} if client_id else None
+    return client.get("/api/iframe-config/snapshots", params=params)
+
+
+@app.tool()
+def restore_iframe_snapshot(snapshot_name: str, client_id: Union[str, None] = None) -> Dict[str, Any]:
+    """Restore iframe config from a snapshot (POST /api/iframe-config/restore).
+
+    Args:
+        snapshot_name: Snapshot name to restore.
+        client_id: Optional client ID; restores the global config when omitted.
+
+    Returns:
+        Restored iframe config payload (same as GET /api/iframe-config).
+    """
+    payload: Dict[str, Any] = {"snapshot_name": snapshot_name}
+    if client_id:
+        payload["client_id"] = client_id
+    return client.post("/api/iframe-config/restore", json_body=payload)
 
 
 @app.tool()
