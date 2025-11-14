@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote_plus
@@ -63,6 +64,34 @@ def _snapshot_path_for(client_id: Optional[str], snapshot_name: str) -> Path:
     return directory / f"{safe_snapshot}.json"
 
 
+def _current_snapshot_timestamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+
+
+def _generate_snapshot_name(client_id: Optional[str], snapshot_name: Optional[str]) -> str:
+    sanitized_client_id = _sanitize_client_id(client_id)
+    safe_descriptor: Optional[str] = None
+    if snapshot_name is not None:
+        if not isinstance(snapshot_name, str):
+            raise ValueError("snapshot_name 必須為字串")
+        safe_descriptor = _sanitize_snapshot_name(snapshot_name)
+
+    prefix = sanitized_client_id or _GLOBAL_SNAPSHOT_KEY
+    timestamp = _current_snapshot_timestamp()
+    parts = [prefix]
+    if safe_descriptor:
+        parts.append(safe_descriptor)
+    parts.append(timestamp)
+    base_name = "_".join(parts)
+
+    candidate = base_name
+    counter = 0
+    while _snapshot_path_for(sanitized_client_id, candidate).exists():
+        counter += 1
+        candidate = f"{base_name}_{counter}"
+    return candidate
+
+
 def _default_config() -> IframeConfig:
     panels: List[PanelConfig] = [
         PanelConfig(id="left", image="offspring_20250929_114732_835.png"),
@@ -114,15 +143,13 @@ def save_iframe_config(payload: Dict[str, object]) -> tuple[IframeConfig, Option
     return config, target_client_id
 
 
-def save_iframe_config_snapshot(client_id: Optional[str], snapshot_name: str) -> Dict[str, object]:
+def save_iframe_config_snapshot(client_id: Optional[str], snapshot_name: Optional[str] = None) -> Dict[str, object]:
     sanitized_client_id = _sanitize_client_id(client_id)
-    safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
+    safe_snapshot_name = _generate_snapshot_name(sanitized_client_id, snapshot_name)
     config = load_iframe_config(sanitized_client_id)
     data = config.model_dump()
 
     path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
-    if path.exists():
-        raise ValueError("snapshot 名稱已存在，請使用其他名稱")
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fp:
         json.dump(data, fp, ensure_ascii=False, indent=2)

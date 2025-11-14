@@ -291,13 +291,12 @@ curl -X PUT http://localhost:8000/api/iframe-config \
 需要保存特定 client 的 iframe 排版時，可使用 snapshot API 保存 JSON 並在需要時恢復：
 
 ```bash
-# 儲存 snapshot（client=function_test）
-SNAPSHOT_NAME="function_test_$(date +%Y%m%d%H%M%S)"
+# 儲存 snapshot（client=function_test），snapshot_name 可寫成場景描述
 curl -X POST http://localhost:8000/api/iframe-config/snapshot \
   -H "Content-Type: application/json" \
   -d '{
     "client_id": "function_test",
-    "snapshot_name": "'$SNAPSHOT_NAME'"
+    "snapshot_name": "before_demo"
   }'
 
 # 列出某 client 所有 snapshot（新到舊排序）
@@ -308,11 +307,11 @@ curl -X POST http://localhost:8000/api/iframe-config/restore \
   -H "Content-Type: application/json" \
   -d '{
     "client_id": "function_test",
-    "snapshot_name": "'$SNAPSHOT_NAME'"
+    "snapshot_name": "function_test_before_demo_20251114135700"
   }'
 ```
 
-> `snapshot_name` 和 `client_id` 只允許字母、數字、底線、連字號；名稱存在時會收到 400，可挑新的名稱重試。
+> `snapshot_name` 是可選的「場景描述」，系統會自動產生實際檔名：`{client_id}_{snapshot_name}_{YYYYMMDDHHmmss}`，若沒帶 `snapshot_name` 則為 `{client_id}_{YYYYMMDDHHmmss}`，client 不存在時會以 `global` 取代。建立成功時的 response 會回傳最終檔名，或可透過 list API 取得。若同 1 秒內重複建立 snapshot，系統會自動加上 `_1`、`_2` 後綴避免衝突。`snapshot_name`/`client_id` 仍僅允許字母、數字、底線、連字號。
 
 ### 任務 8: 查詢目前在線客戶端
 

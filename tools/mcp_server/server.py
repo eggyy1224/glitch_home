@@ -149,18 +149,20 @@ def update_iframe_config(config: Dict[str, Any], target_client_id: Union[str, No
 
 
 @app.tool()
-def create_iframe_snapshot(snapshot_name: str, client_id: Union[str, None] = None) -> Dict[str, Any]:
-    """Create a named iframe config snapshot (POST /api/iframe-config/snapshot).
+def create_iframe_snapshot(snapshot_name: Union[str, None] = None, client_id: Union[str, None] = None) -> Dict[str, Any]:
+    """Create an iframe config snapshot (POST /api/iframe-config/snapshot).
 
     Args:
-        snapshot_name: Name for this snapshot (letters, numbers, underscore, hyphen).
+        snapshot_name: Optional short description for這個 snapshot（letters/numbers/_/-）。實際檔名會自動加上 client 與時間戳。
         client_id: Optional client ID; when omitted, saves the global config snapshot.
 
     Returns:
         Response dict containing `client_id` and snapshot metadata (name, created_at, size_bytes).
     """
-    payload: Dict[str, Any] = {"snapshot_name": snapshot_name}
-    if client_id:
+    payload: Dict[str, Any] = {}
+    if snapshot_name is not None:
+        payload["snapshot_name"] = snapshot_name
+    if client_id is not None:
         payload["client_id"] = client_id
     return client.post("/api/iframe-config/snapshot", json_body=payload)
 
@@ -184,7 +186,7 @@ def restore_iframe_snapshot(snapshot_name: str, client_id: Union[str, None] = No
     """Restore iframe config from a snapshot (POST /api/iframe-config/restore).
 
     Args:
-        snapshot_name: Snapshot name to restore.
+        snapshot_name: Snapshot name to restore (use name returned by create/list snapshot APIs).
         client_id: Optional client ID; restores the global config when omitted.
 
     Returns:

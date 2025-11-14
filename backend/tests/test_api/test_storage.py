@@ -1,6 +1,7 @@
 """Tests for storage-related API endpoints (iframe-config, collage-config, camera-presets)."""
 
 import os
+import re
 from pathlib import Path
 import uuid
 
@@ -60,22 +61,66 @@ def test_put_iframe_config_validation(client: TestClient):
 
 @pytest.mark.api
 def test_snapshot_iframe_config_creates_file(client: TestClient):
-    """Ensure snapshot endpoint stores config on disk."""
+    """Ensure snapshot endpoint stores config on disk with generated name."""
     client_id = f"pytest_snapshot_{uuid.uuid4().hex[:6]}"
-    snapshot_name = f"snapshot_{uuid.uuid4().hex[:8]}"
+    descriptor = f"before_{uuid.uuid4().hex[:4]}"
 
     response = client.post(
         "/api/iframe-config/snapshot",
-        json={"client_id": client_id, "snapshot_name": snapshot_name},
+        json={"client_id": client_id, "snapshot_name": descriptor},
     )
     assert response.status_code == 201
     data = response.json()
     assert data["client_id"] == client_id
-    assert data["snapshot"]["name"] == snapshot_name
+    generated_name = data["snapshot"].get("name")
+    assert re.match(rf"^{client_id}_{descriptor}_\d{{14}}(?:_\d+)?$", generated_name)
 
     metadata_dir = Path(os.environ["METADATA_DIR"])
-    snapshot_path = metadata_dir / "snapshots" / "iframe_config" / client_id / f"{snapshot_name}.json"
+    snapshot_path = metadata_dir / "snapshots" / "iframe_config" / client_id / f"{generated_name}.json"
     assert snapshot_path.exists()
+
+
+@pytest.mark.api
+def test_snapshot_iframe_config_without_descriptor(client: TestClient):
+    """Snapshot name auto-falls back to global_<timestamp> when descriptor missing."""
+    response = client.post("/api/iframe-config/snapshot", json={})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["client_id"] is None
+    generated_name = data["snapshot"]["name"]
+    assert re.match(r"^global_\d{14}(?:_\d+)?$", generated_name)
+
+    metadata_dir = Path(os.environ["METADATA_DIR"])
+    snapshot_path = metadata_dir / "snapshots" / "iframe_config" / "global" / f"{generated_name}.json"
+    assert snapshot_path.exists()
+
+
+@pytest.mark.api
+def test_snapshot_iframe_config_handles_duplicate_timestamp(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    """Duplicate base names should gain an auto-increment suffix."""
+    client_id = f"pytest_snapshot_dupe_{uuid.uuid4().hex[:4]}"
+    descriptor = "scene"
+    fixed_timestamp = "20240102030405"
+    monkeypatch.setattr(
+        "app.services.iframe_config._current_snapshot_timestamp",
+        lambda: fixed_timestamp,
+    )
+
+    first = client.post(
+        "/api/iframe-config/snapshot",
+        json={"client_id": client_id, "snapshot_name": descriptor},
+    )
+    assert first.status_code == 201
+    first_name = first.json()["snapshot"]["name"]
+    assert first_name == f"{client_id}_{descriptor}_{fixed_timestamp}"
+
+    second = client.post(
+        "/api/iframe-config/snapshot",
+        json={"client_id": client_id, "snapshot_name": descriptor},
+    )
+    assert second.status_code == 201
+    second_name = second.json()["snapshot"]["name"]
+    assert second_name == f"{client_id}_{descriptor}_{fixed_timestamp}_1"
 
 
 @pytest.mark.api
@@ -88,13 +133,14 @@ def test_list_iframe_config_snapshots(client: TestClient):
         json={"client_id": client_id, "snapshot_name": snapshot_name},
     )
     assert create_response.status_code == 201
+    created_name = create_response.json()["snapshot"]["name"]
 
     response = client.get(f"/api/iframe-config/snapshots?client={client_id}")
     assert response.status_code == 200
     data = response.json()
     assert data["client_id"] == client_id
     names = [item["name"] for item in data.get("snapshots", [])]
-    assert snapshot_name in names
+    assert created_name in names
 
 
 @pytest.mark.api
@@ -124,6 +170,7 @@ def test_restore_iframe_config_snapshot(client: TestClient):
         json={"client_id": client_id, "snapshot_name": snapshot_name},
     )
     assert snapshot_response.status_code == 201
+    stored_snapshot_name = snapshot_response.json()["snapshot"]["name"]
 
     mutated_config = {
         "target_client_id": client_id,
@@ -144,7 +191,7 @@ def test_restore_iframe_config_snapshot(client: TestClient):
 
     restore_response = client.post(
         "/api/iframe-config/restore",
-        json={"client_id": client_id, "snapshot_name": snapshot_name},
+        json={"client_id": client_id, "snapshot_name": stored_snapshot_name},
     )
     assert restore_response.status_code == 200
     payload = restore_response.json()

@@ -58,8 +58,9 @@ def api_snapshot_iframe_config(body: dict = Body(...)) -> dict:
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     snapshot_name = body.get("snapshot_name")
     client_id = body.get("client_id")
-    if not isinstance(snapshot_name, str):
+    if snapshot_name is not None and not isinstance(snapshot_name, str):
         raise HTTPException(status_code=400, detail="snapshot_name 必須為字串")
+    # snapshot_name 可作為備註描述；實際檔名會加入 client 與時間戳
     if client_id is not None and not isinstance(client_id, str):
         raise HTTPException(status_code=400, detail="client_id 必須為字串")
 
