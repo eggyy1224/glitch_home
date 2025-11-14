@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+（重要提醒：請用繁體中文回覆我）
+
 ## Project Structure & Module Organization
 - `backend/`: FastAPI app (`app/{api,models,services,utils}`), static mounts, and tests in `backend/tests/`.
 - `frontend/`: Vite + React app (`src/` components/hooks/utils; tests in `frontend/tests/`).
