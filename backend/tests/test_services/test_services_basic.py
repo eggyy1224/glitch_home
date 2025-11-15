@@ -146,27 +146,22 @@ def test_tts_validation(mock_settings: MagicMock):
 
 
 @pytest.mark.asyncio
-async def test_screenshot_requests_manager():
-    """Test ScreenshotRequestManager basic functionality."""
-    from app.services.screenshot_requests import screenshot_requests_manager
-    
-    # Test that manager exists and has expected methods
-    assert hasattr(screenshot_requests_manager, 'create_request')
-    assert hasattr(screenshot_requests_manager, 'get_request')
-    assert hasattr(screenshot_requests_manager, 'list_clients')
-    
+async def test_screenshot_request_queue_basic():
+    """Test ScreenshotRequestQueue basic functionality."""
+    from app.services.screenshot_queue import screenshot_request_queue
+
     # Test creating a request - this is async
-    request = await screenshot_requests_manager.create_request(metadata={"test": "data"})
+    request = await screenshot_request_queue.create_request(metadata={"test": "data"})
     assert "id" in request
-    assert "status" in request
-    
-    # Test getting a request - this is async
-    retrieved = await screenshot_requests_manager.get_request(request["id"])
+    assert request["status"] == "pending"
+
+    # Test getting a request
+    retrieved = await screenshot_request_queue.get_request(request["id"])
     assert retrieved is not None
     assert retrieved["id"] == request["id"]
-    
+
     # Test non-existent request
-    assert await screenshot_requests_manager.get_request("non_existent") is None
+    assert await screenshot_request_queue.get_request("non_existent") is None
 
 
 @patch('app.services.vector_store.get_client')

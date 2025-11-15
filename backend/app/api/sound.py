@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Query, Request
 
 from ..models.schemas import SoundPlayRequest, SpeakWithSubtitleRequest, TTSRequest
-from ..services.screenshot_requests import screenshot_requests_manager
+from ..services.realtime_bus import realtime_broadcaster
 from ..services.subtitles import subtitle_manager
 from .sound_helpers import (
     build_sound_url,
@@ -36,7 +36,7 @@ def api_sound_file(filename: str):
 async def api_sound_play(body: SoundPlayRequest, request: Request) -> dict:
     path = get_sound_file_path(body.filename)
     url = build_sound_url(request, path.name)
-    await screenshot_requests_manager.broadcast_sound_play(path.name, url, body.target_client_id)
+    await realtime_broadcaster.broadcast_sound_play(path.name, url, body.target_client_id)
     return {"status": "queued", "filename": path.name, "url": url}
 
 
@@ -93,7 +93,7 @@ async def api_speak_with_subtitle(body: SpeakWithSubtitleRequest, request: Reque
             duration_seconds=body.subtitle_duration_seconds,
             target_client_id=body.target_client_id,
         )
-        await screenshot_requests_manager.broadcast_subtitle(
+        await realtime_broadcaster.broadcast_subtitle(
             subtitle_result, target_client_id=body.target_client_id
         )
     except ValueError as exc:

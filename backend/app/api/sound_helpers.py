@@ -12,7 +12,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
 from ..config import settings
-from ..services.screenshot_requests import screenshot_requests_manager
+from ..services.realtime_bus import realtime_broadcaster
 from ..services.tts_openai import synthesize_speech_openai
 
 ALLOWED_SOUND_EXTS = {".mp3", ".wav", ".opus", ".ulaw", ".alaw", ".aac", ".flac"}
@@ -88,7 +88,7 @@ async def maybe_autoplay(filename: str, url: str, auto_play: bool, target_client
     if not auto_play:
         return None
     safe_name = sanitize_sound_filename(filename)
-    await screenshot_requests_manager.broadcast_sound_play(safe_name, url, target_client_id)
+    await realtime_broadcaster.broadcast_sound_play(safe_name, url, target_client_id)
     return {"status": "queued", "target_client_id": target_client_id}
 
 

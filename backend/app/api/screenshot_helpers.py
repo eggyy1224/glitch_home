@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import HTTPException
 
 from ..config import settings
-from ..services.screenshot_requests import screenshot_requests_manager
+from ..services.screenshot_queue import screenshot_request_queue
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -46,7 +46,7 @@ async def resolve_image_and_snapshot(
         if resolved_path is None:
             raise HTTPException(status_code=404, detail="指定的影像檔案不存在")
     elif request_id:
-        snapshot_record = await screenshot_requests_manager.get_request(request_id)
+        snapshot_record = await screenshot_request_queue.get_request(request_id)
         if snapshot_record is None:
             raise HTTPException(status_code=404, detail="screenshot request not found")
         result = snapshot_record.get("result") or {}

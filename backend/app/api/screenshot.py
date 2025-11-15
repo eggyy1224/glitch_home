@@ -5,7 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from ..models.schemas import AnalyzeAndSoundRequest, AnalyzeScreenshotRequest, GenerateSoundRequest
 from ..services.image_analysis import analyze_screenshot
-from ..services.screenshot_requests import screenshot_requests_manager
+from ..services.screenshot_queue import screenshot_request_queue
 from ..services.sound_effects import generate_sound_effect
 from .screenshot_helpers import build_auto_sound_prompt, resolve_image_and_snapshot
 
@@ -60,7 +60,7 @@ async def api_generate_sound(body: GenerateSoundRequest) -> dict:
     }
 
     if body.request_id:
-        updated = await screenshot_requests_manager.attach_sound_effect(body.request_id, sound_result)
+        updated = await screenshot_request_queue.attach_sound_effect(body.request_id, sound_result)
         response["request_id"] = body.request_id
         if updated:
             response["request_metadata"] = {
@@ -105,7 +105,7 @@ async def api_analyze_and_sound(body: AnalyzeAndSoundRequest) -> dict:
     }
 
     if body.request_id:
-        updated = await screenshot_requests_manager.attach_sound_effect(body.request_id, sound_result)
+        updated = await screenshot_request_queue.attach_sound_effect(body.request_id, sound_result)
         response["request_id"] = body.request_id
         if updated:
             response["request_metadata"] = {

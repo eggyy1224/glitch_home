@@ -116,7 +116,7 @@ def test_tts_generate(mock_tts: MagicMock, client: TestClient):
 
 @pytest.mark.api
 @patch('app.services.tts_openai.synthesize_speech_openai')
-@patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_sound_play')
+@patch('app.services.realtime_bus.realtime_broadcaster.broadcast_sound_play')
 def test_tts_generate_with_auto_play(mock_broadcast: MagicMock, mock_tts: MagicMock, client: TestClient):
     """Test TTS generation with auto-play."""
     mock_tts.return_value = _mock_tts_payload()
@@ -184,7 +184,7 @@ def test_sound_files_with_metadata(client: TestClient):
 @pytest.mark.api
 @patch('app.services.tts_openai.synthesize_speech_openai')
 @patch('app.services.subtitles.subtitle_manager.set_subtitle')
-@patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_subtitle')
+@patch('app.services.realtime_bus.realtime_broadcaster.broadcast_subtitle')
 def test_speak_with_subtitle_basic(
     mock_broadcast_subtitle: MagicMock,
     mock_set_subtitle: MagicMock,
@@ -226,8 +226,8 @@ def test_speak_with_subtitle_basic(
 @pytest.mark.api
 @patch('app.services.tts_openai.synthesize_speech_openai')
 @patch('app.services.subtitles.subtitle_manager.set_subtitle')
-@patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_subtitle')
-@patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_sound_play')
+@patch('app.services.realtime_bus.realtime_broadcaster.broadcast_subtitle')
+@patch('app.services.realtime_bus.realtime_broadcaster.broadcast_sound_play')
 def test_speak_with_subtitle_with_auto_play(
     mock_broadcast_sound: MagicMock,
     mock_broadcast_subtitle: MagicMock,
@@ -268,7 +268,7 @@ def test_speak_with_subtitle_with_auto_play(
 @pytest.mark.api
 @patch('app.services.tts_openai.synthesize_speech_openai')
 @patch('app.services.subtitles.subtitle_manager.set_subtitle')
-@patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_subtitle')
+@patch('app.services.realtime_bus.realtime_broadcaster.broadcast_subtitle')
 def test_speak_with_subtitle_custom_subtitle_text(
     mock_broadcast_subtitle: MagicMock,
     mock_set_subtitle: MagicMock,
@@ -328,7 +328,7 @@ def test_speak_with_subtitle_tts_failure(mock_tts: MagicMock, client: TestClient
 @pytest.mark.api
 @patch('app.services.tts_openai.synthesize_speech_openai')
 @patch('app.services.subtitles.subtitle_manager.set_subtitle')
-@patch('app.services.screenshot_requests.screenshot_requests_manager.broadcast_subtitle')
+@patch('app.services.realtime_bus.realtime_broadcaster.broadcast_subtitle')
 def test_speak_with_subtitle_subtitle_failure(
     mock_broadcast_subtitle: MagicMock,
     mock_set_subtitle: MagicMock,

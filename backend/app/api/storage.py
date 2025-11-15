@@ -21,7 +21,8 @@ from ..services.iframe_config import (
     list_iframe_config_snapshots,
     restore_iframe_config_snapshot,
 )
-from ..services.screenshot_requests import screenshot_requests_manager
+from ..services.realtime_bus import realtime_broadcaster
+from ..services.screenshot_queue import screenshot_request_queue
 from ..services.screenshots import save_screenshot
 
 router = APIRouter()
@@ -48,7 +49,7 @@ async def api_put_iframe_config(body: dict = Body(...)) -> dict:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     payload = iframe_config_payload_for_response(config, target_client_id)
-    await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
+    await realtime_broadcaster.broadcast_iframe_config(payload, target_client_id=target_client_id)
     return payload
 
 
@@ -110,7 +111,7 @@ async def api_restore_iframe_config(body: dict = Body(...)) -> dict:
         raise HTTPException(status_code=500, detail="無法恢復 snapshot") from exc
 
     payload = iframe_config_payload_for_response(config, target_client_id)
-    await screenshot_requests_manager.broadcast_iframe_config(payload, target_client_id=target_client_id)
+    await realtime_broadcaster.broadcast_iframe_config(payload, target_client_id=target_client_id)
     return payload
 
 
@@ -135,7 +136,7 @@ async def api_put_collage_config(body: dict = Body(...)) -> dict:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     payload = collage_config_payload_for_response(config, source, target_client_id, path)
-    await screenshot_requests_manager.broadcast_collage_config(payload, target_client_id=target_client_id)
+    await realtime_broadcaster.broadcast_collage_config(payload, target_client_id=target_client_id)
     return payload
 
 
@@ -177,11 +178,11 @@ async def api_upload_screenshot(
         saved = save_screenshot(file)
     except ValueError as exc:
         if request_id:
-            await screenshot_requests_manager.mark_failed(request_id, str(exc), processed_by=client_id)
+            await screenshot_request_queue.mark_failed(request_id, str(exc), processed_by=client_id)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001 - surface as 500
         if request_id:
-            await screenshot_requests_manager.mark_failed(
+            await screenshot_request_queue.mark_failed(
                 request_id,
                 "failed to save screenshot",
                 processed_by=client_id,
@@ -190,7 +191,7 @@ async def api_upload_screenshot(
 
     record = None
     if request_id:
-        record = await screenshot_requests_manager.mark_completed(
+        record = await screenshot_request_queue.mark_completed(
             request_id,
             saved,
             processed_by=client_id,
