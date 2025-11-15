@@ -4,7 +4,7 @@ import random
 import time
 from datetime import datetime
 from io import BytesIO
-from typing import List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from PIL import Image, ImageOps
 
@@ -12,6 +12,9 @@ from ..config import settings
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import write_metadata
 from ..utils.gemini_client import get_gemini_client
+
+TimestampFactory = Callable[[], datetime]
+FilenameBuilder = Callable[[str, datetime], str]
 
 def _pick_images_from_genes_pool(count: int) -> List[str]:
     if count < 2:
@@ -77,6 +80,297 @@ def _format_input_diagnostics(inputs: List[dict]) -> str:
     return f" inputs=({len(inputs)} images); details=[{details}]"
 
 
+def _default_filename_builder(fmt: str, timestamp: datetime) -> str:
+    base = timestamp.strftime("%Y%m%d_%H%M%S")
+    suffix = int(time.time() * 1000) % 1000
+    return f"offspring_{base}_{suffix:03d}.{fmt}"
+
+
+class GeminiImageGenerator:
+    def __init__(
+        self,
+        *,
+        client=None,
+        timestamp_factory: TimestampFactory | None = None,
+        filename_builder: FilenameBuilder | None = None,
+    ) -> None:
+        self._client = client
+        self._timestamp_factory: TimestampFactory = timestamp_factory or datetime.now
+        self._filename_builder: FilenameBuilder = filename_builder or _default_filename_builder
+
+    @property
+    def client(self):
+        if self._client is None:
+            self._client = get_gemini_client()
+        return self._client
+
+    def generate(
+        self,
+        *,
+        parent_paths: List[str],
+        prompt: str,
+        strength: Optional[float] = None,
+        output_format: Optional[str] = None,
+        output_width: Optional[int] = None,
+        output_height: Optional[int] = None,
+        output_max_side: Optional[int] = None,
+        resize_mode: Optional[str] = None,
+    ) -> dict:
+        ensure_dirs([settings.offspring_dir, settings.metadata_dir])
+
+        if len(parent_paths) < 2:
+            raise ValueError("父圖至少需要 2 張")
+
+        images, input_details = self._prepare_inputs(parent_paths)
+        generated_image = self._call_gemini(prompt, images, input_details)
+        resized = self._resize_image(
+            generated_image,
+            output_format=output_format,
+            output_width=output_width,
+            output_height=output_height,
+            output_max_side=output_max_side,
+            resize_mode=resize_mode,
+        )
+        output_path, fmt, width, height = self._write_output(
+            resized,
+            output_format=output_format,
+            input_details=input_details,
+        )
+        metadata = self._build_metadata(
+            parent_paths=parent_paths,
+            input_details=input_details,
+            prompt=prompt,
+            strength=strength,
+            fmt=fmt,
+            width=width,
+            height=height,
+            output_path=output_path,
+        )
+        metadata_path = write_metadata(
+            metadata, base_name=os.path.splitext(os.path.basename(output_path))[0]
+        )
+
+        return {
+            "output_image_path": output_path,
+            "metadata_path": metadata_path,
+            "parents": metadata["parents"],
+            "parents_full_paths": parent_paths,
+            "model_name": settings.model_name,
+            "output_format": fmt,
+            "width": width,
+            "height": height,
+            "prompt": prompt,
+            "strength": strength,
+        }
+
+    def _prepare_inputs(self, parent_paths: List[str]) -> Tuple[List[Image.Image], List[dict]]:
+        images: List[Image.Image] = []
+        input_details: List[dict] = []
+        for path in parent_paths:
+            img = _open_prepared_image(path)
+            images.append(img)
+            input_details.append(
+                {
+                    "path": path,
+                    "name": os.path.basename(path),
+                    "file_size": _safe_size(path),
+                    "dimensions": f"{img.width}x{img.height}",
+                }
+            )
+        return images, input_details
+
+    def _call_gemini(
+        self,
+        prompt: str,
+        images: List[Image.Image],
+        input_details: List[dict],
+    ) -> Image.Image:
+        try:
+            response = self.client.models.generate_content(
+                model=settings.model_name,
+                contents=[prompt, *images],
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"呼叫 Gemini 產生影像失敗：{e}{_format_input_diagnostics(input_details)}"
+            ) from e
+
+        image_bytes: bytes | None = None
+        try:
+            candidates = getattr(response, "candidates", None) or []
+            if not candidates:
+                raise RuntimeError(
+                    "Gemini 回傳沒有 candidates（可能被安全性或長度限制擋下）"
+                )
+            first = candidates[0]
+            content = getattr(first, "content", None)
+            parts = getattr(content, "parts", None) if content is not None else None
+            if not parts:
+                finish_reason = getattr(first, "finish_reason", None)
+                raise RuntimeError(
+                    f"Gemini candidate 無 content/parts，finish_reason={finish_reason}"
+                )
+            for part in parts:
+                inline = getattr(part, "inline_data", None)
+                camel_inline = getattr(part, "inlineData", None)
+                if inline is not None and getattr(inline, "data", None) is not None:
+                    image_bytes = inline.data
+                    break
+                if camel_inline is not None and getattr(camel_inline, "data", None) is not None:
+                    image_bytes = camel_inline.data
+                    break
+            if not image_bytes:
+                texts = [getattr(p, "text", "") for p in parts if getattr(p, "text", None)]
+                extra = f"；附帶文字：{' '.join(t for t in texts if t)}" if texts else ""
+                raise RuntimeError(
+                    "Gemini 回傳未包含影像資料 (inline_data/inlineData 缺失)" + extra
+                )
+        except Exception as e:
+            raise RuntimeError(
+                f"解析 Gemini 回傳失敗：{e}{_format_input_diagnostics(input_details)}"
+            ) from e
+
+        if isinstance(image_bytes, str):
+            try:
+                image_bytes = base64.b64decode(image_bytes)
+            except Exception:
+                image_bytes = image_bytes.encode("utf-8")
+        elif isinstance(image_bytes, memoryview):
+            image_bytes = image_bytes.tobytes()
+        elif isinstance(image_bytes, bytearray):
+            image_bytes = bytes(image_bytes)
+
+        try:
+            return Image.open(BytesIO(image_bytes))
+        except Exception as e:
+            raise RuntimeError(
+                f"無法解析生成影像：{e}{_format_input_diagnostics(input_details)}"
+            ) from e
+
+    def _resize_image(
+        self,
+        img: Image.Image,
+        *,
+        output_format: Optional[str],
+        output_width: Optional[int],
+        output_height: Optional[int],
+        output_max_side: Optional[int],
+        resize_mode: Optional[str],
+    ) -> Image.Image:
+        target_w = output_width
+        target_h = output_height
+        max_side = output_max_side
+        fmt = (output_format or "png").lower()
+
+        if target_w and target_h:
+            w = int(target_w)
+            h = int(target_h)
+            mode = (resize_mode or "cover").lower()
+            if mode == "fit":
+                fitted = ImageOps.contain(img, (w, h), Image.Resampling.LANCZOS)
+                if fitted.size != (w, h):
+                    pad_color = (
+                        (0, 0, 0, 0)
+                        if fmt in ("png",)
+                        and fitted.mode in ("RGBA", "LA")
+                        else (0, 0, 0)
+                    )
+                    canvas_mode = (
+                        "RGBA"
+                        if isinstance(pad_color, tuple) and len(pad_color) == 4
+                        else "RGB"
+                    )
+                    if fitted.mode != canvas_mode:
+                        fitted = fitted.convert(canvas_mode)
+                    canvas = Image.new(canvas_mode, (w, h), pad_color)
+                    ox = (w - fitted.width) // 2
+                    oy = (h - fitted.height) // 2
+                    canvas.paste(fitted, (ox, oy))
+                    img = canvas
+                else:
+                    img = fitted
+            else:
+                img = ImageOps.fit(
+                    img,
+                    (w, h),
+                    Image.Resampling.LANCZOS,
+                    centering=(0.5, 0.5),
+                )
+        elif target_w and not target_h:
+            w = int(target_w)
+            h = max(1, round(w * img.height / img.width))
+            img = img.resize((w, h), Image.Resampling.LANCZOS)
+        elif target_h and not target_w:
+            h = int(target_h)
+            w = max(1, round(h * img.width / img.height))
+            img = img.resize((w, h), Image.Resampling.LANCZOS)
+        elif max_side:
+            ms = int(max(1, max_side))
+            orig_w, orig_h = img.size
+            scale = ms / max(orig_w, orig_h)
+            if scale < 1.0:
+                new_w = max(1, round(orig_w * scale))
+                new_h = max(1, round(orig_h * scale))
+                img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        return img
+
+    def _write_output(
+        self,
+        img: Image.Image,
+        *,
+        output_format: Optional[str],
+        input_details: List[dict],
+    ) -> Tuple[str, str, int, int]:
+        fmt = (output_format or "png").lower()
+        if fmt == "jpg":
+            fmt = "jpeg"
+
+        timestamp = self._timestamp_factory()
+        filename = self._filename_builder(fmt, timestamp)
+        output_path = os.path.join(settings.offspring_dir, filename)
+
+        try:
+            params = {}
+            save_img = img
+            if fmt == "jpeg":
+                params |= {"quality": 95}
+                if save_img.mode in ("RGBA", "LA"):
+                    save_img = save_img.convert("RGB")
+            save_img.save(output_path, format=fmt.upper(), **params)
+        except Exception as e:
+            raise RuntimeError(
+                f"輸出影像存檔失敗：{e}{_format_input_diagnostics(input_details)}"
+            ) from e
+
+        width, height = img.size
+        return output_path, fmt, width, height
+
+    def _build_metadata(
+        self,
+        *,
+        parent_paths: List[str],
+        input_details: List[dict],
+        prompt: str,
+        strength: Optional[float],
+        fmt: str,
+        width: int,
+        height: int,
+        output_path: str,
+    ) -> dict:
+        return {
+            "parents": [detail["name"] for detail in input_details],
+            "parents_full_paths": parent_paths,
+            "input_details": input_details,
+            "model_name": settings.model_name,
+            "prompt": prompt,
+            "strength": strength,
+            "created_at": datetime.utcnow().isoformat() + "Z",
+            "output_image": os.path.basename(output_path),
+            "output_format": fmt,
+            "output_size": {"width": width, "height": height},
+        }
+
+
 def _generate_and_store_image(
     *,
     parent_paths: List[str],
@@ -87,186 +381,19 @@ def _generate_and_store_image(
     output_height: Optional[int] = None,
     output_max_side: Optional[int] = None,
     resize_mode: Optional[str] = None,
+    generator: Optional[GeminiImageGenerator] = None,
 ) -> dict:
-    ensure_dirs([settings.offspring_dir, settings.metadata_dir])
-
-    if len(parent_paths) < 2:
-        raise ValueError("父圖至少需要 2 張")
-
-    client = get_gemini_client()
-
-    images: List[Image.Image] = []
-    input_details: List[dict] = []
-    for path in parent_paths:
-        img = _open_prepared_image(path)
-        images.append(img)
-        input_details.append(
-            {
-                "path": path,
-                "name": os.path.basename(path),
-                "file_size": _safe_size(path),
-                "dimensions": f"{img.width}x{img.height}",
-            }
-        )
-
-    try:
-        response = client.models.generate_content(
-            model=settings.model_name,
-            contents=[prompt, *images],
-        )
-    except Exception as e:
-        raise RuntimeError(
-            f"呼叫 Gemini 產生影像失敗：{e}{_format_input_diagnostics(input_details)}"
-        ) from e
-
-    image_bytes: bytes | None = None
-    try:
-        candidates = getattr(response, "candidates", None) or []
-        if not candidates:
-            raise RuntimeError("Gemini 回傳沒有 candidates（可能被安全性或長度限制擋下）")
-        first = candidates[0]
-        content = getattr(first, "content", None)
-        parts = getattr(content, "parts", None) if content is not None else None
-        if not parts:
-            finish_reason = getattr(first, "finish_reason", None)
-            raise RuntimeError(
-                f"Gemini candidate 無 content/parts，finish_reason={finish_reason}"
-            )
-        for part in parts:
-            inline = getattr(part, "inline_data", None)
-            camel_inline = getattr(part, "inlineData", None)
-            if inline is not None and getattr(inline, "data", None) is not None:
-                image_bytes = inline.data
-                break
-            if camel_inline is not None and getattr(camel_inline, "data", None) is not None:
-                image_bytes = camel_inline.data
-                break
-        if not image_bytes:
-            texts = [getattr(p, "text", "") for p in parts if getattr(p, "text", None)]
-            extra = f"；附帶文字：{' '.join(t for t in texts if t)}" if texts else ""
-            raise RuntimeError(
-                "Gemini 回傳未包含影像資料 (inline_data/inlineData 缺失)" + extra
-            )
-    except Exception as e:
-        raise RuntimeError(
-            f"解析 Gemini 回傳失敗：{e}{_format_input_diagnostics(input_details)}"
-        ) from e
-
-    if isinstance(image_bytes, str):
-        try:
-            image_bytes = base64.b64decode(image_bytes)
-        except Exception:
-            image_bytes = image_bytes.encode("utf-8")
-    elif isinstance(image_bytes, memoryview):
-        image_bytes = image_bytes.tobytes()
-    elif isinstance(image_bytes, bytearray):
-        image_bytes = bytes(image_bytes)
-
-    try:
-        img = Image.open(BytesIO(image_bytes))
-    except Exception as e:
-        raise RuntimeError(
-            f"無法解析生成影像：{e}{_format_input_diagnostics(input_details)}"
-        ) from e
-
-    target_w = output_width
-    target_h = output_height
-    max_side = output_max_side
-    if target_w and target_h:
-        w = int(target_w)
-        h = int(target_h)
-        mode = (resize_mode or "cover").lower()
-        if mode == "fit":
-            fitted = ImageOps.contain(img, (w, h), Image.Resampling.LANCZOS)
-            if fitted.size != (w, h):
-                pad_color = (
-                    (0, 0, 0, 0)
-                    if (output_format or "png").lower() in ("png",)
-                    and fitted.mode in ("RGBA", "LA")
-                    else (0, 0, 0)
-                )
-                canvas_mode = (
-                    "RGBA"
-                    if isinstance(pad_color, tuple) and len(pad_color) == 4
-                    else "RGB"
-                )
-                if fitted.mode != canvas_mode:
-                    fitted = fitted.convert(canvas_mode)
-                canvas = Image.new(canvas_mode, (w, h), pad_color)
-                ox = (w - fitted.width) // 2
-                oy = (h - fitted.height) // 2
-                canvas.paste(fitted, (ox, oy))
-                img = canvas
-            else:
-                img = fitted
-        else:
-            img = ImageOps.fit(img, (w, h), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
-    elif target_w and not target_h:
-        w = int(target_w)
-        h = max(1, round(w * img.height / img.width))
-        img = img.resize((w, h), Image.Resampling.LANCZOS)
-    elif target_h and not target_w:
-        h = int(target_h)
-        w = max(1, round(h * img.width / img.height))
-        img = img.resize((w, h), Image.Resampling.LANCZOS)
-    elif max_side:
-        ms = int(max(1, max_side))
-        orig_w, orig_h = img.size
-        scale = ms / max(orig_w, orig_h)
-        if scale < 1.0:
-            new_w = max(1, round(orig_w * scale))
-            new_h = max(1, round(orig_h * scale))
-            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-
-    fmt = (output_format or "png").lower()
-    if fmt == "jpg":
-        fmt = "jpeg"
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"offspring_{timestamp}_{int(time.time()*1000)%1000:03d}.{fmt}"
-    output_path = os.path.join(settings.offspring_dir, filename)
-
-    try:
-        params = {}
-        save_img = img
-        if fmt == "jpeg":
-            params |= {"quality": 95}
-            if save_img.mode in ("RGBA", "LA"):
-                save_img = save_img.convert("RGB")
-        save_img.save(output_path, format=fmt.upper(), **params)
-    except Exception as e:
-        raise RuntimeError(
-            f"輸出影像存檔失敗：{e}{_format_input_diagnostics(input_details)}"
-        ) from e
-
-    width, height = img.size
-
-    metadata = {
-        "parents": [detail["name"] for detail in input_details],
-        "parents_full_paths": parent_paths,
-        "input_details": input_details,
-        "model_name": settings.model_name,
-        "prompt": prompt,
-        "strength": strength,
-        "created_at": datetime.utcnow().isoformat() + "Z",
-        "output_image": os.path.basename(output_path),
-        "output_format": fmt,
-        "output_size": {"width": width, "height": height},
-    }
-    metadata_path = write_metadata(metadata, base_name=os.path.splitext(filename)[0])
-
-    return {
-        "output_image_path": output_path,
-        "metadata_path": metadata_path,
-        "parents": metadata["parents"],
-        "parents_full_paths": parent_paths,
-        "model_name": settings.model_name,
-        "output_format": fmt,
-        "width": width,
-        "height": height,
-        "prompt": prompt,
-        "strength": strength,
-    }
+    generator = generator or GeminiImageGenerator()
+    return generator.generate(
+        parent_paths=parent_paths,
+        prompt=prompt,
+        strength=strength,
+        output_format=output_format,
+        output_width=output_width,
+        output_height=output_height,
+        output_max_side=output_max_side,
+        resize_mode=resize_mode,
+    )
 
 
 def generate_mixed_offspring(count: int = 2) -> dict:
