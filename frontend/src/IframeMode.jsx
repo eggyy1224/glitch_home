@@ -1,12 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
+import { DEFAULT_IFRAME_CONFIG, sanitizeIframeConfig } from "./utils/iframeConfig.js";
 
-const DEFAULT_CONFIG = {
-  layout: "grid",
-  gap: 0,
-  columns: 2,
-  panels: [],
-};
+const DEFAULT_CONFIG = DEFAULT_IFRAME_CONFIG;
 
 const blobToDrawable = async (blob) => {
   if (!blob) return null;
@@ -33,65 +29,6 @@ const blobToDrawable = async (blob) => {
   });
 };
 
-const sanitizeLayout = (raw) => {
-  const value = (raw || "").toLowerCase();
-  if (value === "horizontal" || value === "vertical" || value === "grid") {
-    return value;
-  }
-  return "grid";
-};
-
-const clampInt = (value, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return fallback;
-  const intVal = Math.floor(num);
-  if (intVal < min) return min;
-  if (intVal > max) return max;
-  return intVal;
-};
-
-const sanitizePanels = (panels) => {
-  if (!Array.isArray(panels)) return [];
-  const usedIds = new Set();
-  const clampSpan = (value) => {
-    if (value === null || value === undefined) return undefined;
-    return clampInt(value, 1, { min: 1 }) || 1;
-  };
-  return panels
-    .map((panel, index) => {
-      if (!panel || typeof panel !== "object") return null;
-      const src = typeof panel.src === "string" ? panel.src.trim() : "";
-      if (!src) return null;
-      let id = typeof panel.id === "string" && panel.id.trim() ? panel.id.trim() : `panel_${index + 1}`;
-      if (usedIds.has(id)) {
-        id = `${id}_${index + 1}`;
-      }
-      usedIds.add(id);
-      const ratio = Number(panel.ratio);
-      return {
-        id,
-        src,
-        label: typeof panel.label === "string" && panel.label.trim() ? panel.label.trim() : undefined,
-        ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 1,
-        image: typeof panel.image === "string" && panel.image.trim() ? panel.image.trim() : undefined,
-        params: panel.params && typeof panel.params === "object" ? { ...panel.params } : undefined,
-        url: typeof panel.url === "string" && panel.url.trim() ? panel.url.trim() : undefined,
-        colSpan: clampSpan(panel.col_span ?? panel.colSpan),
-        rowSpan: clampSpan(panel.row_span ?? panel.rowSpan),
-      };
-    })
-    .filter(Boolean);
-};
-
-const sanitizeConfig = (config) => {
-  if (!config || typeof config !== "object") return { ...DEFAULT_CONFIG };
-  const layout = sanitizeLayout(config.layout);
-  const gap = clampInt(config.gap, 0, { min: 0 });
-  const columns = clampInt(config.columns, 2, { min: 1 });
-  const panels = sanitizePanels(config.panels);
-  return { layout, gap, columns, panels };
-};
-
 export default function IframeMode({
   config,
   controlsEnabled = false,
@@ -100,7 +37,7 @@ export default function IframeMode({
 }) {
   const containerRef = useRef(null);
   const iframeRefs = useRef({});
-  const sanitizedConfig = useMemo(() => sanitizeConfig(config), [config]);
+  const sanitizedConfig = useMemo(() => sanitizeIframeConfig(config, DEFAULT_CONFIG), [config]);
   const panels = sanitizedConfig.panels;
 
   const [isControlOpen, setControlOpen] = useState(false);

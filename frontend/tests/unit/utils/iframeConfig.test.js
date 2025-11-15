@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
+  buildQueryFromIframeConfig,
+  clampInt,
+  DEFAULT_IFRAME_CONFIG,
   parseIframeConfigFromParams,
   sanitizeIframeConfig,
-  buildQueryFromIframeConfig,
-  clampInt
+  sanitizePanels
 } from '../../../src/utils/iframeConfig.js'
 
 describe('iframeConfig utilities', () => {
@@ -141,6 +143,35 @@ describe('iframeConfig utilities', () => {
     expect(sanitized.panels[0].id).toBe('panel1')
     // Second duplicate gets index-based suffix: panel1_2 (index is 1, so +1 = 2)
     expect(sanitized.panels[1].id).toBe('panel1_2')
+    })
+
+    it('should fall back to DEFAULT_IFRAME_CONFIG when none provided', () => {
+      const sanitized = sanitizeIframeConfig(null)
+      expect(sanitized).toEqual({ ...DEFAULT_IFRAME_CONFIG })
+    })
+  })
+
+  describe('sanitizePanels', () => {
+    it('should filter invalid panels and clamp spans', () => {
+      const panels = [
+        { id: 'p1', src: '/one', colSpan: 0, rowSpan: Infinity },
+        { src: '   ', ratio: -1 },
+        { id: 'p2', src: '/two', col_span: '3', row_span: '2' }
+      ]
+
+      const sanitized = sanitizePanels(panels)
+      expect(sanitized).toHaveLength(2)
+      expect(sanitized[0].colSpan).toBe(1)
+      expect(sanitized[0].rowSpan).toBe(1)
+      expect(sanitized[1].colSpan).toBe(3)
+      expect(sanitized[1].rowSpan).toBe(2)
+    })
+
+    it('should return fallback panels when sanitized list is empty', () => {
+      const fallback = [{ id: 'fallback', src: '/fallback' }]
+      const sanitized = sanitizePanels([{ src: '' }], fallback)
+      expect(sanitized).toEqual(fallback)
+      expect(sanitized).not.toBe(fallback)
     })
   })
 

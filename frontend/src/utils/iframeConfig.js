@@ -1,5 +1,12 @@
 const IFRAME_LAYOUTS = new Set(["grid", "horizontal", "vertical"]);
 
+export const DEFAULT_IFRAME_CONFIG = {
+  layout: "grid",
+  gap: 0,
+  columns: 2,
+  panels: [],
+};
+
 export const clampInt = (value, fallback, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -71,14 +78,13 @@ export const parseIframeConfigFromParams = (params) => {
   return { layout, gap, columns, panels };
 };
 
-const sanitizePanels = (panels, fallbackPanels = []) => {
+export const sanitizePanels = (panels, fallbackPanels = []) => {
   if (!Array.isArray(panels)) return [...fallbackPanels];
   const usedIds = new Set();
   const result = [];
   const clampSpan = (value) => {
     if (value === null || value === undefined) return undefined;
-    const parsed = clampInt(value, 1, { min: 1 });
-    return parsed || 1;
+    return clampInt(value, 1, { min: 1 });
   };
   panels.forEach((panel, index) => {
     if (!panel || typeof panel !== "object") return;
@@ -91,6 +97,9 @@ const sanitizePanels = (panels, fallbackPanels = []) => {
     usedIds.add(id);
     const ratio = parseRatio(panel.ratio, 1);
     const label = typeof panel.label === "string" && panel.label.trim() ? panel.label.trim() : undefined;
+    const image = typeof panel.image === "string" && panel.image.trim() ? panel.image.trim() : undefined;
+    const params = panel.params && typeof panel.params === "object" ? { ...panel.params } : undefined;
+    const url = typeof panel.url === "string" && panel.url.trim() ? panel.url.trim() : undefined;
     const colSpan = clampSpan(panel.col_span ?? panel.colSpan);
     const rowSpan = clampSpan(panel.row_span ?? panel.rowSpan);
     result.push({
@@ -98,9 +107,9 @@ const sanitizePanels = (panels, fallbackPanels = []) => {
       src,
       ratio,
       label,
-      image: panel.image,
-      params: panel.params,
-      url: panel.url,
+      image,
+      params,
+      url,
       colSpan,
       rowSpan,
     });
@@ -108,8 +117,8 @@ const sanitizePanels = (panels, fallbackPanels = []) => {
   return result.length ? result : [...fallbackPanels];
 };
 
-export const sanitizeIframeConfig = (config, fallback) => {
-  const base = fallback || { layout: "grid", gap: 0, columns: 2, panels: [] };
+export const sanitizeIframeConfig = (config, fallback = DEFAULT_IFRAME_CONFIG) => {
+  const base = fallback || DEFAULT_IFRAME_CONFIG;
   if (!config || typeof config !== "object") {
     return { ...base, panels: [...(base.panels || [])] };
   }
