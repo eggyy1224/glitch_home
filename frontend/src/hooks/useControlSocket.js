@@ -9,10 +9,24 @@ export function useControlSocket({
   onCaptionUpdate,
   onIframeConfig,
   onCollageConfig,
+  enabled = true,
 }) {
   const wsRef = useRef(null);
 
   useEffect(() => {
+    if (!enabled) {
+      const existing = wsRef.current;
+      if (existing) {
+        try {
+          existing.close();
+        } catch (err) {
+          // ignore close error
+        }
+      }
+      wsRef.current = null;
+      return undefined;
+    }
+
     let active = true;
     let retryTimer = null;
 
@@ -118,6 +132,7 @@ export function useControlSocket({
       cleanupSocket();
     };
   }, [
+    enabled,
     clientId,
     onScreenshotRequest,
     onScreenshotLifecycle,

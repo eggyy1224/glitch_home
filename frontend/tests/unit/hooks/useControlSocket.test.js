@@ -58,6 +58,12 @@ describe('useControlSocket', () => {
     expect(global.WebSocket).toHaveBeenCalled()
   })
 
+  it('should skip WebSocket connection when disabled', () => {
+    renderHook(() => useControlSocket({ clientId: 'test_client', enabled: false }))
+
+    expect(global.WebSocket).not.toHaveBeenCalled()
+  })
+
   it('should send hello message with clientId on connection', async () => {
     renderHook(() => useControlSocket({ clientId: 'test_client' }))
 
@@ -162,5 +168,21 @@ describe('useControlSocket', () => {
     })
 
     expect(onCollageConfig).toHaveBeenCalledWith(message)
+  })
+
+  it('should close the socket when disabled after being enabled', async () => {
+    const hook = renderHook(({ enabled }) =>
+      useControlSocket({ clientId: 'test_toggle', enabled })
+    , { initialProps: { enabled: true } })
+
+    await waitFor(() => {
+      expect(mockSocket.send).toHaveBeenCalled()
+    }, { timeout: 1000 })
+
+    hook.rerender({ enabled: false })
+
+    await waitFor(() => {
+      expect(mockSocket.close).toHaveBeenCalled()
+    }, { timeout: 1000 })
   })
 })
