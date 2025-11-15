@@ -3,10 +3,8 @@ import { fetchKinship, fetchCameraPresets, saveCameraPreset, deleteCameraPreset 
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
-import SoundPlayer from "./SoundPlayer.jsx";
 import SlideMode from "./SlideMode.jsx";
 import IframeMode from "./IframeMode.jsx";
-import SubtitleOverlay from "./SubtitleOverlay.jsx";
 import CaptionMode from "./CaptionMode.jsx";
 import CollageMode from "./CollageMode.jsx";
 import CollageVersionMode from "./CollageVersionMode.jsx";
@@ -19,6 +17,8 @@ import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
 import { useIframeConfig } from "./hooks/useIframeConfig.js";
 import { useCollageConfig } from "./hooks/useCollageConfig.js";
 import { useControlSocket } from "./hooks/useControlSocket.js";
+import ModeLayout from "./components/ModeLayout.jsx";
+import { DisplayModes, useDisplayMode } from "./hooks/useDisplayMode.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const MAX_CLUSTERS = 3;
@@ -51,6 +51,14 @@ const IFRAME_DEFAULT_CONFIG = {
   ],
 };
 
+const KINSHIP_DATA_EXCLUDED = new Set([
+  DisplayModes.ORGANIC,
+  DisplayModes.SLIDE,
+  DisplayModes.IFRAME,
+  DisplayModes.STATIC,
+  DisplayModes.VIDEO,
+]);
+
 export default function App() {
   const readParams = () => new URLSearchParams(window.location.search);
   const initialParams = useMemo(() => readParams(), []);
@@ -68,35 +76,17 @@ export default function App() {
   const [presetMessage, setPresetMessage] = useState(null);
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
   const messageTimerRef = useRef(null);
-  const incubatorMode = (readParams().get("incubator") ?? "false") === "true";
-  const soundPlayerEnabled = (readParams().get("sound_player") ?? "true") !== "false";
-  const iframeMode = !incubatorMode && (readParams().get("iframe_mode") ?? "false") === "true";
-  const slideMode = !incubatorMode && !iframeMode && (readParams().get("slide_mode") ?? "false") === "true";
-  const organicMode =
-    !incubatorMode && !iframeMode && !slideMode && (readParams().get("organic_mode") ?? "false") === "true";
-  const phylogenyMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && (readParams().get("phylogeny") ?? "false") === "true";
-  const searchMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode &&
-    (readParams().get("search_mode") ?? "false") === "true";
-  const collageMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode &&
-    (readParams().get("collage_mode") ?? "false") === "true";
-  const captionMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode &&
-    (readParams().get("caption_mode") ?? "false") === "true";
-  const collageVersionMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode &&
-    (readParams().get("collage_version_mode") ?? "false") === "true";
-  const generateMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode && !collageVersionMode &&
-    (readParams().get("generate_mode") ?? "false") === "true";
-  const staticMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode && !collageVersionMode && !generateMode &&
-    (readParams().get("static_mode") ?? "false") === "true";
-  const videoMode =
-    !incubatorMode && !iframeMode && !slideMode && !organicMode && !phylogenyMode && !searchMode && !collageMode && !captionMode && !collageVersionMode && !generateMode && !staticMode &&
-    (readParams().get("video_mode") ?? "false") === "true";
+  const { type: activeMode, config: modeConfig } = useDisplayMode(initialParams);
+  const incubatorMode = Boolean(modeConfig?.incubator);
+  const phylogenyMode = Boolean(modeConfig?.phylogeny);
+  const soundPlayerEnabled = useMemo(() => {
+    const rawValue = initialParams.get("sound_player");
+    return (rawValue ?? "true") !== "false";
+  }, [initialParams]);
+  const slideIntervalMs = useMemo(() => {
+    const slideIntervalParam = initialParams.get("slide_interval") || initialParams.get("slide_interval_ms");
+    return slideIntervalParam ? clampInt(slideIntervalParam, 3000, { min: 1000 }) : 3000;
+  }, [initialParams]);
   const clientId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("client");
@@ -122,7 +112,7 @@ export default function App() {
     applyRemoteConfig: applyRemoteIframeConfig,
   } = useIframeConfig({
     initialParams,
-    iframeMode,
+    iframeMode: activeMode === DisplayModes.IFRAME,
     clientId,
     defaultConfig: IFRAME_DEFAULT_CONFIG,
   });
@@ -133,9 +123,11 @@ export default function App() {
     controlsEnabled: collageControlsEnabled,
     applyRemoteConfig: applyRemoteCollageConfig,
   } = useCollageConfig({
-    collageMode,
+    collageMode: activeMode === DisplayModes.COLLAGE,
     clientId,
   });
+
+  const shouldLoadKinshipData = !KINSHIP_DATA_EXCLUDED.has(activeMode);
 
 
   const handleFpsUpdate = useCallback((value) => {
@@ -243,7 +235,7 @@ export default function App() {
   }, [selectedPresetName, removePresetInState, pushPresetMessage]);
 
   useEffect(() => {
-    if (!imgId || organicMode || slideMode || iframeMode || staticMode || videoMode) return;
+    if (!imgId || !shouldLoadKinshipData) return;
     let cancelled = false;
     setErr(null);
     fetchKinship(imgId, -1)
@@ -275,7 +267,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [imgId, phylogenyMode, incubatorMode, organicMode, slideMode, iframeMode, staticMode, videoMode]);
+  }, [imgId, phylogenyMode, incubatorMode, shouldLoadKinshipData]);
 
   const navigateToImage = (nextImg) => {
     const params = readParams();
@@ -287,7 +279,7 @@ export default function App() {
 
   // 自動向子代/兄弟/父母切換
   useEffect(() => {
-    if (!data || organicMode || slideMode || iframeMode || staticMode || videoMode) return;
+    if (!data || !shouldLoadKinshipData) return;
     const params = readParams();
     // 新增：continuous=true 時，不自動切換
     const continuous = (params.get("continuous") ?? "false") === "true";
@@ -314,7 +306,7 @@ export default function App() {
       navigateToImage(next);
     }, stepSec * 1000);
     return () => clearTimeout(t);
-  }, [data, organicMode, slideMode, iframeMode, staticMode, videoMode]);
+  }, [data, shouldLoadKinshipData]);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
@@ -399,227 +391,37 @@ export default function App() {
     onCollageConfig: handleCollageConfigMessage,
   });
 
-  const subtitleOverlay = <SubtitleOverlay subtitle={subtitle} />;
+  const handleSoundHandled = useCallback(() => {
+    setSoundPlayRequest(null);
+  }, []);
 
-  if (iframeMode) {
+  if (activeMode === DisplayModes.KINSHIP && !imgId) {
     return (
-      <>
-        <IframeMode
-          config={iframeActiveConfig}
-          controlsEnabled={iframeControlsEnabled}
-          onApplyConfig={iframeControlsEnabled ? handleLocalIframeConfigApply : undefined}
-          onCaptureReady={handleCaptureReady}
-        />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
+      <ModeLayout
+        beforeContent={<div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>}
+        soundPlayerEnabled={soundPlayerEnabled}
+        soundPlayRequest={soundPlayRequest}
+        onSoundHandled={handleSoundHandled}
+        showInfo={showInfo}
+        subtitle={subtitle}
+        onCaptureReady={handleCaptureReady}
+      />
     );
   }
 
-  if (slideMode) {
-    const slideIntervalParam = initialParams.get("slide_interval") || initialParams.get("slide_interval_ms");
-    const slideIntervalMs = slideIntervalParam
-      ? clampInt(slideIntervalParam, 3000, { min: 1000 })
-      : 3000;
+  if (activeMode === DisplayModes.KINSHIP && err) {
     return (
-      <>
-        <SlideMode
-          imagesBase={IMAGES_BASE}
-          anchorImage={imgId}
-          intervalMs={slideIntervalMs}
-          onCaptureReady={handleCaptureReady}
-        />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
+      <ModeLayout
+        beforeContent={<div style={{ padding: 16 }}>載入失敗：{err}</div>}
+        soundPlayerEnabled={soundPlayerEnabled}
+        soundPlayRequest={soundPlayRequest}
+        onSoundHandled={handleSoundHandled}
+        showInfo={showInfo}
+        subtitle={subtitle}
+        onCaptureReady={handleCaptureReady}
+      />
     );
   }
-
-  if (organicMode) {
-    return (
-      <>
-        <OrganicRoomScene
-          imagesBase={IMAGES_BASE}
-          anchorImage={imgId}
-          onSelectImage={navigateToImage}
-          showInfo={showInfo}
-          onCaptureReady={handleCaptureReady}
-        />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (searchMode) {
-    return (
-      <>
-        <SearchMode imagesBase={IMAGES_BASE} />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (collageMode) {
-    return (
-      <>
-        <CollageMode
-          imagesBase={IMAGES_BASE}
-          anchorImage={imgId}
-          onCaptureReady={handleCaptureReady}
-          remoteConfig={collageRemoteConfig}
-          controlsEnabled={collageControlsEnabled}
-          remoteSource={collageRemoteSource}
-        />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (captionMode) {
-    return (
-      <>
-        <CaptionMode caption={caption} />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (collageVersionMode) {
-    return (
-      <>
-        <CollageVersionMode />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (generateMode) {
-    return (
-      <>
-        <GenerateMode />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (staticMode) {
-    return (
-      <>
-        <StaticMode
-          imagesBase={IMAGES_BASE}
-          imgId={imgId}
-          onCaptureReady={handleCaptureReady}
-        />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (videoMode) {
-    return (
-      <>
-        <VideoMode onCaptureReady={handleCaptureReady} />
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  }
-
-  if (!imgId)
-    return (
-      <>
-        <div style={{ padding: 16 }}>請在網址加上 ?img=檔名</div>
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
-  if (err)
-    return (
-      <>
-        <div style={{ padding: 16 }}>載入失敗：{err}</div>
-        {soundPlayerEnabled && (
-          <SoundPlayer
-            playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-            onPlayHandled={() => setSoundPlayRequest(null)}
-            visible={showInfo}
-          />
-        )}
-        {subtitleOverlay}
-      </>
-    );
 
   const original = data?.original_image || imgId;
   const related = data?.related_images || [];
@@ -627,75 +429,163 @@ export default function App() {
   const children = data?.children || [];
   const siblings = data?.siblings || [];
   const ancestors = data?.ancestors || [];
-  const ancestorsByLevel = data?.ancestors_by_level || [];
-
   const modeLabel = incubatorMode ? "孵化室 3D" : phylogenyMode ? "親緣圖 2D" : "3D 景觀";
 
+  const topbarContent =
+    showInfo && (
+      <div className="topbar">
+        <div className="badge">模式：{modeLabel}</div>
+        <div className="badge">原圖：{original}</div>
+        <div className="badge">客戶端：{clientId}</div>
+        <div className="badge">關聯：{related.length} 張</div>
+        <div className="badge">父母：{parents.length}</div>
+        <div className="badge">子代：{children.length}</div>
+        <div className="badge">兄弟姊妹：{siblings.length}</div>
+        <div className="badge">祖先（去重）：{ancestors.length}</div>
+        <div className="badge">FPS：{fps !== null ? fps.toFixed(1) : "--"}</div>
+        <div className="badge">
+          視角：
+          {cameraInfo
+            ? `pos(${cameraInfo.position.x.toFixed(1)}, ${cameraInfo.position.y.toFixed(1)}, ${cameraInfo.position.z.toFixed(1)}) ` +
+              `target(${cameraInfo.target.x.toFixed(1)}, ${cameraInfo.target.y.toFixed(1)}, ${cameraInfo.target.z.toFixed(1)})`
+            : "--"}
+        </div>
+        <div className="controls">
+          <button type="button" onClick={handleSavePreset}>儲存視角</button>
+          <select value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
+            <option value="">選擇視角</option>
+            {cameraPresets.map((preset) => (
+              <option key={preset.name} value={preset.name}>
+                {preset.name}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={handleApplyPreset} disabled={!selectedPresetName}>
+            套用
+          </button>
+          <button type="button" onClick={handleDeletePreset} disabled={!selectedPresetName}>
+            刪除
+          </button>
+        </div>
+        {presetMessage && <div className="badge notice">{presetMessage}</div>}
+      </div>
+    );
+
+  const screenshotContent =
+    screenshotMessage && (
+      <div className="screenshot-panel">
+        <div className="screenshot-message">{screenshotMessage}</div>
+      </div>
+    );
+
+  const modeRenderMap = {
+    [DisplayModes.IFRAME]: {
+      component: IframeMode,
+      withCaptureReady: true,
+      componentProps: {
+        config: iframeActiveConfig,
+        controlsEnabled: iframeControlsEnabled,
+        onApplyConfig: iframeControlsEnabled ? handleLocalIframeConfigApply : undefined,
+      },
+    },
+    [DisplayModes.SLIDE]: {
+      component: SlideMode,
+      withCaptureReady: true,
+      componentProps: {
+        imagesBase: IMAGES_BASE,
+        anchorImage: imgId,
+        intervalMs: slideIntervalMs,
+      },
+    },
+    [DisplayModes.ORGANIC]: {
+      component: OrganicRoomScene,
+      withCaptureReady: true,
+      componentProps: {
+        imagesBase: IMAGES_BASE,
+        anchorImage: imgId,
+        onSelectImage: navigateToImage,
+        showInfo,
+      },
+    },
+    [DisplayModes.SEARCH]: {
+      component: SearchMode,
+      componentProps: {
+        imagesBase: IMAGES_BASE,
+      },
+    },
+    [DisplayModes.COLLAGE]: {
+      component: CollageMode,
+      withCaptureReady: true,
+      componentProps: {
+        imagesBase: IMAGES_BASE,
+        anchorImage: imgId,
+        remoteConfig: collageRemoteConfig,
+        controlsEnabled: collageControlsEnabled,
+        remoteSource: collageRemoteSource,
+      },
+    },
+    [DisplayModes.CAPTION]: {
+      component: CaptionMode,
+      componentProps: {
+        caption,
+      },
+    },
+    [DisplayModes.COLLAGE_VERSION]: {
+      component: CollageVersionMode,
+    },
+    [DisplayModes.GENERATE]: {
+      component: GenerateMode,
+    },
+    [DisplayModes.STATIC]: {
+      component: StaticMode,
+      withCaptureReady: true,
+      componentProps: {
+        imagesBase: IMAGES_BASE,
+        imgId,
+      },
+    },
+    [DisplayModes.VIDEO]: {
+      component: VideoMode,
+      withCaptureReady: true,
+    },
+    [DisplayModes.KINSHIP]: {
+      component: KinshipScene,
+      withCaptureReady: true,
+      componentProps: {
+        imagesBase: IMAGES_BASE,
+        clusters,
+        data,
+        phylogenyMode,
+        incubatorMode,
+        onPick: navigateToImage,
+        onFpsUpdate: handleFpsUpdate,
+        onCameraUpdate: handleCameraUpdate,
+        applyPreset: pendingPreset,
+      },
+      beforeContent: topbarContent,
+      afterContent: screenshotContent,
+    },
+  };
+
+  const activeModeEntry = modeRenderMap[activeMode];
+
+  if (!activeModeEntry) {
+    return null;
+  }
+
   return (
-    <>
-      {showInfo && (
-        <div className="topbar">
-          <div className="badge">模式：{modeLabel}</div>
-          <div className="badge">原圖：{original}</div>
-          <div className="badge">客戶端：{clientId}</div>
-          <div className="badge">關聯：{related.length} 張</div>
-          <div className="badge">父母：{parents.length}</div>
-          <div className="badge">子代：{children.length}</div>
-          <div className="badge">兄弟姊妹：{siblings.length}</div>
-          <div className="badge">祖先（去重）：{ancestors.length}</div>
-          <div className="badge">FPS：{fps !== null ? fps.toFixed(1) : "--"}</div>
-          <div className="badge">
-            視角：
-            {cameraInfo
-              ? `pos(${cameraInfo.position.x.toFixed(1)}, ${cameraInfo.position.y.toFixed(1)}, ${cameraInfo.position.z.toFixed(1)}) ` +
-                `target(${cameraInfo.target.x.toFixed(1)}, ${cameraInfo.target.y.toFixed(1)}, ${cameraInfo.target.z.toFixed(1)})`
-              : "--"}
-          </div>
-          <div className="controls">
-            <button type="button" onClick={handleSavePreset}>儲存視角</button>
-            <select value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
-              <option value="">選擇視角</option>
-              {cameraPresets.map((preset) => (
-                <option key={preset.name} value={preset.name}>
-                  {preset.name}
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={handleApplyPreset} disabled={!selectedPresetName}>
-              套用
-            </button>
-            <button type="button" onClick={handleDeletePreset} disabled={!selectedPresetName}>
-              刪除
-            </button>
-          </div>
-          {presetMessage && <div className="badge notice">{presetMessage}</div>}
-        </div>
-      )}
-      <KinshipScene
-        imagesBase={IMAGES_BASE}
-        clusters={clusters}
-        data={data}
-        phylogenyMode={phylogenyMode}
-        incubatorMode={incubatorMode}
-        onPick={(name) => navigateToImage(name)}
-        onFpsUpdate={handleFpsUpdate}
-        onCameraUpdate={handleCameraUpdate}
-        applyPreset={pendingPreset}
-        onCaptureReady={handleCaptureReady}
-      />
-      {screenshotMessage && (
-        <div className="screenshot-panel">
-          <div className="screenshot-message">{screenshotMessage}</div>
-        </div>
-      )}
-      {soundPlayerEnabled && (
-        <SoundPlayer
-          playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-          onPlayHandled={() => setSoundPlayRequest(null)}
-          visible={showInfo}
-        />
-      )}
-      {subtitleOverlay}
-    </>
+    <ModeLayout
+      component={activeModeEntry.component}
+      componentProps={activeModeEntry.componentProps}
+      withCaptureReady={activeModeEntry.withCaptureReady}
+      beforeContent={activeModeEntry.beforeContent}
+      afterContent={activeModeEntry.afterContent}
+      soundPlayerEnabled={soundPlayerEnabled}
+      soundPlayRequest={soundPlayerEnabled ? soundPlayRequest : null}
+      onSoundHandled={handleSoundHandled}
+      showInfo={showInfo}
+      subtitle={subtitle}
+      onCaptureReady={handleCaptureReady}
+    />
   );
 }
