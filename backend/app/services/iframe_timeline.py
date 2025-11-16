@@ -140,8 +140,10 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
     cursor = 0.0
     total_duration = 0.0
     for index, step in enumerate(timeline.steps):
-        client_override, snapshot_name = _split_snapshot_reference(step.snapshot, default_client)
-        client_for_step = sanitize_client_id(step.client_id) or sanitize_client_id(client_override)
+        step_client_override = sanitize_client_id(step.client_id)
+        split_default_client = step_client_override or default_client
+        client_override, snapshot_name = _split_snapshot_reference(step.snapshot, split_default_client)
+        client_for_step = step_client_override or sanitize_client_id(client_override)
         config = load_iframe_config_snapshot_config(client_for_step, snapshot_name)
         start_at = step.at if step.at is not None else cursor
         cursor = start_at + step.duration
