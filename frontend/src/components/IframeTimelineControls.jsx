@@ -37,8 +37,9 @@ export default function IframeTimelineControls({
   const durationLabel = currentStep?.duration ? `${currentStep.duration}s` : null;
 
   return (
-    <div className="iframe-timeline-controls">
-      <div className="timeline-header">
+    <div className="iframe-timeline-control-trigger">
+      <div className="iframe-timeline-controls">
+        <div className="timeline-header">
         <div className="timeline-titles">
           <div className="timeline-title">{title}</div>
           <div className="timeline-meta">
@@ -69,8 +70,8 @@ export default function IframeTimelineControls({
         <button type="button" onClick={onReload} disabled={loading}>
           重新載入
         </button>
-      </div>
-      <div className="timeline-step-info">
+        </div>
+        <div className="timeline-step-info">
         <div>
           <div className="step-label">
             第 {currentStepIndex + 1} 段 {currentLabel ? `· ${currentLabel}` : null}
@@ -81,7 +82,8 @@ export default function IframeTimelineControls({
           </div>
         </div>
       </div>
-      {error && <div className="timeline-error">{error}</div>}
+        {error && <div className="timeline-error">{error}</div>}
+      </div>
     </div>
   );
 }
