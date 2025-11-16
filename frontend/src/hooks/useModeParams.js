@@ -43,6 +43,14 @@ export function useModeParams() {
     return "default";
   }, []);
 
+  const iframeTimelineId = useMemo(() => {
+    const fromQuery = initialParams.get("iframe_timeline");
+    if (fromQuery && fromQuery.trim()) {
+      return fromQuery.trim();
+    }
+    return null;
+  }, [initialParams]);
+
   const shouldLoadKinshipData = !KINSHIP_DATA_EXCLUDED.has(type);
 
   return {
@@ -55,6 +63,7 @@ export function useModeParams() {
     soundPlayerEnabled,
     slideIntervalMs,
     clientId,
+    iframeTimelineId,
     shouldLoadKinshipData,
   };
 }

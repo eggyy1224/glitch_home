@@ -34,6 +34,12 @@ def _sanitize_client_id(value: Optional[str]) -> Optional[str]:
     return candidate
 
 
+def sanitize_client_id(value: Optional[str]) -> Optional[str]:
+    """Public helper to validate client_id from external modules."""
+
+    return _sanitize_client_id(value)
+
+
 def _sanitize_snapshot_name(value: str) -> str:
     if not isinstance(value, str):
         raise ValueError("snapshot_name 必須為字串")
@@ -43,6 +49,12 @@ def _sanitize_snapshot_name(value: str) -> str:
     if not _CLIENT_ID_PATTERN.fullmatch(candidate):
         raise ValueError("snapshot_name 僅允許字母、數字、底線、連字號")
     return candidate
+
+
+def sanitize_snapshot_name(value: str) -> str:
+    """Expose snapshot name validation for other services."""
+
+    return _sanitize_snapshot_name(value)
 
 
 def _config_path_for(client_id: Optional[str]) -> Path:
@@ -191,6 +203,20 @@ def list_iframe_config_snapshots(client_id: Optional[str]) -> Tuple[Optional[str
 
 
 def restore_iframe_config_snapshot(client_id: Optional[str], snapshot_name: str) -> tuple[IframeConfig, Optional[str]]:
+    config = load_iframe_config_snapshot_config(client_id, snapshot_name)
+    sanitized_client_id = _sanitize_client_id(client_id)
+
+    target_path = _config_path_for(sanitized_client_id)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("w", encoding="utf-8") as fp:
+        json.dump(config.model_dump(), fp, ensure_ascii=False, indent=2)
+
+    return config, sanitized_client_id
+
+
+def load_iframe_config_snapshot_config(client_id: Optional[str], snapshot_name: str) -> IframeConfig:
+    """Load a snapshot without mutating current config files."""
+
     sanitized_client_id = _sanitize_client_id(client_id)
     safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
     path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
@@ -202,13 +228,7 @@ def restore_iframe_config_snapshot(client_id: Optional[str], snapshot_name: str)
 
     config = IframeConfig(**raw)
     _validate_images(config)
-
-    target_path = _config_path_for(sanitized_client_id)
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    with target_path.open("w", encoding="utf-8") as fp:
-        json.dump(config.model_dump(), fp, ensure_ascii=False, indent=2)
-
-    return config, sanitized_client_id
+    return config
 
 
 def resolve_iframe_config(config: IframeConfig, client_id: Optional[str] = None) -> ResolvedIframeConfig:

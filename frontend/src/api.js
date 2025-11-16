@@ -43,6 +43,19 @@ export async function fetchCollageConfig(clientId = null) {
   return res.json();
 }
 
+export async function fetchIframeTimeline(timelineId, { signal } = {}) {
+  if (!timelineId) {
+    throw new Error("timelineId is required");
+  }
+  const url = `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
 export async function saveCollageConfig(config) {
   const url = `${API_BASE}/api/collage-config`;
   const res = await fetch(url, {

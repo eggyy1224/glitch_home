@@ -15,6 +15,7 @@ from .api import (
     screenshot_router,
     sound_router,
     storage_router,
+    timeline_router,
 )
 from .config import settings
 
@@ -50,6 +51,7 @@ app.include_router(screenshot_router)
 app.include_router(kinship_router)
 app.include_router(collage_router)
 app.include_router(realtime_router)
+app.include_router(timeline_router)
 
 
 @app.get("/health")

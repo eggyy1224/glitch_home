@@ -818,6 +818,33 @@ ws.onmessage = (event) => {
 - `target_client_id` 是否與前端的 URL 參數匹配？
 - 是否啟用了 `iframe_mode=true`？
 
+## 🕒 Iframe Timeline API（時間軸播放）
+
+> 讓既有的 `iframe_config` snapshot 串成時間軸，單一 client 就能自動播放多個場景。
+
+1. **列出所有 timeline**
+
+```bash
+curl http://localhost:8000/api/iframe-timelines
+# 可加上 ?client=desktop2 僅列出指定 client
+```
+
+回傳欄位包含 `id`, `title`, `step_count`, `estimated_duration`, `loop` 等資訊。
+
+2. **取得 timeline 詳細內容**
+
+```bash
+curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
+```
+
+每個 `steps[]` 會附帶 snapshot 來源、停留秒數與 `config`（等同 `GET /api/iframe-config` 的 payload，可直接套用）。
+
+3. **前端啟動播放**
+
+- 在網址加上 `?iframe_mode=true&iframe_timeline=desktop2_opening_demo`
+- 進入 iframe mode 後左上角會出現控制面板，可播放 / 暫停 / 跳段 / 重新載入
+- 若 timeline 播放完畢或停止，會自動釋放遠端鎖定，方便改回本地控制
+
 ---
 
 ## 📚 參考資源

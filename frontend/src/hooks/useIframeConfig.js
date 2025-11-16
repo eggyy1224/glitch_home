@@ -76,6 +76,18 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
     [defaultConfig, updateQueryWithIframeConfig],
   );
 
+  const releaseRemoteConfig = useCallback(() => {
+    setServerConfig((current) => {
+      if (!current) {
+        return null;
+      }
+      const sanitized = sanitizeIframeConfig(current, defaultConfig);
+      setLocalConfig(sanitized);
+      updateQueryWithIframeConfig(sanitized);
+      return null;
+    });
+  }, [defaultConfig, updateQueryWithIframeConfig]);
+
   useEffect(() => {
     if (!iframeMode) {
       setServerConfig(null);
@@ -121,6 +133,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
     controlsEnabled: !serverConfig,
     handleLocalApply,
     applyRemoteConfig,
+    releaseRemoteConfig,
     updateQueryWithIframeConfig,
     iframeConfigError: error,
   };

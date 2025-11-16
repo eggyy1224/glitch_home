@@ -22,6 +22,8 @@ import { useCameraPresets } from "./hooks/useCameraPresets.js";
 import { useKinshipData } from "./hooks/useKinshipData.js";
 import ControlPanel from "./components/ControlPanel.jsx";
 import ScreenshotMessage from "./components/ScreenshotMessage.jsx";
+import IframeTimelineControls from "./components/IframeTimelineControls.jsx";
+import { useIframeTimelinePlayer } from "./hooks/useIframeTimelinePlayer.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const IFRAME_DEFAULT_CONFIG = {
@@ -67,6 +69,7 @@ export default function App() {
     soundPlayerEnabled,
     slideIntervalMs,
     clientId,
+    iframeTimelineId,
     shouldLoadKinshipData,
   } = useModeParams();
 
@@ -105,6 +108,7 @@ export default function App() {
     controlsEnabled: iframeControlsEnabled,
     handleLocalApply: handleLocalIframeConfigApply,
     applyRemoteConfig: applyRemoteIframeConfig,
+    releaseRemoteConfig: releaseRemoteIframeConfig,
   } = useIframeConfig({
     initialParams,
     iframeMode: activeMode === DisplayModes.IFRAME,
@@ -120,6 +124,27 @@ export default function App() {
   } = useCollageConfig({
     collageMode: activeMode === DisplayModes.COLLAGE,
     clientId,
+  });
+
+  const {
+    timeline,
+    currentStep,
+    currentStepIndex,
+    status: timelineStatus,
+    isPlaying: timelineIsPlaying,
+    loading: timelineLoading,
+    error: timelineError,
+    play: playTimeline,
+    pause: pauseTimeline,
+    stop: stopTimeline,
+    next: nextTimelineStep,
+    previous: previousTimelineStep,
+    reload: reloadTimeline,
+  } = useIframeTimelinePlayer({
+    timelineId: iframeTimelineId,
+    isActive: activeMode === DisplayModes.IFRAME,
+    applyRemoteConfig: applyRemoteIframeConfig,
+    releaseRemoteConfig: releaseRemoteIframeConfig,
   });
 
   const handleFpsUpdate = useCallback((value) => {
@@ -276,6 +301,26 @@ export default function App() {
 
   const screenshotContent = <ScreenshotMessage message={screenshotMessage} />;
 
+  const iframeTimelineOverlay =
+    activeMode === DisplayModes.IFRAME && iframeTimelineId ? (
+      <IframeTimelineControls
+        timelineId={iframeTimelineId}
+        timeline={timeline}
+        currentStep={currentStep}
+        currentStepIndex={currentStepIndex}
+        status={timelineStatus}
+        isPlaying={timelineIsPlaying}
+        loading={timelineLoading}
+        error={timelineError}
+        onPlay={playTimeline}
+        onPause={pauseTimeline}
+        onStop={stopTimeline}
+        onNext={nextTimelineStep}
+        onPrevious={previousTimelineStep}
+        onReload={reloadTimeline}
+      />
+    ) : null;
+
   const modeRenderMap = {
     [DisplayModes.IFRAME]: {
       component: IframeMode,
@@ -285,6 +330,7 @@ export default function App() {
         controlsEnabled: iframeControlsEnabled,
         onApplyConfig: iframeControlsEnabled ? handleLocalIframeConfigApply : undefined,
       },
+      beforeContent: iframeTimelineOverlay,
     },
     [DisplayModes.SLIDE]: {
       component: SlideMode,
