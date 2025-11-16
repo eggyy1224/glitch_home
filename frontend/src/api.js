@@ -190,6 +190,72 @@ export async function fetchCaptionState(clientId = null) {
   };
 }
 
+function buildTargetQuery(targetClientId) {
+  if (!targetClientId) return "";
+  const qs = new URLSearchParams({ target_client_id: targetClientId });
+  return `?${qs.toString()}`;
+}
+
+async function postJson(url, payload, { signal } = {}) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal,
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function triggerTts(payload, options = {}) {
+  return postJson(`${API_BASE}/api/tts`, payload, options);
+}
+
+export async function speakWithSubtitle(payload, options = {}) {
+  return postJson(`${API_BASE}/api/speak-with-subtitle`, payload, options);
+}
+
+export async function queueSoundPlay(filename, targetClientId = null, options = {}) {
+  const body = { filename };
+  if (targetClientId) {
+    body.target_client_id = targetClientId;
+  }
+  return postJson(`${API_BASE}/api/sound-play`, body, options);
+}
+
+export async function setSubtitle(payload, targetClientId = null, options = {}) {
+  const url = `${API_BASE}/api/subtitles${buildTargetQuery(targetClientId)}`;
+  return postJson(url, payload, options);
+}
+
+export async function clearSubtitle(targetClientId = null, { signal } = {}) {
+  const url = `${API_BASE}/api/subtitles${buildTargetQuery(targetClientId)}`;
+  const res = await fetch(url, { method: "DELETE", signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return true;
+}
+
+export async function setCaption(payload, targetClientId = null, options = {}) {
+  const url = `${API_BASE}/api/captions${buildTargetQuery(targetClientId)}`;
+  return postJson(url, payload, options);
+}
+
+export async function clearCaption(targetClientId = null, { signal } = {}) {
+  const url = `${API_BASE}/api/captions${buildTargetQuery(targetClientId)}`;
+  const res = await fetch(url, { method: "DELETE", signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return true;
+}
+
 export async function generateCollageVersion(files, params) {
   const url = `${API_BASE}/api/generate-collage-version`;
   const formData = new FormData();

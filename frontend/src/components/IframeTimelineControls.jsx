@@ -10,6 +10,7 @@ export default function IframeTimelineControls({
   isPlaying,
   loading,
   error,
+  actionError,
   onPlay,
   onPause,
   onStop,
@@ -83,6 +84,7 @@ export default function IframeTimelineControls({
         </div>
       </div>
         {error && <div className="timeline-error">{error}</div>}
+        {actionError && <div className="timeline-error">{actionError}</div>}
       </div>
     </div>
   );

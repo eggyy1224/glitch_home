@@ -845,6 +845,42 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
 - 進入 iframe mode 後左上角會出現控制面板，可播放 / 暫停 / 跳段 / 重新載入
 - 若 timeline 播放完畢或停止，會自動釋放遠端鎖定，方便改回本地控制
 
+### Step 動作欄位：subtitle / caption / tts
+
+每個 `steps[]` 可以同時指定多媒體動作，Timeline Player 會根據順序自動呼叫對應 API：
+
+```jsonc
+{
+  "snapshot": "desktop2/opening_stage2",
+  "duration": 12,
+  "subtitle": {
+    "text": "多面板同步展示",
+    "language": "zh-TW",
+    "duration_seconds": 8
+  },
+  "caption": {
+    "clear": true
+  },
+  "tts": {
+    "mode": "speak_with_subtitle",      // tts | speak_with_subtitle | sound_play
+    "text": "第二段展示混合視覺模式",
+    "subtitle_language": "zh-TW",
+    "auto_play": true
+  }
+}
+```
+
+- `subtitle` / `caption`：共用欄位，若 `clear=true` 則會呼叫 `DELETE /api/(subtitles|captions)`；否則使用 `text`、`language`、`duration_seconds` 送到 POST API。
+- `tts.mode`：
+  - `tts` → `POST /api/tts`
+  - `speak_with_subtitle` → `POST /api/speak-with-subtitle`（若未提供 `subtitle_text` 會沿用 `text`）
+  - `sound_play` → `POST /api/sound-play`，需提供 `sound_filename`
+- `target_client_id` 預設順序：action > step.clientId > timeline.clientId。可在 JSON 中覆寫（`targetClientId`）。
+
+範例檔案：`backend/metadata/timelines/iframe/desktop2_opening_with_media.json`，展示如何同時套用 snapshot、字幕、標題、語音與音效。
+
+> 提醒：前端需以 `?iframe_mode=true&client=<id>&iframe_timeline=<timeline_id>` 啟動，並確保該 client 正在 WebSocket 上線，Timeline Player 才能同步收到字幕/Caption/TTS 廣播。
+
 ---
 
 ## 📚 參考資源

@@ -107,3 +107,59 @@ def test_resolve_timeline_with_per_step_clients():
     assert first_step["config"]["columns"] == 2
     assert second_step["client_id"] == "client_b"
     assert second_step["config"]["layout"] == "vertical"
+
+
+def test_resolve_timeline_with_actions():
+    metadata_dir = Path(settings.metadata_dir)
+    timeline_dir = metadata_dir / "timelines" / "iframe"
+    snapshot_dir = metadata_dir / "snapshots" / "iframe_config" / "action_client"
+    timeline_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+
+    snapshot_payload = {
+        "layout": "grid",
+        "gap": 4,
+        "columns": 1,
+        "panels": [{"id": "solo", "url": "/?img=solo.png", "ratio": 1}],
+    }
+    (snapshot_dir / "stage_action.json").write_text(json.dumps(snapshot_payload), encoding="utf-8")
+
+    timeline_payload = {
+        "id": "actions_demo",
+        "title": "Actions Demo",
+        "clientId": "action_client",
+        "steps": [
+            {
+                "snapshot": "stage_action",
+                "duration": 6,
+                "subtitle": {
+                    "text": "字幕測試",
+                    "language": "zh-TW",
+                    "duration_seconds": 5,
+                },
+                "caption": {
+                    "clear": True,
+                },
+                "tts": {
+                    "mode": "speak_with_subtitle",
+                    "text": "大家好，歡迎收看",
+                    "auto_play": False,
+                },
+            }
+        ],
+    }
+    (timeline_dir / "actions_demo.json").write_text(json.dumps(timeline_payload), encoding="utf-8")
+
+    timeline = load_iframe_timeline_definition("actions_demo")
+    resolved = resolve_iframe_timeline(timeline)
+    payload = resolved.to_payload()
+
+    assert payload["step_count"] == 1
+    step = payload["steps"][0]
+    assert step["subtitle"]["text"] == "字幕測試"
+    assert step["subtitle"]["target_client_id"] == "action_client"
+    assert step["caption"]["clear"] is True
+    assert "text" not in step["caption"]
+    assert step["tts"]["mode"] == "speak_with_subtitle"
+    assert step["tts"]["subtitle_text"] == "大家好，歡迎收看"
+    assert step["tts"]["target_client_id"] == "action_client"

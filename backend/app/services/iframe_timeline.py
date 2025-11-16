@@ -30,6 +30,9 @@ class ResolvedIframeTimelineStep:
     step: IframeTimelineStep
     client_id: Optional[str]
     config: IframeConfig
+    subtitle: Optional[Dict[str, object]] = None
+    caption: Optional[Dict[str, object]] = None
+    tts: Optional[Dict[str, object]] = None
 
     def to_payload(self) -> Dict[str, object]:
         payload: Dict[str, object] = {
@@ -40,6 +43,9 @@ class ResolvedIframeTimelineStep:
             "label": self.step.label,
             "client_id": self.client_id,
             "config": config_payload_for_response(self.config, self.client_id),
+            "subtitle": self.subtitle,
+            "caption": self.caption,
+            "tts": self.tts,
         }
         return {k: v for k, v in payload.items() if v is not None}
 
@@ -145,6 +151,42 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
         client_override, snapshot_name = _split_snapshot_reference(step.snapshot, split_default_client)
         client_for_step = step_client_override or sanitize_client_id(client_override)
         config = load_iframe_config_snapshot_config(client_for_step, snapshot_name)
+
+        fallback_client = step_client_override or client_for_step
+
+        def _resolve_timed_text_action(action) -> Optional[Dict[str, object]]:
+            if action is None:
+                return None
+            payload = action.model_dump(exclude_none=True)
+            target = sanitize_client_id(action.target_client_id) or fallback_client
+            if target:
+                payload["target_client_id"] = target
+            if payload.get("clear"):
+                payload.pop("text", None)
+                payload.pop("language", None)
+                payload.pop("duration_seconds", None)
+            else:
+                payload.pop("clear", None)
+                payload["text"] = action.text
+            if not payload.get("clear"):
+                payload.pop("clear", None)
+            return payload
+
+        def _resolve_speech_action(action) -> Optional[Dict[str, object]]:
+            if action is None:
+                return None
+            payload = action.model_dump(exclude_none=True)
+            target = sanitize_client_id(action.target_client_id) or fallback_client
+            if target:
+                payload["target_client_id"] = target
+            if payload.get("mode") == "speak_with_subtitle" and not payload.get("subtitle_text"):
+                payload["subtitle_text"] = action.subtitle_text or action.text
+            return payload
+
+        subtitle_payload = _resolve_timed_text_action(step.subtitle)
+        caption_payload = _resolve_timed_text_action(step.caption)
+        tts_payload = _resolve_speech_action(step.tts)
+
         start_at = step.at if step.at is not None else cursor
         cursor = start_at + step.duration
         total_duration = max(total_duration, cursor)
@@ -156,6 +198,9 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
                 step=step,
                 client_id=client_for_step,
                 config=config,
+                subtitle=subtitle_payload,
+                caption=caption_payload,
+                tts=tts_payload,
             )
         )
     return ResolvedIframeTimeline(timeline=timeline, steps=resolved_steps, total_duration=total_duration)

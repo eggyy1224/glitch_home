@@ -24,6 +24,7 @@ import ControlPanel from "./components/ControlPanel.jsx";
 import ScreenshotMessage from "./components/ScreenshotMessage.jsx";
 import IframeTimelineControls from "./components/IframeTimelineControls.jsx";
 import { useIframeTimelinePlayer } from "./hooks/useIframeTimelinePlayer.js";
+import { useTimelineStepActions } from "./hooks/useTimelineStepActions.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const IFRAME_DEFAULT_CONFIG = {
@@ -127,6 +128,21 @@ export default function App() {
   });
 
   const {
+    executeStepActions,
+    actionError: timelineActionError,
+    clearActionError,
+    cancelPendingActions,
+  } = useTimelineStepActions({ clientId });
+
+  const handleTimelineStepStart = useCallback(
+    ({ step, stepIndex, runId }) => {
+      if (!iframeTimelineId) return;
+      executeStepActions({ step, stepIndex, timelineId: iframeTimelineId, runId });
+    },
+    [executeStepActions, iframeTimelineId],
+  );
+
+  const {
     timeline,
     currentStep,
     currentStepIndex,
@@ -145,7 +161,20 @@ export default function App() {
     isActive: activeMode === DisplayModes.IFRAME,
     applyRemoteConfig: applyRemoteIframeConfig,
     releaseRemoteConfig: releaseRemoteIframeConfig,
+    onStepStart: handleTimelineStepStart,
   });
+
+  useEffect(() => {
+    if (!iframeTimelineId || activeMode !== DisplayModes.IFRAME) {
+      cancelPendingActions();
+      clearActionError();
+    }
+  }, [iframeTimelineId, activeMode, cancelPendingActions, clearActionError]);
+
+  const handleStopTimeline = useCallback(() => {
+    cancelPendingActions();
+    stopTimeline();
+  }, [cancelPendingActions, stopTimeline]);
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -312,9 +341,10 @@ export default function App() {
         isPlaying={timelineIsPlaying}
         loading={timelineLoading}
         error={timelineError}
+        actionError={timelineActionError}
         onPlay={playTimeline}
         onPause={pauseTimeline}
-        onStop={stopTimeline}
+        onStop={handleStopTimeline}
         onNext={nextTimelineStep}
         onPrevious={previousTimelineStep}
         onReload={reloadTimeline}

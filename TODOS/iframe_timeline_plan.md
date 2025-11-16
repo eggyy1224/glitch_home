@@ -173,3 +173,11 @@
 4. **為 Episode System 預留接口**
    - 在命名與結構上，預留「之後 Episode Player 可以把多條 iframe timeline 組合起來」的空間。
 
+---
+
+## 7. 附錄：範例時間軸
+
+- `backend/metadata/timelines/iframe/desktop2_opening_with_media.json`
+  - 使用 `desktop2/opening_stage*` snapshot。
+  - 同步示範 `subtitle`、`caption`、`tts`（含 `sound_play`）三種動作欄位。
+  - 可作為撰寫含語音/字幕的開場腳本模板。

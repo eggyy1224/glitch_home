@@ -116,6 +116,14 @@ curl -X POST http://localhost:8000/api/tts \
 }
 ```
 
+## 與 Iframe Timeline 整合
+
+- `steps[].tts` 可直接指定 `mode: "tts" | "speak_with_subtitle" | "sound_play"`，Timeline Player 會在每段開頭呼叫對應 API。
+- `speak_with_subtitle` 模式若未帶 `subtitle_text`，系統會沿用同段的 `text`，並可額外設定 `subtitle_language` / `subtitle_duration_seconds`。
+- `sound_play` 適合播放既有 MP3，欄位只需要 `sound_filename`（後端會透過 WebSocket 序列化成 `sound_play` 事件）。
+- `target_client_id` 未指定時，會自動延用 `step.clientId` 或 Timeline 預設 `clientId`，確保語音推播與版面同步。
+- JSON 範例請參考 `backend/metadata/timelines/iframe/desktop2_opening_with_media.json`。
+
 ---
 
 ## 檔案管理

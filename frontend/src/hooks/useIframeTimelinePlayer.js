@@ -13,6 +13,7 @@ export function useIframeTimelinePlayer({
   isActive,
   applyRemoteConfig,
   releaseRemoteConfig,
+  onStepStart,
 }) {
   const [timeline, setTimeline] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,7 @@ export function useIframeTimelinePlayer({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const timerRef = useRef(null);
+  const runIdRef = useRef(0);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -43,6 +45,7 @@ export function useIframeTimelinePlayer({
       setCurrentStepIndex(0);
       setError(null);
       releaseRemoteConfig?.();
+      runIdRef.current = 0;
       return;
     }
   }, [timelineId, stopTimer, releaseRemoteConfig]);
@@ -56,6 +59,7 @@ export function useIframeTimelinePlayer({
     setTimeline(null);
     setIsPlaying(false);
     setCurrentStepIndex(0);
+    runIdRef.current = 0;
 
     let cancelled = false;
     const controller = new AbortController();
@@ -68,6 +72,7 @@ export function useIframeTimelinePlayer({
         const payload = data?.timeline || null;
         setTimeline(payload);
         setCurrentStepIndex(0);
+        runIdRef.current = 0;
         setIsPlaying(Boolean(payload && Array.isArray(payload.steps) && payload.steps.length));
       })
       .catch((err) => {
@@ -95,6 +100,7 @@ export function useIframeTimelinePlayer({
         setIsPlaying(false);
         releaseRemoteConfig?.();
       }
+      runIdRef.current = 0;
       return;
     }
   }, [isActive, releaseRemoteConfig, stopTimer, timelineId]);
@@ -123,6 +129,8 @@ export function useIframeTimelinePlayer({
     }
     stopTimer();
     applyStepConfig(step);
+    const runId = (runIdRef.current += 1);
+    onStepStart?.({ step, stepIndex: index, runId });
     const durationMs = Math.max(0.1, Number(step.duration) || 0) * 1000;
     const timer = window.setTimeout(() => {
       setCurrentStepIndex((prev) => {
@@ -142,7 +150,7 @@ export function useIframeTimelinePlayer({
     return () => {
       clearTimeout(timer);
     };
-  }, [timeline, isActive, isPlaying, currentStepIndex, applyStepConfig, releaseRemoteConfig, stopTimer]);
+  }, [timeline, isActive, isPlaying, currentStepIndex, applyStepConfig, releaseRemoteConfig, stopTimer, onStepStart]);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -180,6 +188,7 @@ export function useIframeTimelinePlayer({
     setCurrentStepIndex(0);
     stopTimer();
     releaseRemoteConfig?.();
+    runIdRef.current = 0;
   }, [releaseRemoteConfig, stopTimer]);
 
   const next = useCallback(() => {
