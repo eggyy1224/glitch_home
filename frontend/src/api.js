@@ -1,5 +1,12 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
+
+export async function fetchClients() {
+  const url = `${API_BASE}/api/clients`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
 export async function fetchKinship(img, depth = -1) {
   const url = `${API_BASE}/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
   const res = await fetch(url);
@@ -43,12 +50,40 @@ export async function fetchCollageConfig(clientId = null) {
   return res.json();
 }
 
-export async function saveCollageConfig(config) {
+export async function fetchIframeConfig(clientId = null) {
+  let url = `${API_BASE}/api/iframe-config`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function saveCollageConfig(config, targetClientId = null) {
   const url = `${API_BASE}/api/collage-config`;
+  const payload = targetClientId
+    ? { ...config, target_client_id: targetClientId }
+    : { ...config };
   const res = await fetch(url, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(config),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function saveIframeConfig(config, targetClientId = null) {
+  const url = `${API_BASE}/api/iframe-config`;
+  const payload = targetClientId
+    ? { ...config, target_client_id: targetClientId }
+    : { ...config };
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
@@ -175,6 +210,72 @@ export async function fetchCaptionState(clientId = null) {
   return {
     caption: data?.caption ?? null,
   };
+}
+
+export async function setSubtitle(payload, targetClientId = null) {
+  if (!payload || !payload.text) {
+    throw new Error("缺少字幕內容");
+  }
+  let url = `${API_BASE}/api/subtitles`;
+  if (targetClientId) {
+    const params = new URLSearchParams({ target_client_id: targetClientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text: payload.text,
+      language: payload.language ?? null,
+      duration_seconds: payload.duration_seconds ?? null,
+    }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function clearSubtitle(targetClientId = null) {
+  let url = `${API_BASE}/api/subtitles`;
+  if (targetClientId) {
+    const params = new URLSearchParams({ target_client_id: targetClientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return true;
+}
+
+export async function setCaption(payload, targetClientId = null) {
+  if (!payload || !payload.text) {
+    throw new Error("缺少字幕內容");
+  }
+  let url = `${API_BASE}/api/captions`;
+  if (targetClientId) {
+    const params = new URLSearchParams({ target_client_id: targetClientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text: payload.text,
+      language: payload.language ?? null,
+      duration_seconds: payload.duration_seconds ?? null,
+    }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function clearCaption(targetClientId = null) {
+  let url = `${API_BASE}/api/captions`;
+  if (targetClientId) {
+    const params = new URLSearchParams({ target_client_id: targetClientId });
+    url = `${url}?${params.toString()}`;
+  }
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return true;
 }
 
 export async function generateCollageVersion(files, params) {
