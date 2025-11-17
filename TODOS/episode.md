@@ -23,9 +23,16 @@
 - 前端 Episode 選單與管理 UI
 - MCP Episode 工具
 
+## 最新進度（2025-02）
+
+- ✅ 後端 Phase 1 (Read-only) 已落地：`backend/app/models/episode.py`、`backend/app/services/episode.py`、`backend/app/api/episode.py`
+- ✅ `/api/episodes`、`/api/episodes/{id}` 可讀取 `backend/metadata/episodes/*.json`
+- ✅ `backend/metadata/episodes/desktop2_opening_episode.json` 作為示例 Episode（引用 `desktop2_opening_with_media` timeline）
+- ✅ 測試覆蓋：`backend/tests/test_episode.py`、`backend/tests/test_api/test_episode_api.py`
+
 ## Phase 1：Episode 資料模型與 Read-only API
 
-### 1.1 建立 Episode Pydantic Model
+### 1.1 建立 Episode Pydantic Model（✅ 已完成）
 
 **檔案**：`backend/app/models/episode.py`
 
@@ -39,8 +46,9 @@
 - `clients_layout`: Optional[Dict[str, Any]] (client role 參與方式)
 - `meta`: Dict (version, status, created_at, updated_at, author)
 - Status 枚舉：`draft` | `published` | `archived`
+- 完成：`Episode` + `EpisodeMeta` + `EpisodeStatus`，含欄位清洗/aliases
 
-### 1.2 建立 Episode Service
+### 1.2 建立 Episode Service（✅ 已完成）
 
 **檔案**：`backend/app/services/episode.py`
 
@@ -48,16 +56,18 @@
 - `list_episodes(client: Optional[str] = None) -> List[Dict]`
 - `resolve_episode(episode: Episode) -> ResolvedEpisode` (組裝 timeline + assets)
 - 儲存位置：`backend/metadata/episodes/*.json`
+- 完成：`ResolvedEpisode.to_payload()`；client 過濾含 timeline 與 clients_layout
 
-### 1.3 建立 Episode API
+### 1.3 建立 Episode API（✅ 已完成）
 
 **檔案**：`backend/app/api/episode.py`
 
 - `GET /api/episodes`：列出所有 Episode（支援 `?client=` 過濾）
 - `GET /api/episodes/{episode_id}`：取得 Episode 詳細內容
 - 註冊到 `backend/app/main.py` 的 router
+- 完成：`episode_router` 已掛載至主應用
 
-### 1.4 建立範例 Episode JSON
+### 1.4 建立範例 Episode JSON（✅ 已完成）
 
 **檔案**：`backend/metadata/episodes/desktop2_opening_episode.json`
 
@@ -65,6 +75,7 @@
 - 列出相關 assets（images, audio）
 - 設定 clients_layout
 - 作為 API smoke test 範例
+- 完成：提供 tags/clientsLayout/音訊資產清單
 
 ## Phase 2：前端 Dashboard 整合
 
@@ -178,6 +189,7 @@
 - Episode 載入、列表、解析
 - CRUD 操作
 - 邊界情境（缺 timeline、缺 assets）
+- ✅ 現有：Read-only flows 已涵蓋
 - **前端**：手動測試 Dashboard Episode 選單
 - **整合**：MCP 工具端對端測試
 
@@ -185,4 +197,4 @@
 
 - `docs/API_QUICK_START_GUIDE.md`：新增 Episode API 章節
 - `backend/README.md`：說明 Episode 模型與儲存位置
-- `TODOS/episode_model_rollout_plan.md`：標記完成項目
+- `TODOS/episode_model_rollout_plan.md`：標記完成項目（待更新）

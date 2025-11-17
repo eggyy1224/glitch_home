@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .api import (
     collage_router,
+    episode_router,
     generation_router,
     indexing_router,
     kinship_router,
@@ -52,6 +53,7 @@ app.include_router(kinship_router)
 app.include_router(collage_router)
 app.include_router(realtime_router)
 app.include_router(timeline_router)
+app.include_router(episode_router)
 
 
 @app.get("/health")

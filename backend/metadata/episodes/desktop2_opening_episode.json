@@ -1,0 +1,37 @@
+{
+  "id": "desktop2_opening_episode",
+  "title": "Desktop2 開場 Episode",
+  "description": "桌機牆面搭配多聲道播放器的開場節奏，整合語音、字幕與多客戶端布局。",
+  "tags": ["desktop2", "opening", "demo"],
+  "timelineId": "desktop2_opening_with_media",
+  "assets": {
+    "snapshots": [
+      "snapshots/iframe_config/desktop2/opening_stage1.json",
+      "snapshots/iframe_config/desktop2/opening_stage2.json",
+      "snapshots/iframe_config/desktop2/opening_stage3.json"
+    ],
+    "audio": [
+      "narration_20251117T084657_a466345b.mp3",
+      "narration_20251117T084705_4e65e71b.mp3"
+    ],
+    "images": [
+      "offspring_20250929_114940_017.png",
+      "offspring_20250927_141336_787.png"
+    ]
+  },
+  "clientsLayout": {
+    "desktop2": {"role": "main_wall"},
+    "desktop2-birdman": {"role": "audio_birdman"},
+    "desktop2-birds": {"role": "audio_birds"},
+    "desktop2-drivein": {"role": "audio_drivein"},
+    "desktop2-sequence": {"role": "audio_sequence"},
+    "desktop2-photoshoot": {"role": "audio_photoshoot"}
+  },
+  "meta": {
+    "version": "v1",
+    "status": "draft",
+    "author": "system",
+    "created_at": "2025-02-01T06:00:00Z",
+    "updated_at": "2025-02-01T06:00:00Z"
+  }
+}
