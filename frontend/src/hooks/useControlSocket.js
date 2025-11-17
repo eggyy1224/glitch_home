@@ -9,6 +9,7 @@ export function useControlSocket({
   onCaptionUpdate,
   onIframeConfig,
   onCollageConfig,
+  onUnlockAudio,
 }) {
   const wsRef = useRef(null);
 
@@ -92,6 +93,8 @@ export function useControlSocket({
           onIframeConfig?.(payload);
         } else if (payload?.type === "collage_config" && payload?.config) {
           onCollageConfig?.(payload);
+        } else if (payload?.type === "unlock_audio") {
+          onUnlockAudio?.(payload);
         }
       };
 
@@ -126,5 +129,6 @@ export function useControlSocket({
     onCaptionUpdate,
     onIframeConfig,
     onCollageConfig,
+    onUnlockAudio,
   ]);
 }

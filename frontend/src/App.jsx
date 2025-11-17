@@ -252,6 +252,31 @@ export default function App() {
     [clientId, applyRemoteCollageConfig],
   );
 
+  const handleUnlockAudioMessage = useCallback(
+    (payload) => {
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      const body = document.body;
+      if (!body) return;
+      try {
+        const clickEvent = new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        });
+      body.dispatchEvent(clickEvent);
+    } catch (err) {
+      // ignore dispatch error and fallback to direct click below
+      }
+      if (typeof body.click === "function") {
+        body.click();
+      }
+    },
+    [clientId],
+  );
+
   useControlSocket({
     clientId,
     onScreenshotRequest: enqueueScreenshotRequest,
@@ -261,6 +286,7 @@ export default function App() {
     onCaptionUpdate: handleCaptionMessage,
     onIframeConfig: handleIframeConfigMessage,
     onCollageConfig: handleCollageConfigMessage,
+    onUnlockAudio: handleUnlockAudioMessage,
   });
 
   const handleSoundHandled = useCallback(() => {

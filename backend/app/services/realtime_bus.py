@@ -149,6 +149,12 @@ class RealtimeBroadcaster:
             payload["target_client_id"] = target_client_id
         await self.broadcast(payload, target_client_id=target_client_id)
 
+    async def broadcast_unlock_audio(self, target_client_id: Optional[str] = None) -> None:
+        payload = {"type": "unlock_audio"}
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        await self.broadcast(payload, target_client_id=target_client_id)
+
     async def _send(self, websocket: WebSocket, message: dict[str, Any]) -> None:
         try:
             await websocket.send_json(message)

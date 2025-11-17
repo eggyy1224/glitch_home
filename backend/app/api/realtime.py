@@ -79,6 +79,12 @@ async def api_clear_captions(target_client_id: str | None = Query(default=None))
     return Response(status_code=204)
 
 
+@router.post("/api/unlock-audio")
+async def api_unlock_audio(target_client_id: str | None = Query(default=None)) -> dict:
+    await realtime_broadcaster.broadcast_unlock_audio(target_client_id=target_client_id)
+    return {"status": "ok", "message": "unlock audio broadcast sent"}
+
+
 @router.post("/api/screenshots/request", status_code=202)
 async def api_create_screenshot_request(body: dict | None = Body(default=None)) -> dict:
     record = await screenshot_request_queue.create_request(metadata=body or {})
