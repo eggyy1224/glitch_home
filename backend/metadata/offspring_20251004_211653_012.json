@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "DSCF8441.jpg",
+    "wc6725_Taiwan_Taiwan_Taichung__midwest_Waipu_Tachia_1999999_1226b9a8-58da-41d0-82aa-70f4feb9265e.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Extract the most distinctive subjects, forms, textures, and lighting cues from the provided images and recombine them into a freshly composed scene. Build a new layout from scratch—do not preserve or layer whole backgrounds; reinterpret placement, perspective, and scale so every element feels re-staged rather than pasted. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly stylization or obvious digital compositing artifacts.",
+  "created_at": "2025-10-04T13:16:53.013994Z",
+  "output_image": "offspring_20251004_211653_012.png"
+}

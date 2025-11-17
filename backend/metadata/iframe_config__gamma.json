@@ -1,0 +1,37 @@
+{
+  "layout": "grid",
+  "gap": 18,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "gamma-1",
+      "image": "offspring_20250924_133452_175.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null
+    },
+    {
+      "id": "gamma-2",
+      "image": "offspring_20251008_190843_302.png",
+      "url": null,
+      "params": {
+        "organic_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null
+    },
+    {
+      "id": "gamma-3",
+      "image": "offspring_20251006_191549_643.png",
+      "url": null,
+      "params": {
+        "phylogeny": "true"
+      },
+      "ratio": 1.0,
+      "label": null
+    }
+  ]
+}

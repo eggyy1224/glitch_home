@@ -1,0 +1,11 @@
+{
+  "parents": [
+    "wc6725__a20f1711-75e8-485d-b601-38bb78ed6d34.png",
+    "DSCF2485.jpg",
+    "wc6725_Create_a_serene_and_evocative_nighttime_scene_featuring__dd437391-f772-4559-8c95-1435fcd825ae.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T05:32:05.048072Z",
+  "output_image": "offspring_20250924_133205_044.png"
+}

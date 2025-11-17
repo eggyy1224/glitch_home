@@ -1,0 +1,17 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "caption",
+      "image": null,
+      "url": "/?caption_mode=true&client=image_genealogy",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Caption",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

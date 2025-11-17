@@ -1,0 +1,13 @@
+{
+  "images": [
+    "offspring_20251109_120451_159.png",
+    "offspring_20251109_162424_673.png"
+  ],
+  "image_count": 2,
+  "rows": 50,
+  "cols": 50,
+  "mix": true,
+  "stage_width": 1080,
+  "stage_height": 1920,
+  "seed": 88888
+}

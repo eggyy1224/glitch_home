@@ -1,0 +1,71 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 12,
+  "panels": [
+    {
+      "id": "hero_slide",
+      "image": "offspring_20250923_162223_271.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 0.85,
+      "label": "巨幅幻燈",
+      "col_span": 4,
+      "row_span": 8
+    },
+    {
+      "id": "kinship_pulse",
+      "image": "offspring_20250923_161747_194.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship 串流",
+      "col_span": 3,
+      "row_span": 5
+    },
+    {
+      "id": "video_column",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=desktop2-birdman",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.75,
+      "label": "BirdmanTalk 影片",
+      "col_span": 5,
+      "row_span": 12
+    },
+    {
+      "id": "birds_video",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=desktop2-birds",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影像",
+      "col_span": 3,
+      "row_span": 4
+    },
+    {
+      "id": "drivein_video",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=desktop2-drivein",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "Drive-in Stormy",
+      "col_span": 4,
+      "row_span": 4
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "mode_default",
+      "image": null,
+      "url": "/?img=offspring_20250929_114732_835.png",
+      "params": {},
+      "ratio": 0.75,
+      "label": "預設 3D 景觀",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "mode_incubator",
+      "image": null,
+      "url": "/?incubator=true&img=offspring_20250929_114732_835.png",
+      "params": {},
+      "ratio": 0.6,
+      "label": "孵化室模式",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "mode_phylogeny",
+      "image": null,
+      "url": "/?phylogeny=true&img=offspring_20250929_114732_835.png",
+      "params": {},
+      "ratio": 0.65,
+      "label": "親緣圖 2D",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "mode_slide",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png",
+      "params": {},
+      "ratio": 0.8,
+      "label": "幻燈片模式",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "mode_organic",
+      "image": null,
+      "url": "/?organic_mode=true&img=offspring_20250929_114732_835.png",
+      "params": {},
+      "ratio": 0.7,
+      "label": "有機室模式",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

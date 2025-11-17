@@ -1,0 +1,12 @@
+{
+  "parents": [
+    "wc6725_Tai_1400s_low_resolution_ccd_monster_like_Juniperus_chin_59dfe15f-7363-4de0-a12b-bf7b39875320.png",
+    "DSCF6748.jpg",
+    "wc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_2001_ccd_low_74e3e001-07cd-40f8-8468-56d48d68a6f9.png",
+    "wc6725_A_highly_realistic_nighttime_flash_photograph_with_sligh_d5568810-f530-46a4-b24c-c31a1f33a543.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-23T15:35:57.844859Z",
+  "output_image": "offspring_20250923_233557_840.png"
+}

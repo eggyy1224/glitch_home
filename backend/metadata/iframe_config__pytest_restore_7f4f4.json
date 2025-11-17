@@ -1,0 +1,17 @@
+{
+  "layout": "grid",
+  "gap": 14,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "restore_panel",
+      "image": null,
+      "url": "/?mode=base",
+      "params": {},
+      "ratio": 1.0,
+      "label": "original",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

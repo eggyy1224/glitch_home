@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "offspring_20250924_162019_062.png",
+    "wc6725_A_towering_leafless_tree_at_night_its_thick_trunk_and_gn_c8b85731-8c6e-42bb-8bfa-f8e525b797cb.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T09:11:43.529684Z",
+  "output_image": "offspring_20250924_171143_526.png"
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250928_203748_266.png",
+    "offspring_20250927_183722_078.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_183722_078.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly. Horizontal composition. Separate elements: 1) a flock of realistic birds flying above the pond; 2) a static group of Taiwanese young public servants (1970s look): white shirts, black trousers, black ties, neat black short hair, neutral serious; hard frontal flash; preserve reflections.",
+  "strength": null,
+  "created_at": "2025-09-29T03:37:32.268062Z",
+  "output_image": "offspring_20250929_113731_778.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 896,
+    "height": 1152
+  }
+}

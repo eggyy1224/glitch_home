@@ -1,0 +1,32 @@
+{
+  "generation_type": "collage",
+  "parents": [
+    "offspring_20251005_145502_652.png",
+    "offspring_20251006_200736_655.png",
+    "offspring_20251006_202714_956.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_145502_652.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_200736_655.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_202714_956.png"
+  ],
+  "collage_params": {
+    "rows": 50,
+    "cols": 50,
+    "mode": "weave",
+    "base": "first",
+    "allow_self": false,
+    "seed": 682394,
+    "resize_w": 2048,
+    "pad_px": 0,
+    "jitter_px": 0,
+    "rotate_deg": 0
+  },
+  "output_image": "offspring_20251109_125820_946.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2000,
+    "height": 2600
+  },
+  "created_at": "2025-11-09T04:58:23.406430Z"
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250928_203748_266.png",
+    "offspring_20250928_203748_266.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly. Same scene and framing. Extremely large crowd filling width with five to six rows, tightly packed. Strong central flash. Replace faces with realistic photographic bird heads consistent with scene lighting.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.97 (0=loose, 1=strict).",
+  "strength": 0.97,
+  "created_at": "2025-09-28T14:57:42.117758Z",
+  "output_image": "offspring_20250928_225741_649.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1248,
+    "height": 832
+  }
+}

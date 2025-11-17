@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "DSCF7655.jpg",
+    "DSCF4385.jpg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Role map — keep it photoreal.\nDSCF4385.jpg → centered hooded statue (back view); two tall evergreens as side columns; low shrubs foreground; night sky.\nDSCF7655.jpg → cluster of 9–12 separate orange‑red radial umbrellas behind the statue; varied size/tilt; gentle overlaps; not a single fused disk.\nRules: statue head/shoulders contour clean; remove front sapling and any rods crossing the figure.\nLight: warm backlight from umbrellas; soft off‑camera fill on shrubs (~−1.5 EV); no halo/edge outline.\nLook: 4×5 photoreal film; vertical 2:3.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.68 (0=loose, 1=strict).",
+  "strength": 0.68,
+  "created_at": "2025-09-27T05:07:13.883370Z",
+  "output_image": "offspring_20250927_130713_235.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1024,
+    "height": 1536
+  }
+}

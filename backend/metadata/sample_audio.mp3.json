@@ -1,0 +1,1 @@
+{"kind": "tts", "provider": "openai", "output_audio": "sample_audio.mp3", "text": "hello"}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250929_114940_017.png",
+    "IMG_4414.JPG"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_114940_017.png",
+    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_4414.JPG"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-first on the ultra-wide crowd image. Preserve the birds, pond reflections, fisheye curvature, lighting, and dense composition. Replace every visible person with the individual from IMG_4414—consistent facial features, hair, and expression—while keeping the 1970s civil servant uniforms and posture. Maintain flash highlights and depth of field (blurred foreground heads, sharp mid-ground). Ensure the replicated face integrates naturally across all rows without obvious artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.75 (0=loose, 1=strict).",
+  "strength": 0.75,
+  "created_at": "2025-09-30T13:47:24.246671Z",
+  "output_image": "offspring_20250930_214723_791.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 896,
+    "height": 1152
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "parents": [
+    "offspring_20250925_134255_976.png",
+    "DSCF4385.jpg",
+    "wc6725_This_image_portrays_a_solitary_tree_standing_in_a_stark__67501356-f706-4183-b0e5-bcd95ea6d44f.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_134255_976.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_This_image_portrays_a_solitary_tree_standing_in_a_stark__67501356-f706-4183-b0e5-bcd95ea6d44f.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Iterate the previous offspring. Keep the central root-mass tree emerging in a Taiwanese alley and the real materials (brick, corrugated metal). Recompose for clearer fore-mid-back separation; add subtle motion-blurred crowd silhouettes hugging the alley edges; ensure single-exposure realism, consistent perspective, coherent shadows. Lighting: warm flash spill and sodium rim on bricks and roots; cool cobalt/cyan sky and distant fill. Filmic: fine grain, high micro-contrast, natural color science, gentle optical falloff and lens bokeh. No painterly look, no collage seams.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.62 (0=loose, 1=strict).",
+  "strength": 0.62,
+  "created_at": "2025-09-25T05:44:37.630648Z",
+  "output_image": "offspring_20250925_134437_408.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1024,
+    "height": 768
+  }
+}

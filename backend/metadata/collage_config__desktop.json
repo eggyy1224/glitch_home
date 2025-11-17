@@ -1,0 +1,19 @@
+{
+  "images": [
+    "offspring_20251008_193116_244.png",
+    "offspring_20250924_171342_040.png",
+    "offspring_20250924_195420_044.png",
+    "offspring_20250925_103812_223.png",
+    "offspring_20251008_190638_632.png",
+    "offspring_20251004_220906_005.png",
+    "offspring_20251004_225110_794.png",
+    "offspring_20251005_142915_438.png"
+  ],
+  "image_count": 8,
+  "rows": 12,
+  "cols": 12,
+  "mix": true,
+  "stage_width": 1920,
+  "stage_height": 1080,
+  "seed": 44444
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-12T08:51:53Z",
+  "text": "現在 Birdman 用鳥語輕快地述說栖息地的節奏，音符像羽毛般飛行，帶著金屬回聲。",
+  "instructions": "zh-TW Mandarin, playful, slightly staccato, with airy chirps",
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251112T085151_90cdb2d2.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251112T085151_90cdb2d2.mp3",
+  "relative_path": "generated_sounds/narration_20251112T085151_90cdb2d2.mp3",
+  "size_bytes": 153600,
+  "checksum_sha256": "33c50505b8c4171e77ca9415316937e4912408209a56d377f7f509e9355cf974"
+}

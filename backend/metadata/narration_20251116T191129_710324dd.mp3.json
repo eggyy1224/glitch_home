@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-16T19:11:31Z",
+  "text": "Desktop2 opening sequence start",
+  "instructions": "en-US, announcer, soft",
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251116T191129_710324dd.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251116T191129_710324dd.mp3",
+  "relative_path": "generated_sounds/narration_20251116T191129_710324dd.mp3",
+  "size_bytes": 45696,
+  "checksum_sha256": "cc0948c10272d6bc151d13a77b8d7ddcee8f953a88a6ed3a4d7b7ed235899895"
+}

@@ -1,0 +1,17 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "panel1",
+      "image": null,
+      "url": "/?collage_version_mode=true&client=agent",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

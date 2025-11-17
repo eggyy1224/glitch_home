@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250928_203748_266.png",
+    "offspring_20250928_203748_266.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly. Move camera closer for half-length tightly packed rows. Strong central flash. Faces should match Taiwanese appearance; age high school; mostly female; hair black bob with bangs; wear white shirts, black trousers, no tie; expression subtle smiles.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.96 (0=loose, 1=strict).",
+  "strength": 0.96,
+  "created_at": "2025-09-28T14:51:35.849185Z",
+  "output_image": "offspring_20250928_225135_315.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1248,
+    "height": 832
+  }
+}

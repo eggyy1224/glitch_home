@@ -1,0 +1,27 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "video1",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "BirdmanTalk",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "video2",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Birds",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

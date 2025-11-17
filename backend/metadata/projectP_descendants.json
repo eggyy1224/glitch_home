@@ -1,0 +1,1187 @@
+{
+  "seeds": [
+    "offspring_20251004_215812_206.png",
+    "offspring_20251004_215930_814.png",
+    "offspring_20251004_220133_209.png",
+    "offspring_20251004_220333_675.png",
+    "offspring_20251004_220447_139.png",
+    "offspring_20251004_220714_373.png",
+    "offspring_20251004_223947_393.png",
+    "offspring_20251004_224346_061.png",
+    "offspring_20251004_224522_734.png",
+    "offspring_20251004_224725_143.png",
+    "offspring_20251004_224805_000.png",
+    "offspring_20251004_224845_807.png",
+    "offspring_20251004_224929_107.png",
+    "offspring_20251004_224934_019.png",
+    "offspring_20251004_225355_003.png",
+    "offspring_20251004_225357_569.png",
+    "offspring_20251004_225535_291.png",
+    "offspring_20251004_225616_575.png",
+    "offspring_20251004_225639_060.png",
+    "offspring_20251005_130346_998.png",
+    "offspring_20251005_131144_364.png",
+    "offspring_20251005_131145_479.png",
+    "offspring_20251005_131948_141.png",
+    "offspring_20251005_131952_688.png",
+    "offspring_20251005_132125_129.png",
+    "offspring_20251005_132447_389.png",
+    "offspring_20251005_132541_435.png",
+    "offspring_20251005_142805_666.png",
+    "offspring_20251005_142915_108.png",
+    "offspring_20251005_143313_581.png",
+    "offspring_20251005_143317_759.png",
+    "offspring_20251005_143439_944.png",
+    "offspring_20251005_143538_869.png",
+    "offspring_20251005_143542_079.png",
+    "offspring_20251005_143642_780.png",
+    "offspring_20251005_143749_760.png",
+    "offspring_20251005_144222_074.png",
+    "offspring_20251005_144311_611.png",
+    "offspring_20251005_144504_345.png",
+    "offspring_20251005_144713_432.png",
+    "offspring_20251005_144940_377.png",
+    "offspring_20251005_145045_722.png",
+    "offspring_20251005_145059_874.png",
+    "offspring_20251005_145509_385.png",
+    "offspring_20251005_150540_139.png",
+    "offspring_20251006_191129_560.png",
+    "offspring_20251006_191231_914.png",
+    "offspring_20251006_191351_946.png",
+    "offspring_20251006_191452_694.png",
+    "offspring_20251006_191546_498.png",
+    "offspring_20251006_191549_643.png",
+    "offspring_20251006_191649_910.png",
+    "offspring_20251006_191736_586.png",
+    "offspring_20251006_191740_179.png",
+    "offspring_20251006_192100_669.png",
+    "offspring_20251006_192152_401.png",
+    "offspring_20251006_192308_956.png",
+    "offspring_20251006_192444_291.png",
+    "offspring_20251006_192635_160.png",
+    "offspring_20251006_200736_655.png",
+    "offspring_20251006_200918_642.png",
+    "offspring_20251006_201144_778.png",
+    "offspring_20251006_201229_507.png",
+    "offspring_20251006_201319_519.png",
+    "offspring_20251006_201423_517.png",
+    "offspring_20251006_201521_628.png",
+    "offspring_20251006_201636_653.png",
+    "offspring_20251006_202007_450.png",
+    "offspring_20251006_202012_593.png",
+    "offspring_20251006_202059_673.png",
+    "offspring_20251006_202101_827.png",
+    "offspring_20251006_202255_960.png",
+    "offspring_20251006_202418_864.png",
+    "offspring_20251006_202539_119.png",
+    "offspring_20251006_202623_863.png",
+    "offspring_20251006_202628_572.png",
+    "offspring_20251006_202714_956.png",
+    "offspring_20251006_202840_976.png",
+    "offspring_20251006_203106_436.png",
+    "offspring_20251006_203113_635.png",
+    "offspring_20251007_165219_430.png",
+    "offspring_20251007_165414_176.png",
+    "offspring_20251007_165516_016.png",
+    "offspring_20251007_165615_400.png",
+    "offspring_20251007_165649_159.png",
+    "offspring_20251007_165651_464.png",
+    "offspring_20251007_165758_824.png",
+    "offspring_20251007_165800_750.png",
+    "offspring_20251007_165842_143.png",
+    "offspring_20251007_165850_048.png",
+    "offspring_20251007_165928_950.png",
+    "offspring_20251007_170110_504.png",
+    "offspring_20251007_170115_178.png",
+    "offspring_20251007_170200_591.png",
+    "offspring_20251007_170345_740.png",
+    "offspring_20251007_170519_363.png",
+    "offspring_20251012_182921_156.png",
+    "offspring_20251012_183006_890.png",
+    "offspring_20251012_183147_226.png",
+    "offspring_20251012_183303_957.png",
+    "offspring_20251012_183315_724.png"
+  ],
+  "descendants": [
+    {
+      "name": "offspring_20251004_220553_178.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_220906_005.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_220954_827.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_221040_373.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_221528_400.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_222735_628.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_222935_316.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_223714_297.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_223740_815.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_223947_393.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224303_473.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224308_541.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224446_135.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224522_734.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224639_943.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224805_000.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224818_588.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224845_807.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_224934_019.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225107_427.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225212_734.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225246_422.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225355_003.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225357_569.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225445_247.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225446_543.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225529_468.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225613_063.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225616_575.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225639_060.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225640_169.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225741_745.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225749_353.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_225857_773.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251004_230019_787.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_123455_580.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_123459_495.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_123537_019.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_125955_327.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_130056_692.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_130346_998.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_130347_759.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_130551_889.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_131144_364.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_131145_479.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_131915_473.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_131915_990.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_131948_141.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_131952_688.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132124_703.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132125_129.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132251_036.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132321_938.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132326_163.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132407_226.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132449_130.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132541_435.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_132546_842.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_142805_666.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_142915_108.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143054_575.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143233_160.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143235_115.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143313_581.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143317_759.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143439_944.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143538_869.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143542_079.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143642_629.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143642_780.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143856_430.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143953_981.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_143957_654.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144128_323.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144128_844.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144222_074.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144223_081.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144311_611.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144311_630.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144506_139.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144704_471.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144704_564.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144713_432.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144816_293.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144819_422.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144855_055.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144906_507.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144934_368.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_144940_377.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145030_435.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145041_884.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145045_162.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145045_722.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145059_874.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145350_253.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145502_652.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145509_385.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145808_134.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145848_624.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145925_908.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_145929_939.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_150448_797.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_150454_407.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_150540_139.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251005_150546_786.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191003_086.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191005_301.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191045_189.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191129_560.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191231_914.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191237_185.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191316_956.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191317_494.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191351_946.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191356_468.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191451_449.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191546_498.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191549_643.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191644_532.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191649_910.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191736_586.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191740_179.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191906_395.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191946_455.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_191952_441.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192019_600.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192100_669.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192147_668.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192234_783.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192308_468.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192308_956.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192442_158.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192444_291.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192557_638.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192603_172.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192634_936.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192635_160.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192735_331.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192735_743.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192809_961.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192813_111.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192843_419.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192846_086.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192917_749.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192920_110.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192953_856.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_192959_391.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193029_803.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193031_951.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193106_514.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193107_291.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193222_194.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193222_446.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_193258_415.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_200736_655.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_200743_884.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_200849_206.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_200852_502.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_200922_726.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201008_425.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201010_043.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201113_520.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201140_400.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201144_778.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201229_507.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201317_983.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201319_519.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201423_517.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201424_567.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201521_628.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201524_573.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201633_307.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201636_653.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201727_279.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201806_003.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201811_946.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201901_202.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201930_699.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_201931_049.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202007_450.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202012_593.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202059_673.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202101_827.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202211_449.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202211_867.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202253_900.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202255_960.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202343_106.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202418_864.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202423_684.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202509_669.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202526_934.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202539_119.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202623_863.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202628_572.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202712_886.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202714_956.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202809_749.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202840_976.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202848_410.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202931_230.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_202943_617.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203021_734.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203028_102.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203106_436.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203113_635.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203158_830.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203200_239.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203253_712.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203257_509.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203331_381.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251006_203335_175.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165219_430.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165414_176.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165516_016.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165559_286.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165649_159.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165651_464.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165758_824.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165800_750.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165842_143.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165850_048.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165928_950.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_165932_165.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170011_899.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170110_504.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170115_178.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170155_820.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170200_591.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170345_740.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170347_860.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170518_940.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170519_363.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170710_898.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251007_170712_921.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251008_110727_029.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251008_110728_488.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251010_202606_007.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251010_203232_645.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251010_203322_028.png",
+      "min_depth_from_projectP": 2
+    },
+    {
+      "name": "offspring_20251010_205005_865.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_182828_799.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_182921_156.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183009_044.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183015_981.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183057_500.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183057_563.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183145_661.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183147_226.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183303_957.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183315_724.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183403_507.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183452_316.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183506_187.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183542_468.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183701_198.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183708_098.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183747_752.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183749_353.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251012_183757_386.png",
+      "min_depth_from_projectP": 2
+    },
+    {
+      "name": "offspring_20251013_143146_700.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_143222_347.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_143252_880.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_143257_209.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_143611_229.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_143709_283.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_144203_024.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_144231_277.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_144240_378.png",
+      "min_depth_from_projectP": 1
+    },
+    {
+      "name": "offspring_20251013_144310_935.png",
+      "min_depth_from_projectP": 1
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "parents": [
+    "DSCF4385.jpg",
+    "DSCF7655.jpg",
+    "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Role map — direct‑flash, photoreal.\nDSCF4385 → centered hooded statue; tall evergreens L/R; low shrubs; night.\nDSCF7655 → 9–12 separate orange‑red umbrellas behind statue; irregular size/tilt; gentle overlaps; keep head/shoulders clear.\nwc6725_crowd → dense inward‑facing ring at mid‑ground; leave a narrow front walkway.\nLighting → on‑camera direct flash (hard, point‑source): crisp shadows, strong speculars, short falloff; foreground bright, background quickly darker; no halo/rim glow.\nLook → gritty flash snapshot on 4×5: high micro‑contrast, fine film grain; vertical 2:3.\nRules → remove front sapling; no poles crossing the statue.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",
+  "strength": 0.7,
+  "created_at": "2025-09-27T06:00:23.700527Z",
+  "output_image": "offspring_20250927_140022_966.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1121,
+    "height": 1536
+  }
+}

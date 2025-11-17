@@ -1,0 +1,79 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "hero",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "tall",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "wide",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 3,
+      "row_span": 1
+    },
+    {
+      "id": "square1",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "square2",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "square3",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 6,
+  "panels": [
+    {
+      "id": "videoL",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%97%91%E5%A3%9E%E7%9A%84%E5%B0%91%E7%88%BA.mp4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "嗑壞的少爺",
+      "col_span": 3,
+      "row_span": 4
+    }
+  ]
+}

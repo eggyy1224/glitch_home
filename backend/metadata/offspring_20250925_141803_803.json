@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250925_132631_308.png",
+    "offspring_20250925_132643_648.jpeg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_132631_308.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_132643_648.jpeg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Cinematic twilight alley portrait with high‑contrast monochrome tonality and subtle warm rim‑light accents; shallow depth of field with creamy bokeh; fine film grain; subject isolated against a back‑lit haze in a realistic urban alley atmosphere. Keep a cohesive single photographic exposure with consistent perspective and geometry; photorealistic large‑format film look; avoid painterly stylization or obvious collage artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.68 (0=loose, 1=strict).",
+  "strength": 0.68,
+  "created_at": "2025-09-25T06:18:04.156535Z",
+  "output_image": "offspring_20250925_141803_803.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

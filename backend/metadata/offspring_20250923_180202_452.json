@@ -1,0 +1,12 @@
+{
+  "parents": [
+    "DSCF0188.jpg",
+    "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png",
+    "wc6725_Tai_37384957895s_midnight_recolored_photograph_of_8_dedi_a6d09c1d-1967-4fb7-a753-bd0c7c5cb669.png",
+    "wc6725__a643f343-a5ab-4dfe-9a53-8e8a4c83e3fb.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-23T10:02:02.453302Z",
+  "output_image": "offspring_20250923_180202_452.png"
+}

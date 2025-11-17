@@ -1,0 +1,45 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "horse-video-large",
+      "image": null,
+      "url": "/?video_mode=true&video=%E8%B7%B3%E8%B7%B3%E9%A6%AC.mp4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "跳跳馬",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "horse-slide-highlight",
+      "image": "offspring_20251109_003051_795.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "馬景 Highlight",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "horse-video-small",
+      "image": null,
+      "url": "/?video_mode=true&video=Horse.mp4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Horse",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "DSCF4245.jpg",
+    "wc6725_resimulate_this_unfinished_picture_--ar_5877_--v_6.1_4db76573-0588-4b1d-87a0-45e62a43c22c.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T07:01:58.467371Z",
+  "output_image": "offspring_20250924_150158_465.png"
+}

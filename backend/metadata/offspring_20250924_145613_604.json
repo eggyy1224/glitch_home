@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png",
+    "wc6725_Low-Level_Features_Color_The_image_primarily_features_da_c4159395-22f7-49b5-8afb-0936fd58bdb4.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T06:56:13.606313Z",
+  "output_image": "offspring_20250924_145613_604.png"
+}

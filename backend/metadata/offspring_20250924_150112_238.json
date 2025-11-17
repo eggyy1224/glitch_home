@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_1977.7777777_578c8c3e-8fff-4b9e-b707-7f3107d4a92e.png",
+    "DSCF2631.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T07:01:12.239642Z",
+  "output_image": "offspring_20250924_150112_238.png"
+}

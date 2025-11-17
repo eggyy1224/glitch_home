@@ -1,0 +1,28 @@
+{
+  "parents": [
+    "offspring_20251109_185443_643.png",
+    "offspring_20251109_185728_331.png",
+    "offspring_20251109_185716_341.png",
+    "offspring_20251109_185821_377.png",
+    "offspring_20251109_190027_005.png",
+    "offspring_20251109_185838_872.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_185443_643.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_185728_331.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_185716_341.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_185821_377.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_190027_005.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_185838_872.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Extract the most distinctive subjects, forms, textures, and lighting cues from the provided images and recombine them into a freshly composed scene. Build a new layout from scratch—do not preserve or layer whole backgrounds; reinterpret placement, perspective, and scale so every element feels re-staged rather than pasted. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly stylization or obvious digital compositing artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",
+  "strength": 0.5,
+  "created_at": "2025-11-13T08:54:29.103588Z",
+  "output_image": "offspring_20251113_165428_752.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

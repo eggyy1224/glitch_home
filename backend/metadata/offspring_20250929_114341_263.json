@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250929_113731_778.png",
+    "offspring_20250928_203748_266.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly centered on the provided base image. Fill the scene with an overwhelming crowd: pack both foreground and background with Taiwanese young public servants, matching the 1970s formal uniforms. In the extreme foreground place a few very close, oversized heads and shoulders, heavily out-of-focus bokeh blur, hinting shallow depth of field. Keep the middle and back rows sharp and orderly, maintaining reflections and flash lighting. Emphasize strong spatial depth: near-field faces soft and blurred, mid-ground group crisp, distant clusters fading softly. Preserve the overall composition and environment from the base image.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",
+  "strength": 0.8,
+  "created_at": "2025-09-29T03:43:41.701755Z",
+  "output_image": "offspring_20250929_114341_263.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 896,
+    "height": 1152
+  }
+}

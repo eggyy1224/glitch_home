@@ -1,0 +1,13 @@
+{
+  "images": [
+    "img1.png",
+    "img2.png"
+  ],
+  "image_count": 2,
+  "rows": 10,
+  "cols": 10,
+  "mix": true,
+  "stage_width": 1920,
+  "stage_height": 1080,
+  "seed": 100
+}

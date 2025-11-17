@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-17T06:28:41Z",
+  "text": "測試音訊是否會被瀏覽器阻擋",
+  "instructions": null,
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251117T062839_4cef843d.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251117T062839_4cef843d.mp3",
+  "relative_path": "generated_sounds/narration_20251117T062839_4cef843d.mp3",
+  "size_bytes": 57600,
+  "checksum_sha256": "2e9cbcbe83504a94f7707b076b38f1d6315df281325a0b381cd3933d52aec547"
+}

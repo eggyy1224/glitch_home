@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_A_massive_ancient_tree_with_a_thick_twisted_trunk_captur_c78b03da-7f8f-4972-81f4-7cc01e4c1cba.png",
+    "wc6725_Visualize_a_mysterious_and_atmospheric_night_scene_where_a6ee515d-e8ea-47a3-a309-c7d78c29c335.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T08:22:58.536906Z",
+  "output_image": "offspring_20250923_162258_533.png"
+}

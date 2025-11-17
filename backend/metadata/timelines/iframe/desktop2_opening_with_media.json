@@ -1,0 +1,122 @@
+{
+  "id": "desktop2_opening_with_media",
+  "title": "Desktop2 開場：含語音/標題",
+  "clientId": "desktop2",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop2/opening_stage1",
+      "duration": 8,
+      "label": "暖身",
+      "subtitle": {
+        "text": "準備啟動 Desktop2 展示",
+        "language": "zh-TW",
+        "duration_seconds": 6
+      },
+      "tts": {
+        "mode": "tts",
+        "text": "Desktop2 opening sequence start",
+        "instructions": "en-US, announcer, soft",
+        "auto_play": true
+      },
+      "remote_clicks": [
+        {
+          "label": "Birdman 聲軌啟動",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-birdman",
+          "offset_seconds": 0.5
+        }
+      ]
+    },
+    {
+      "snapshot": "desktop2/opening_stage2",
+      "duration": 12,
+      "label": "動態排布",
+      "caption": {
+        "text": "圖像系譜學 · 排布演示",
+        "language": "zh-TW",
+        "duration_seconds": 10
+      },
+      "tts": {
+        "mode": "speak_with_subtitle",
+        "text": "此階段展示多重面板的協作",
+        "subtitle_language": "zh-TW",
+        "auto_play": true
+      },
+      "remote_clicks": [
+        {
+          "label": "Birdman 靜音",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-birdman",
+          "offset_seconds": 0.1
+        },
+        {
+          "label": "Birds 聲軌啟動",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-birds",
+          "offset_seconds": 0.6
+        },
+        {
+          "label": "Birds 靜音",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-birds",
+          "offset_seconds": 6.2
+        },
+        {
+          "label": "Drive-in 聲軌啟動",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-drivein",
+          "offset_seconds": 6.7
+        }
+      ]
+    },
+    {
+      "snapshot": "desktop2/opening_stage3",
+      "duration": 10,
+      "label": "收束",
+      "caption": {
+        "clear": true
+      },
+      "subtitle": {
+        "clear": true
+      },
+      "tts": {
+        "mode": "sound_play",
+        "sound_filename": "narration_20251101T123456_demo.mp3",
+        "auto_play": true
+      },
+      "remote_clicks": [
+        {
+          "label": "Drive-in 靜音",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-drivein",
+          "offset_seconds": 0.1
+        },
+        {
+          "label": "Sequence 聲軌啟動",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-sequence",
+          "offset_seconds": 0.6
+        },
+        {
+          "label": "Sequence 靜音",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-sequence",
+          "offset_seconds": 5.2
+        },
+        {
+          "label": "Photoshoot 聲軌啟動",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-photoshoot",
+          "offset_seconds": 5.7
+        },
+        {
+          "label": "Photoshoot 靜音",
+          "selector": ".video-mode-container",
+          "targetClientId": "desktop2-photoshoot",
+          "offset_seconds": 9.5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "images": [
+    "offspring_20250923_161624_066.png",
+    "offspring_20250923_161704_451.png",
+    "offspring_20250923_161747_194.png",
+    "offspring_20250923_161828_524.png",
+    "offspring_20250923_162135_155.png",
+    "offspring_20250923_162223_271.png"
+  ],
+  "image_count": 6,
+  "rows": 12,
+  "cols": 18,
+  "mix": true,
+  "stage_width": 1152,
+  "stage_height": 2048,
+  "seed": 555777
+}

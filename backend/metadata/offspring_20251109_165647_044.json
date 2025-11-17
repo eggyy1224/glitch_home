@@ -1,0 +1,38 @@
+{
+  "generation_type": "collage",
+  "parents": [
+    "offspring_20250928_203748_266.png",
+    "offspring_20250928_205326_521.png",
+    "offspring_20250928_205337_050.png",
+    "offspring_20250928_205354_252.png",
+    "offspring_20250928_205654_206.png",
+    "offspring_20250928_205716_733.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_205326_521.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_205337_050.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_205354_252.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_205654_206.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_205716_733.png"
+  ],
+  "collage_params": {
+    "rows": 300,
+    "cols": 16,
+    "mode": "weave",
+    "base": "first",
+    "allow_self": false,
+    "seed": 364272,
+    "resize_w": 2048,
+    "pad_px": 0,
+    "jitter_px": 0,
+    "rotate_deg": 0
+  },
+  "output_image": "offspring_20251109_165647_044.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2048,
+    "height": 1200
+  },
+  "created_at": "2025-11-09T08:56:48.059689Z"
+}

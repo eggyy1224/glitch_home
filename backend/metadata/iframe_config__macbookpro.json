@@ -1,0 +1,427 @@
+{
+  "layout": "grid",
+  "gap": 6,
+  "columns": 14,
+  "panels": [
+    {
+      "id": "panel_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=1000",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 6,
+      "row_span": 3
+    },
+    {
+      "id": "panel_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=1200",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 4,
+      "row_span": 2
+    },
+    {
+      "id": "panel_3",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=1400",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "panel_4",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=1600",
+      "params": {},
+      "ratio": 0.75,
+      "label": null,
+      "col_span": 3,
+      "row_span": 4
+    },
+    {
+      "id": "panel_5",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=1800",
+      "params": {},
+      "ratio": 2.5,
+      "label": null,
+      "col_span": 5,
+      "row_span": 2
+    },
+    {
+      "id": "panel_6",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=2000",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 3,
+      "row_span": 3
+    },
+    {
+      "id": "panel_7",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=2400",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "panel_8",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=2800",
+      "params": {},
+      "ratio": 1.3333333333333333,
+      "label": null,
+      "col_span": 4,
+      "row_span": 3
+    },
+    {
+      "id": "panel_9",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=3200",
+      "params": {},
+      "ratio": 1.6666666666666667,
+      "label": null,
+      "col_span": 5,
+      "row_span": 3
+    },
+    {
+      "id": "panel_10",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=3600",
+      "params": {},
+      "ratio": 1.5,
+      "label": null,
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "panel_11",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=4200",
+      "params": {},
+      "ratio": 0.6666666666666666,
+      "label": null,
+      "col_span": 2,
+      "row_span": 3
+    },
+    {
+      "id": "panel_12",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=4800",
+      "params": {},
+      "ratio": 3.0,
+      "label": null,
+      "col_span": 6,
+      "row_span": 2
+    },
+    {
+      "id": "panel_13",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=5600",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel_14",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=6400",
+      "params": {},
+      "ratio": 4.0,
+      "label": null,
+      "col_span": 4,
+      "row_span": 1
+    },
+    {
+      "id": "panel_15",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=7400",
+      "params": {},
+      "ratio": 1.5,
+      "label": null,
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "panel_16",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=8600",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "panel_17",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=10000",
+      "params": {},
+      "ratio": 2.5,
+      "label": null,
+      "col_span": 5,
+      "row_span": 2
+    },
+    {
+      "id": "panel_18",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=11600",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 3,
+      "row_span": 3
+    },
+    {
+      "id": "panel_19",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=13400",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "panel_20",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=15400",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 4,
+      "row_span": 2
+    },
+    {
+      "id": "panel_21",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=17600",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 6,
+      "row_span": 3
+    },
+    {
+      "id": "panel_22",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=20000",
+      "params": {},
+      "ratio": 0.5,
+      "label": null,
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "panel_23",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=22600",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "panel_24",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=25400",
+      "params": {},
+      "ratio": 3.0,
+      "label": null,
+      "col_span": 3,
+      "row_span": 1
+    },
+    {
+      "id": "panel_25",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=28400",
+      "params": {},
+      "ratio": 1.25,
+      "label": null,
+      "col_span": 5,
+      "row_span": 4
+    },
+    {
+      "id": "panel_26",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=31600",
+      "params": {},
+      "ratio": 0.6666666666666666,
+      "label": null,
+      "col_span": 2,
+      "row_span": 3
+    },
+    {
+      "id": "panel_27",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=35000",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 4,
+      "row_span": 2
+    },
+    {
+      "id": "panel_28",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=38600",
+      "params": {},
+      "ratio": 1.5,
+      "label": null,
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "panel_29",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=42400",
+      "params": {},
+      "ratio": 0.3333333333333333,
+      "label": null,
+      "col_span": 1,
+      "row_span": 3
+    },
+    {
+      "id": "panel_30",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=46400",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "panel_31",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=50600",
+      "params": {},
+      "ratio": 2.5,
+      "label": null,
+      "col_span": 5,
+      "row_span": 2
+    },
+    {
+      "id": "panel_32",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=55000",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 3,
+      "row_span": 3
+    },
+    {
+      "id": "panel_33",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=59600",
+      "params": {},
+      "ratio": 4.0,
+      "label": null,
+      "col_span": 4,
+      "row_span": 1
+    },
+    {
+      "id": "panel_34",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=64400",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "panel_35",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=69400",
+      "params": {},
+      "ratio": 3.0,
+      "label": null,
+      "col_span": 6,
+      "row_span": 2
+    },
+    {
+      "id": "panel_36",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=74600",
+      "params": {},
+      "ratio": 3.0,
+      "label": null,
+      "col_span": 3,
+      "row_span": 1
+    },
+    {
+      "id": "panel_37",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=80000",
+      "params": {},
+      "ratio": 0.5,
+      "label": null,
+      "col_span": 2,
+      "row_span": 4
+    },
+    {
+      "id": "panel_38",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=85600",
+      "params": {},
+      "ratio": 1.6666666666666667,
+      "label": null,
+      "col_span": 5,
+      "row_span": 3
+    },
+    {
+      "id": "panel_39",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=91400",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "panel_40",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=97400",
+      "params": {},
+      "ratio": 2.0,
+      "label": null,
+      "col_span": 4,
+      "row_span": 2
+    },
+    {
+      "id": "panel_41",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=103600",
+      "params": {},
+      "ratio": 1.5,
+      "label": null,
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "panel_42",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png&slide_interval=110000",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

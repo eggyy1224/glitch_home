@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250928_203748_266.png",
+    "offspring_20250928_203748_266.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly. Same scene and framing. Maximum group size like graduation photo: four rows, centered composition. Keep flash look and water.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.92 (0=loose, 1=strict).",
+  "strength": 0.92,
+  "created_at": "2025-09-28T12:57:17.237905Z",
+  "output_image": "offspring_20250928_205716_733.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1248,
+    "height": 832
+  }
+}

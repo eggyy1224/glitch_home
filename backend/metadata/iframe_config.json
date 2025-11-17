@@ -1,0 +1,17 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "test",
+      "image": null,
+      "url": "/?test=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Test Panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

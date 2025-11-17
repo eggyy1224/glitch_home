@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_Visualize_a_mysterious_and_atmospheric_night_scene_where_a6ee515d-e8ea-47a3-a309-c7d78c29c335.png",
+    "wc6725_Create_a_serene_and_evocative_nighttime_scene_featuring__dd437391-f772-4559-8c95-1435fcd825ae.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T09:54:41.086035Z",
+  "output_image": "offspring_20250923_175441_083.png"
+}

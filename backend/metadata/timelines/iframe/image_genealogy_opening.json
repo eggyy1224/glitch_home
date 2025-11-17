@@ -1,0 +1,38 @@
+{
+  "id": "image_genealogy_opening",
+  "title": "Image Genealogy 開場序列",
+  "clientId": "image_genealogy",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "opening_single_slide",
+      "duration": 10,
+      "label": "單格 Slide Mode"
+    },
+    {
+      "snapshot": "opening_two_panel",
+      "duration": 5,
+      "label": "雙格展示"
+    },
+    {
+      "snapshot": "opening_four_panel",
+      "duration": 3,
+      "label": "四格展示"
+    },
+    {
+      "snapshot": "opening_sixteen_grid",
+      "duration": 1,
+      "label": "16 格矩陣"
+    },
+    {
+      "snapshot": "opening_hundred_grid",
+      "duration": 30,
+      "label": "100 格展示牆"
+    },
+    {
+      "snapshot": "opening_caption",
+      "duration": 15,
+      "label": "Caption 標題頁"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20251008_193039_435.png",
+    "IMG_3694.JPG"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251008_193039_435.png",
+    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_3694.JPG"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Preserve the first reference image's staging, lighting, and composition, but overwrite every puppet and human head with carved wooden effigies that clearly resemble the subject in the second reference photo. The central stacked puppet must have the second subject's facial structure, expression, hair silhouette, and eyes—but rendered as polished, varnished wood with visible grain, carved seams, and puppet joints. Convert every floating mask and every dog-walker face into these wooden clones as well. Remove any remaining skin or paint textures; if a feature looks human, rebuild it as wood while keeping the scene's nocturnal glow and realistic lighting.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.98 (0=loose, 1=strict).",
+  "strength": 0.98,
+  "created_at": "2025-10-10T12:42:48.990710Z",
+  "output_image": "offspring_20251010_204248_648.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 686,
+    "height": 1200
+  }
+}

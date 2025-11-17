@@ -1,0 +1,23 @@
+{
+  "id": "desktop2_opening_demo",
+  "title": "Desktop2 多段開場",
+  "clientId": "desktop2",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "opening_stage1",
+      "duration": 8,
+      "label": "單柱暖場"
+    },
+    {
+      "snapshot": "opening_stage2",
+      "duration": 8,
+      "label": "並列展開"
+    },
+    {
+      "snapshot": "opening_stage3",
+      "duration": 10,
+      "label": "全景鋪陳"
+    }
+  ]
+}

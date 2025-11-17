@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_A_surreal_nighttime_scene_under_a_deep_cobalt-blue_sky_t_4501baa0-1686-4371-a71d-55a18a1846e0.png",
+    "wc6725_Tai_1400s_low_resolution_ccd_monster_like_Juniperus_chin_59dfe15f-7363-4de0-a12b-bf7b39875320.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T08:16:24.069476Z",
+  "output_image": "offspring_20250923_161624_066.png"
+}

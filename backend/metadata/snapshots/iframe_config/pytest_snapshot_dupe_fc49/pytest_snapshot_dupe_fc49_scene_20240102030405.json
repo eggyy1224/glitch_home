@@ -1,0 +1,53 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left",
+      "image": "offspring_20250929_114732_835.png",
+      "url": null,
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": "offspring_20250929_112621_888.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "third",
+      "image": "offspring_20250927_141336_787.png",
+      "url": null,
+      "params": {
+        "incubator": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "fourth",
+      "image": "offspring_20251001_181913_443.png",
+      "url": null,
+      "params": {
+        "organic_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "parents": [
+    "offspring_20250923_172041_821.png",
+    "DSCF0424.jpg",
+    "wc6725_A_nighttime_hillside_scene_with_a_colossal_ancient_tree__81966f49-a61c-4cf9-83dd-0b0db6da11d6.png",
+    "DSCF6857.jpg",
+    "DSCF2022.jpg",
+    "offspring_20250923_173947_968.png",
+    "offspring_20250923_173902_441.png",
+    "wc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_199999999999_442eb68e-5bed-4338-849c-dd8d23d39012.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-23T10:05:59.222735Z",
+  "output_image": "offspring_20250923_180559_221.png"
+}

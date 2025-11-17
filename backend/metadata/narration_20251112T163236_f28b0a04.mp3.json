@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-12T16:32:39Z",
+  "text": "今天天氣好清爽 路上野花香",
+  "instructions": null,
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251112T163236_f28b0a04.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251112T163236_f28b0a04.mp3",
+  "relative_path": "generated_sounds/narration_20251112T163236_f28b0a04.mp3",
+  "size_bytes": 61824,
+  "checksum_sha256": "0c88f583b276013b1cc619694e41596a4d4f449343993bd601010373e9f591f7"
+}

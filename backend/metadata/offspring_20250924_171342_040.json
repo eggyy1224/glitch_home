@@ -1,0 +1,11 @@
+{
+  "parents": [
+    "wc6725_The_photo_shows_the_silhouette_of_people_in_dark_holding_cfc34b7a-bd64-45d5-ba7e-59bd50ee15d6.png",
+    "DSCF0970.jpg",
+    "wc6725_resimulate_this_unfinished_picture_--ar_5877_--v_6.1_4db76573-0588-4b1d-87a0-45e62a43c22c.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T09:13:42.041272Z",
+  "output_image": "offspring_20250924_171342_040.png"
+}

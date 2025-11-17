@@ -1,0 +1,27 @@
+{
+  "id": "experimental_opening",
+  "title": "Experimental Opening Sequence",
+  "description": "從靜態瀏覽牆逐步切換到更密集的布局，適合單機 demo",
+  "client_id": "desktop2",
+  "loop": false,
+  "steps": [
+    {
+      "label": "起始：雙欄資訊牆",
+      "snapshot": "experimental/experimental_experimental-15x10_20251114145843.json",
+      "at": 0,
+      "duration": 10
+    },
+    {
+      "label": "過場：聚焦長條",
+      "snapshot": "experimental/experimental_experimental-layout-grid3_20251114150022.json",
+      "at": 10,
+      "duration": 8
+    },
+    {
+      "label": "高潮：細長拼貼",
+      "snapshot": "experimental/experimental_experimental-slim-collage_20251114150118.json",
+      "at": 18,
+      "duration": 12
+    }
+  ]
+}

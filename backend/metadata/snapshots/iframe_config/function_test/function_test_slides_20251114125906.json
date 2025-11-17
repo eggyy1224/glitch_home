@@ -1,0 +1,91 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "slide_a",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "slide_interval": "fast"
+      },
+      "ratio": 1.0,
+      "label": "Kinship A",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "slide_b",
+      "image": "offspring_20250923_162258_533.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "slide_interval": "slow"
+      },
+      "ratio": 1.0,
+      "label": "Kinship B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "slide_c",
+      "image": "offspring_20250923_163230_415.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "slide_interval": "medium"
+      },
+      "ratio": 1.0,
+      "label": "Field",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "slide_d",
+      "image": "offspring_20250923_170818_939.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "slide_interval": "medium"
+      },
+      "ratio": 1.0,
+      "label": "Macro",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "slide_e",
+      "image": "offspring_20250923_171906_216.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "organic",
+        "slide_interval": "slow"
+      },
+      "ratio": 1.0,
+      "label": "Organic",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "slide_f",
+      "image": "offspring_20250923_172803_633.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "slide_interval": "fast"
+      },
+      "ratio": 1.0,
+      "label": "Archive",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

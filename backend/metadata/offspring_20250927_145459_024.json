@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250923_175851_526.png",
+    "DSCF8839.jpg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250923_175851_526.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF8839.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly stylization or obvious digital compositing artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",
+  "strength": 0.8,
+  "created_at": "2025-09-27T06:54:59.428942Z",
+  "output_image": "offspring_20250927_145459_024.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

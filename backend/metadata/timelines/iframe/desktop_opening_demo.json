@@ -1,0 +1,23 @@
+{
+  "id": "desktop_opening_demo",
+  "title": "Desktop 開場假資料",
+  "clientId": "desktop",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop_snapshot",
+      "duration": 6,
+      "label": "馬景暖身"
+    },
+    {
+      "snapshot": "desktop_20251114135028",
+      "duration": 7,
+      "label": "鳥景展開"
+    },
+    {
+      "snapshot": "closing_focus",
+      "duration": 5,
+      "label": "聚焦終章"
+    }
+  ]
+}

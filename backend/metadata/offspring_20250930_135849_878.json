@@ -1,0 +1,24 @@
+{
+  "parents": [
+    "3A.jpg",
+    "offspring_20250924_150915_655.png",
+    "offspring_20250925_132631_308.png",
+    "offspring_20250924_172737_799.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/場地模擬/3A.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_150915_655.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250925_132631_308.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_172737_799.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Use the provided exhibition photo (3A.jpg) as the base environment. Replace the three screen contents with the supplied artworks: left vertical screen shows offspring_20250924_150915_655.png, large center LED wall shows offspring_20250925_132631_308.png, and right stacked monitor shows offspring_20250924_172737_799.png. Keep the original room architecture, green lighting wash, speakers, and hanging fixtures intact. Match perspective and screen proportions so each artwork sits naturally on its display without visible collage seams. Preserve photographic realism, subtle lens glow, and real screen luminance.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",
+  "strength": 0.7,
+  "created_at": "2025-09-30T05:58:49.891566Z",
+  "output_image": "offspring_20250930_135849_878.jpeg",
+  "output_format": "jpeg",
+  "output_size": {
+    "width": 1440,
+    "height": 960
+  }
+}

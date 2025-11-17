@@ -1,0 +1,28 @@
+{
+  "layout": "vertical",
+  "gap": 16,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "beta-top",
+      "image": "offspring_20250925_103513_977.png",
+      "url": null,
+      "params": {
+        "phylogeny": "true"
+      },
+      "ratio": 1.0,
+      "label": null
+    },
+    {
+      "id": "beta-bottom",
+      "image": "offspring_20251004_212756_163.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": null
+    }
+  ]
+}

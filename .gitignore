@@ -8,7 +8,7 @@ venv/
 
 # Generated artifacts
 offspring_images/
-metadata/
+
 embeddings/
 genes_pool/
 

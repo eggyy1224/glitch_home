@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png",
+    "wc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_1977.7777777_578c8c3e-8fff-4b9e-b707-7f3107d4a92e.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T08:17:47.196572Z",
+  "output_image": "offspring_20250923_161747_194.png"
+}

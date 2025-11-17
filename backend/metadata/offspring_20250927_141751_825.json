@@ -1,0 +1,22 @@
+{
+  "parents": [
+    "DSCF4385.jpg",
+    "offspring_20250927_115953_059.png",
+    "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_115953_059.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Role map — direct‑flash, wild snapshot.\nDSCF4385 → hooded statue centered; tall evergreens left/right; low shrubs; night.\noffspring_20250927_115953_059 → decor: 9–12 orange‑red umbrellas with green rims, strong spokes; irregular size/tilt; partial overlaps; KEEP the messy foliage and support poles; it is OK if some elements cross the statue outline.\nwc6725 crowd → dense inward‑facing ring; front 1–2 rows waist‑up; youthful 1970s Taiwan look (neat short hair/bowl cuts/side parts, plain shirts, high‑waist slacks/skirts, simple leather shoes, a few metal‑frame glasses); natural mixed expressions.\nLighting → on‑camera direct flash: hard chin shadows, crisp skin texture, bright front rows (+0.5 EV), quick falloff; allow slight hotspots; no artificial rim/halo.\nLook → raw/gritty 4×5 film, fine grain; vertical 2:3.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.74 (0=loose, 1=strict).",
+  "strength": 0.74,
+  "created_at": "2025-09-27T06:17:52.426809Z",
+  "output_image": "offspring_20250927_141751_825.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1121,
+    "height": 1536
+  }
+}

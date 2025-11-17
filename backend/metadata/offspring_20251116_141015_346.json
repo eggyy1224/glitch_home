@@ -1,0 +1,44 @@
+{
+  "generation_type": "collage",
+  "parents": [
+    "offspring_20250927_143759_057.png",
+    "offspring_20250927_143820_805.png",
+    "offspring_20250927_143740_296.png",
+    "offspring_20250927_115953_059.png",
+    "offspring_20250927_141336_787.png",
+    "offspring_20250927_142559_763.png",
+    "offspring_20250927_143151_576.png",
+    "offspring_20250927_141751_825.png",
+    "offspring_20250927_140849_156.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_143759_057.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_143820_805.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_143740_296.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_115953_059.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_141336_787.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_142559_763.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_143151_576.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_141751_825.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_140849_156.png"
+  ],
+  "collage_params": {
+    "rows": 35,
+    "cols": 35,
+    "mode": "source-cluster",
+    "base": "first",
+    "allow_self": false,
+    "seed": 904291,
+    "resize_w": 2048,
+    "pad_px": 0,
+    "jitter_px": 0,
+    "rotate_deg": 0
+  },
+  "output_image": "offspring_20251116_141015_346.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2030,
+    "height": 2800
+  },
+  "created_at": "2025-11-16T06:10:20.075972Z"
+}

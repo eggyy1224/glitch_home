@@ -1,0 +1,24 @@
+{
+  "parents": [
+    "DSCF0424.jpg",
+    "DSCF6251.jpg",
+    "offspring_20250925_142626_950.jpeg",
+    "offspring_20250925_135934_202.jpeg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_142626_950.jpeg",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_135934_202.jpeg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Portrait crop, close to the trunk. White tree silhouette with fine charred fissures and ember veins creeping upward from the base; canopy remains clean white (no cracks on leaves). Restrict red glow to low vegetation and root base; subtle ground fog. Omit the horse. Single photographic exposure, realistic light falloff, high micro-contrast, fine film grain. No neon, no line-art, no double exposure; avoid uniform overlays or duplicated patterns.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.38 (0=loose, 1=strict).",
+  "strength": 0.38,
+  "created_at": "2025-09-25T06:32:52.713764Z",
+  "output_image": "offspring_20250925_143252_706.jpeg",
+  "output_format": "jpeg",
+  "output_size": {
+    "width": 1080,
+    "height": 1440
+  }
+}

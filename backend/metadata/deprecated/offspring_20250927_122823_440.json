@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "DSCF7655.jpg",
+    "DSCF4385.jpg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Recompose a dramatic yet photoreal night‑garden using the provided images only as semantic references. Center a hooded/robed statue from behind with a clean head‑and‑shoulders silhouette. Behind it, arrange a CLUSTER of 9–13 separate orange‑red paper‑umbrella orbs with radial spokes: varied sizes (0.6×–1.3×), slight tilt/rotation, staggered depth, gentle overlaps, and clear negative space so each circle reads distinctly. Do NOT fuse them into one disk. Allow a few leaves to partially kiss some orbs, but keep the statue’s head/shoulders free of any intersections. Evergreen trees remain as left/right vertical columns. Foreground shrubs stay lush and alive but subdued (about −1.8 EV to the orbs). If thin supports are visible, keep them soft and behind the subject—never crossing the statue contour.\n\nLighting: deep midnight sky; bold warm backlight from the orbs; soft off‑camera fill on foliage (−1.8 EV); a very subtle, physically‑plausible cool rim only on the statue’s brightest edges—NO neon outline, NO halo/edge glow. Reduce overall saturation ~10% and midtone contrast ~5% for a natural filmic palette.\n\nLens/rendering: real large‑format (4×5) look with slight front tilt; fine film grain; gentle highlight roll‑off; faint diffusion/halation around the brightest orbs (like a 1/8 diffusion filter), slight optical vignetting; distant background softly out of focus; a few tiny moth streaks from a longer shutter.\n\nComposition: vertical 2:3, viewpoint slightly low. Keep the statue clearly readable and grounded; allow light foliage near lower torso only.\n\nBuild the layout from scratch with consistent geometry and color; single photographic exposure. Strictly no painterly style, no visible compositing artifacts, no HDR/oversharpening, no edge outlines.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",
+  "strength": 0.7,
+  "created_at": "2025-09-27T04:28:24.224275Z",
+  "output_image": "offspring_20250927_122823_440.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1024,
+    "height": 1536
+  }
+}

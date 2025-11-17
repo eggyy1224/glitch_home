@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "DSCF6857.jpg",
+    "wc6725_A_massive_ancient_tree_with_a_thick_twisted_trunk_captur_c78b03da-7f8f-4972-81f4-7cc01e4c1cba.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the salient subjects, forms, and textures from all provided images into one coherent scene. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and scale; unify textures and palette; present as a single shot (not a collage); avoid painterly or digital-art looks.",
+  "created_at": "2025-09-24T08:14:09.352708Z",
+  "output_image": "offspring_20250924_161409_352.png"
+}

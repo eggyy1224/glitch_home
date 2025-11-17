@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250925_133955_922.jpeg",
+    "offspring_20250923_190036_174.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250925_133955_922.jpeg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250923_190036_174.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Night garden ritual scene, maintain base composition: central robed statue back view, orange radial discs glowing like ceremonial umbrellas; add a disciplined long row of figures in dark dark navy uniforms at the very front, evenly spaced, neutral expressions, frontal flash lighting.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.55 (0=loose, 1=strict).",
+  "strength": 0.55,
+  "created_at": "2025-09-28T12:33:46.791282Z",
+  "output_image": "offspring_20250928_203346_360.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 864,
+    "height": 1184
+  }
+}

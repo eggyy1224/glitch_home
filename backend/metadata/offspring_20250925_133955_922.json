@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "DSCF7733.jpg",
+    "offspring_20250924_144818_648.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7733.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Monochrome long-exposure with layered ground fog and distant small fires; no bokeh orbs, no glitter spheres, no double exposure; subject silhouette with restrained halation; high micro-contrast B&W; single exposure.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",
+  "strength": 0.5,
+  "created_at": "2025-09-25T05:39:55.928159Z",
+  "output_image": "offspring_20250925_133955_922.jpeg",
+  "output_format": "jpeg",
+  "output_size": {
+    "width": 1080,
+    "height": 1350
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250929_113731_778.png",
+    "offspring_20250928_203748_266.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly anchored on the base image. Preserve the entire flock of birds in the sky—do not remove them—and subtly add a few more birds so the upper half stays lively. At the same time, massively increase the crowd of Taiwanese young public servants: foreground should feature several extremely close heads and shoulders, strongly out-of-focus bokeh blur; mid-ground group sharp and orderly; far background columns fading softly. Maintain the pond reflections and frontal flash lighting. Emphasize layered depth: blurred foreground faces, crisp mid-ground, soft distant silhouettes, with birds still visible above.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",
+  "strength": 0.8,
+  "created_at": "2025-09-29T03:45:31.664835Z",
+  "output_image": "offspring_20250929_114531_184.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 896,
+    "height": 1152
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "bird-slide-1",
+      "image": "offspring_20251012_182656_147.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "鳥景 Slide 1",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "bird-slide-2",
+      "image": "offspring_20250927_135510_380.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "鳥景 Slide 2",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "right-video",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "BirdmanTalk",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "bird-slide-3",
+      "image": "offspring_20250924_172900_385.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "鳥景 Slide 3",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "bird-slide-4",
+      "image": "offspring_20251109_161756_462.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "鳥景 Slide 4",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_Create_a_serene_and_evocative_nighttime_scene_featuring__dd437391-f772-4559-8c95-1435fcd825ae.png",
+    "wc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_199999999999_6cda0df5-b942-4daf-a7fa-1de6ba32f46d.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T09:39:02.443331Z",
+  "output_image": "offspring_20250923_173902_441.png"
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-16T18:55:34Z",
+  "text": "此階段展示多重面板的協作",
+  "instructions": null,
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251116T185532_6975c22f.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251116T185532_6975c22f.mp3",
+  "relative_path": "generated_sounds/narration_20251116T185532_6975c22f.mp3",
+  "size_bytes": 50688,
+  "checksum_sha256": "daf3ded6c5ec14aa9b2d606a7b6cea976071516c04eba79f49565c0fe7dd8ee9"
+}

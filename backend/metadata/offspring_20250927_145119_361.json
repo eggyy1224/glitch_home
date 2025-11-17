@@ -1,0 +1,24 @@
+{
+  "parents": [
+    "DSCF4385.jpg",
+    "offspring_20250927_115953_059.png",
+    "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png",
+    "offspring_20250927_140315_846.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_115953_059.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_140315_846.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Role map — direct‑flash, wild snapshot (ALL‑MALE youth, classic glasses).\nDSCF4385 → hooded statue centered; tall evergreens L/R; low shrubs; night.\noffspring_20250927_115953_059 → decor: 9–12 orange‑red umbrellas with green rims, strong spokes; irregular size/tilt; partial overlaps; foliage/supports may cross the statue.\nwc6725 crowd → dense inward‑facing ring; FRONT 1–2 rows waist‑up near bottom; ALL MALE youth (16–22), 1970s school uniforms: white shirts, high‑waist dark slacks, narrow belts; neat side part/crew/bowl cuts.\nGlasses spec → classic thin wire‑frame round/oval (Windsor) or small browline only; gold/silver; lens width ≈42–46 mm; 25–35% of faces wear glasses; no thick plastic, no oversized, no modern shapes; subtle flash reflections but keep eyes visible.\nFlash look → on‑camera direct flash: faces +0.5 EV; hard chin shadows; fast falloff; allow mild hotspots; no rim/halo.\nFilm look → raw 4×5 film grain; 2:3 vertical.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.75 (0=loose, 1=strict).",
+  "strength": 0.75,
+  "created_at": "2025-09-27T06:51:19.937043Z",
+  "output_image": "offspring_20250927_145119_361.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1024,
+    "height": 1536
+  }
+}

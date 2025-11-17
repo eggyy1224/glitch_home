@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_resimulate_this_unfinished_picture_--ar_5877_--v_6.1_4db76573-0588-4b1d-87a0-45e62a43c22c.png",
+    "wc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T08:25:12.774792Z",
+  "output_image": "offspring_20250923_162512_773.png"
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "DSCF7655.jpg",
+    "DSCF4385.jpg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "robed statue silhouette, three to five glowing umbrellas in varying sizes, clean layered arrangement with gaps, symmetrical evergreen framing, remove poles or sticks, parted foliage, soft warm rim light, cinematic teal/orange, 85mm f/2.8, realistic film grain, single photographic exposure, no painterly artifacts",
+  "strength": null,
+  "created_at": "2025-09-27T04:29:15.316458Z",
+  "output_image": "offspring_20250927_122914_874.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

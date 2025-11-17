@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "opening_slide",
+      "image": "offspring_20251109_162257_852.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

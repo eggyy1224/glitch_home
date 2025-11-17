@@ -1,0 +1,24 @@
+{
+  "parents": [
+    "DSCF2022.jpg",
+    "DSCF4159.jpg",
+    "offspring_20250924_161704_050.png",
+    "offspring_20250924_193953_106.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF2022.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4159.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_161704_050.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250924_193953_106.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "single photographic exposure, realistic falloff, high micro-contrast, fine film grain, twilight agave field centered on a towering bloom stalk, incorporate a teal-to-indigo dusk sky with sparse stars like the reference, subtle crimson backlight spilling from a hidden lamp behind the plant so illumination feels motivated, red glow hugging lower leaves but no ghosting, remove utility wires and stray props, keep background trees low-contrast silhouettes, emphasize moist soil texture around the base, no neon outlines, no cartoon linework, no double exposure, no uniform overlays\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.35 (0=loose, 1=strict).",
+  "strength": 0.35,
+  "created_at": "2025-09-26T13:01:42.445568Z",
+  "output_image": "offspring_20250926_210142_439.jpeg",
+  "output_format": "jpeg",
+  "output_size": {
+    "width": 1080,
+    "height": 1440
+  }
+}

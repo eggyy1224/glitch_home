@@ -1,0 +1,23 @@
+{
+  "id": "desktop3_opening_demo",
+  "title": "Desktop3 層次假資料",
+  "clientId": "desktop3",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "opening_stage1",
+      "duration": 6,
+      "label": "主視覺先行"
+    },
+    {
+      "snapshot": "opening_stage2",
+      "duration": 7,
+      "label": "雙屏與滑動"
+    },
+    {
+      "snapshot": "opening_stage3",
+      "duration": 9,
+      "label": "完整版面"
+    }
+  ]
+}

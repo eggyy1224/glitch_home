@@ -1,0 +1,10 @@
+{
+  "parents": [
+    "wc6725_Imagine_you_are_a_automatic_camera_triggered_by_animals__a6f1e53a-1307-496c-bd46-ff56162ce445.png",
+    "wc6725_midnight_with_flash_189999999999999999999recoloerd_WILD__5ae96d7f-b09d-488c-93cf-38b928f82cf0.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T08:18:28.526604Z",
+  "output_image": "offspring_20250923_161828_524.png"
+}

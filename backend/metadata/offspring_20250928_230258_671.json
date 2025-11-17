@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250928_203748_266.png",
+    "offspring_20250927_183722_078.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_183722_078.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-only assembly. Keep base scene and framing. Replace all people with the character from the second reference; uniformize appearance into rows. Strong central flash. Preserve reflections.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.96 (0=loose, 1=strict).",
+  "strength": 0.96,
+  "created_at": "2025-09-28T15:02:59.197682Z",
+  "output_image": "offspring_20250928_230258_671.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 896,
+    "height": 1152
+  }
+}

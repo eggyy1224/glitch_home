@@ -1,0 +1,54 @@
+{
+  "generation_type": "collage",
+  "parents": [
+    "offspring_20250924_133452_175.png",
+    "offspring_20250923_191225_748.png",
+    "offspring_20250923_185714_061.png",
+    "offspring_20250923_185800_917.png",
+    "offspring_20250923_173803_154.png",
+    "offspring_20250923_173653_868.png",
+    "offspring_20250923_172803_633.png",
+    "offspring_20250923_172955_493.png",
+    "offspring_20250923_175441_083.png",
+    "offspring_20250923_174458_649.png",
+    "offspring_20250923_174417_753.png",
+    "offspring_20250923_175715_932.png",
+    "offspring_20250923_175851_526.png",
+    "offspring_20250923_180454_955.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250924_133452_175.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_191225_748.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_185714_061.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_185800_917.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_173803_154.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_173653_868.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_172803_633.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_172955_493.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_175441_083.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_174458_649.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_174417_753.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_175715_932.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_175851_526.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_180454_955.png"
+  ],
+  "collage_params": {
+    "rows": 50,
+    "cols": 50,
+    "mode": "kinship",
+    "base": "first",
+    "allow_self": false,
+    "seed": 288293,
+    "resize_w": 2048,
+    "pad_px": 0,
+    "jitter_px": 0,
+    "rotate_deg": 0
+  },
+  "output_image": "offspring_20251108_141728_569.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2000,
+    "height": 2800
+  },
+  "created_at": "2025-11-08T06:17:31.984323Z"
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20251008_192122_080.png",
+    "IMG_4415.JPG"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251008_192122_080.png",
+    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_4415.JPG"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Use the first reference image for the environment and composition, but replace every person in the crowd with the individual from the second reference image. Maintain variations in pose, outfits, and placement so the crowd still looks natural, yet each face and body should clearly be the same featured person. Preserve the lighting, color, and cinematic mood of the base photo while avoiding visual artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",
+  "strength": 0.8,
+  "created_at": "2025-10-10T12:25:23.616810Z",
+  "output_image": "offspring_20251010_202523_092.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

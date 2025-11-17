@@ -1,0 +1,50 @@
+{
+  "generation_type": "collage",
+  "parents": [
+    "offspring_20250929_113801_941.png",
+    "offspring_20250929_112550_555.png",
+    "offspring_20250929_112621_888.png",
+    "offspring_20250929_113114_959.png",
+    "offspring_20250929_113731_778.png",
+    "offspring_20251001_181629_250.png",
+    "offspring_20251001_181913_443.png",
+    "offspring_20251001_182051_218.png",
+    "offspring_20251001_182634_637.png",
+    "offspring_20251001_182705_297.png",
+    "offspring_20251001_182954_752.png",
+    "offspring_20251001_183316_858.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113801_941.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_112550_555.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_112621_888.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113114_959.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_181629_250.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_181913_443.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_182051_218.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_182634_637.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_182705_297.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_182954_752.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251001_183316_858.png"
+  ],
+  "collage_params": {
+    "rows": 37,
+    "cols": 41,
+    "mode": "kinship",
+    "base": "first",
+    "allow_self": false,
+    "seed": 682458,
+    "resize_w": 2048,
+    "pad_px": 3,
+    "jitter_px": 32,
+    "rotate_deg": 29
+  },
+  "output_image": "offspring_20251108_203732_895.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2015,
+    "height": 2633
+  },
+  "created_at": "2025-11-08T12:37:34.490248Z"
+}

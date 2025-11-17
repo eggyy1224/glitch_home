@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250929_113731_778.png",
+    "IMG_4415.JPG"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250929_113731_778.png",
+    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_4415.JPG"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-first on the base crowd image. Preserve the entire composition: birds, pond reflections, uniforms, lighting, and density. Replace every person's face with the individual from IMG_4415, cloning their features consistently while keeping the 1970s civil servant attire and serious expressions. Ensure skin tone, lighting, and flash highlights match the original scene, with shallow depth of field in the foreground and sharp mid-ground lineup.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.75 (0=loose, 1=strict).",
+  "strength": 0.75,
+  "created_at": "2025-09-30T13:44:50.435476Z",
+  "output_image": "offspring_20250930_214449_942.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 896,
+    "height": 1152
+  }
+}

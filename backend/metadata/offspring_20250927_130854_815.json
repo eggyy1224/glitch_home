@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "DSCF7655.jpg",
+    "DSCF4385.jpg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "DSCF4385 → subject+frame: hooded statue (back) centered; two tall evergreens left/right; low shrubs; night sky. DSCF7655 → background lights: 9–12 distinct orange‑red radial umbrellas behind the statue, varied size/tilt, gentle overlaps; NOT a single fused disk. Constraints: keep the statue head/shoulders silhouette clean; remove the front sapling; no poles/rods crossing the figure. Photoreal 4×5; vertical 2:3.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.66 (0=loose, 1=strict).",
+  "strength": 0.66,
+  "created_at": "2025-09-27T05:08:55.365956Z",
+  "output_image": "offspring_20250927_130854_815.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1024,
+    "height": 1536
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "parents": [
+    "wc6725_httpss.mj.run_HMEDVbzp-Y_Imagine_a_candid_raw_scene_capt_bf394034-2e8b-4fcc-98f9-89d7c9f4048d.png",
+    "wc6725_resimulate_this_unfinished_image_--ar_23_--v_6.1_30883678-98e3-41dd-9378-7dabfae28450.png",
+    "wc6725_Create_a_highly_detailed_photograph_of_a_surreal_and_uns_f91d8d42-1bfe-40c6-8bfe-2c1e3fe7ce66.png",
+    "wc6725__b17f2406-2dd8-4d46-b854-5d638fde57b7.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Extract the most distinctive subjects, forms, textures, and lighting cues from the provided images and recombine them into a freshly composed scene. Build a new layout from scratch—do not preserve or layer whole backgrounds; reinterpret placement, perspective, and scale so every element feels re-staged rather than pasted. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly stylization or obvious digital compositing artifacts.",
+  "created_at": "2025-10-08T11:14:17.307360Z",
+  "output_image": "offspring_20251008_191417_305.png"
+}

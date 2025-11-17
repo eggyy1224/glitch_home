@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-12T14:59:15Z",
+  "text": "大家好，歡迎來到 Kinship Viewer，我將協助大家展示最新的後代圖像。",
+  "instructions": "zh-TW Mandarin, warm tone",
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251112T145909_ad087cda.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251112T145909_ad087cda.mp3",
+  "relative_path": "generated_sounds/narration_20251112T145909_ad087cda.mp3",
+  "size_bytes": 5760,
+  "checksum_sha256": "a1e5ec6f595aac84679f1de28dd06a1e2803446db813c90e9bf3f33430d14ba7"
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250924_150304_156.png",
+    "DSCF1111.jpg"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_150304_156.png",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF1111.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Reference-first. Same framing. Dense front line in dark navy uniforms, hands down, neutral faces. Maintain flash and foliage.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.90 (0=loose, 1=strict).",
+  "strength": 0.9,
+  "created_at": "2025-09-28T12:38:14.791942Z",
+  "output_image": "offspring_20250928_203814_315.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

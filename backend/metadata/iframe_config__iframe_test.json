@@ -1,0 +1,17 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "collage_panel",
+      "image": null,
+      "url": "/?client=iframe_collage&collage_mode=true&img=offspring_20251008_193116_244.png",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Iframe 內的 Collage",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

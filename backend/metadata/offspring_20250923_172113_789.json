@@ -1,0 +1,12 @@
+{
+  "parents": [
+    "DSCF8839.jpg",
+    "DSCF9593.jpg",
+    "DSCF4240.jpg",
+    "DSCF4385.jpg"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Compose a single coherent image that artistically融合 the salient subjects and styles of the provided images. cinematic style, atmospheric lighting, digital art. Keep forms consistent; blend textures and palette.",
+  "created_at": "2025-09-23T09:21:13.792260Z",
+  "output_image": "offspring_20250923_172113_789.png"
+}

@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "panel1",
+      "image": "offspring_20250923_161624_066.png",
+      "url": "/?collage_mode=true&client=agent&img=offspring_20250923_161624_066.png",
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

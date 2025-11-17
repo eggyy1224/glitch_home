@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "DSCF3738.jpg",
+    "wc6725_A_massive_ancient_tree_with_a_thick_twisted_trunk_captur_c78b03da-7f8f-4972-81f4-7cc01e4c1cba.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF3738.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_massive_ancient_tree_with_a_thick_twisted_trunk_captur_c78b03da-7f8f-4972-81f4-7cc01e4c1cba.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "single photographic exposure, realistic falloff, high micro-contrast, fine film grain, nocturnal alley with a backlit pale tree emerging from damp brick textures, low ground fog hugging red undergrowth, no neon outlines, no cartoon linework, no double exposure, no uniform overlays\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.40 (0=loose, 1=strict).",
+  "strength": 0.4,
+  "created_at": "2025-09-26T12:30:05.590628Z",
+  "output_image": "offspring_20250926_203005_582.jpeg",
+  "output_format": "jpeg",
+  "output_size": {
+    "width": 1080,
+    "height": 1440
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "parents": [
+    "DSCF0424.jpg",
+    "DSCF6251.jpg",
+    "offspring_20250925_141030_592.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250925_141030_592.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Twilight color, on-camera flash foreground. Constrain fireflies to lower half of frame and around grasses/trunk; no particles above the canopy line; left-to-right wind so trails arc gently to the right; near larger and slightly streaked, far smaller and fewer; density highest near ground vegetation. Use the third parent only as particle style reference (not a uniform overlay). Single photographic exposure, realistic falloff/shadows; no neon, no line-art, no double exposure.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.40 (0=loose, 1=strict).",
+  "strength": 0.4,
+  "created_at": "2025-09-25T06:18:03.415558Z",
+  "output_image": "offspring_20250925_141803_408.jpeg",
+  "output_format": "jpeg",
+  "output_size": {
+    "width": 1500,
+    "height": 1000
+  }
+}

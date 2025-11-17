@@ -1,0 +1,16 @@
+{
+  "kind": "tts",
+  "provider": "openai",
+  "created_at": "2025-11-17T06:28:03Z",
+  "text": "測試修正後的音訊解鎖功能",
+  "instructions": null,
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "format": "mp3",
+  "speed": null,
+  "output_audio": "narration_20251117T062802_40f42a00.mp3",
+  "absolute_path": "/Volumes/2024data/glitch_home_project/backend/generated_sounds/narration_20251117T062802_40f42a00.mp3",
+  "relative_path": "generated_sounds/narration_20251117T062802_40f42a00.mp3",
+  "size_bytes": 64896,
+  "checksum_sha256": "839b75726a471ddfba5c8231ce2e636bcf3a1f9405ec19ef1c087ae49a160f0f"
+}

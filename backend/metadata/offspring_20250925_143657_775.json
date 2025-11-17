@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250925_141803_803.png",
+    "offspring_20250925_141614_632.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_141803_803.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_141614_632.png"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Cinematic nocturnal scene at an alley–forest threshold: a rearing white horse against back‑lit frost‑white trees and ember‑red foliage; a dark‑suited figure reaching toward the horse. Monochrome foundation with high contrast; desaturate all elements except the ember‑red foliage; the horse remains luminous white; background, sky and human in grayscale; no additional colors beyond the ember‑red plants. Shallow depth of field, creamy bokeh, fine film grain, strong micro‑contrast, soft rim‑light through haze. Single cohesive photographic exposure with consistent perspective and geometry; photorealistic large‑format film look; avoid painterly stylization or obvious digital‑collage artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.66 (0=loose, 1=strict).",
+  "strength": 0.66,
+  "created_at": "2025-09-25T06:36:58.174483Z",
+  "output_image": "offspring_20250925_143657_775.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 832,
+    "height": 1248
+  }
+}

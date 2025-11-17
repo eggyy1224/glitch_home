@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "offspring_20250925_132631_308.png",
+    "IMG_4414.JPG"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250925_132631_308.png",
+    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_4414.JPG"
+  ],
+  "model_name": "gemini-2.5-flash-image-preview",
+  "prompt": "Blend the provided portrait subject into the nocturnal alley scene. Place the person naturally within the environment, illuminated by the existing warm light sources, as if they were part of the original photograph. Maintain the cinematic night atmosphere, tree backdrop, and orange lighting. Ensure proportions, shadows, and color grading match the scene.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.65 (0=loose, 1=strict).",
+  "strength": 0.65,
+  "created_at": "2025-09-30T13:38:54.590990Z",
+  "output_image": "offspring_20250930_213851_542.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2048,
+    "height": 2807
+  }
+}
