@@ -10,6 +10,7 @@ export function useControlSocket({
   onIframeConfig,
   onCollageConfig,
   onUnlockAudio,
+  onRemoteClick,
 }) {
   const wsRef = useRef(null);
 
@@ -95,6 +96,8 @@ export function useControlSocket({
           onCollageConfig?.(payload);
         } else if (payload?.type === "unlock_audio") {
           onUnlockAudio?.(payload);
+        } else if (payload?.type === "remote_click") {
+          onRemoteClick?.(payload);
         }
       };
 
@@ -130,5 +133,6 @@ export function useControlSocket({
     onIframeConfig,
     onCollageConfig,
     onUnlockAudio,
+    onRemoteClick,
   ]);
 }

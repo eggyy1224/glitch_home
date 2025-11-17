@@ -266,12 +266,74 @@ export default function App() {
           cancelable: true,
           view: window,
         });
-      body.dispatchEvent(clickEvent);
-    } catch (err) {
-      // ignore dispatch error and fallback to direct click below
+        body.dispatchEvent(clickEvent);
+      } catch (err) {
+        // ignore dispatch error and fallback to direct click below
       }
       if (typeof body.click === "function") {
         body.click();
+      }
+    },
+    [clientId],
+  );
+
+  const handleRemoteClickMessage = useCallback(
+    (payload) => {
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      const fallbackSelector = ".video-mode-container";
+      const selector =
+        typeof payload?.selector === "string" && payload.selector.trim().length > 0
+          ? payload.selector.trim()
+          : null;
+      const childSelector =
+        (typeof payload?.target_selector === "string" && payload.target_selector.trim().length > 0
+          ? payload.target_selector.trim()
+          : null) ||
+        (typeof payload?.target === "string" && payload.target.trim().length > 0
+          ? payload.target.trim()
+          : null);
+      const selectorsProvided = Boolean(selector || childSelector);
+
+      let targetNode = null;
+      let rootNode = null;
+      if (selector) {
+        rootNode = document.querySelector(selector);
+      }
+      if (rootNode && childSelector) {
+        targetNode = rootNode.querySelector(childSelector) || rootNode;
+      } else if (rootNode) {
+        targetNode = rootNode;
+      } else if (childSelector) {
+        targetNode = document.querySelector(childSelector);
+      }
+
+      if (!targetNode && typeof payload?.x === "number" && typeof payload?.y === "number") {
+        targetNode = document.elementFromPoint(payload.x, payload.y);
+      }
+
+      if (!targetNode && selectorsProvided && fallbackSelector) {
+        targetNode = document.querySelector(fallbackSelector);
+      }
+
+      if (!targetNode) {
+        return;
+      }
+
+      try {
+        const clickEvent = new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        });
+        targetNode.dispatchEvent(clickEvent);
+      } catch (err) {
+        // ignore dispatch failure
+      }
+      if (typeof targetNode.click === "function") {
+        targetNode.click();
       }
     },
     [clientId],
@@ -287,6 +349,7 @@ export default function App() {
     onIframeConfig: handleIframeConfigMessage,
     onCollageConfig: handleCollageConfigMessage,
     onUnlockAudio: handleUnlockAudioMessage,
+    onRemoteClick: handleRemoteClickMessage,
   });
 
   const handleSoundHandled = useCallback(() => {

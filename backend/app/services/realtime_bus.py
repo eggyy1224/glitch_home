@@ -149,6 +149,19 @@ class RealtimeBroadcaster:
             payload["target_client_id"] = target_client_id
         await self.broadcast(payload, target_client_id=target_client_id)
 
+    async def broadcast_remote_click(
+        self,
+        click_payload: dict[str, Any],
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        payload = {
+            "type": "remote_click",
+            **click_payload,
+        }
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        await self.broadcast(payload, target_client_id=target_client_id)
+
     async def broadcast_unlock_audio(self, target_client_id: Optional[str] = None) -> None:
         payload = {"type": "unlock_audio"}
         if target_client_id:

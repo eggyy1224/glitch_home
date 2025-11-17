@@ -150,6 +150,45 @@ class SubtitleUpdateRequest(BaseModel):
     )
 
 
+class RemoteClickRequest(BaseModel):
+    """Remote click instructions for WebSocket broadcast."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    selector: Optional[str] = Field(
+        default=None,
+        description="CSS 選擇器，表示主要目標（預設可為 .video-mode-container）",
+    )
+    target_selector: Optional[str] = Field(
+        default=None,
+        alias="target",
+        description="可選擇器，於主要目標內再查找特定元素（例：video 或 .play-button）",
+    )
+    x: Optional[float] = Field(default=None, description="視窗座標 X（px），若不提供 selector 時需搭配 y 使用")
+    y: Optional[float] = Field(default=None, description="視窗座標 Y（px），若不提供 selector 時需搭配 x 使用")
+    target_client_id: Optional[str] = Field(
+        default=None,
+        alias="client_id",
+        description="指定目標 client_id（可改由 query target_client_id 指定）",
+    )
+
+    @model_validator(mode="after")
+    def _validate_click(self) -> "RemoteClickRequest":
+        selector = (self.selector or "").strip()
+        target_selector = (self.target_selector or "").strip()
+        has_selector = bool(selector)
+        has_child_selector = bool(target_selector)
+        has_coordinates = self.x is not None and self.y is not None
+        if not has_selector and not has_child_selector and not has_coordinates:
+            raise ValueError("selector、target 或 x/y 座標至少需提供一種定位方式")
+        self.selector = selector or None
+        self.target_selector = target_selector or None
+        if self.target_client_id is not None:
+            client = str(self.target_client_id).strip()
+            self.target_client_id = client or None
+        return self
+
+
 class SoundPlayRequest(BaseModel):
     filename: str = Field(..., min_length=1, description="音效檔案名稱（含副檔名）")
     target_client_id: Optional[str] = Field(default=None, description="指定播放的 client_id，可為空代表廣播")

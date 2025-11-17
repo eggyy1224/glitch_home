@@ -6,7 +6,7 @@ import json
 
 from fastapi import APIRouter, Body, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 
-from ..models.schemas import SubtitleUpdateRequest
+from ..models.schemas import RemoteClickRequest, SubtitleUpdateRequest
 from ..services.captions import caption_manager
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
@@ -83,6 +83,27 @@ async def api_clear_captions(target_client_id: str | None = Query(default=None))
 async def api_unlock_audio(target_client_id: str | None = Query(default=None)) -> dict:
     await realtime_broadcaster.broadcast_unlock_audio(target_client_id=target_client_id)
     return {"status": "ok", "message": "unlock audio broadcast sent"}
+
+
+@router.post("/api/remote-click")
+async def api_remote_click(
+    body: RemoteClickRequest,
+    target_client_id: str | None = Query(default=None),
+) -> dict:
+    resolved_target = target_client_id or body.target_client_id
+    click_payload: dict[str, object] = {}
+    if body.selector:
+        click_payload["selector"] = body.selector
+    if body.target_selector:
+        click_payload["target"] = body.target_selector
+    if body.x is not None:
+        click_payload["x"] = body.x
+    if body.y is not None:
+        click_payload["y"] = body.y
+    if not click_payload:
+        raise HTTPException(status_code=400, detail="remote click payload is empty")
+    await realtime_broadcaster.broadcast_remote_click(click_payload, target_client_id=resolved_target)
+    return {"status": "queued", "message": "remote click broadcast sent"}
 
 
 @router.post("/api/screenshots/request", status_code=202)
