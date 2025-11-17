@@ -85,6 +85,53 @@ class TimelineSpeechAction(BaseModel):
         return self
 
 
+class TimelineRemoteClickAction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    selector: Optional[str] = Field(default=None, description="CSS selector for primary target")
+    target_selector: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("target_selector", "target"),
+        serialization_alias="target",
+        description="Nested selector inside primary container",
+    )
+    x: Optional[float] = Field(default=None, description="Viewport X coordinate (px)")
+    y: Optional[float] = Field(default=None, description="Viewport Y coordinate (px)")
+    offset_seconds: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        validation_alias=AliasChoices("offset_seconds", "offsetSeconds"),
+        serialization_alias="offset_seconds",
+        description="Delay before triggering the click",
+    )
+    target_client_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("target_client_id", "targetClientId"),
+        serialization_alias="targetClientId",
+        description="Target client id override",
+    )
+    label: Optional[str] = Field(default=None, description="Optional label for logging")
+
+    @model_validator(mode="after")
+    def _validate_click(self) -> "TimelineRemoteClickAction":
+        selector = (self.selector or "").strip()
+        nested = (self.target_selector or "").strip()
+        has_selector = bool(selector)
+        has_nested = bool(nested)
+        has_coordinates = self.x is not None and self.y is not None
+        if not has_selector and not has_nested and not has_coordinates:
+            raise ValueError("remote_click 需要 selector/target 或 x+y 座標")
+        self.selector = selector or None
+        self.target_selector = nested or None
+        if self.target_client_id:
+            client = str(self.target_client_id).strip()
+            self.target_client_id = client or None
+        if self.label:
+            label = self.label.strip()
+            self.label = label or None
+        return self
+
+
 class IframeTimelineStep(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -101,6 +148,10 @@ class IframeTimelineStep(BaseModel):
     subtitle: Optional[TimelineTimedTextAction] = Field(default=None, description="字幕指令")
     caption: Optional[TimelineTimedTextAction] = Field(default=None, description="標題指令")
     tts: Optional[TimelineSpeechAction] = Field(default=None, description="語音或音效指令")
+    remote_clicks: List[TimelineRemoteClickAction] = Field(
+        default_factory=list,
+        description="Remote click actions triggered within the step",
+    )
 
     @field_validator("snapshot")
     @classmethod

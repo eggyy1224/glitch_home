@@ -256,6 +256,13 @@ export async function clearCaption(targetClientId = null, { signal } = {}) {
   return true;
 }
 
+export async function sendRemoteClick(payload, options = {}) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("remote click payload is required");
+  }
+  return postJson(`${API_BASE}/api/remote-click`, payload, options);
+}
+
 export async function generateCollageVersion(files, params) {
   const url = `${API_BASE}/api/generate-collage-version`;
   const formData = new FormData();

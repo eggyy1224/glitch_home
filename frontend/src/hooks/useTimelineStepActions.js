@@ -3,6 +3,7 @@ import {
   clearCaption,
   clearSubtitle,
   queueSoundPlay,
+  sendRemoteClick,
   setCaption,
   setSubtitle,
   speakWithSubtitle,
@@ -23,6 +24,20 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
   const controllerRef = useRef(null);
   const activeRunRef = useRef(null);
   const actionErrorRef = useRef(null);
+  const remoteClickTimersRef = useRef([]);
+
+  const clearRemoteClickTimers = useCallback(() => {
+    if (!remoteClickTimersRef.current.length) {
+      remoteClickTimersRef.current = [];
+      return;
+    }
+    remoteClickTimersRef.current.forEach((timerId) => {
+      if (typeof timerId === "number") {
+        clearTimeout(timerId);
+      }
+    });
+    remoteClickTimersRef.current = [];
+  }, []);
 
   const cancelPendingActions = useCallback(() => {
     if (controllerRef.current) {
@@ -30,7 +45,8 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
     }
     controllerRef.current = null;
     activeRunRef.current = null;
-  }, []);
+    clearRemoteClickTimers();
+  }, [clearRemoteClickTimers]);
 
   useEffect(
     () => () => {
@@ -72,6 +88,7 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
 
       const actionsRan = [];
       const errors = [];
+      let hasErrors = false;
 
       const handleError = (label, err) => {
         if (err?.name === "AbortError" || isStale()) {
@@ -79,10 +96,89 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
         }
         const message = `[${label}] ${err?.message || String(err)}`;
         errors.push(message);
+        hasErrors = true;
         console.error("Timeline step action failed:", label, err);
       };
 
+      const flushErrors = () => {
+        if (!errors.length) {
+          return;
+        }
+        const prefix = timelineId ? `Timeline ${timelineId}` : "Timeline";
+        const indexLabel = typeof stepIndex === "number" ? ` step ${stepIndex + 1}` : "";
+        const summary = `${prefix}${indexLabel}: ${errors.join(" | ")}`;
+        errors.length = 0;
+        reportActionError(summary);
+      };
+
       const resolveTarget = (actionTarget) => actionTarget || step.client_id || clientId || null;
+
+      const remoteClicks = Array.isArray(step.remote_clicks)
+        ? step.remote_clicks
+        : Array.isArray(step.remoteClicks)
+          ? step.remoteClicks
+          : [];
+      const hasRemoteClicks = remoteClicks.length > 0;
+
+      const scheduleRemoteClick = (action, index) => {
+        if (!action) return;
+        const actionLabel =
+          (typeof action.label === "string" && action.label.trim()) || `remote_${index + 1}`;
+        const getSelector = (value) => (typeof value === "string" ? value.trim() : "");
+        const buildPayload = () => {
+          const payload = {};
+          const selector = getSelector(action.selector);
+          if (selector) {
+            payload.selector = selector;
+          }
+          const nested = getSelector(action.target ?? action.target_selector);
+          if (nested) {
+            payload.target = nested;
+          }
+          const xValue = numberOrUndefined(action.x);
+          const yValue = numberOrUndefined(action.y);
+          if (xValue !== undefined) {
+            payload.x = xValue;
+          }
+          if (yValue !== undefined) {
+            payload.y = yValue;
+          }
+          const targetOverride = resolveTarget(action.target_client_id || action.targetClientId);
+          if (targetOverride) {
+            payload.target_client_id = targetOverride;
+          }
+          const hasSelector = Boolean(payload.selector);
+          const hasTarget = Boolean(payload.target);
+          const hasCoordinates = payload.x !== undefined && payload.y !== undefined;
+          if (!hasSelector && !hasTarget && !hasCoordinates) {
+            throw new Error("remote_click 需要 selector/target 或 x,y 座標");
+          }
+          return payload;
+        };
+
+        const executeRemoteClick = async () => {
+          if (isStale()) return;
+          try {
+            const payload = buildPayload();
+            await sendRemoteClick(payload, { signal });
+          } catch (err) {
+            handleError(`remote_click:${actionLabel}`, err);
+            flushErrors();
+          }
+        };
+
+        const delaySeconds = numberOrUndefined(action.offset_seconds ?? action.offsetSeconds) || 0;
+        const delayMs = delaySeconds > 0 ? delaySeconds * 1000 : 0;
+        if (delayMs <= 0) {
+          void executeRemoteClick();
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          remoteClickTimersRef.current = remoteClickTimersRef.current.filter((id) => id !== timerId);
+          void executeRemoteClick();
+        }, delayMs);
+        remoteClickTimersRef.current.push(timerId);
+      };
 
       const runTimedText = async (action, kind) => {
         if (!action || isStale()) return;
@@ -181,16 +277,22 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
         handleError("tts", err);
       }
 
+      try {
+        if (remoteClicks.length) {
+          remoteClicks.forEach((action, index) => scheduleRemoteClick(action, index));
+        }
+      } catch (err) {
+        handleError("remote_click", err);
+        flushErrors();
+      }
+
       if (isStale()) {
         return;
       }
 
-      if (errors.length) {
-        const prefix = timelineId ? `Timeline ${timelineId}` : "Timeline";
-        const indexLabel = typeof stepIndex === "number" ? ` step ${stepIndex + 1}` : "";
-        const summary = `${prefix}${indexLabel}: ${errors.join(" | ")}`;
-        reportActionError(summary);
-      } else if (actionsRan.length > 0 || actionErrorRef.current) {
+      if (hasErrors) {
+        flushErrors();
+      } else if (actionsRan.length > 0 || hasRemoteClicks || actionErrorRef.current) {
         clearActionError();
       }
     },
