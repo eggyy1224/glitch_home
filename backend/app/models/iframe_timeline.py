@@ -152,6 +152,12 @@ class IframeTimelineStep(BaseModel):
         default_factory=list,
         description="Remote click actions triggered within the step",
     )
+    unlock_audio_targets: List[str] = Field(
+        default_factory=list,
+        description="List of client ids that should receive unlock-audio before此 step",
+        validation_alias=AliasChoices("unlock_audio_targets", "unlockAudioTargets"),
+        serialization_alias="unlock_audio_targets",
+    )
 
     @field_validator("snapshot")
     @classmethod
@@ -159,6 +165,25 @@ class IframeTimelineStep(BaseModel):
         cleaned = value.strip()
         if not cleaned:
             raise ValueError("snapshot 不可為空白")
+        return cleaned
+
+    @field_validator("unlock_audio_targets", mode="before")
+    @classmethod
+    def _sanitize_unlock_targets(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            value = [value]
+        if not isinstance(value, list):
+            raise ValueError("unlock_audio_targets 需要陣列或字串")
+        cleaned: List[str] = []
+        for item in value:
+            if item is None:
+                continue
+            text = str(item).strip()
+            if not text:
+                continue
+            cleaned.append(text)
         return cleaned
 
 

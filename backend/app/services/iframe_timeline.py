@@ -34,6 +34,7 @@ class ResolvedIframeTimelineStep:
     caption: Optional[Dict[str, object]] = None
     tts: Optional[Dict[str, object]] = None
     remote_clicks: Optional[List[Dict[str, object]]] = None
+    unlock_audio_targets: Optional[List[str]] = None
 
     def to_payload(self) -> Dict[str, object]:
         payload: Dict[str, object] = {
@@ -48,6 +49,7 @@ class ResolvedIframeTimelineStep:
             "caption": self.caption,
             "tts": self.tts,
             "remote_clicks": self.remote_clicks,
+            "unlock_audio_targets": self.unlock_audio_targets,
         }
         return {k: v for k, v in payload.items() if v is not None}
 
@@ -226,6 +228,8 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
             if not remote_click_payloads:
                 remote_click_payloads = None
 
+        unlock_audio_targets = step.unlock_audio_targets or None
+
         start_at = step.at if step.at is not None else cursor
         cursor = start_at + step.duration
         total_duration = max(total_duration, cursor)
@@ -241,6 +245,7 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
                 caption=caption_payload,
                 tts=tts_payload,
                 remote_clicks=remote_click_payloads,
+                unlock_audio_targets=unlock_audio_targets,
             )
         )
     return ResolvedIframeTimeline(timeline=timeline, steps=resolved_steps, total_duration=total_duration)

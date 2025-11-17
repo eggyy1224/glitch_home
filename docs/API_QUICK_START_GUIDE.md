@@ -937,6 +937,24 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
 - `targetClientId`：同樣遵循 action > step.clientId > timeline.clientId 的優先順序。
 - Timeline Player 會在對應時間呼叫 `/api/remote-click`，前端 `handleRemoteClickMessage` 會代為執行 `.click()`，適合遠端切換影片聲音或播放狀態。
 
+### Step 動作欄位：unlock_audio_targets
+
+瀏覽器若尚未有互動會擋下自動播放，可透過 `unlock_audio_targets` 讓 Timeline 在段落開始前依序呼叫 `/api/unlock-audio`：
+
+```jsonc
+{
+  "snapshot": "desktop2/opening_stage1",
+  "duration": 8,
+  "unlock_audio_targets": [
+    "desktop2",
+    "desktop2-birdman",
+    "desktop2-birds"
+  ]
+}
+```
+
+每個 client 會播放極短靜音，解除 autoplay 限制，後續的 `remote_clicks`/`tts`/`sound_play` 才能順利出聲。
+
 範例檔案：`backend/metadata/timelines/iframe/desktop2_opening_with_media.json`，展示如何同時套用 snapshot、字幕、標題、語音與音效。
 
 > 提醒：前端需以 `?iframe_mode=true&client=<id>&iframe_timeline=<timeline_id>` 啟動，並確保該 client 正在 WebSocket 上線，Timeline Player 才能同步收到字幕/Caption/TTS 廣播。

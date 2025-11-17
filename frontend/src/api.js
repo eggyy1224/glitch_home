@@ -256,6 +256,16 @@ export async function clearCaption(targetClientId = null, { signal } = {}) {
   return true;
 }
 
+export async function unlockAudio(targetClientId = null, { signal } = {}) {
+  const url = `${API_BASE}/api/unlock-audio${buildTargetQuery(targetClientId)}`;
+  const res = await fetch(url, { method: "POST", signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
 export async function sendRemoteClick(payload, options = {}) {
   if (!payload || typeof payload !== "object") {
     throw new Error("remote click payload is required");

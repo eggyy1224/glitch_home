@@ -8,6 +8,7 @@ import {
   setSubtitle,
   speakWithSubtitle,
   triggerTts,
+  unlockAudio,
 } from "../api.js";
 
 function numberOrUndefined(value) {
@@ -120,6 +121,12 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
           : [];
       const hasRemoteClicks = remoteClicks.length > 0;
 
+      const unlockAudioTargets = Array.isArray(step.unlock_audio_targets)
+        ? step.unlock_audio_targets
+        : Array.isArray(step.unlockAudioTargets)
+          ? step.unlockAudioTargets
+          : [];
+
       const scheduleRemoteClick = (action, index) => {
         if (!action) return;
         const actionLabel =
@@ -178,6 +185,20 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
           void executeRemoteClick();
         }, delayMs);
         remoteClickTimersRef.current.push(timerId);
+      };
+
+      const runUnlockAudio = async () => {
+        if (!unlockAudioTargets.length || isStale()) return;
+        for (const target of unlockAudioTargets) {
+          if (isStale()) return;
+          const trimmed = typeof target === "string" ? target.trim() : "";
+          try {
+            await unlockAudio(trimmed || null, { signal });
+          } catch (err) {
+            handleError(`unlock_audio${trimmed ? `:${trimmed}` : ""}`, err);
+            flushErrors();
+          }
+        }
       };
 
       const runTimedText = async (action, kind) => {
@@ -249,6 +270,12 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
           await triggerTts(base, { signal });
         }
       };
+
+      try {
+        await runUnlockAudio();
+      } catch (err) {
+        handleError("unlock_audio", err);
+      }
 
       try {
         if (step.subtitle) {

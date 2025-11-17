@@ -8,6 +8,14 @@
       "snapshot": "desktop2/opening_stage1",
       "duration": 8,
       "label": "暖身",
+      "unlock_audio_targets": [
+        "desktop2",
+        "desktop2-birdman",
+        "desktop2-birds",
+        "desktop2-drivein",
+        "desktop2-sequence",
+        "desktop2-photoshoot"
+      ],
       "subtitle": {
         "text": "準備啟動 Desktop2 展示",
         "language": "zh-TW",
@@ -82,7 +90,7 @@
       },
       "tts": {
         "mode": "sound_play",
-        "sound_filename": "narration_20251101T123456_demo.mp3",
+        "sound_filename": "narration_20251117T084705_4e65e71b.mp3",
         "auto_play": true
       },
       "remote_clicks": [
