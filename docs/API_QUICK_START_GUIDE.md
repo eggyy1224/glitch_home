@@ -313,6 +313,38 @@ curl -X POST http://localhost:8000/api/iframe-config/restore \
 
 > `snapshot_name` 是可選的「場景描述」，系統會自動產生實際檔名：`{client_id}_{snapshot_name}_{YYYYMMDDHHmmss}`，若沒帶 `snapshot_name` 則為 `{client_id}_{YYYYMMDDHHmmss}`，client 不存在時會以 `global` 取代。建立成功時的 response 會回傳最終檔名，或可透過 list API 取得。若同 1 秒內重複建立 snapshot，系統會自動加上 `_1`、`_2` 後綴避免衝突。`snapshot_name`/`client_id` 仍僅允許字母、數字、底線、連字號。
 
+### 任務 7.1: 遠端觸發指定元素點擊
+
+用於在展場遠端「代點擊」特定播放器或 UI 控制（例如切換播放、彈出對話框）：
+
+```bash
+curl -X POST http://localhost:8000/api/remote-click \
+  -H "Content-Type: application/json" \
+  -d '{
+    "selector": ".video-mode-container",
+    "target": "video",
+    "client_id": "display-main"
+  }'
+```
+
+- `selector`: 必填之一。主體容器的 CSS 選擇器（預設 `.video-mode-container` 即可鎖定整個播放器）。
+- `target`: 可選。會在 selector 範圍內再次 query，例如 `video`、`.play-button`。
+- `x` / `y`: 若沒有 selector，可用視窗座標（需同時提供 x 與 y）。
+- `client_id`: 輸入 body 也可以在 query 用 `?target_client_id=xxx`，後者優先。
+
+API 會整理 payload 後透過 WebSocket 廣播 `type: "remote_click"`，前端 `useRealtimeSocket` 會在收到訊息時嘗試匹配元素並執行 `.click()` 或模擬滑鼠事件。常見用法：遠端切換影片播放/暫停、觸發畫面模式切換、打開某個 overlay。
+
+### 任務 7.2: 遠端解除音訊鎖 (Autoplay Unlock)
+
+部分瀏覽器會鎖定自動播放，需要使用者互動後才能播放音訊。可透過 `/api/unlock-audio` 讓前端所有音訊播放器執行一次「無聲互動」：
+
+```bash
+curl -X POST "http://localhost:8000/api/unlock-audio?target_client_id=mobile"
+```
+
+- 不帶 `target_client_id` 會廣播給所有 client。
+- 前端會收到 `type: "unlock_audio"`，並在背景播放極短的靜音片段，之後主控端即可推播聲音（例如 `/api/sound-play` 或 `/api/tts` 自動播放）。
+
 ### 任務 8: 查詢目前在線客戶端
 
 ```bash

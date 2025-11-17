@@ -1,5 +1,7 @@
 """Tests for realtime API endpoints (clients, subtitles, captions)."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -175,3 +177,61 @@ def test_multiple_captions_sequence(client: TestClient):
         data = response.json()
         assert data["caption"]["text"] == caption_text
 
+
+@pytest.mark.api
+@patch("app.services.realtime_bus.realtime_broadcaster.broadcast_remote_click", new_callable=AsyncMock)
+def test_remote_click_selector_payload(mock_broadcast: AsyncMock, client: TestClient) -> None:
+    """Remote click endpoint should forward cleaned selector payload to broadcaster."""
+    response = client.post(
+        "/api/remote-click",
+        json={"selector": ".video-mode-container"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "queued"
+
+    mock_broadcast.assert_awaited_once()
+    await_args = mock_broadcast.await_args
+    assert await_args.args[0] == {"selector": ".video-mode-container"}
+    assert await_args.kwargs["target_client_id"] is None
+
+
+@pytest.mark.api
+@patch("app.services.realtime_bus.realtime_broadcaster.broadcast_remote_click", new_callable=AsyncMock)
+def test_remote_click_target_priority(mock_broadcast: AsyncMock, client: TestClient) -> None:
+    """Query target_client_id should override body client_id alias resolution."""
+    response = client.post(
+        "/api/remote-click?target_client_id=display-wall",
+        json={
+            "selector": ".video-mode",
+            "target": "video",
+            "client_id": "sidecar",
+        },
+    )
+    assert response.status_code == 200
+    payload = mock_broadcast.await_args.args[0]
+    assert payload == {"selector": ".video-mode", "target": "video"}
+    assert mock_broadcast.await_args.kwargs["target_client_id"] == "display-wall"
+
+
+@pytest.mark.api
+def test_remote_click_validation_requires_target(client: TestClient) -> None:
+    """Remote click request must include selector, target, or full coordinates."""
+    response = client.post(
+        "/api/remote-click",
+        json={"selector": "   ", "x": 100},
+    )
+    # Missing usable selector/target and incomplete coordinates => validation error
+    assert response.status_code == 422
+
+
+@pytest.mark.api
+@patch("app.services.realtime_bus.realtime_broadcaster.broadcast_unlock_audio", new_callable=AsyncMock)
+def test_unlock_audio_endpoint(mock_broadcast: AsyncMock, client: TestClient) -> None:
+    """POST /api/unlock-audio should enqueue unlock broadcast for provided client."""
+    response = client.post("/api/unlock-audio?target_client_id=display-main")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+
+    mock_broadcast.assert_awaited_once()
+    assert mock_broadcast.await_args.kwargs["target_client_id"] == "display-main"

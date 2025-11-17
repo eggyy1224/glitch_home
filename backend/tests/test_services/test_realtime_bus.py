@@ -48,3 +48,51 @@ async def test_failed_send_removes_connection() -> None:
 
     clients = await broadcaster.list_clients()
     assert clients == []
+
+
+@pytest.mark.asyncio
+async def test_broadcast_remote_click_payload_includes_target() -> None:
+    broadcaster = RealtimeBroadcaster()
+    ws_alpha = DummyWebSocket()
+    ws_beta = DummyWebSocket()
+
+    await broadcaster.add_connection(ws_alpha)
+    await broadcaster.add_connection(ws_beta)
+    await broadcaster.register_client(ws_alpha, "alpha")
+    await broadcaster.register_client(ws_beta, "beta")
+
+    click_payload = {"selector": ".video-playback", "x": 120.0, "y": 64.0}
+    await broadcaster.broadcast_remote_click(click_payload, target_client_id="alpha")
+
+    assert ws_alpha.sent_messages == [
+        {
+            "type": "remote_click",
+            "selector": ".video-playback",
+            "x": 120.0,
+            "y": 64.0,
+            "target_client_id": "alpha",
+        }
+    ]
+    assert ws_beta.sent_messages == []
+
+
+@pytest.mark.asyncio
+async def test_broadcast_unlock_audio_includes_target_flag() -> None:
+    broadcaster = RealtimeBroadcaster()
+    ws_alpha = DummyWebSocket()
+    ws_beta = DummyWebSocket()
+
+    await broadcaster.add_connection(ws_alpha)
+    await broadcaster.add_connection(ws_beta)
+    await broadcaster.register_client(ws_alpha, "display")
+    await broadcaster.register_client(ws_beta, "control")
+
+    await broadcaster.broadcast_unlock_audio(target_client_id="control")
+
+    assert ws_alpha.sent_messages == []
+    assert ws_beta.sent_messages == [
+        {
+            "type": "unlock_audio",
+            "target_client_id": "control",
+        }
+    ]
