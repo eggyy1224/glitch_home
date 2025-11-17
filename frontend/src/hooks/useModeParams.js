@@ -51,6 +51,14 @@ export function useModeParams() {
     return null;
   }, [initialParams]);
 
+  const episodeId = useMemo(() => {
+    const fromQuery = initialParams.get("episode");
+    if (fromQuery && fromQuery.trim()) {
+      return fromQuery.trim();
+    }
+    return null;
+  }, [initialParams]);
+
   const shouldLoadKinshipData = !KINSHIP_DATA_EXCLUDED.has(type);
 
   return {
@@ -64,6 +72,7 @@ export function useModeParams() {
     slideIntervalMs,
     clientId,
     iframeTimelineId,
+    episodeId,
     shouldLoadKinshipData,
   };
 }

@@ -1,5 +1,39 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
+
+function buildEpisodeListUrl({ clientId } = {}) {
+  let url = `${API_BASE}/api/episodes`;
+  if (clientId) {
+    const params = new URLSearchParams({ client: clientId });
+    url = `${url}?${params.toString()}`;
+  }
+  return url;
+}
+
+export async function fetchEpisodes({ clientId, signal } = {}) {
+  const url = buildEpisodeListUrl({ clientId });
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  const data = await res.json();
+  return Array.isArray(data?.episodes) ? data.episodes : [];
+}
+
+export async function fetchEpisode(episodeId, { signal } = {}) {
+  if (!episodeId) {
+    throw new Error("episodeId is required");
+  }
+  const url = `${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
 export async function fetchKinship(img, depth = -1) {
   const url = `${API_BASE}/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
   const res = await fetch(url);

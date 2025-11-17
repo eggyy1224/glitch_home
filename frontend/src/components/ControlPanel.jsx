@@ -1,5 +1,6 @@
 import React from "react";
 import CameraPresetControls from "./CameraPresetControls.jsx";
+import EpisodeSelector from "./EpisodeSelector.jsx";
 import SubtitleCaptionStatus from "./SubtitleCaptionStatus.jsx";
 
 export default function ControlPanel({
@@ -23,6 +24,16 @@ export default function ControlPanel({
   onSavePreset,
   onApplyPreset,
   onDeletePreset,
+  timelineId,
+  episodes,
+  episodesLoading,
+  episodesError,
+  selectedEpisodeId,
+  onSelectEpisode,
+  onRefreshEpisodes,
+  activeEpisode,
+  episodeLoading,
+  episodeError,
 }) {
   if (!visible) {
     return null;
@@ -38,6 +49,7 @@ export default function ControlPanel({
       <div className="badge">模式：{modeLabel}</div>
       <div className="badge">原圖：{originalImage}</div>
       <div className="badge">客戶端：{clientId}</div>
+      <div className="badge">Timeline：{timelineId || "--"}</div>
       <div className="badge">關聯：{relatedCount} 張</div>
       <div className="badge">父母：{parentsCount}</div>
       <div className="badge">子代：{childrenCount}</div>
@@ -53,8 +65,34 @@ export default function ControlPanel({
         onApplyPreset={onApplyPreset}
         onDeletePreset={onDeletePreset}
       />
+      {onSelectEpisode ? (
+        <EpisodeSelector
+          episodes={episodes}
+          loading={episodesLoading}
+          error={episodesError}
+          selectedEpisodeId={selectedEpisodeId}
+          onSelect={onSelectEpisode}
+          onRefresh={onRefreshEpisodes}
+        />
+      ) : null}
       <SubtitleCaptionStatus subtitle={subtitle} caption={caption} />
       {presetMessage && <div className="badge notice">{presetMessage}</div>}
+      {episodeLoading && <div className="badge notice">Episode 詳細載入中…</div>}
+      {episodeError && <div className="badge notice">Episode 載入失敗：{episodeError}</div>}
+      {!episodeError && activeEpisode ? (
+        <div className="badge episode-meta">
+          <div className="episode-meta-title">{activeEpisode.title}</div>
+          {activeEpisode.description ? (
+            <div className="episode-meta-desc">{activeEpisode.description}</div>
+          ) : (
+            <div className="episode-meta-desc">尚未提供描述</div>
+          )}
+          <div className="episode-meta-tags">
+            Tags：{activeEpisode.tags?.length ? activeEpisode.tags.join(", ") : "未設定"} · 狀態：
+            {activeEpisode.meta?.status || "未定義"}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

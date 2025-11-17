@@ -23,6 +23,8 @@ import { useKinshipData } from "./hooks/useKinshipData.js";
 import ControlPanel from "./components/ControlPanel.jsx";
 import ScreenshotMessage from "./components/ScreenshotMessage.jsx";
 import IframeTimelineControls from "./components/IframeTimelineControls.jsx";
+import { useEpisodes } from "./hooks/useEpisodes.js";
+import { useEpisodePlayback } from "./hooks/useEpisodePlayback.js";
 import { useIframeTimelinePlayer } from "./hooks/useIframeTimelinePlayer.js";
 import { useTimelineStepActions } from "./hooks/useTimelineStepActions.js";
 
@@ -71,6 +73,7 @@ export default function App() {
     slideIntervalMs,
     clientId,
     iframeTimelineId,
+    episodeId: initialEpisodeId,
     shouldLoadKinshipData,
   } = useModeParams();
 
@@ -128,6 +131,29 @@ export default function App() {
   });
 
   const {
+    episodes,
+    loading: episodesLoading,
+    error: episodesError,
+    selectedEpisodeId,
+    selectEpisode,
+    refreshEpisodes,
+  } = useEpisodes({
+    clientId,
+    initialEpisodeId,
+    autoSelectFirst: !iframeTimelineId,
+  });
+
+  const {
+    episode: activeEpisode,
+    timelineId: activeTimelineId,
+    loading: episodeLoading,
+    error: episodeError,
+  } = useEpisodePlayback({
+    episodeId: selectedEpisodeId,
+    fallbackTimelineId: iframeTimelineId,
+  });
+
+  const {
     executeStepActions,
     actionError: timelineActionError,
     clearActionError,
@@ -136,10 +162,10 @@ export default function App() {
 
   const handleTimelineStepStart = useCallback(
     ({ step, stepIndex, runId }) => {
-      if (!iframeTimelineId) return;
-      executeStepActions({ step, stepIndex, timelineId: iframeTimelineId, runId });
+      if (!activeTimelineId) return;
+      executeStepActions({ step, stepIndex, timelineId: activeTimelineId, runId });
     },
-    [executeStepActions, iframeTimelineId],
+    [executeStepActions, activeTimelineId],
   );
 
   const {
@@ -157,7 +183,7 @@ export default function App() {
     previous: previousTimelineStep,
     reload: reloadTimeline,
   } = useIframeTimelinePlayer({
-    timelineId: iframeTimelineId,
+    timelineId: activeTimelineId,
     isActive: activeMode === DisplayModes.IFRAME,
     applyRemoteConfig: applyRemoteIframeConfig,
     releaseRemoteConfig: releaseRemoteIframeConfig,
@@ -165,11 +191,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (!iframeTimelineId || activeMode !== DisplayModes.IFRAME) {
+    if (!activeTimelineId || activeMode !== DisplayModes.IFRAME) {
       cancelPendingActions();
       clearActionError();
     }
-  }, [iframeTimelineId, activeMode, cancelPendingActions, clearActionError]);
+  }, [activeTimelineId, activeMode, cancelPendingActions, clearActionError]);
 
   const handleStopTimeline = useCallback(() => {
     cancelPendingActions();
@@ -414,15 +440,25 @@ export default function App() {
       presetMessage={presetMessage}
       subtitle={subtitle}
       caption={caption}
+      timelineId={activeTimelineId}
+      episodes={episodes}
+      episodesLoading={episodesLoading}
+      episodesError={episodesError}
+      selectedEpisodeId={selectedEpisodeId}
+      onSelectEpisode={selectEpisode}
+      onRefreshEpisodes={refreshEpisodes}
+      activeEpisode={activeEpisode}
+      episodeLoading={episodeLoading}
+      episodeError={episodeError}
     />
   );
 
   const screenshotContent = <ScreenshotMessage message={screenshotMessage} />;
 
   const iframeTimelineOverlay =
-    activeMode === DisplayModes.IFRAME && iframeTimelineId ? (
+    activeMode === DisplayModes.IFRAME && activeTimelineId ? (
       <IframeTimelineControls
-        timelineId={iframeTimelineId}
+        timelineId={activeTimelineId}
         timeline={timeline}
         currentStep={currentStep}
         currentStepIndex={currentStepIndex}

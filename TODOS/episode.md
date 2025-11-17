@@ -29,6 +29,7 @@
 - ✅ `/api/episodes`、`/api/episodes/{id}` 可讀取 `backend/metadata/episodes/*.json`
 - ✅ `backend/metadata/episodes/desktop2_opening_episode.json` 作為示例 Episode（引用 `desktop2_opening_with_media` timeline）
 - ✅ 測試覆蓋：`backend/tests/test_episode.py`、`backend/tests/test_api/test_episode_api.py`
+- ✅ 前端 Phase 2：API client、`useEpisodes`/`useEpisodePlayback` hook、Dashboard Episode 選單與 metadata 顯示（`frontend/src/App.jsx`、`ControlPanel`、`EpisodeSelector`）
 
 ## Phase 1：Episode 資料模型與 Read-only API
 
@@ -79,20 +80,20 @@
 
 ## Phase 2：前端 Dashboard 整合
 
-### 2.1 建立 Episode API Client
+### 2.1 建立 Episode API Client（✅ 已完成）
 
 **檔案**：`frontend/src/api.js`
 
 - 新增 `fetchEpisodes(clientId)`、`fetchEpisode(episodeId)` 函數
 
-### 2.2 建立 Episode Hook
+### 2.2 建立 Episode Hook（✅ 已完成）
 
 **檔案**：`frontend/src/hooks/useEpisodes.js`
 
 - `useEpisodes(clientId)`：管理 Episode 列表與選擇
-- `useEpisodePlayback(episodeId)`：整合 `useIframeTimelinePlayer` 播放 Episode
+- `useEpisodePlayback(episodeId)`：解析 Episode 詳細並回傳 timelineId（搭配既有 `useIframeTimelinePlayer`）
 
-### 2.3 更新 Dashboard UI
+### 2.3 更新 Dashboard UI（✅ 已完成）
 
 **檔案**：`frontend/src/components/ControlPanel.jsx` 或新建 `EpisodeSelector.jsx`
 
@@ -100,7 +101,7 @@
 - 選擇 Episode 後自動載入對應 timeline
 - 顯示 Episode metadata（title, description, tags）
 
-### 2.4 更新 App.jsx
+### 2.4 更新 App.jsx（✅ 已完成）
 
 **檔案**：`frontend/src/App.jsx`
 
