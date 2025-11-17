@@ -228,7 +228,15 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
             if not remote_click_payloads:
                 remote_click_payloads = None
 
-        unlock_audio_targets = step.unlock_audio_targets or None
+        unlock_audio_targets = None
+        if step.unlock_audio_targets:
+            validated_targets = []
+            for target in step.unlock_audio_targets:
+                sanitized_target = sanitize_client_id(target)
+                if sanitized_target:
+                    validated_targets.append(sanitized_target)
+            if validated_targets:
+                unlock_audio_targets = validated_targets
 
         start_at = step.at if step.at is not None else cursor
         cursor = start_at + step.duration
