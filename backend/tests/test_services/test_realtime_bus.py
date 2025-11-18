@@ -96,3 +96,27 @@ async def test_broadcast_unlock_audio_includes_target_flag() -> None:
             "target_client_id": "control",
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_broadcast_video_control_includes_target() -> None:
+    broadcaster = RealtimeBroadcaster()
+    ws_alpha = DummyWebSocket()
+    ws_beta = DummyWebSocket()
+
+    await broadcaster.add_connection(ws_alpha)
+    await broadcaster.add_connection(ws_beta)
+    await broadcaster.register_client(ws_alpha, "alpha")
+    await broadcaster.register_client(ws_beta, "beta")
+
+    payload = {"action": "mute"}
+    await broadcaster.broadcast_video_control(payload, target_client_id="beta")
+
+    assert ws_alpha.sent_messages == []
+    assert ws_beta.sent_messages == [
+        {
+            "type": "video_control",
+            "action": "mute",
+            "target_client_id": "beta",
+        }
+    ]

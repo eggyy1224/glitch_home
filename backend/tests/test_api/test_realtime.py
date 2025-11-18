@@ -225,6 +225,33 @@ def test_remote_click_validation_requires_target(client: TestClient) -> None:
 
 
 @pytest.mark.api
+@patch("app.services.realtime_bus.realtime_broadcaster.broadcast_video_control", new_callable=AsyncMock)
+def test_video_control_endpoint_payload(mock_broadcast: AsyncMock, client: TestClient) -> None:
+    """Video control endpoint should forward payload並尊重 query target override."""
+    response = client.post(
+        "/api/video-control?target_client_id=wall",
+        json={"action": "set_volume", "volume": 0.65, "muted": False},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "queued"
+
+    mock_broadcast.assert_awaited_once()
+    payload = mock_broadcast.await_args.args[0]
+    assert payload == {"action": "set_volume", "volume": 0.65, "muted": False}
+    assert mock_broadcast.await_args.kwargs["target_client_id"] == "wall"
+
+
+@pytest.mark.api
+def test_video_control_validation_requires_volume(client: TestClient) -> None:
+    """set_volume without volume should trigger 422 validation error."""
+    response = client.post(
+        "/api/video-control",
+        json={"action": "set_volume"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.api
 @patch("app.services.realtime_bus.realtime_broadcaster.broadcast_unlock_audio", new_callable=AsyncMock)
 def test_unlock_audio_endpoint(mock_broadcast: AsyncMock, client: TestClient) -> None:
     """POST /api/unlock-audio should enqueue unlock broadcast for provided client."""

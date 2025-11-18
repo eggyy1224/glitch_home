@@ -345,6 +345,27 @@ curl -X POST "http://localhost:8000/api/unlock-audio?target_client_id=mobile"
 - 不帶 `target_client_id` 會廣播給所有 client。
 - 前端會收到 `type: "unlock_audio"`，並在背景播放極短的靜音片段，之後主控端即可推播聲音（例如 `/api/sound-play` 或 `/api/tts` 自動播放）。
 
+### 任務 7.3: 遠端控制 Video 播放/音量
+
+新的 `/api/video-control` API 讓後端可以直接指揮特定 `video_mode` 面板，免去模擬點擊：
+
+```bash
+curl -X POST "http://localhost:8000/api/video-control?target_client_id=desktop2-birds" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "set_volume",
+    "volume": 0.4
+  }'
+```
+
+- `action`（必填）目前支援：`play`、`pause`、`mute`、`unmute`、`set_volume`、`set_muted`、`seek`。
+- `volume`: `set_volume` 或 `unmute` 時可附帶（0~1）。
+- `muted`: `set_muted` 時必填布林值；也可搭配 `unmute` 控制。
+- `time`: `seek` 動作需要指定跳轉秒數（>=0）。
+- `target_client_id`: 可在 query 或 body 指定；若省略會依照 timeline step/timeline 的 `client_id` 推斷。
+
+前端會透過 WebSocket 收到 `type: "video_control"`，藉由 `VideoMode` 暴露的控制介面直接執行 `play/pause/volume/seek`，不再透過 `remote_click` 模擬按鈕。為避免瀏覽器阻擋音訊，仍建議在進入步驟前透過 `unlock_audio_targets` 解鎖。
+
 ### 任務 8: 查詢目前在線客戶端
 
 ```bash
@@ -956,6 +977,41 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
 每個 client 會播放極短靜音，解除 autoplay 限制，後續的 `remote_clicks`/`tts`/`sound_play` 才能順利出聲。
 
 範例檔案：`backend/metadata/timelines/iframe/desktop2_opening_with_media.json`，展示如何同時套用 snapshot、字幕、標題、語音與音效。
+
+### Step 動作欄位：video_controls
+
+若要直接控制 `video_mode` 面板（播放/暫停/調音量/seek），可在 step 加入 `video_controls`：
+
+```jsonc
+{
+  "snapshot": "desktop2/opening_stage2",
+  "duration": 8,
+  "video_controls": [
+    {
+      "action": "play",
+      "targetClientId": "desktop2-birdman",
+      "offset_seconds": 0
+    },
+    {
+      "action": "set_volume",
+      "volume": 0.35,
+      "targetClientId": "desktop2-birds",
+      "offset_seconds": 2
+    },
+    {
+      "action": "seek",
+      "time": 45,
+      "targetClientId": "desktop2-drivein"
+    }
+  ]
+}
+```
+
+- `action`: 同 `/api/video-control`；`set_volume` 需搭配 `volume`，`set_muted` 需搭配 `muted`，`seek` 需搭配 `time`。
+- `offset_seconds`：延遲執行秒數，預設 0，支援 `offsetSeconds`。
+- `targetClientId`: 若未指定，沿用 step/timeline `client_id`。
+
+Timeline player 會依序排程這些動作，呼叫新的 `/api/video-control`。相較於 `remote_clicks`，此方式可穩定控制多面板的播放與音量。
 
 > 提醒：前端需以 `?iframe_mode=true&client=<id>&iframe_timeline=<timeline_id>` 啟動，並確保該 client 正在 WebSocket 上線，Timeline Player 才能同步收到字幕/Caption/TTS 廣播。
 
