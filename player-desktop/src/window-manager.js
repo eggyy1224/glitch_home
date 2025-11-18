@@ -296,6 +296,16 @@ class WindowManager {
     return false;
   }
 
+  shouldKeepProcessAlive() {
+    if (this.clientsById.size === 0) {
+      return false;
+    }
+    if (this.windows.size > 0) {
+      return true;
+    }
+    return this.restartTimers.size > 0;
+  }
+
   summary() {
     const platform = `${os.platform()} ${os.release()}`;
     const windows = [];

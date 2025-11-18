@@ -4,6 +4,7 @@ const { loadConfig, DEFAULT_CONFIG_PATH } = require("./config-loader");
 const { WindowManager } = require("./window-manager");
 
 let windowManager = null;
+let explicitQuitRequested = false;
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
@@ -16,6 +17,14 @@ app.on("second-instance", () => {
     windowManager.launchAll();
   }
 });
+
+function requestAppQuit() {
+  if (explicitQuitRequested) {
+    return;
+  }
+  explicitQuitRequested = true;
+  app.quit();
+}
 
 function resolveConfigPath() {
   const cliIndex = process.argv.findIndex((arg) => arg === "--config" || arg === "-c");
@@ -63,15 +72,27 @@ app.whenReady().then(() => {
 });
 
 app.on("before-quit", () => {
+  explicitQuitRequested = true;
   if (windowManager) {
     windowManager.shutdown();
   }
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
+  if (process.platform === "darwin") {
+    return;
   }
+
+  if (explicitQuitRequested) {
+    return;
+  }
+
+  if (windowManager?.shouldKeepProcessAlive()) {
+    console.info("[PlayerShell] 所有視窗已暫時關閉，等待自動重啟");
+    return;
+  }
+
+  requestAppQuit();
 });
 
 app.on("child-process-gone", (_event, details) => {
@@ -91,7 +112,7 @@ process.on("unhandledRejection", (reason) => {
 
 const handleSignal = (signal) => {
   console.info(`[PlayerShell] 接收到訊號 ${signal}，準備結束應用`);
-  app.quit();
+  requestAppQuit();
 };
 
 process.on("SIGINT", handleSignal);
