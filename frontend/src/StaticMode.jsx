@@ -22,8 +22,16 @@ export default function StaticMode({ imagesBase, imgId, onCaptureReady = null })
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const objectFit = params.get("object_fit") || "contain";
   const objectPosition = params.get("object_position") || "center";
+  const queryImagesBase = params.get("img_base");
 
-  const imageUrl = imgId ? `${imagesBase}${imgId}` : null;
+  const effectiveImagesBase = useMemo(() => {
+    const trimmed = queryImagesBase?.trim();
+    const base = trimmed ? trimmed : imagesBase;
+    if (!base) return "";
+    return base.endsWith("/") ? base : `${base}/`;
+  }, [imagesBase, queryImagesBase]);
+
+  const imageUrl = imgId ? `${effectiveImagesBase}${imgId}` : null;
 
   useEffect(() => {
     if (typeof onCaptureReady !== "function") {
@@ -68,4 +76,3 @@ export default function StaticMode({ imagesBase, imgId, onCaptureReady = null })
     </div>
   );
 }
-

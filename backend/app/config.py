@@ -34,6 +34,7 @@ class Settings:
     camera_presets_file: str = os.getenv("CAMERA_PRESETS_FILE", "backend/metadata/camera_presets.json")
     screenshot_dir: str = os.getenv("SCREENSHOT_DIR", "screen_shots")
     generated_sounds_dir: str = os.getenv("GENERATED_SOUNDS_DIR", "backend/generated_sounds")
+    nightwalk_assets_dir: Optional[str] = os.getenv("NIGHTWALK_ASSETS_DIR", "夜遊 - 毛刺")
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
         (
@@ -98,6 +99,13 @@ class Settings:
         self.screenshot_dir = resolve(self.screenshot_dir)
         self.generated_sounds_dir = resolve(self.generated_sounds_dir)
         self.chroma_db_path = resolve(self.chroma_db_path)
+        if self.nightwalk_assets_dir:
+            resolved = resolve(self.nightwalk_assets_dir)
+            if os.path.isdir(resolved):
+                self.nightwalk_assets_dir = resolved
+            else:
+                self.nightwalk_assets_dir = None
+
 
 
 settings = Settings()

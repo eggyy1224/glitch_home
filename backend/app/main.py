@@ -43,6 +43,14 @@ app.mount(
     name="generated_sounds",
 )
 
+if settings.nightwalk_assets_dir:
+    nightwalk_path = Path(settings.nightwalk_assets_dir)
+    app.mount(
+        "/nightwalk_assets",
+        StaticFiles(directory=nightwalk_path),
+        name="nightwalk_assets",
+    )
+
 app.include_router(storage_router)
 app.include_router(generation_router)
 app.include_router(indexing_router)

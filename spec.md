@@ -1381,6 +1381,7 @@ CAMERA_PRESETS_FILE=backend/metadata/camera_presets.json
 CHROMA_DB_PATH=backend/chroma_db
 CHROMA_COLLECTION_IMAGES=offspring_images
 CHROMA_COLLECTION_TEXT=text_queries
+NIGHTWALK_ASSETS_DIR="夜遊 - 毛刺"                     # 掛載為 /nightwalk_assets，提供 StaticMode 額外圖庫
 
 # 圖像處理
 IMAGE_SIZE=1024                                     # 輸入圖像縮放尺寸

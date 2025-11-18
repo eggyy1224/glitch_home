@@ -14,6 +14,10 @@ export default {
         target: "http://localhost:8000",
         changeOrigin: true,
       },
+      "/nightwalk_assets": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
       "/ws": {
         target: "ws://localhost:8000",
         changeOrigin: true,
@@ -22,4 +26,3 @@ export default {
     },
   },
 };
-
