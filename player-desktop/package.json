@@ -1,0 +1,21 @@
+{
+  "name": "player-desktop",
+  "version": "1.0.0",
+  "description": "Player Desktop Shell - Electron container for multi-screen exhibition playback",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "build": "echo \"Bundle with electron-builder once ready\""
+  },
+  "keywords": [
+    "electron",
+    "player",
+    "desktop-shell"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^39.2.1"
+  }
+}

@@ -1,0 +1,116 @@
+# Player Desktop Shell
+
+Player Desktop Shell 是一個 Electron 桌面應用程式，用來在展覽現場包覆現有的 Web 前端。它負責多螢幕視窗管理、自動播放政策設定與視窗異常恢復，讓現場僅需啟動單一應用程式即可載入所有展示 client。
+
+## 功能概要
+
+- 依照配置檔自動建立對應實體螢幕的播放視窗
+- 強制啟用 `autoplayPolicy: "no-user-gesture-required"` 解除音訊/影片手動解鎖
+- 視窗關閉、崩潰或載入失敗時自動重啟，避免人工介入
+- 透過 URL 參數傳遞 `clientId`、`mode` 等資訊，沿用既有前端邏輯
+- 單一應用即可管理多個 client，支援 kiosk / fullscreen 模式
+
+## 專案結構
+
+```
+player-desktop/
+├── config/
+│   └── clients.json            # 多螢幕與 client 配置
+├── src/
+│   ├── config-loader.js        # 讀取與驗證配置檔
+│   ├── window-manager.js       # 管理 BrowserWindow 生命週期
+│   └── main.js                 # Electron 主進程入口
+├── package.json
+├── package-lock.json
+├── README.md                   # 本文件
+└── IMPLEMENTATION_SPEC.md      # 深入技術說明
+```
+
+## 安裝與啟動
+
+```bash
+cd /Volumes/2024data/glitch_home_project/player-desktop
+npm install
+npm run dev    # 或 npm start
+```
+
+預設會載入 `config/clients.json`，並連線到 `http://localhost:5173`（前端 dev server）。
+
+> **提示**：正式部署時可改成指向已 Build 的前端網址或靜態檔案伺服器。
+
+## 配置檔 (`config/clients.json`)
+
+| 欄位 | 說明 |
+|------|------|
+| `frontend_url` | 要載入的前端 URL。開發時預設 `http://localhost:5173`。 |
+| `auto_restart.cooldown_ms` | 異常後等待多少毫秒再重啟視窗（預設 3000）。 |
+| `auto_restart.max_attempts` | 單一視窗最多重啟次數（預設 5，填入較大的數字可放寬）。 |
+| `clients[].client_id` | 每個視窗的唯一 ID，也會寫入 URL `?client=` 供前端識別。 |
+| `clients[].display_index` | 指定第幾個實體螢幕（0 為主螢幕）。若超出現有螢幕數量，應用程式會拒絕啟動。 |
+| `clients[].fullscreen` | 是否自動進入全螢幕（預設 `true`）。 |
+| `clients[].kiosk` | Kiosk 模式（隱藏系統 UI、避免 Alt+Tab）。 |
+| `clients[].devtools` | 啟動時是否開啟 DevTools，方便除錯。 |
+| `clients[].url_params` | 會附加到前端 URL 的查詢參數，例如 `iframe_mode=true`、`iframe_timeline=<id>`。若未指定 `client` 參數，系統會自動補上。 |
+
+### 範例
+
+```json
+{
+  "frontend_url": "http://localhost:5173",
+  "auto_restart": {
+    "cooldown_ms": 3000,
+    "max_attempts": 5
+  },
+  "clients": [
+    {
+      "client_id": "desktop-main",
+      "display_index": 0,
+      "fullscreen": true,
+      "url_params": {
+        "client": "desktop-main",
+        "iframe_mode": "true",
+        "iframe_timeline": "desktop_wall"
+      }
+    },
+    {
+      "client_id": "desktop-side",
+      "display_index": 1,
+      "fullscreen": true,
+      "url_params": {
+        "client": "desktop-side",
+        "incubator": "true",
+        "phylogeny": "true"
+      }
+    }
+  ]
+}
+```
+
+## 運行流程
+
+1. 開啟電腦後啟動 Player Desktop Shell
+2. 應用程式讀取 `clients.json`，並檢查是否有重複 `client_id`
+3. 根據 `display_index` 建立對應視窗並套用 URL 參數
+4. 視窗載入成功後即可透過 WebSocket 與後端協同播放
+5. 如果任一視窗崩潰、載入失敗或被誤關，Shell 會在冷卻時間後自動重啟
+
+## 參數覆寫
+
+- CLI：`npm start -- --config /path/to/custom.json`
+- 環境變數：`PLAYER_DESKTOP_CONFIG=/path/to/custom.json npm run dev`
+
+## 疑難排解
+
+| 問題 | 排解方式 |
+|------|-----------|
+| 視窗卡在主螢幕 | 確認 `display_index` 是否超出實體螢幕數量；若超出，應用程式會在終端輸出錯誤。 |
+| 無法自動播放音訊 | 確保前端載入後會建立 `SoundPlayer`，並讓殼層維持 `autoplayPolicy` 預設值。 |
+| 視窗不斷重啟 | 查看終端訊息，若已達 `max_attempts` 會停止重啟；調整配置後再重新啟動。 |
+| 想手動重載配置 | 停止應用、修改 `clients.json`、再執行 `npm run dev`。未來可擴充熱載入。 |
+
+## 後續規劃
+
+- 設計簡易設定 UI 以便非技術人員管理配置
+- 整合硬體按鈕 / 感測器事件，觸發 WebSocket 播放指令
+- 加入視窗監控 API，供後端或監控系統查詢狀態
+

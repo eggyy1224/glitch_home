@@ -1,0 +1,31 @@
+{
+  "frontend_url": "http://localhost:5173",
+  "auto_restart": {
+    "cooldown_ms": 3000,
+    "max_attempts": 5
+  },
+  "clients": [
+    {
+      "client_id": "desktop-main",
+      "display_index": 0,
+      "fullscreen": true,
+      "kiosk": false,
+      "devtools": false,
+      "url_params": {
+        "client": "desktop",
+        "iframe_mode": "true"
+      }
+    },
+    {
+      "client_id": "desktop-side",
+      "display_index": 1,
+      "fullscreen": true,
+      "kiosk": false,
+      "devtools": false,
+      "url_params": {
+        "client": "desktop2",
+        "iframe_mode": "true"
+      }
+    }
+  ]
+}
