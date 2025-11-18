@@ -1,0 +1,30 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left",
+      "image": "offspring_20251012_182656_147.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

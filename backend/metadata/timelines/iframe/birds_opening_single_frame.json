@@ -1,0 +1,48 @@
+{
+  "id": "birds_opening_single_frame",
+  "title": "Birds 開場：單格鳥圖＋聲音",
+  "clientId": "birds",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "birds/birds_opening_slide_mode_20251117171225",
+      "duration": 8,
+      "label": "單格鳥圖開場",
+      "unlock_audio_targets": [
+        "birds"
+      ],
+      "caption": {
+        "text": "Birds 聲軌 · 單格展示",
+        "language": "zh-TW",
+        "duration_seconds": 10
+      },
+      "tts": {
+        "mode": "tts",
+        "text": "鳥 鳥 鳥",
+        "instructions": "zh-TW Mandarin, calm, medium pace",
+        "auto_play": true
+      }
+    },
+    {
+      "snapshot": "birds/birds_two_panel_slide_video_with_client_20251117173556",
+      "duration": 12,
+      "label": "雙格：Slide + Birds 影片",
+      "unlock_audio_targets": [
+        "birds-video"
+      ],
+      "caption": {
+        "text": "左：系譜 slide · 右：Birds 影片",
+        "language": "zh-TW",
+        "duration_seconds": 10
+      },
+      "remote_clicks": [
+        {
+          "label": "Birds 影片開聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video",
+          "offset_seconds": 1.5
+        }
+      ]
+    }
+  ]
+}
