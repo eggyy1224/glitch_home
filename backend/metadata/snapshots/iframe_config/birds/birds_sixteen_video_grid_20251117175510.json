@@ -1,0 +1,199 @@
+{
+  "layout": "grid",
+  "gap": 6,
+  "columns": 4,
+  "panels": [
+    {
+      "id": "grid_r1c1",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-01",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 01",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r1c2",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-02",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 02",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r1c3",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-03",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 03",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r1c4",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-04",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 04",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r2c1",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-05",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 05",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r2c2",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-06",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 06",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r2c3",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-07",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 07",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r2c4",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-08",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 08",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r3c1",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-09",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 09",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r3c2",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-10",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 10",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r3c3",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-11",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 11",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r3c4",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-12",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 12",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r4c1",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-13",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 13",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r4c2",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-14",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 14",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r4c3",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-15",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 15",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grid_r4c4",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video-grid-16",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birds 影片 16",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

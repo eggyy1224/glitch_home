@@ -43,6 +43,186 @@
           "offset_seconds": 1.5
         }
       ]
+    },
+    {
+      "snapshot": "birds/birds_quad_video_grid_20251117174500",
+      "duration": 18,
+      "label": "四格：Birds 影片牆",
+      "unlock_audio_targets": [
+        "birds-video-quad-1",
+        "birds-video-quad-2",
+        "birds-video-quad-3",
+        "birds-video-quad-4"
+      ],
+      "caption": {
+        "text": "四支 Birds 影片同步播放",
+        "language": "zh-TW",
+        "duration_seconds": 12
+      },
+      "tts": {
+        "mode": "tts",
+        "text": "現在切換到四格 Birds 影像，一起感受牠們的節奏",
+        "instructions": "zh-TW Mandarin, lively, medium pace",
+        "auto_play": true
+      },
+      "remote_clicks": [
+        {
+          "label": "Birds Quad A 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-quad-1",
+          "offset_seconds": 0.8
+        },
+        {
+          "label": "Birds Quad B 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-quad-2",
+          "offset_seconds": 1.6
+        },
+        {
+          "label": "Birds Quad C 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-quad-3",
+          "offset_seconds": 2.4
+        },
+        {
+          "label": "Birds Quad D 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-quad-4",
+          "offset_seconds": 3.2
+        }
+      ]
+    },
+    {
+      "snapshot": "birds/birds_sixteen_video_grid_20251117175510",
+      "duration": 24,
+      "label": "十六格：Birds 影片矩陣",
+      "unlock_audio_targets": [
+        "birds-video-grid-01",
+        "birds-video-grid-02",
+        "birds-video-grid-03",
+        "birds-video-grid-04",
+        "birds-video-grid-05",
+        "birds-video-grid-06",
+        "birds-video-grid-07",
+        "birds-video-grid-08",
+        "birds-video-grid-09",
+        "birds-video-grid-10",
+        "birds-video-grid-11",
+        "birds-video-grid-12",
+        "birds-video-grid-13",
+        "birds-video-grid-14",
+        "birds-video-grid-15",
+        "birds-video-grid-16"
+      ],
+      "caption": {
+        "text": "Birds 影像矩陣 · 16 格同時綻放",
+        "language": "zh-TW",
+        "duration_seconds": 14
+      },
+      "tts": {
+        "mode": "tts",
+        "text": "最後我們展開十六格 Birds 影像矩陣，讓所有鳥鳴匯流成同一個節奏。",
+        "instructions": "zh-TW Mandarin, inspiring, medium pace",
+        "auto_play": true
+      },
+      "remote_clicks": [
+        {
+          "label": "Birds Grid 01 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-01",
+          "offset_seconds": 0.6
+        },
+        {
+          "label": "Birds Grid 02 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-02",
+          "offset_seconds": 1.2
+        },
+        {
+          "label": "Birds Grid 03 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-03",
+          "offset_seconds": 1.8
+        },
+        {
+          "label": "Birds Grid 04 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-04",
+          "offset_seconds": 2.4
+        },
+        {
+          "label": "Birds Grid 05 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-05",
+          "offset_seconds": 3.0
+        },
+        {
+          "label": "Birds Grid 06 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-06",
+          "offset_seconds": 3.6
+        },
+        {
+          "label": "Birds Grid 07 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-07",
+          "offset_seconds": 4.2
+        },
+        {
+          "label": "Birds Grid 08 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-08",
+          "offset_seconds": 4.8
+        },
+        {
+          "label": "Birds Grid 09 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-09",
+          "offset_seconds": 5.4
+        },
+        {
+          "label": "Birds Grid 10 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-10",
+          "offset_seconds": 6.0
+        },
+        {
+          "label": "Birds Grid 11 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-11",
+          "offset_seconds": 6.6
+        },
+        {
+          "label": "Birds Grid 12 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-12",
+          "offset_seconds": 7.2
+        },
+        {
+          "label": "Birds Grid 13 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-13",
+          "offset_seconds": 7.8
+        },
+        {
+          "label": "Birds Grid 14 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-14",
+          "offset_seconds": 8.4
+        },
+        {
+          "label": "Birds Grid 15 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-15",
+          "offset_seconds": 9.0
+        },
+        {
+          "label": "Birds Grid 16 聲音",
+          "selector": ".video-mode-container",
+          "targetClientId": "birds-video-grid-16",
+          "offset_seconds": 9.6
+        }
+      ]
     }
   ]
 }
