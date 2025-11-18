@@ -273,6 +273,13 @@ export async function sendRemoteClick(payload, options = {}) {
   return postJson(`${API_BASE}/api/remote-click`, payload, options);
 }
 
+export async function sendVideoControl(payload, options = {}) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("video control payload is required");
+  }
+  return postJson(`${API_BASE}/api/video-control`, payload, options);
+}
+
 export async function generateCollageVersion(files, params) {
   const url = `${API_BASE}/api/generate-collage-version`;
   const formData = new FormData();

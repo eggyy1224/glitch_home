@@ -6,7 +6,7 @@ import json
 
 from fastapi import APIRouter, Body, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 
-from ..models.schemas import RemoteClickRequest, SubtitleUpdateRequest
+from ..models.schemas import RemoteClickRequest, SubtitleUpdateRequest, VideoControlRequest
 from ..services.captions import caption_manager
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
@@ -104,6 +104,23 @@ async def api_remote_click(
         raise HTTPException(status_code=400, detail="remote click payload is empty")
     await realtime_broadcaster.broadcast_remote_click(click_payload, target_client_id=resolved_target)
     return {"status": "queued", "message": "remote click broadcast sent"}
+
+
+@router.post("/api/video-control")
+async def api_video_control(
+    body: VideoControlRequest,
+    target_client_id: str | None = Query(default=None),
+) -> dict:
+    resolved_target = target_client_id or body.target_client_id
+    payload: dict[str, object] = {"action": body.action}
+    if body.volume is not None:
+        payload["volume"] = body.volume
+    if body.muted is not None:
+        payload["muted"] = body.muted
+    if body.time is not None:
+        payload["time"] = body.time
+    await realtime_broadcaster.broadcast_video_control(payload, target_client_id=resolved_target)
+    return {"status": "queued", "message": "video control broadcast sent"}
 
 
 @router.post("/api/screenshots/request", status_code=202)

@@ -4,6 +4,7 @@ import {
   clearSubtitle,
   queueSoundPlay,
   sendRemoteClick,
+  sendVideoControl,
   setCaption,
   setSubtitle,
   speakWithSubtitle,
@@ -26,6 +27,7 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
   const activeRunRef = useRef(null);
   const actionErrorRef = useRef(null);
   const remoteClickTimersRef = useRef([]);
+  const videoControlTimersRef = useRef([]);
 
   const clearRemoteClickTimers = useCallback(() => {
     if (!remoteClickTimersRef.current.length) {
@@ -47,6 +49,14 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
     controllerRef.current = null;
     activeRunRef.current = null;
     clearRemoteClickTimers();
+    if (videoControlTimersRef.current.length) {
+      videoControlTimersRef.current.forEach((timerId) => {
+        if (typeof timerId === "number") {
+          clearTimeout(timerId);
+        }
+      });
+      videoControlTimersRef.current = [];
+    }
   }, [clearRemoteClickTimers]);
 
   useEffect(
@@ -121,6 +131,13 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
           : [];
       const hasRemoteClicks = remoteClicks.length > 0;
 
+      const videoControls = Array.isArray(step.video_controls)
+        ? step.video_controls
+        : Array.isArray(step.videoControls)
+          ? step.videoControls
+          : [];
+      const hasVideoControls = videoControls.length > 0;
+
       const unlockAudioTargets = Array.isArray(step.unlock_audio_targets)
         ? step.unlock_audio_targets
         : Array.isArray(step.unlockAudioTargets)
@@ -185,6 +202,54 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
           void executeRemoteClick();
         }, delayMs);
         remoteClickTimersRef.current.push(timerId);
+      };
+
+      const scheduleVideoControl = (action, index) => {
+        if (!action || !action.action) return;
+        const labelBase = typeof action.action === "string" ? action.action : "video";
+        const actionLabel = `${labelBase}_${index + 1}`;
+        const buildPayload = () => {
+          const payload = { action: action.action };
+          const volumeValue = numberOrUndefined(action.volume);
+          if (volumeValue !== undefined) {
+            payload.volume = Math.min(1, Math.max(0, volumeValue));
+          }
+          if (typeof action.muted === "boolean") {
+            payload.muted = action.muted;
+          }
+          const timeValue = numberOrUndefined(action.time);
+          if (timeValue !== undefined) {
+            payload.time = Math.max(0, timeValue);
+          }
+          const targetOverride = resolveTarget(action.target_client_id || action.targetClientId);
+          if (targetOverride) {
+            payload.target_client_id = targetOverride;
+          }
+          return payload;
+        };
+
+        const executeVideoControl = async () => {
+          if (isStale()) return;
+          try {
+            const payload = buildPayload();
+            await sendVideoControl(payload, { signal });
+          } catch (err) {
+            handleError(`video_control:${actionLabel}`, err);
+            flushErrors();
+          }
+        };
+
+        const delaySeconds = numberOrUndefined(action.offset_seconds ?? action.offsetSeconds) || 0;
+        const delayMs = delaySeconds > 0 ? delaySeconds * 1000 : 0;
+        if (delayMs <= 0) {
+          void executeVideoControl();
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          videoControlTimersRef.current = videoControlTimersRef.current.filter((id) => id !== timerId);
+          void executeVideoControl();
+        }, delayMs);
+        videoControlTimersRef.current.push(timerId);
       };
 
       const runUnlockAudio = async () => {
@@ -313,13 +378,22 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
         flushErrors();
       }
 
+      try {
+        if (videoControls.length) {
+          videoControls.forEach((action, index) => scheduleVideoControl(action, index));
+        }
+      } catch (err) {
+        handleError("video_control", err);
+        flushErrors();
+      }
+
       if (isStale()) {
         return;
       }
 
       if (hasErrors) {
         flushErrors();
-      } else if (actionsRan.length > 0 || hasRemoteClicks || actionErrorRef.current) {
+      } else if (actionsRan.length > 0 || hasRemoteClicks || hasVideoControls || actionErrorRef.current) {
         clearActionError();
       }
     },

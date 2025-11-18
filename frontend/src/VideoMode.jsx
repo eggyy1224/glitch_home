@@ -14,17 +14,128 @@ const canvasToBlob = (canvas) =>
       },
       "image/png",
     );
-  });
+});
 
-export default function VideoMode({ onCaptureReady = null }) {
+const DEFAULT_VOLUME = 0.7;
+
+const clampVolume = (value, fallback = DEFAULT_VOLUME) => {
+  if (value == null) return fallback;
+  const numberValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numberValue)) return fallback;
+  return Math.min(1, Math.max(0, numberValue));
+};
+
+export default function VideoMode({ onCaptureReady = null, controlRef = null }) {
   const rootRef = useRef(null);
   const videoRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [volumeLevel, setVolumeLevel] = useState(DEFAULT_VOLUME);
+  const [needsUserAction, setNeedsUserAction] = useState(false);
+  const autoUnmuteAttemptedRef = useRef(false);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const videoFileName = params.get("video");
+  const autoUnmuteEnabled = useMemo(() => {
+    const raw = params.get("auto_unmute");
+    if (raw == null) return true;
+    return raw !== "false";
+  }, [params]);
+
+  const initialVolume = useMemo(() => {
+    const raw = params.get("video_volume") ?? params.get("volume");
+    return clampVolume(raw, DEFAULT_VOLUME);
+  }, [params]);
 
   const videoUrl = videoFileName ? `/videos/圖像系譜學Video/${videoFileName}` : null;
+
+  useEffect(() => {
+    setVolumeLevel(initialVolume);
+  }, [initialVolume]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.volume = volumeLevel;
+  }, [volumeLevel]);
+
+  const playVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return Promise.resolve();
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      return playPromise
+        .then(() => {
+          setNeedsUserAction(false);
+        })
+        .catch((err) => {
+          setNeedsUserAction(true);
+          throw err;
+        });
+    }
+    setNeedsUserAction(false);
+    return Promise.resolve();
+  }, []);
+
+  const pauseVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.pause();
+  }, []);
+
+  const setMutedState = useCallback(
+    (nextMuted) => {
+      const video = videoRef.current;
+      if (!video) return;
+      const finalMuted = Boolean(nextMuted);
+      video.muted = finalMuted;
+      setIsMuted(finalMuted);
+      if (!finalMuted) {
+        void playVideo();
+      }
+    },
+    [playVideo],
+  );
+
+  const setVolumeState = useCallback(
+    (value) => {
+      const video = videoRef.current;
+      if (!video) return;
+      const clamped = clampVolume(value, volumeLevel);
+      video.volume = clamped;
+      setVolumeLevel(clamped);
+      if (clamped > 0 && video.muted) {
+        video.muted = false;
+        setIsMuted(false);
+      }
+    },
+    [volumeLevel],
+  );
+
+  const seekVideo = useCallback((timeInSeconds) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const parsed = typeof timeInSeconds === "number" ? timeInSeconds : Number(timeInSeconds);
+    if (!Number.isFinite(parsed) || parsed < 0) return;
+    try {
+      video.currentTime = parsed;
+    } catch (err) {
+      // ignore invalid seek
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!controlRef) return undefined;
+    controlRef.current = {
+      play: () => playVideo(),
+      pause: () => pauseVideo(),
+      setVolume: (value) => setVolumeState(value),
+      setMuted: (muted) => setMutedState(muted),
+      seek: (timeInSeconds) => seekVideo(timeInSeconds),
+    };
+    return () => {
+      controlRef.current = null;
+    };
+  }, [controlRef, pauseVideo, playVideo, seekVideo, setMutedState, setVolumeState]);
 
   const handleToggleMute = useCallback(() => {
     const video = videoRef.current;
@@ -32,7 +143,9 @@ export default function VideoMode({ onCaptureReady = null }) {
     const nextMuted = !isMuted;
     video.muted = nextMuted;
     if (!nextMuted && video.paused) {
-      video.play().catch(() => {});
+      video.play().then(() => setNeedsUserAction(false)).catch(() => {
+        setNeedsUserAction(true);
+      });
     }
     setIsMuted(nextMuted);
   }, [isMuted]);
@@ -47,6 +160,96 @@ export default function VideoMode({ onCaptureReady = null }) {
     },
     [handleToggleMute],
   );
+
+  useEffect(() => {
+    autoUnmuteAttemptedRef.current = false;
+  }, [videoUrl, autoUnmuteEnabled]);
+
+  useEffect(() => {
+    if (!autoUnmuteEnabled) return undefined;
+    if (autoUnmuteAttemptedRef.current) return undefined;
+    let cancelled = false;
+    let cleanupListener = null;
+    let rafId = null;
+
+    const attemptAutoUnlock = () => {
+      if (cancelled) return;
+      const video = videoRef.current;
+      if (!video) return;
+      video.volume = initialVolume;
+      video.muted = false;
+      setVolumeLevel(initialVolume);
+      setIsMuted(false);
+      video
+        .play()
+        .then(() => {
+          if (!cancelled) {
+            setNeedsUserAction(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setNeedsUserAction(true);
+          }
+        });
+    };
+
+    const setupAutoUnlock = () => {
+      if (cancelled) return;
+      const video = videoRef.current;
+      if (!video) {
+        rafId = window.requestAnimationFrame(setupAutoUnlock);
+        return;
+      }
+      if (autoUnmuteAttemptedRef.current) {
+        return;
+      }
+      autoUnmuteAttemptedRef.current = true;
+
+      if (video.readyState >= 2) {
+        attemptAutoUnlock();
+        return;
+      }
+
+      const onCanPlay = () => {
+        video.removeEventListener("canplay", onCanPlay);
+        attemptAutoUnlock();
+      };
+      video.addEventListener("canplay", onCanPlay);
+      cleanupListener = () => {
+        video.removeEventListener("canplay", onCanPlay);
+      };
+    };
+
+    setupAutoUnlock();
+
+    return () => {
+      cancelled = true;
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+      if (cleanupListener) {
+        cleanupListener();
+      }
+    };
+  }, [autoUnmuteEnabled, initialVolume, videoUrl]);
+
+  useEffect(() => {
+    if (!needsUserAction) return undefined;
+    const handler = () => {
+      setNeedsUserAction(false);
+      setIsMuted(false);
+      const video = videoRef.current;
+      if (video) {
+        video.muted = false;
+        void video.play();
+      }
+    };
+    document.addEventListener("click", handler, { once: true });
+    return () => {
+      document.removeEventListener("click", handler);
+    };
+  }, [needsUserAction]);
 
   useEffect(() => {
     if (typeof onCaptureReady !== "function") {

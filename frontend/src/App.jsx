@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import KinshipScene from "./ThreeKinshipScene.jsx";
 import SearchMode from "./SearchMode.jsx";
 import OrganicRoomScene from "./OrganicRoomScene.jsx";
@@ -60,6 +60,7 @@ export default function App() {
   const [showInfo, setShowInfo] = useState(false);
   const [fps, setFps] = useState(null);
   const [soundPlayRequest, setSoundPlayRequest] = useState(null);
+  const videoControllerRef = useRef(null);
 
   const {
     initialParams,
@@ -339,6 +340,55 @@ export default function App() {
     [clientId],
   );
 
+  const handleVideoControlMessage = useCallback(
+    (payload) => {
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      const controller = videoControllerRef.current;
+      if (!controller || typeof payload !== "object" || !payload) {
+        return;
+      }
+      const action = typeof payload.action === "string" ? payload.action.trim().toLowerCase() : "";
+      if (!action) {
+        return;
+      }
+      if (action === "play") {
+        controller.play?.();
+        return;
+      }
+      if (action === "pause") {
+        controller.pause?.();
+        return;
+      }
+      if (action === "seek" && payload.time != null) {
+        controller.seek?.(payload.time);
+        return;
+      }
+      if (action === "set_volume" || action === "volume") {
+        controller.setVolume?.(payload.volume);
+        return;
+      }
+      if (action === "set_muted") {
+        controller.setMuted?.(payload.muted);
+        return;
+      }
+      if (action === "mute") {
+        controller.setMuted?.(true);
+        return;
+      }
+      if (action === "unmute") {
+        controller.setMuted?.(false);
+        if (payload.volume != null) {
+          controller.setVolume?.(payload.volume);
+        }
+        return;
+      }
+    },
+    [clientId],
+  );
+
   useControlSocket({
     clientId,
     onScreenshotRequest: enqueueScreenshotRequest,
@@ -350,6 +400,7 @@ export default function App() {
     onCollageConfig: handleCollageConfigMessage,
     onUnlockAudio: handleUnlockAudioMessage,
     onRemoteClick: handleRemoteClickMessage,
+    onVideoControl: handleVideoControlMessage,
   });
 
   const handleSoundHandled = useCallback(() => {
@@ -510,6 +561,9 @@ export default function App() {
     [DisplayModes.VIDEO]: {
       component: VideoMode,
       withCaptureReady: true,
+      componentProps: {
+        controlRef: videoControllerRef,
+      },
     },
     [DisplayModes.KINSHIP]: {
       component: KinshipScene,

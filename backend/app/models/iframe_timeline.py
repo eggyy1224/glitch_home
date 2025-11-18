@@ -132,6 +132,49 @@ class TimelineRemoteClickAction(BaseModel):
         return self
 
 
+class TimelineVideoControlAction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    action: Literal["play", "pause", "mute", "unmute", "set_volume", "set_muted", "seek"] = Field(
+        ...,
+        description="Video 控制動作",
+    )
+    volume: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="set_volume/unmute 時可指定音量",
+    )
+    muted: Optional[bool] = Field(default=None, description="set_muted 動作需帶布林值")
+    time: Optional[float] = Field(default=None, ge=0.0, description="seek 的目標秒數")
+    offset_seconds: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        validation_alias=AliasChoices("offset_seconds", "offsetSeconds"),
+        serialization_alias="offset_seconds",
+        description="延遲幾秒後執行 video 控制",
+    )
+    target_client_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("target_client_id", "targetClientId"),
+        serialization_alias="targetClientId",
+        description="覆寫預設 target client",
+    )
+
+    @model_validator(mode="after")
+    def _validate_video_action(self) -> "TimelineVideoControlAction":
+        if self.action == "set_volume" and self.volume is None:
+            raise ValueError("set_volume 需要 volume")
+        if self.action == "set_muted" and self.muted is None:
+            raise ValueError("set_muted 需要 muted")
+        if self.action == "seek" and self.time is None:
+            raise ValueError("seek 需要 time")
+        if self.target_client_id:
+            client = self.target_client_id.strip()
+            self.target_client_id = client or None
+        return self
+
+
 class IframeTimelineStep(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -151,6 +194,12 @@ class IframeTimelineStep(BaseModel):
     remote_clicks: List[TimelineRemoteClickAction] = Field(
         default_factory=list,
         description="Remote click actions triggered within the step",
+    )
+    video_controls: List[TimelineVideoControlAction] = Field(
+        default_factory=list,
+        description="Video 控制指令",
+        validation_alias=AliasChoices("video_controls", "videoControls"),
+        serialization_alias="video_controls",
     )
     unlock_audio_targets: List[str] = Field(
         default_factory=list,

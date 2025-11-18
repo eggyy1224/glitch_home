@@ -35,6 +35,7 @@ class ResolvedIframeTimelineStep:
     tts: Optional[Dict[str, object]] = None
     remote_clicks: Optional[List[Dict[str, object]]] = None
     unlock_audio_targets: Optional[List[str]] = None
+    video_controls: Optional[List[Dict[str, object]]] = None
 
     def to_payload(self) -> Dict[str, object]:
         payload: Dict[str, object] = {
@@ -50,6 +51,7 @@ class ResolvedIframeTimelineStep:
             "tts": self.tts,
             "remote_clicks": self.remote_clicks,
             "unlock_audio_targets": self.unlock_audio_targets,
+            "video_controls": self.video_controls,
         }
         return {k: v for k, v in payload.items() if v is not None}
 
@@ -215,6 +217,24 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
                 raise ValueError("remote_click 缺少 selector/target 或 x/y 座標")
             return payload
 
+        def _resolve_video_control_action(action) -> Optional[Dict[str, object]]:
+            if action is None:
+                return None
+            payload: Dict[str, object] = {"action": action.action}
+            if action.volume is not None:
+                payload["volume"] = max(0.0, min(1.0, float(action.volume)))
+            if action.muted is not None:
+                payload["muted"] = bool(action.muted)
+            if action.time is not None:
+                payload["time"] = max(0.0, float(action.time))
+            offset = action.offset_seconds
+            if offset is not None:
+                payload["offset_seconds"] = max(0.0, float(offset))
+            target = sanitize_client_id(action.target_client_id) or fallback_client
+            if target:
+                payload["target_client_id"] = target
+            return payload
+
         subtitle_payload = _resolve_timed_text_action(step.subtitle)
         caption_payload = _resolve_timed_text_action(step.caption)
         tts_payload = _resolve_speech_action(step.tts)
@@ -227,6 +247,16 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
                     remote_click_payloads.append(resolved_click)
             if not remote_click_payloads:
                 remote_click_payloads = None
+
+        video_control_payloads = None
+        if step.video_controls:
+            video_control_payloads = []
+            for action in step.video_controls:
+                resolved_control = _resolve_video_control_action(action)
+                if resolved_control:
+                    video_control_payloads.append(resolved_control)
+            if not video_control_payloads:
+                video_control_payloads = None
 
         unlock_audio_targets = None
         if step.unlock_audio_targets:
@@ -254,6 +284,7 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
                 tts=tts_payload,
                 remote_clicks=remote_click_payloads,
                 unlock_audio_targets=unlock_audio_targets,
+                video_controls=video_control_payloads,
             )
         )
     return ResolvedIframeTimeline(timeline=timeline, steps=resolved_steps, total_duration=total_duration)

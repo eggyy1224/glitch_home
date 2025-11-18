@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, model_validator, ConfigDict
-from typing import List, Optional
+from typing import List, Literal, Optional
 from datetime import datetime
 
 
@@ -183,6 +183,41 @@ class RemoteClickRequest(BaseModel):
             raise ValueError("selector、target 或 x/y 座標至少需提供一種定位方式")
         self.selector = selector or None
         self.target_selector = target_selector or None
+        if self.target_client_id is not None:
+            client = str(self.target_client_id).strip()
+            self.target_client_id = client or None
+        return self
+
+
+class VideoControlRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    action: Literal["play", "pause", "mute", "unmute", "set_volume", "set_muted", "seek"] = Field(
+        ...,
+        description="Video 控制動作：play/pause/mute/unmute/set_volume/set_muted/seek",
+    )
+    volume: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="音量（0-1），set_volume 或 unmute 時可附帶",
+    )
+    muted: Optional[bool] = Field(default=None, description="set_muted 動作需要提供 true/false")
+    time: Optional[float] = Field(default=None, ge=0.0, description="seek 動作使用的秒數")
+    target_client_id: Optional[str] = Field(
+        default=None,
+        alias="client_id",
+        description="指定目標 client_id，可改用 query target_client_id 指定",
+    )
+
+    @model_validator(mode="after")
+    def _validate_video_payload(self) -> "VideoControlRequest":
+        if self.action == "set_volume" and self.volume is None:
+            raise ValueError("set_volume 需要 volume")
+        if self.action == "set_muted" and self.muted is None:
+            raise ValueError("set_muted 需要 muted")
+        if self.action == "seek" and self.time is None:
+            raise ValueError("seek 需要 time")
         if self.target_client_id is not None:
             client = str(self.target_client_id).strip()
             self.target_client_id = client or None
