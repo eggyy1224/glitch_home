@@ -18,8 +18,8 @@
       },
       "tts": {
         "mode": "tts",
-        "text": "鳥 鳥 鳥",
-        "instructions": "zh-TW Mandarin, calm, medium pace",
+        "text": "啊 啊啊啊 啊啊 啊啊啊啊啊",
+        "instructions": "Taigi, sharp tone",
         "auto_play": true
       }
     },
@@ -35,10 +35,16 @@
         "language": "zh-TW",
         "duration_seconds": 10
       },
-      "remote_clicks": [
+      "video_controls": [
         {
-          "label": "Birds 影片開聲音",
-          "selector": ".video-mode-container",
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video",
+          "offset_seconds": 0.75
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.7,
           "targetClientId": "birds-video",
           "offset_seconds": 1.5
         }
@@ -61,34 +67,58 @@
       },
       "tts": {
         "mode": "tts",
-        "text": "現在切換到四格 Birds 影像，一起感受牠們的節奏",
-        "instructions": "zh-TW Mandarin, lively, medium pace",
+        "text": "啊 啊啊啊 啊啊 啊啊啊啊啊",
+        "instructions": "Taigi, sharp tone",
         "auto_play": true
       },
-      "remote_clicks": [
+      "video_controls": [
         {
-          "label": "Birds Quad A 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-quad-1",
           "offset_seconds": 0.8
         },
         {
-          "label": "Birds Quad B 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.65,
+          "targetClientId": "birds-video-quad-1",
+          "offset_seconds": 1.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-quad-2",
           "offset_seconds": 1.6
         },
         {
-          "label": "Birds Quad C 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.65,
+          "targetClientId": "birds-video-quad-2",
+          "offset_seconds": 1.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-quad-3",
           "offset_seconds": 2.4
         },
         {
-          "label": "Birds Quad D 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.65,
+          "targetClientId": "birds-video-quad-3",
+          "offset_seconds": 2.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-quad-4",
           "offset_seconds": 3.2
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.65,
+          "targetClientId": "birds-video-quad-4",
+          "offset_seconds": 3.4
         }
       ]
     },
@@ -121,106 +151,1054 @@
       },
       "tts": {
         "mode": "tts",
-        "text": "最後我們展開十六格 Birds 影像矩陣，讓所有鳥鳴匯流成同一個節奏。",
-        "instructions": "zh-TW Mandarin, inspiring, medium pace",
+        "text": "啊 啊啊啊 啊啊 啊啊啊啊啊",
+        "instructions": "Taigi, sharp tone",
         "auto_play": true
       },
-      "remote_clicks": [
+      "video_controls": [
         {
-          "label": "Birds Grid 01 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-01",
           "offset_seconds": 0.6
         },
         {
-          "label": "Birds Grid 02 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-01",
+          "offset_seconds": 0.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-02",
           "offset_seconds": 1.2
         },
         {
-          "label": "Birds Grid 03 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-02",
+          "offset_seconds": 1.4
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-03",
           "offset_seconds": 1.8
         },
         {
-          "label": "Birds Grid 04 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-03",
+          "offset_seconds": 2.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-04",
           "offset_seconds": 2.4
         },
         {
-          "label": "Birds Grid 05 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-04",
+          "offset_seconds": 2.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-05",
           "offset_seconds": 3.0
         },
         {
-          "label": "Birds Grid 06 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-05",
+          "offset_seconds": 3.2
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-06",
           "offset_seconds": 3.6
         },
         {
-          "label": "Birds Grid 07 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-06",
+          "offset_seconds": 3.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-07",
           "offset_seconds": 4.2
         },
         {
-          "label": "Birds Grid 08 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-07",
+          "offset_seconds": 4.4
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-08",
           "offset_seconds": 4.8
         },
         {
-          "label": "Birds Grid 09 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-08",
+          "offset_seconds": 5.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-09",
           "offset_seconds": 5.4
         },
         {
-          "label": "Birds Grid 10 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-09",
+          "offset_seconds": 5.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-10",
           "offset_seconds": 6.0
         },
         {
-          "label": "Birds Grid 11 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-10",
+          "offset_seconds": 6.2
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-11",
           "offset_seconds": 6.6
         },
         {
-          "label": "Birds Grid 12 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-11",
+          "offset_seconds": 6.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-12",
           "offset_seconds": 7.2
         },
         {
-          "label": "Birds Grid 13 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-12",
+          "offset_seconds": 7.4
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-13",
           "offset_seconds": 7.8
         },
         {
-          "label": "Birds Grid 14 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-13",
+          "offset_seconds": 8.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-14",
           "offset_seconds": 8.4
         },
         {
-          "label": "Birds Grid 15 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-14",
+          "offset_seconds": 8.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-15",
           "offset_seconds": 9.0
         },
         {
-          "label": "Birds Grid 16 聲音",
-          "selector": ".video-mode-container",
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-15",
+          "offset_seconds": 9.2
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
           "targetClientId": "birds-video-grid-16",
           "offset_seconds": 9.6
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.45,
+          "targetClientId": "birds-video-grid-16",
+          "offset_seconds": 9.8
+        }
+      ]
+    },
+    {
+      "snapshot": "birds/birds_sixtyfour_video_grid_20251117182000",
+      "duration": 30,
+      "label": "六十四格：Birds 影片矩陣",
+      "unlock_audio_targets": [
+        "birds-video-grid-01",
+        "birds-video-grid-02",
+        "birds-video-grid-03",
+        "birds-video-grid-04",
+        "birds-video-grid-05",
+        "birds-video-grid-06",
+        "birds-video-grid-07",
+        "birds-video-grid-08",
+        "birds-video-grid-09",
+        "birds-video-grid-10",
+        "birds-video-grid-11",
+        "birds-video-grid-12",
+        "birds-video-grid-13",
+        "birds-video-grid-14",
+        "birds-video-grid-15",
+        "birds-video-grid-16",
+        "birds-video-grid-17",
+        "birds-video-grid-18",
+        "birds-video-grid-19",
+        "birds-video-grid-20",
+        "birds-video-grid-21",
+        "birds-video-grid-22",
+        "birds-video-grid-23",
+        "birds-video-grid-24",
+        "birds-video-grid-25",
+        "birds-video-grid-26",
+        "birds-video-grid-27",
+        "birds-video-grid-28",
+        "birds-video-grid-29",
+        "birds-video-grid-30",
+        "birds-video-grid-31",
+        "birds-video-grid-32",
+        "birds-video-grid-33",
+        "birds-video-grid-34",
+        "birds-video-grid-35",
+        "birds-video-grid-36",
+        "birds-video-grid-37",
+        "birds-video-grid-38",
+        "birds-video-grid-39",
+        "birds-video-grid-40",
+        "birds-video-grid-41",
+        "birds-video-grid-42",
+        "birds-video-grid-43",
+        "birds-video-grid-44",
+        "birds-video-grid-45",
+        "birds-video-grid-46",
+        "birds-video-grid-47",
+        "birds-video-grid-48",
+        "birds-video-grid-49",
+        "birds-video-grid-50",
+        "birds-video-grid-51",
+        "birds-video-grid-52",
+        "birds-video-grid-53",
+        "birds-video-grid-54",
+        "birds-video-grid-55",
+        "birds-video-grid-56",
+        "birds-video-grid-57",
+        "birds-video-grid-58",
+        "birds-video-grid-59",
+        "birds-video-grid-60",
+        "birds-video-grid-61",
+        "birds-video-grid-62",
+        "birds-video-grid-63",
+        "birds-video-grid-64"
+      ],
+      "caption": {
+        "text": "Birds 影像矩陣 · 64 格同時綻放",
+        "language": "zh-TW",
+        "duration_seconds": 14
+      },
+      "tts": {
+        "mode": "tts",
+        "text": "啊 啊啊啊 啊啊 啊啊啊啊啊",
+        "instructions": "Taigi, sharp tone",
+        "auto_play": true
+      },
+      "video_controls": [
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-01",
+          "offset_seconds": 0.0
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-01",
+          "offset_seconds": 0.15
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-02",
+          "offset_seconds": 0.35
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-02",
+          "offset_seconds": 0.5
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-03",
+          "offset_seconds": 0.7
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-03",
+          "offset_seconds": 0.85
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-04",
+          "offset_seconds": 1.05
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-04",
+          "offset_seconds": 1.2
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-05",
+          "offset_seconds": 1.4
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-05",
+          "offset_seconds": 1.55
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-06",
+          "offset_seconds": 1.75
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-06",
+          "offset_seconds": 1.9
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-07",
+          "offset_seconds": 2.1
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-07",
+          "offset_seconds": 2.25
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-08",
+          "offset_seconds": 2.45
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-08",
+          "offset_seconds": 2.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-09",
+          "offset_seconds": 2.8
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-09",
+          "offset_seconds": 2.95
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-10",
+          "offset_seconds": 3.15
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-10",
+          "offset_seconds": 3.3
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-11",
+          "offset_seconds": 3.5
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-11",
+          "offset_seconds": 3.65
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-12",
+          "offset_seconds": 3.85
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-12",
+          "offset_seconds": 4.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-13",
+          "offset_seconds": 4.2
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-13",
+          "offset_seconds": 4.35
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-14",
+          "offset_seconds": 4.55
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-14",
+          "offset_seconds": 4.7
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-15",
+          "offset_seconds": 4.9
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-15",
+          "offset_seconds": 5.05
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-16",
+          "offset_seconds": 5.25
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-16",
+          "offset_seconds": 5.4
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-17",
+          "offset_seconds": 5.6
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-17",
+          "offset_seconds": 5.75
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-18",
+          "offset_seconds": 5.95
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-18",
+          "offset_seconds": 6.1
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-19",
+          "offset_seconds": 6.3
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-19",
+          "offset_seconds": 6.45
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-20",
+          "offset_seconds": 6.65
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-20",
+          "offset_seconds": 6.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-21",
+          "offset_seconds": 7.0
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-21",
+          "offset_seconds": 7.15
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-22",
+          "offset_seconds": 7.35
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-22",
+          "offset_seconds": 7.5
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-23",
+          "offset_seconds": 7.7
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-23",
+          "offset_seconds": 7.85
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-24",
+          "offset_seconds": 8.05
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-24",
+          "offset_seconds": 8.2
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-25",
+          "offset_seconds": 8.4
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-25",
+          "offset_seconds": 8.55
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-26",
+          "offset_seconds": 8.75
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-26",
+          "offset_seconds": 8.9
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-27",
+          "offset_seconds": 9.1
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-27",
+          "offset_seconds": 9.25
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-28",
+          "offset_seconds": 9.45
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-28",
+          "offset_seconds": 9.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-29",
+          "offset_seconds": 9.8
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-29",
+          "offset_seconds": 9.95
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-30",
+          "offset_seconds": 10.15
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-30",
+          "offset_seconds": 10.3
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-31",
+          "offset_seconds": 10.5
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-31",
+          "offset_seconds": 10.65
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-32",
+          "offset_seconds": 10.85
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-32",
+          "offset_seconds": 11.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-33",
+          "offset_seconds": 11.2
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-33",
+          "offset_seconds": 11.35
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-34",
+          "offset_seconds": 11.55
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-34",
+          "offset_seconds": 11.7
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-35",
+          "offset_seconds": 11.9
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-35",
+          "offset_seconds": 12.05
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-36",
+          "offset_seconds": 12.25
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-36",
+          "offset_seconds": 12.4
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-37",
+          "offset_seconds": 12.6
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-37",
+          "offset_seconds": 12.75
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-38",
+          "offset_seconds": 12.95
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-38",
+          "offset_seconds": 13.1
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-39",
+          "offset_seconds": 13.3
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-39",
+          "offset_seconds": 13.45
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-40",
+          "offset_seconds": 13.65
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-40",
+          "offset_seconds": 13.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-41",
+          "offset_seconds": 14.0
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-41",
+          "offset_seconds": 14.15
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-42",
+          "offset_seconds": 14.35
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-42",
+          "offset_seconds": 14.5
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-43",
+          "offset_seconds": 14.7
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-43",
+          "offset_seconds": 14.85
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-44",
+          "offset_seconds": 15.05
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-44",
+          "offset_seconds": 15.2
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-45",
+          "offset_seconds": 15.4
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-45",
+          "offset_seconds": 15.55
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-46",
+          "offset_seconds": 15.75
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-46",
+          "offset_seconds": 15.9
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-47",
+          "offset_seconds": 16.1
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-47",
+          "offset_seconds": 16.25
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-48",
+          "offset_seconds": 16.45
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-48",
+          "offset_seconds": 16.6
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-49",
+          "offset_seconds": 16.8
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-49",
+          "offset_seconds": 16.95
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-50",
+          "offset_seconds": 17.15
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-50",
+          "offset_seconds": 17.3
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-51",
+          "offset_seconds": 17.5
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-51",
+          "offset_seconds": 17.65
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-52",
+          "offset_seconds": 17.85
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-52",
+          "offset_seconds": 18.0
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-53",
+          "offset_seconds": 18.2
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-53",
+          "offset_seconds": 18.35
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-54",
+          "offset_seconds": 18.55
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-54",
+          "offset_seconds": 18.7
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-55",
+          "offset_seconds": 18.9
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-55",
+          "offset_seconds": 19.05
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-56",
+          "offset_seconds": 19.25
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-56",
+          "offset_seconds": 19.4
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-57",
+          "offset_seconds": 19.6
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-57",
+          "offset_seconds": 19.75
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-58",
+          "offset_seconds": 19.95
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-58",
+          "offset_seconds": 20.1
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-59",
+          "offset_seconds": 20.3
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-59",
+          "offset_seconds": 20.45
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-60",
+          "offset_seconds": 20.65
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-60",
+          "offset_seconds": 20.8
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-61",
+          "offset_seconds": 21.0
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-61",
+          "offset_seconds": 21.15
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-62",
+          "offset_seconds": 21.35
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-62",
+          "offset_seconds": 21.5
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-63",
+          "offset_seconds": 21.7
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-63",
+          "offset_seconds": 21.85
+        },
+        {
+          "action": "set_muted",
+          "muted": false,
+          "targetClientId": "birds-video-grid-64",
+          "offset_seconds": 22.05
+        },
+        {
+          "action": "set_volume",
+          "volume": 0.4,
+          "targetClientId": "birds-video-grid-64",
+          "offset_seconds": 22.2
         }
       ]
     }
