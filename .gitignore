@@ -30,4 +30,5 @@ frontend/dist
 frontend/public/videos
 
 .codex
-.specify
+
+frontend/coverage
