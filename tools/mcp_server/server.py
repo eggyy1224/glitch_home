@@ -24,6 +24,62 @@ def list_clients() -> Dict[str, Any]:
 
 
 @app.tool()
+def list_iframe_timelines(client_id: Optional[str] = None) -> Dict[str, Any]:
+    """List iframe timelines defined under backend/metadata/timelines/iframe."""
+    params = {"client": client_id} if client_id else None
+    return client.get("/api/iframe-timelines", params=params)
+
+
+@app.tool()
+def play_iframe_timeline(
+    timeline_id: str,
+    target_client_id: Optional[str] = None,
+    start_step: Optional[int] = None,
+    auto_play: bool = True,
+    loop_override: Optional[bool] = None,
+    force_iframe_mode: bool = True,
+    command_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Trigger remote playback for an iframe timeline."""
+
+    payload: Dict[str, Any] = {
+        "auto_play": auto_play,
+        "force_iframe_mode": force_iframe_mode,
+    }
+    if target_client_id:
+        payload["target_client_id"] = target_client_id
+    if start_step is not None:
+        payload["start_step"] = max(0, int(start_step))
+    if loop_override is not None:
+        payload["loop_override"] = loop_override
+    if command_id:
+        payload["command_id"] = command_id
+
+    return client.post(f"/api/iframe-timelines/{timeline_id}/play", json_body=payload)
+
+
+@app.tool()
+def stop_iframe_timeline(
+    target_client_id: str,
+    timeline_id: Optional[str] = None,
+    release_control: bool = True,
+    command_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Stop a remote timeline playback and optionally release the client lock."""
+
+    payload: Dict[str, Any] = {
+        "target_client_id": target_client_id,
+        "release_control": release_control,
+    }
+    if timeline_id:
+        payload["timeline_id"] = timeline_id
+    if command_id:
+        payload["command_id"] = command_id
+
+    return client.post("/api/iframe-timelines/stop", json_body=payload)
+
+
+@app.tool()
 def list_assets(
     source: Literal["videos", "offspring_images", "generated_sounds"],
     limit: Optional[int] = 100,

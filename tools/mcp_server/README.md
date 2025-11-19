@@ -6,6 +6,9 @@ curated set of tools to control the backend via a stable interface.
 v1 exposes:
 - `health_check()` → GET `/health`
 - `list_clients()` → GET `/api/clients`
+- `list_iframe_timelines(client_id)` → GET `/api/iframe-timelines`
+- `play_iframe_timeline(...)` → POST `/api/iframe-timelines/{timeline_id}/play`
+- `stop_iframe_timeline(...)` → POST `/api/iframe-timelines/stop`
 - `list_assets(source, limit, offset)` → Scan curated local asset folders
 - `search_images_by_text(query, top_k)` → POST `/api/search/text`
 - `search_images_by_image(image_path, top_k)` → POST `/api/search/image`
@@ -69,6 +72,12 @@ pip install httpx mcp
 
 - **`search_images_by_text(query: str, top_k: int = 10)`**: Semantic text-to-image search (POST `/api/search/text`). Returns the backend search payload with `matches`, scoring metadata, etc.
 - **`search_images_by_image(image_path: str, top_k: int = 10)`**: Image-to-image similarity search (POST `/api/search/image`). `image_path` should be repository-relative (e.g., `backend/offspring_images/foo.png`).
+
+### Iframe Timeline Control
+
+- **`list_iframe_timelines(client_id: str | None = None)`**: 列出可用 timeline 以及標題、總長、預設 client。可加 `client_id` 只看特定 client。
+- **`play_iframe_timeline(timeline_id: str, target_client_id: str | None = None, start_step: int | None = None, auto_play: bool = True, loop_override: bool | None = None, force_iframe_mode: bool = True, command_id: str | None = None)`**: 觸發遠端播放，會轉發到 `POST /api/iframe-timelines/{id}/play`。`command_id` 可搭配 stop 用於去重。
+- **`stop_iframe_timeline(target_client_id: str, timeline_id: str | None = None, release_control: bool = True, command_id: str | None = None)`**: 終止指定 client 的 timeline，並可指定 `release_control` 是否恢復原始 `iframe_config`。
 
 ### Iframe Configuration
 
