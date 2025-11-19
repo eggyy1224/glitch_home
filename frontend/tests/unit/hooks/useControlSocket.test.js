@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useControlSocket } from '../../../src/hooks/useControlSocket.js'
 
@@ -41,6 +41,10 @@ describe('useControlSocket', () => {
       }, 0)
       return mockSocket
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should connect to WebSocket on mount', () => {
@@ -162,5 +166,76 @@ describe('useControlSocket', () => {
     })
 
     expect(onCollageConfig).toHaveBeenCalledWith(message)
+  })
+
+  it.each([
+    { type: 'screenshot_completed', handler: 'onScreenshotLifecycle', payload: { request_id: 'req' } },
+    { type: 'screenshot_failed', handler: 'onScreenshotLifecycle', payload: { request_id: 'req', reason: 'boom' } },
+    { type: 'sound_play', handler: 'onSoundPlay', payload: { filename: 'sound.mp3' } },
+    { type: 'iframe_config', handler: 'onIframeConfig', payload: { config: { layout: 'grid' } } },
+    { type: 'unlock_audio', handler: 'onUnlockAudio', payload: { ts: Date.now() } },
+    { type: 'remote_click', handler: 'onRemoteClick', payload: { x: 1, y: 2 } },
+    { type: 'video_control', handler: 'onVideoControl', payload: { action: 'pause' } },
+    { type: 'timeline_control', handler: 'onTimelineControl', payload: { command: 'next' } }
+  ])('handles %s messages', async ({ type, handler, payload }) => {
+    const handlers = {
+      onScreenshotLifecycle: vi.fn(),
+      onSoundPlay: vi.fn(),
+      onIframeConfig: vi.fn(),
+      onUnlockAudio: vi.fn(),
+      onRemoteClick: vi.fn(),
+      onVideoControl: vi.fn(),
+      onTimelineControl: vi.fn()
+    }
+
+    renderHook(() => useControlSocket({ clientId: 'test', ...handlers }))
+
+    await waitFor(() => {
+      expect(mockSocket.onmessage).toBeDefined()
+    })
+
+    act(() => {
+      mockSocket.onmessage?.({ data: JSON.stringify({ type, ...payload }) })
+    })
+
+    expect(handlers[handler]).toHaveBeenCalledWith(expect.objectContaining(payload))
+  })
+
+  it('忽略無效 JSON 訊息', async () => {
+    const onSoundPlay = vi.fn()
+    renderHook(() => useControlSocket({ clientId: 'test', onSoundPlay }))
+
+    await waitFor(() => {
+      expect(mockSocket.onmessage).toBeDefined()
+    })
+
+    act(() => {
+      mockSocket.onmessage?.({ data: '{invalid json' })
+    })
+
+    expect(onSoundPlay).not.toHaveBeenCalled()
+  })
+
+  it('socket 關閉後會排程重連', async () => {
+    vi.useFakeTimers()
+    renderHook(() => useControlSocket({ clientId: 'test' }))
+    expect(global.WebSocket).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      mockSocket.onclose?.()
+    })
+
+    vi.advanceTimersByTime(2000)
+    expect(global.WebSocket).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
+  })
+
+  it('socket 發生錯誤時會關閉連線', async () => {
+    renderHook(() => useControlSocket({ clientId: 'test' }))
+    expect(mockSocket.close).not.toHaveBeenCalled()
+    act(() => {
+      mockSocket.onerror?.(new Error('boom'))
+    })
+    expect(mockSocket.close).toHaveBeenCalled()
   })
 })
