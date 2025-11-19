@@ -28,6 +28,4 @@
 | Week 2 | 截圖/音訊測試落地，啟用 CI coverage gate |
 | Week 3+ | Utils/外部呼叫補齊，總覆蓋推進至 ≥70% |
 
-### 待跟進
-- [ ] 將 `datetime.utcnow()` 換成 `datetime.now(datetime.UTC)` 或等效方案以消 Deprecation warning。
-- [ ] 規劃自動上傳 `htmlcov/` 為 CI artifact，便於審視缺漏行。
+

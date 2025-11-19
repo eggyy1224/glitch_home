@@ -30,6 +30,4 @@
 | Week 2 | Hooks 測試（Collage/Screenshot/Playback）完成，覆蓋 ≥35%，新增 CI 指令 |
 | Week 3+ | Modes、Kinship 整合測試上線，覆蓋逐步逼近 50% → 60% |
 
-### 待跟進
-- [ ] 研究是否需在 `setupTests` 中宣告 `globalThis.IS_REACT_ACT_ENVIRONMENT = true` 以清除 `act` 警告。
-- [ ] 規劃將 `frontend/coverage/` HTML 報告上傳到 CI artifact，讓 UI 團隊檢視缺漏行。
+
