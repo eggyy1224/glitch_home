@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 
 from fastapi import WebSocket
@@ -179,6 +180,26 @@ class RealtimeBroadcaster:
         }
         if target_client_id:
             payload["target_client_id"] = target_client_id
+        await self.broadcast(payload, target_client_id=target_client_id)
+
+    async def broadcast_timeline_control(
+        self,
+        action: str,
+        timeline_id: Optional[str],
+        target_client_id: Optional[str],
+        options: Optional[dict[str, Any]] = None,
+    ) -> None:
+        payload: dict[str, Any] = {
+            "type": "timeline_control",
+            "action": action,
+            "issued_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if timeline_id:
+            payload["timeline_id"] = timeline_id
+        if target_client_id:
+            payload["target_client_id"] = target_client_id
+        if options:
+            payload["options"] = options
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def _send(self, websocket: WebSocket, message: dict[str, Any]) -> None:

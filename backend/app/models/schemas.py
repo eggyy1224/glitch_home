@@ -224,6 +224,70 @@ class VideoControlRequest(BaseModel):
         return self
 
 
+class TimelinePlayRequest(BaseModel):
+    target_client_id: Optional[str] = Field(
+        default=None,
+        description="要播放 timeline 的 client id；未提供時沿用 timeline.client_id",
+    )
+    auto_play: bool = Field(default=True, description="收到指令後立即播放")
+    force_iframe_mode: bool = Field(default=True, description="指示前端切換到 iframe mode")
+    start_step: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="可選，指定從第幾段開始（0-based）",
+    )
+    loop_override: Optional[bool] = Field(
+        default=None,
+        description="若提供，覆寫 timeline 的 loop 設定",
+    )
+    command_id: Optional[str] = Field(
+        default=None,
+        description="可選的命令 ID，方便客戶端去重",
+    )
+
+    @model_validator(mode="after")
+    def _normalize_fields(self) -> "TimelinePlayRequest":
+        if self.target_client_id:
+            client = self.target_client_id.strip()
+            self.target_client_id = client or None
+        if self.command_id:
+            command_id = self.command_id.strip()
+            self.command_id = command_id or None
+        return self
+
+
+class TimelineStopRequest(BaseModel):
+    target_client_id: Optional[str] = Field(
+        default=None,
+        description="要停止 timeline 播放的 client id",
+    )
+    timeline_id: Optional[str] = Field(
+        default=None,
+        description="限定某個 timeline id；留空則停止該 client 的所有 timeline",
+    )
+    command_id: Optional[str] = Field(
+        default=None,
+        description="可選命令 ID，方便客戶端去重",
+    )
+    release_control: bool = Field(
+        default=True,
+        description="是否要求客戶端釋放強制播放，回到本機控制",
+    )
+
+    @model_validator(mode="after")
+    def _normalize_stop_fields(self) -> "TimelineStopRequest":
+        if self.target_client_id:
+            client = self.target_client_id.strip()
+            self.target_client_id = client or None
+        if self.timeline_id:
+            timeline = self.timeline_id.strip()
+            self.timeline_id = timeline or None
+        if self.command_id:
+            command_id = self.command_id.strip()
+            self.command_id = command_id or None
+        return self
+
+
 class SoundPlayRequest(BaseModel):
     filename: str = Field(..., min_length=1, description="音效檔案名稱（含副檔名）")
     target_client_id: Optional[str] = Field(default=None, description="指定播放的 client_id，可為空代表廣播")

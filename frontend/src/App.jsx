@@ -69,7 +69,7 @@ export default function App() {
   const {
     initialParams,
     initialImg,
-    activeMode,
+    activeMode: defaultActiveMode,
     incubatorMode,
     phylogenyMode,
     soundPlayerEnabled,
@@ -78,6 +78,11 @@ export default function App() {
     iframeTimelineId,
     shouldLoadKinshipData,
   } = useModeParams();
+
+  const [activeModeOverride, setActiveModeOverride] = useState(null);
+  const activeMode = activeModeOverride ?? defaultActiveMode;
+  const [remoteTimelineControl, setRemoteTimelineControl] = useState(null);
+  const remoteTimelineCommandRef = useRef(null);
 
   const {
     cameraInfo,
@@ -91,6 +96,21 @@ export default function App() {
     handleApplyPreset,
     handleDeletePreset,
   } = useCameraPresets();
+
+  const effectiveTimelineId = remoteTimelineControl?.timelineId ?? iframeTimelineId;
+  const remoteTimelineInitialStep = remoteTimelineControl?.startStep ?? null;
+  const remoteTimelineAutoPlay = remoteTimelineControl ? remoteTimelineControl.autoPlay : true;
+  const remoteTimelineLoopOverride =
+    remoteTimelineControl && typeof remoteTimelineControl.loopOverride === "boolean"
+      ? remoteTimelineControl.loopOverride
+      : null;
+  const remoteTimelineSessionKey = remoteTimelineControl?.sessionKey ?? null;
+
+  const releaseRemoteTimelineControl = useCallback(() => {
+    setRemoteTimelineControl(null);
+    remoteTimelineCommandRef.current = null;
+    setActiveModeOverride(null);
+  }, []);
 
   const { imgId, data, err, clusters, navigateToImage } = useKinshipData({
     initialImg,
@@ -141,10 +161,10 @@ export default function App() {
 
   const handleTimelineStepStart = useCallback(
     ({ step, stepIndex, runId }) => {
-      if (!iframeTimelineId) return;
-      executeStepActions({ step, stepIndex, timelineId: iframeTimelineId, runId });
+      if (!effectiveTimelineId) return;
+      executeStepActions({ step, stepIndex, timelineId: effectiveTimelineId, runId });
     },
-    [executeStepActions, iframeTimelineId],
+    [executeStepActions, effectiveTimelineId],
   );
 
   useEffect(() => {
@@ -185,24 +205,44 @@ export default function App() {
     previous: previousTimelineStep,
     reload: reloadTimeline,
   } = useIframeTimelinePlayer({
-    timelineId: iframeTimelineId,
+    timelineId: effectiveTimelineId,
     isActive: activeMode === DisplayModes.IFRAME,
     applyRemoteConfig: applyRemoteIframeConfig,
     releaseRemoteConfig: releaseRemoteIframeConfig,
     onStepStart: handleTimelineStepStart,
+    initialStep: remoteTimelineInitialStep,
+    autoPlayOnLoad: remoteTimelineAutoPlay,
+    loopOverride: remoteTimelineLoopOverride,
+    sessionKey: remoteTimelineSessionKey,
   });
 
   useEffect(() => {
-    if (!iframeTimelineId || activeMode !== DisplayModes.IFRAME) {
+    if (!effectiveTimelineId || activeMode !== DisplayModes.IFRAME) {
       cancelPendingActions();
       clearActionError();
     }
-  }, [iframeTimelineId, activeMode, cancelPendingActions, clearActionError]);
+  }, [effectiveTimelineId, activeMode, cancelPendingActions, clearActionError]);
 
-  const handleStopTimeline = useCallback(() => {
-    cancelPendingActions();
-    stopTimeline();
-  }, [cancelPendingActions, stopTimeline]);
+  const performTimelineStop = useCallback(
+    (releaseRemote = true) => {
+      cancelPendingActions();
+      stopTimeline();
+      if (releaseRemote && remoteTimelineControl) {
+        releaseRemoteTimelineControl();
+      }
+    },
+    [cancelPendingActions, stopTimeline, remoteTimelineControl, releaseRemoteTimelineControl],
+  );
+
+  const handleStopTimeline = useCallback(
+    (event) => {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      performTimelineStop(true);
+    },
+    [performTimelineStop],
+  );
 
   const handleFpsUpdate = useCallback((value) => {
     setFps(value);
@@ -445,6 +485,75 @@ export default function App() {
     [clientId],
   );
 
+  const handleTimelineControlMessage = useCallback(
+    (payload) => {
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
+      const targetId = payload?.target_client_id;
+      if (targetId && targetId !== clientId) {
+        return;
+      }
+      const action = typeof payload?.action === "string" ? payload.action.toLowerCase() : "";
+      const options = payload?.options && typeof payload.options === "object" ? payload.options : {};
+      const commandId = options.commandId || payload?.command_id || payload?.commandId || null;
+      if (commandId && remoteTimelineCommandRef.current === commandId) {
+        return;
+      }
+      if (action === "play") {
+        const timelineId = payload?.timeline_id;
+        if (!timelineId) {
+          return;
+        }
+        if (commandId) {
+          remoteTimelineCommandRef.current = commandId;
+        } else {
+          remoteTimelineCommandRef.current = null;
+        }
+        const startFrom =
+          typeof options.startStep === "number" && Number.isFinite(options.startStep)
+            ? Math.max(0, Math.floor(options.startStep))
+            : null;
+        const loopOverride = typeof options.loop === "boolean" ? Boolean(options.loop) : null;
+        setRemoteTimelineControl({
+          timelineId,
+          startStep: startFrom,
+          autoPlay: options.autoPlay !== false,
+          loopOverride,
+          sessionKey: commandId || `${timelineId}:${Date.now()}`,
+        });
+        const forceMode = options.forceIframeMode !== false;
+        if (forceMode) {
+          setActiveModeOverride(DisplayModes.IFRAME);
+        }
+        return;
+      }
+      if (action === "stop") {
+        const requestedTimelineId =
+          typeof payload?.timeline_id === "string" && payload.timeline_id.trim().length > 0
+            ? payload.timeline_id.trim()
+            : null;
+        if (requestedTimelineId) {
+          if (remoteTimelineControl) {
+            if (remoteTimelineControl.timelineId !== requestedTimelineId) {
+              return;
+            }
+          } else if (effectiveTimelineId && effectiveTimelineId !== requestedTimelineId) {
+            return;
+          }
+        }
+        if (commandId) {
+          remoteTimelineCommandRef.current = commandId;
+        } else {
+          remoteTimelineCommandRef.current = null;
+        }
+        const shouldRelease = options.releaseControl !== false;
+        performTimelineStop(shouldRelease);
+      }
+    },
+    [clientId, remoteTimelineControl, performTimelineStop],
+  );
+
   useControlSocket({
     clientId,
     onScreenshotRequest: enqueueScreenshotRequest,
@@ -457,6 +566,7 @@ export default function App() {
     onUnlockAudio: handleUnlockAudioMessage,
     onRemoteClick: handleRemoteClickMessage,
     onVideoControl: handleVideoControlMessage,
+    onTimelineControl: handleTimelineControlMessage,
   });
 
   const handleSoundHandled = useCallback(() => {
@@ -527,9 +637,9 @@ export default function App() {
   const screenshotContent = <ScreenshotMessage message={screenshotMessage} />;
 
   const iframeTimelineOverlay =
-    activeMode === DisplayModes.IFRAME && iframeTimelineId ? (
+    activeMode === DisplayModes.IFRAME && effectiveTimelineId ? (
       <IframeTimelineControls
-        timelineId={iframeTimelineId}
+        timelineId={effectiveTimelineId}
         timeline={timeline}
         currentStep={currentStep}
         currentStepIndex={currentStepIndex}

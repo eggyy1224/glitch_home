@@ -83,6 +83,12 @@ def _sanitize_timeline_id(value: str) -> str:
     return cleaned
 
 
+def sanitize_timeline_id(value: str) -> str:
+    """Public helper for validating timeline ids."""
+
+    return _sanitize_timeline_id(value)
+
+
 def _timeline_path_for(timeline_id: str) -> Path:
     safe_id = _sanitize_timeline_id(timeline_id)
     return _TIMELINE_DIR / f"{safe_id}.json"

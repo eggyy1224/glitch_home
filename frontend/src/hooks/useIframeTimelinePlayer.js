@@ -14,6 +14,10 @@ export function useIframeTimelinePlayer({
   applyRemoteConfig,
   releaseRemoteConfig,
   onStepStart,
+  initialStep = null,
+  autoPlayOnLoad = true,
+  loopOverride = null,
+  sessionKey = null,
 }) {
   const [timeline, setTimeline] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -70,10 +74,20 @@ export function useIframeTimelinePlayer({
       .then((data) => {
         if (cancelled) return;
         const payload = data?.timeline || null;
-        setTimeline(payload);
-        setCurrentStepIndex(0);
+        let resolvedTimeline = payload;
+        if (payload && loopOverride !== null && loopOverride !== undefined) {
+          resolvedTimeline = { ...payload, loop: loopOverride };
+        }
+        setTimeline(resolvedTimeline);
+        const steps = Array.isArray(resolvedTimeline?.steps) ? resolvedTimeline.steps : [];
+        const hasSteps = steps.length > 0;
+        const nextIndex =
+          initialStep !== null && initialStep !== undefined
+            ? clampIndex(initialStep, steps.length > 0 ? steps.length - 1 : 0)
+            : 0;
+        setCurrentStepIndex(nextIndex);
         runIdRef.current = 0;
-        setIsPlaying(Boolean(payload && Array.isArray(payload.steps) && payload.steps.length));
+        setIsPlaying(hasSteps && autoPlayOnLoad);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -91,7 +105,7 @@ export function useIframeTimelinePlayer({
       cancelled = true;
       controller.abort();
     };
-  }, [timelineId, isActive, reloadKey, stopTimer]);
+  }, [timelineId, isActive, reloadKey, stopTimer, loopOverride, sessionKey, initialStep, autoPlayOnLoad]);
 
   useEffect(() => {
     if (!isActive) {
