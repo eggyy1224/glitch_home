@@ -497,19 +497,18 @@ export default function App() {
       const action = typeof payload?.action === "string" ? payload.action.toLowerCase() : "";
       const options = payload?.options && typeof payload.options === "object" ? payload.options : {};
       const commandId = options.commandId || payload?.command_id || payload?.commandId || null;
-      if (commandId && remoteTimelineCommandRef.current === commandId) {
-        return;
+      if (commandId) {
+        const previousEntry = remoteTimelineCommandRef.current;
+        if (previousEntry && previousEntry.id === commandId && previousEntry.action === action) {
+          return;
+        }
       }
       if (action === "play") {
         const timelineId = payload?.timeline_id;
         if (!timelineId) {
           return;
         }
-        if (commandId) {
-          remoteTimelineCommandRef.current = commandId;
-        } else {
-          remoteTimelineCommandRef.current = null;
-        }
+        remoteTimelineCommandRef.current = commandId ? { id: commandId, action } : null;
         const startFrom =
           typeof options.startStep === "number" && Number.isFinite(options.startStep)
             ? Math.max(0, Math.floor(options.startStep))
@@ -542,11 +541,7 @@ export default function App() {
             return;
           }
         }
-        if (commandId) {
-          remoteTimelineCommandRef.current = commandId;
-        } else {
-          remoteTimelineCommandRef.current = null;
-        }
+        remoteTimelineCommandRef.current = commandId ? { id: commandId, action } : null;
         const shouldRelease = options.releaseControl !== false;
         performTimelineStop(shouldRelease);
       }
