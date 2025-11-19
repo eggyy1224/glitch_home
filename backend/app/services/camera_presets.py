@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any
 
 from ..config import settings
@@ -48,7 +48,7 @@ def upsert_camera_preset(payload: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("preset name contains invalid characters")
 
     presets = _load_all()
-    now_iso = datetime.utcnow().isoformat() + "Z"
+    now_iso = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     payload = {
         "name": name,
         "position": payload["position"],

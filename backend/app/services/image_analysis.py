@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from PIL import Image, ImageOps
@@ -105,10 +105,9 @@ def analyze_screenshot(image_path: str, prompt: Optional[str] = None) -> Dict[st
         "model": settings.model_name,
         "prompt": user_prompt,
         "image": os.path.abspath(image_path),
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "finish_reason": getattr(primary, "finish_reason", None),
         "safety_ratings": _serialise_safety(primary),
     }
 
     return analysis
-

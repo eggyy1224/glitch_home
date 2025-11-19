@@ -20,9 +20,11 @@ ALLOWED_SOUND_EXTS = {".mp3", ".wav", ".opus", ".ulaw", ".alaw", ".aac", ".flac"
 
 def _format_iso(ts: float) -> str:
     try:
-        return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+        timestamp = float(ts)
     except Exception:
-        return datetime.utcfromtimestamp(ts).isoformat() + "Z"
+        return str(ts)
+    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc).replace(microsecond=0)
+    return dt.isoformat().replace("+00:00", "Z")
 
 
 def list_sound_files(with_metadata: bool) -> list[dict]:

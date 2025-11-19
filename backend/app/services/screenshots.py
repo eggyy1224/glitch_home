@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import secrets
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import UploadFile
@@ -44,7 +44,7 @@ def save_screenshot(upload: UploadFile) -> dict[str, str]:
     destination_dir.mkdir(parents=True, exist_ok=True)
 
     extension = _resolve_extension(upload)
-    timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
     token = secrets.token_hex(4)
     filename = f"scene_{timestamp}_{token}{extension}"
     full_path = destination_dir / filename

@@ -1,6 +1,6 @@
 import base64
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from typing import List, Optional
 
@@ -185,7 +185,7 @@ class GeminiImageGenerator:
             "model_name": settings.model_name,
             "prompt": prompt,
             "strength": strength,
-            "created_at": datetime.utcnow().isoformat() + "Z",
+            "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "output_image": os.path.basename(output_path),
             "output_format": fmt,
             "output_size": {"width": width, "height": height},

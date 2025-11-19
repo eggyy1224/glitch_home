@@ -6,7 +6,7 @@ import os
 import random
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -1140,7 +1140,7 @@ def generate_collage_version(
         "output_image": filename,
         "output_format": format,
         "output_size": {"width": width, "height": height},
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     }
     
     # Add tile mapping if requested

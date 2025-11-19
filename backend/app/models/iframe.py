@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -105,6 +105,7 @@ def isoformat(ts: Optional[float]) -> Optional[str]:
     if ts is None:
         return None
     try:
-        return datetime.utcfromtimestamp(float(ts)).replace(microsecond=0).isoformat() + "Z"
+        dt = datetime.fromtimestamp(float(ts), tz=timezone.utc).replace(microsecond=0)
+        return dt.isoformat().replace("+00:00", "Z")
     except Exception:
         return None
