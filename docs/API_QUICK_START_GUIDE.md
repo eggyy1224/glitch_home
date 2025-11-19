@@ -898,6 +898,50 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
 - 進入 iframe mode 後左上角會出現控制面板，可播放 / 暫停 / 跳段 / 重新載入
 - 若 timeline 播放完畢或停止，會自動釋放遠端鎖定，方便改回本地控制
 
+### 遠端播放控制 API
+
+若不想手動在前端切換網址，可用以下 API 直接指揮指定 client 播放或停止 timeline：
+
+- `POST /api/iframe-timelines/{timeline_id}/play`
+
+  ```bash
+  curl -X POST \
+    http://localhost:8000/api/iframe-timelines/desktop2_opening_demo/play \
+    -H "Content-Type: application/json" \
+    -d '{
+      "target_client_id": "desktop2",
+      "force_iframe_mode": true,
+      "start_step": 0,
+      "loop_override": false,
+      "command_id": "desktop2_opening_demo_run1"
+    }'
+  ```
+
+  主要欄位：
+  - `target_client_id`：必填，指定要播放的 client。留空時會 fallback 到 timeline 定義的 `clientId`。
+  - `force_iframe_mode`：預設 `true`，會通知前端切換到 iframe mode。
+  - `start_step`：可選，從第幾段開始（0-based）。
+  - `loop_override`：可選，覆寫 timeline 的 loop 設定。
+  - `command_id`：可選，同一輪播放/停止建議共用同一 ID，方便客戶端去重。
+
+- `POST /api/iframe-timelines/stop`
+
+  ```bash
+  curl -X POST http://localhost:8000/api/iframe-timelines/stop \
+    -H "Content-Type: application/json" \
+    -d '{
+      "target_client_id": "desktop2",
+      "timeline_id": "desktop2_opening_demo",
+      "release_control": true,
+      "command_id": "desktop2_opening_demo_run1"
+    }'
+  ```
+
+  - `timeline_id` 可選，若提供僅會停止對應 timeline，避免誤傷其他本地播放。
+  - `release_control`（預設 `true`）決定停止後是否要解除遠端鎖定並恢復 client 原本的 `iframe_config`。
+
+> 提醒：API 只會觸發 WebSocket 指令，實際畫面變化要等目標 client 在線、且以 `?client=<id>` 連上後端控制通道。
+
 ### Step 動作欄位：subtitle / caption / tts
 
 每個 `steps[]` 可以同時指定多媒體動作，Timeline Player 會根據順序自動呼叫對應 API：
