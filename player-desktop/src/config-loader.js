@@ -4,6 +4,7 @@ const path = require("node:path");
 const DEFAULT_CONFIG_PATH = path.resolve(__dirname, "..", "config", "clients.json");
 const DEFAULT_FRONTEND_URL = "http://localhost:5173";
 const DEFAULT_AUTORESTART = Object.freeze({ cooldownMs: 3000, maxAttempts: 5 });
+const DEFAULT_SINGLE_DISPLAY_MODE = false;
 
 function loadConfig(configPath = DEFAULT_CONFIG_PATH) {
   const resolvedPath = path.resolve(configPath);
@@ -37,12 +38,16 @@ function normalizeConfig(rawConfig, resolvedPath) {
 
   const frontendUrl = normalizeFrontendUrl(rawConfig.frontend_url ?? rawConfig.frontendUrl);
   const autoRestart = normalizeAutoRestart(rawConfig.auto_restart ?? rawConfig.autoRestart);
+  const singleDisplayMode = normalizeSingleDisplayMode(
+    rawConfig.single_display_mode ?? rawConfig.singleDisplayMode ?? rawConfig.allowSingleDisplayMode,
+  );
   const clients = normalizeClients(rawConfig.clients, resolvedPath);
 
   return {
     configPath: resolvedPath,
     frontendUrl,
     autoRestart,
+    singleDisplayMode,
     clients,
   };
 }
@@ -66,6 +71,19 @@ function normalizeAutoRestart(autoRestartValue) {
     cooldownMs: Number.isFinite(cooldown) && cooldown > 0 ? Math.round(cooldown) : DEFAULT_AUTORESTART.cooldownMs,
     maxAttempts: Number.isFinite(maxAttempts) && maxAttempts > 0 ? Math.round(maxAttempts) : DEFAULT_AUTORESTART.maxAttempts,
   };
+}
+
+function normalizeSingleDisplayMode(rawValue) {
+  if (typeof rawValue === "boolean") {
+    return rawValue;
+  }
+  if (rawValue === 1 || rawValue === "1" || rawValue === "true") {
+    return true;
+  }
+  if (rawValue === 0 || rawValue === "0" || rawValue === "false") {
+    return false;
+  }
+  return DEFAULT_SINGLE_DISPLAY_MODE;
 }
 
 function normalizeClients(clientsValue, resolvedPath) {

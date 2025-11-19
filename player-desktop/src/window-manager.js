@@ -5,11 +5,15 @@ const os = require("node:os");
 const DEFAULT_BACKGROUND = "#000000";
 
 class WindowManager {
-  constructor({ frontendUrl, clients, autoRestart }) {
+  constructor({ frontendUrl, clients, autoRestart, singleDisplayMode }) {
     this.frontendUrl = frontendUrl;
     this.clientsById = new Map();
+    let maxDisplayIndex = 0;
     clients.forEach((client) => {
       this.clientsById.set(client.clientId, client);
+      if (typeof client.displayIndex === "number") {
+        maxDisplayIndex = Math.max(maxDisplayIndex, client.displayIndex);
+      }
     });
 
     const fallbackRestart = autoRestart || { cooldownMs: 3000, maxAttempts: 5 };
@@ -22,17 +26,33 @@ class WindowManager {
     this.windowStates = new Map();
     this.restartCounters = new Map();
     this.restartTimers = new Map();
+    this.requiredDisplayCount = maxDisplayIndex + 1;
+    this.singleDisplayMode = Boolean(singleDisplayMode);
   }
 
   launchAll() {
     const displays = screen.getAllDisplays();
     const displayCount = Array.isArray(displays) ? displays.length : 0;
-    const singleDisplayMode = displayCount <= 1;
+    const requiresMultipleDisplays = this.requiredDisplayCount > 1;
+    const singleDisplayDetected = displayCount === 1;
+    const fallbackSingleDisplayMode = this.singleDisplayMode && requiresMultipleDisplays && singleDisplayDetected;
+
+    if (displayCount < this.requiredDisplayCount && !fallbackSingleDisplayMode) {
+      throw new Error(
+        `[WindowManager] 偵測到 ${displayCount} 個顯示器，但配置至少需要 ${this.requiredDisplayCount} 個顯示器`,
+      );
+    }
+
+    if (fallbackSingleDisplayMode) {
+      console.warn(
+        `[WindowManager] 僅偵測到單一顯示器，已啟用 single_display_mode，僅啟動 display_index=0 的 client`,
+      );
+    }
 
     for (const client of this.clientsById.values()) {
-      if (singleDisplayMode && client.displayIndex > 0) {
+      if (fallbackSingleDisplayMode && client.displayIndex > 0) {
         console.info(
-          `[WindowManager] 僅偵測到 ${displayCount} 個顯示器，略過需要 display ${client.displayIndex} 的 client '${client.clientId}'`,
+          `[WindowManager] single_display_mode：略過需要 display ${client.displayIndex} 的 client '${client.clientId}'`,
         );
         continue;
       }
@@ -190,7 +210,13 @@ class WindowManager {
 
     const timer = setTimeout(() => {
       this.restartTimers.delete(clientId);
-      this.createWindow(clientId);
+      try {
+        this.createWindow(clientId);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[WindowManager] client '${clientId}' 重啟失敗：${errorMessage}`);
+        this.restartWindow(clientId, `restart-failed:${errorMessage}`);
+      }
     }, cooldown);
 
     this.restartTimers.set(clientId, timer);

@@ -4,6 +4,7 @@
     "cooldown_ms": 3000,
     "max_attempts": 5
   },
+  "single_display_mode": false,
   "clients": [
     {
       "client_id": "desktop-main",

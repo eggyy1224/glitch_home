@@ -45,6 +45,7 @@ npm run dev    # 或 npm start
 | `frontend_url` | 要載入的前端 URL。開發時預設 `http://localhost:5173`。 |
 | `auto_restart.cooldown_ms` | 異常後等待多少毫秒再重啟視窗（預設 3000）。 |
 | `auto_restart.max_attempts` | 單一視窗最多重啟次數（預設 5，填入較大的數字可放寬）。 |
+| `single_display_mode` | 僅偵測到一個螢幕時是否允許啟動 fallback 模式。`false`（預設）會直接失敗並冒出錯誤；`true` 代表僅啟動 `display_index = 0` 的 client，其餘會被略過。 |
 | `clients[].client_id` | 每個視窗的唯一 ID，也會寫入 URL `?client=` 供前端識別。 |
 | `clients[].display_index` | 指定第幾個實體螢幕（0 為主螢幕）。若超出現有螢幕數量，應用程式會拒絕啟動。 |
 | `clients[].fullscreen` | 是否自動進入全螢幕（預設 `true`）。 |
@@ -61,6 +62,7 @@ npm run dev    # 或 npm start
     "cooldown_ms": 3000,
     "max_attempts": 5
   },
+  "single_display_mode": false,
   "clients": [
     {
       "client_id": "desktop-main",
@@ -113,4 +115,3 @@ npm run dev    # 或 npm start
 - 設計簡易設定 UI 以便非技術人員管理配置
 - 整合硬體按鈕 / 感測器事件，觸發 WebSocket 播放指令
 - 加入視窗監控 API，供後端或監控系統查詢狀態
-
