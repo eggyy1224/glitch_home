@@ -76,17 +76,27 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
     [defaultConfig, updateQueryWithIframeConfig],
   );
 
+  const applyServerSnapshot = useCallback(
+    (config) => {
+      const sanitized = sanitizeIframeConfig(config, defaultConfig);
+      setLocalConfig(sanitized);
+      setServerConfig(sanitized);
+      setError(null);
+      updateQueryWithIframeConfig(sanitized);
+    },
+    [defaultConfig, updateQueryWithIframeConfig],
+  );
+
   const releaseRemoteConfig = useCallback(() => {
     setServerConfig((current) => {
       if (!current) {
         return null;
       }
-      const sanitized = sanitizeIframeConfig(current, defaultConfig);
-      setLocalConfig(sanitized);
-      updateQueryWithIframeConfig(sanitized);
+      const fallback = sanitizeIframeConfig(localConfig || defaultConfig, defaultConfig);
+      updateQueryWithIframeConfig(fallback);
       return null;
     });
-  }, [defaultConfig, updateQueryWithIframeConfig]);
+  }, [defaultConfig, localConfig, updateQueryWithIframeConfig]);
 
   useEffect(() => {
     if (!iframeMode) {
@@ -111,7 +121,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
         }
         const json = await response.json();
         if (cancelled) return;
-        applyRemoteConfig(json);
+        applyServerSnapshot(json);
       } catch (err) {
         if (cancelled) return;
         console.error("取得 iframe 配置失敗", err);
@@ -126,7 +136,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
       cancelled = true;
       controller.abort();
     };
-  }, [iframeMode, clientId, applyRemoteConfig]);
+  }, [iframeMode, clientId, applyServerSnapshot]);
 
   return {
     activeConfig: serverConfig || localConfig || defaultConfig,
