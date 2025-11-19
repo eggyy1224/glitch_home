@@ -1,11 +1,15 @@
 """Tests for media-related API endpoints (generate, search, index, tts, kinship)."""
 
 import json
+import time
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
+
+from app.services.collage_version import task_manager
 
 
 def _mock_tts_payload() -> dict:
@@ -22,6 +26,17 @@ def _mock_tts_payload() -> dict:
         "checksum_sha256": "deadbeef",
         "metadata_path": "/metadata/test_narration.mp3.json",
     }
+
+
+def _create_offspring_image(filename: str, color=(255, 255, 255)) -> str:
+    """Create a small RGB image directly inside the offspring directory."""
+    from app.config import settings
+
+    dest = Path(settings.offspring_dir) / filename
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    img = Image.new("RGB", (32, 32), color)
+    img.save(dest)
+    return filename
 
 
 @pytest.mark.api
@@ -449,31 +464,86 @@ def test_search_text_validation(client: TestClient):
 
 
 @pytest.mark.api
-@patch('app.services.gemini_image.generate_mixed_offspring_v2')
-def test_generate_mix_two(mock_generate: MagicMock, client: TestClient):
-    """Test image generation endpoint."""
-    mock_generate.return_value = {
+@patch("app.api.generation.generate_mixed_offspring_v2")
+def test_generate_mix_two_with_body(mock_generate: MagicMock, client: TestClient):
+    """Body payload should forward parameters to v2 generator."""
+    payload = {
+        "parents": ["parent1.png", "parent2.png"],
+        "count": 2,
+        "prompt": "mix them",
+        "strength": 0.5,
+        "output_format": "png",
+        "output_width": 256,
+        "output_height": 256,
+        "output_max_side": 512,
+        "resize_mode": "fit",
+    }
+    expected = {
         "output_image_path": "/generated_images/offspring1.png",
         "metadata_path": "/metadata/offspring1.json",
         "parents": ["parent1.png", "parent2.png"],
-        "model_name": "gemini-2.5-flash-image-preview"
+        "model_name": "gemini-2.5-flash-image-preview",
     }
-    
+    mock_generate.return_value = expected
+
+    response = client.post("/api/generate/mix-two", json=payload)
+
+    assert response.status_code == 201
+    assert response.json() == expected
+    mock_generate.assert_called_once_with(
+        parents=payload["parents"],
+        count=payload["count"],
+        prompt=payload["prompt"],
+        strength=payload["strength"],
+        output_format=payload["output_format"],
+        output_width=payload["output_width"],
+        output_height=payload["output_height"],
+        output_max_side=payload["output_max_side"],
+        resize_mode=payload["resize_mode"],
+    )
+
+
+@pytest.mark.api
+@patch("app.api.generation.generate_mixed_offspring")
+def test_generate_mix_two_without_body(mock_generate: MagicMock, client: TestClient):
+    """Query param count should trigger legacy generator."""
+    mock_generate.return_value = {"ok": True}
+
+    response = client.post("/api/generate/mix-two?count=3", json=None)
+
+    assert response.status_code == 201
+    assert response.json() == {"ok": True}
+    mock_generate.assert_called_once_with(count=3)
+
+
+@pytest.mark.api
+@patch("app.api.generation.generate_mixed_offspring_v2")
+def test_generate_mix_two_value_error(mock_generate: MagicMock, client: TestClient):
+    """ValueError bubbled as 400."""
+    mock_generate.side_effect = ValueError("parents missing")
+
     response = client.post(
         "/api/generate/mix-two",
-        json={
-            "parents": ["parent1.png", "parent2.png"],
-            "count": 2  # Must be >= 2 per schema
-        }
+        json={"parents": ["a.png", "b.png"], "count": 2},
     )
-    
-    # Generation may fail without actual parents/images, but test endpoint structure
-    # If mock works, should return 201; otherwise may return 400/500
-    assert response.status_code in [201, 400, 500]
-    if response.status_code == 201:
-        data = response.json()
-        assert "output_image_path" in data
-        assert "parents" in data
+
+    assert response.status_code == 400
+    assert "parents missing" in response.json()["detail"]
+
+
+@pytest.mark.api
+@patch("app.api.generation.generate_mixed_offspring_v2")
+def test_generate_mix_two_unexpected_error(mock_generate: MagicMock, client: TestClient):
+    """Unexpected exceptions are turned into 500."""
+    mock_generate.side_effect = RuntimeError("boom")
+
+    response = client.post(
+        "/api/generate/mix-two",
+        json={"parents": ["a.png", "b.png"], "count": 2},
+    )
+
+    assert response.status_code == 500
+    assert "boom" in response.json()["detail"]
 
 
 @pytest.mark.api
@@ -496,6 +566,81 @@ def test_generate_collage_version(client: TestClient):
 
 
 @pytest.mark.api
+def test_generate_collage_version_requires_images(client: TestClient):
+    """Missing image_names should trigger validation error."""
+    response = client.post(
+        "/api/generate-collage-version",
+        json={"rows": 2, "cols": 2, "mode": "random"},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "至少需要 1 張圖片"
+
+
+@pytest.mark.api
+def test_generate_collage_version_missing_file(client: TestClient):
+    """Non-existent files reported with 404."""
+    response = client.post(
+        "/api/generate-collage-version",
+        json={
+            "image_names": ["missing.png", "also_missing.png"],
+            "rows": 2,
+            "cols": 2,
+            "mode": "rotate-90",
+        },
+    )
+    assert response.status_code == 404
+    assert "圖片不存在" in response.json()["detail"]
+
+
+@pytest.mark.api
+@patch("app.api.collage.generate_collage_version")
+def test_generate_collage_version_enqueues_task(mock_generate: MagicMock, client: TestClient):
+    """Valid request should register a task and kick off generation."""
+    filenames = [
+        _create_offspring_image("api_collage_a.png", (255, 0, 0)),
+        _create_offspring_image("api_collage_b.png", (0, 255, 0)),
+    ]
+    mock_generate.return_value = {
+        "output_image_path": "/tmp/collage.png",
+        "metadata_path": "/tmp/collage.json",
+        "output_image": "collage.png",
+        "parents": filenames,
+        "output_format": "png",
+        "width": 64,
+        "height": 64,
+    }
+
+    response = client.post(
+        "/api/generate-collage-version",
+        json={
+            "image_names": filenames,
+            "rows": 2,
+            "cols": 2,
+            "mode": "random",
+            "resize_w": 256,
+        },
+    )
+    assert response.status_code == 202
+    payload = response.json()
+    task_id = payload["task_id"]
+    assert task_id
+
+    for _ in range(20):
+        task = task_manager.get_task(task_id)
+        if task and task["completed"]:
+            break
+        time.sleep(0.05)
+    task = task_manager.get_task(task_id)
+
+    assert task is not None
+    assert task["stage"] in {"initializing", "completed", "failed"}
+    mock_generate.assert_called_once()
+    if task["completed"] and not task.get("error"):
+        assert task["result"] == mock_generate.return_value
+    task_manager.tasks.pop(task_id, None)
+
+
+@pytest.mark.api
 def test_get_collage_version_progress(client: TestClient):
     """Test collage version progress endpoint."""
     # Test with non-existent task (should return 404)
@@ -504,9 +649,24 @@ def test_get_collage_version_progress(client: TestClient):
 
 
 @pytest.mark.api
-def test_get_collage_version_progress_not_found(client: TestClient):
-    """Test collage version progress with non-existent task."""
-    from app.services.collage_version import task_manager
-    # Use real task_manager which should return None for non-existent task
-    response = client.get("/api/collage-version/non_existent_task/progress")
-    assert response.status_code == 404
+def test_get_collage_version_progress_completed(client: TestClient):
+    """Progress endpoint should return result payload once task finishes."""
+    fake_result = {
+        "output_image_path": "/tmp/fake.png",
+        "metadata_path": "/tmp/fake.json",
+        "output_image": "fake.png",
+        "parents": ["a.png", "b.png"],
+        "output_format": "png",
+        "width": 32,
+        "height": 32,
+    }
+    task_id = task_manager.create_task()
+    task_manager.complete_task(task_id, fake_result)
+
+    response = client.get(f"/api/collage-version/{task_id}/progress")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["completed"] is True
+    assert data["output_image_path"] == fake_result["output_image_path"]
+    assert data["metadata_path"] == fake_result["metadata_path"]
+    task_manager.tasks.pop(task_id, None)
