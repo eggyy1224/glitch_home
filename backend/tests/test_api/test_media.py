@@ -40,31 +40,30 @@ def _create_offspring_image(filename: str, color=(255, 255, 255)) -> str:
 
 
 @pytest.mark.api
-@pytest.mark.slow
-def test_get_kinship(client: TestClient):
-    """Test kinship query endpoint."""
-    # This test requires the kinship index to be loaded and have data
-    # Skip if no data available
-    from app.services.kinship_index import kinship_index
-    kinship_index.load()
-    
-    if not kinship_index._parents_map:
-        pytest.skip("No kinship data available")
-    
-    test_img = list(kinship_index._parents_map.keys())[0]
-    response = client.get(f"/api/kinship?img={test_img}&depth=1")
-    
-    if response.status_code == 404:
-        pytest.skip("Test image not found in offspring directory")
-    
+def test_get_kinship(client: TestClient, kinship_sample_dataset):
+    """Test kinship query endpoint with deterministic dataset."""
+    target = kinship_sample_dataset["primary_child"]
+    response = client.get(f"/api/kinship?img={target}&depth=2")
+
     assert response.status_code == 200
     data = response.json()
-    assert "parents" in data
-    assert "children" in data
-    assert "siblings" in data
-    assert isinstance(data["parents"], list)
-    assert isinstance(data["children"], list)
-    assert isinstance(data["siblings"], list)
+    assert data["parents"] == [
+        kinship_sample_dataset["parent_a"],
+        kinship_sample_dataset["parent_b"],
+    ]
+    assert data["children"] == [kinship_sample_dataset["grandchild"]]
+    assert data["siblings"] == [kinship_sample_dataset["sibling"]]
+    assert data["related_images"] == sorted({
+        kinship_sample_dataset["parent_a"],
+        kinship_sample_dataset["parent_b"],
+        kinship_sample_dataset["sibling"],
+        kinship_sample_dataset["grandchild"],
+    })
+    assert data["ancestors_by_level"][0] == data["parents"]
+    assert data["ancestors_by_level"][1] == [kinship_sample_dataset["ancestor"]]
+    assert kinship_sample_dataset["ancestor"] in data["root_ancestors"]
+    assert any(node["name"] == target for node in data["lineage_graph"]["nodes"])
+    assert data["depth_used"] == 2
 
 
 @pytest.mark.api
@@ -82,25 +81,93 @@ def test_get_kinship_missing_param(client: TestClient):
 
 
 @pytest.mark.api
-def test_get_kinship_with_depth(client: TestClient):
+def test_get_kinship_with_depth(client: TestClient, kinship_sample_dataset):
     """Test kinship query with different depth values."""
-    from app.services.kinship_index import kinship_index
-    kinship_index.load()
-    
-    if not kinship_index._parents_map:
-        pytest.skip("No kinship data available")
-    
-    test_img = list(kinship_index._parents_map.keys())[0]
-    
-    # Test with depth=1
-    response = client.get(f"/api/kinship?img={test_img}&depth=1")
-    if response.status_code == 404:
-        pytest.skip("Test image not found")
+    target = kinship_sample_dataset["grandchild"]
+
+    # depth=1 should only include immediate parents
+    response = client.get(f"/api/kinship?img={target}&depth=1")
     assert response.status_code == 200
-    
-    # Test with depth=-1 (full depth)
-    response = client.get(f"/api/kinship?img={test_img}&depth=-1")
+    data = response.json()
+    assert data["ancestors_by_level"] == [[kinship_sample_dataset["primary_child"]]]
+    assert data["root_ancestors"] == []
+
+    # depth=-1 should traverse to ancestor root
+    response = client.get(f"/api/kinship?img={target}&depth=-1")
     assert response.status_code == 200
+    data = response.json()
+    assert data["ancestors_by_level"][-1] == [kinship_sample_dataset["ancestor"]]
+    assert kinship_sample_dataset["ancestor"] in data["root_ancestors"]
+
+
+@pytest.mark.api
+def test_get_kinship_depth_zero(client: TestClient, kinship_sample_dataset):
+    """Depth=0 should suppress ancestor traversal."""
+    target = kinship_sample_dataset["primary_child"]
+    response = client.get(f"/api/kinship?img={target}&depth=0")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ancestors_by_level"] == []
+    assert data["root_ancestors"] == []
+
+
+@pytest.mark.api
+def test_get_kinship_filters_missing_files(client: TestClient, kinship_sample_dataset):
+    """Related lists should only include files present on disk."""
+    from app.config import settings
+
+    sibling = kinship_sample_dataset["sibling"]
+    path = Path(settings.offspring_dir) / sibling
+    path.unlink()
+
+    target = kinship_sample_dataset["primary_child"]
+    response = client.get(f"/api/kinship?img={target}&depth=1")
+    assert response.status_code == 200
+    data = response.json()
+    assert sibling not in data["siblings"]
+    assert sibling not in data["related_images"]
+
+
+@pytest.mark.api
+@patch("app.api.kinship.kinship_index.build_and_save")
+def test_kinship_rebuild_endpoint(mock_build: MagicMock, client: TestClient):
+    """Rebuild endpoint should return build result payload."""
+    mock_build.return_value = {"status": "ok", "metadata_count": 4}
+    response = client.post("/api/kinship/rebuild")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "metadata_count": 4}
+    mock_build.assert_called_once_with()
+
+
+@pytest.mark.api
+@patch("app.api.kinship.kinship_index.build_and_save")
+def test_kinship_rebuild_endpoint_failure(mock_build: MagicMock, client: TestClient):
+    """Rebuild failures bubble up as HTTP 500."""
+    mock_build.side_effect = RuntimeError("boom")
+    response = client.post("/api/kinship/rebuild")
+    assert response.status_code == 500
+    assert "Failed to rebuild index" in response.json()["detail"]
+
+
+@pytest.mark.api
+@patch("app.api.kinship.kinship_index.stats")
+def test_kinship_stats_endpoint(mock_stats: MagicMock, client: TestClient):
+    """Stats endpoint proxies to kinship_index."""
+    mock_stats.return_value = {"offspring_count": 4, "parent_count": 4}
+    response = client.get("/api/kinship/stats")
+    assert response.status_code == 200
+    assert response.json() == {"offspring_count": 4, "parent_count": 4}
+    mock_stats.assert_called_once_with()
+
+
+@pytest.mark.api
+@patch("app.api.kinship.kinship_index.stats")
+def test_kinship_stats_endpoint_failure(mock_stats: MagicMock, client: TestClient):
+    """Stats failures surface as HTTP 500."""
+    mock_stats.side_effect = ValueError("bad state")
+    response = client.get("/api/kinship/stats")
+    assert response.status_code == 500
+    assert "Failed to get stats" in response.json()["detail"]
 
 
 @pytest.mark.api

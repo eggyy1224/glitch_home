@@ -1,5 +1,6 @@
 """Pytest configuration and shared fixtures."""
 
+import json
 import os
 import tempfile
 from pathlib import Path
@@ -74,3 +75,80 @@ def sample_image_path(temp_dir: Path) -> Path:
     image_path = temp_dir / "test_image.png"
     image_path.write_bytes(png_data)
     return image_path
+
+
+@pytest.fixture
+def kinship_sample_dataset(monkeypatch, tmp_path_factory) -> dict:
+    """Create a deterministic kinship dataset in isolated directories."""
+    from app.config import settings
+    from app.services import kinship_index as kinship_module
+
+    base_dir = tmp_path_factory.mktemp("kinship_sample")
+    metadata_dir = base_dir / "metadata"
+    offspring_dir = base_dir / "offspring"
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    offspring_dir.mkdir(parents=True, exist_ok=True)
+
+    # Patch settings to point to isolated dirs for this dataset
+    monkeypatch.setattr(settings, "metadata_dir", str(metadata_dir))
+    monkeypatch.setattr(settings, "offspring_dir", str(offspring_dir))
+
+    original_index_path = kinship_module.kinship_index._index_path
+    kinship_module.kinship_index._index_path = metadata_dir / kinship_module.INDEX_FILENAME
+    kinship_module.kinship_index._parents_map = {}
+    kinship_module.kinship_index._children_map = {}
+    kinship_module.kinship_index._loaded = False
+
+    png_data = (
+        b'\x89PNG\r\n\x1a\n'
+        b'\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde'
+        b'\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\n'
+        b'IDATx\x9cc\xf8\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00IEND\xaeB`\x82'
+    )
+
+    def create_image(name: str) -> None:
+        path = offspring_dir / name
+        path.write_bytes(png_data)
+
+    image_names = [
+        "ancestor.png",
+        "parent_a.png",
+        "parent_b.png",
+        "child_alpha.png",
+        "child_beta.png",
+        "grandchild.png",
+    ]
+    for name in image_names:
+        create_image(name)
+
+    def write_metadata(child: str, parents: list[str]) -> None:
+        payload = {
+            "output_image": child,
+            "parents": parents,
+        }
+        meta_path = metadata_dir / f"offspring_{child}.json"
+        meta_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    write_metadata("parent_a.png", ["ancestor.png"])
+    write_metadata("child_alpha.png", ["parent_a.png", "parent_b.png"])
+    write_metadata("child_beta.png", ["parent_a.png"])
+    write_metadata("grandchild.png", ["child_alpha.png"])
+
+    kinship_module.kinship_index.build_and_save()
+
+    dataset = {
+        "primary_child": "child_alpha.png",
+        "sibling": "child_beta.png",
+        "single_parent_child": "child_beta.png",
+        "parent_a": "parent_a.png",
+        "parent_b": "parent_b.png",
+        "ancestor": "ancestor.png",
+        "grandchild": "grandchild.png",
+    }
+
+    yield dataset
+
+    kinship_module.kinship_index._parents_map = {}
+    kinship_module.kinship_index._children_map = {}
+    kinship_module.kinship_index._loaded = False
+    kinship_module.kinship_index._index_path = original_index_path
