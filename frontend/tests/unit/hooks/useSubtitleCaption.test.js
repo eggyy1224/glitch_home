@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
 // Mock the API module before importing the hook
@@ -9,7 +9,19 @@ vi.mock('../../../src/api.js', () => ({
 
 import { useSubtitleCaption } from '../../../src/hooks/useSubtitleCaption.js'
 
+const flushAsyncUpdates = () => act(async () => { await Promise.resolve() })
+
 describe('useSubtitleCaption', () => {
+  let originalActEnv
+  beforeAll(() => {
+    originalActEnv = globalThis.IS_REACT_ACT_ENVIRONMENT
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  })
+
+  afterAll(() => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnv
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
@@ -23,8 +35,9 @@ describe('useSubtitleCaption', () => {
     // Skipped: Mock timing issues
   })
 
-  it('should apply subtitle with duration', () => {
+  it('should apply subtitle with duration', async () => {
     const { result } = renderHook(() => useSubtitleCaption(null))
+    await flushAsyncUpdates()
 
     const subtitle = {
       text: '測試字幕',
@@ -51,8 +64,9 @@ describe('useSubtitleCaption', () => {
     expect(result.current.subtitle).toBeNull()
   })
 
-  it('should apply caption', () => {
+  it('should apply caption', async () => {
     const { result } = renderHook(() => useSubtitleCaption(null))
+    await flushAsyncUpdates()
 
     const caption = {
       text: '測試說明',
@@ -67,8 +81,9 @@ describe('useSubtitleCaption', () => {
     expect(result.current.caption.text).toBe('測試說明')
   })
 
-  it('should clear subtitle when null is applied', () => {
+  it('should clear subtitle when null is applied', async () => {
     const { result } = renderHook(() => useSubtitleCaption(null))
+    await flushAsyncUpdates()
 
     act(() => {
       result.current.applySubtitle({ text: '測試' })
