@@ -551,7 +551,7 @@ export default function App() {
         performTimelineStop(shouldRelease);
       }
     },
-    [clientId, remoteTimelineControl, performTimelineStop],
+    [clientId, remoteTimelineControl, effectiveTimelineId, performTimelineStop],
   );
 
   useControlSocket({
