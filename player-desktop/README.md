@@ -38,6 +38,25 @@ npm run dev    # 或 npm start
 
 > **提示**：正式部署時可改成指向已 Build 的前端網址或靜態檔案伺服器。
 
+## Remote DevTools / MCP 連線
+
+為了讓 chrome-devtools MCP 或其他 CDP 用戶端可以直接操控展演視窗，Player Desktop Shell 啟動時會預設打開 `remote-debugging-port=5858`（僅綁定本機回圈）。
+
+- **自訂或停用 Port**
+  - 透過環境變數：`PLAYER_DESKTOP_REMOTE_DEBUG_PORT=9222 npm run dev`
+  - 透過 CLI 旗標：`npm run dev -- --remote-debug-port 9222` 或 `npm run dev -- --remote-debug-port=9222`（等號寫法亦支援 `--remote-debugging-port[=]`）
+  - 設成 `0` / `false` / `off` 代表停用 remote debugging，例如 `PLAYER_DESKTOP_REMOTE_DEBUG_PORT=0 npm start`
+- **驗證是否成功開啟**：啟動程式後執行 `curl http://127.0.0.1:5858/json/version`，應能收到包含 `webSocketDebuggerUrl` 的 JSON。
+- **接上 chrome-devtools MCP**：
+  ```toml
+  [mcp_servers.chrome-devtools]
+  command = "npx"
+  args = ["-y", "chrome-devtools-mcp@latest", "--browserUrl=http://127.0.0.1:5858"]
+  ```
+  之後使用 `navigate_page`、`click`、`take_snapshot` 等 tool 時，就會直接操作 Electron 裡的展示視窗。
+
+> ⚠️ Remote debugging 擁有完整控制權，僅在內網或佈展機啟用即可；正式版本可透過上述環境變數/旗標關閉。
+
 ## 配置檔 (`config/clients.json`)
 
 | 欄位 | 說明 |

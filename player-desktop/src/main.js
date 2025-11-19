@@ -5,6 +5,110 @@ const { WindowManager } = require("./window-manager");
 
 let windowManager = null;
 let explicitQuitRequested = false;
+const DEFAULT_REMOTE_DEBUG_PORT = 5858;
+const REMOTE_DEBUG_SWITCHES = ["--remote-debug-port", "--remote-debugging-port"];
+
+function parseRemoteDebugPortValue(rawValue) {
+  if (rawValue === undefined || rawValue === null) {
+    return undefined;
+  }
+  const normalized = String(rawValue).trim();
+  if (!normalized) {
+    return undefined;
+  }
+  const lowered = normalized.toLowerCase();
+  if (lowered === "0" || lowered === "false" || lowered === "off" || lowered === "disable") {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  if (Number.isFinite(parsed) && parsed > 0 && parsed < 65536) {
+    return Math.floor(parsed);
+  }
+  console.warn(`[PlayerShell] remote-debug-port '${rawValue}' 無效，將沿用預設值 ${DEFAULT_REMOTE_DEBUG_PORT}`);
+  return undefined;
+}
+
+function findRemoteDebugPortFromArgv() {
+  const args = process.argv || [];
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    for (const variant of REMOTE_DEBUG_SWITCHES) {
+      if (arg === variant) {
+        const nextValue = args[i + 1];
+        if (nextValue === undefined) {
+          console.warn(`[PlayerShell] ${variant} 缺少埠號，忽略此參數`);
+          break;
+        }
+        const parsed = parseRemoteDebugPortValue(nextValue);
+        if (parsed === undefined) {
+          console.warn(`[PlayerShell] ${variant}=${nextValue} 無效，忽略此參數`);
+          break;
+        }
+        return parsed;
+      }
+      if (arg.startsWith(`${variant}=`)) {
+        const valuePart = arg.slice(variant.length + 1);
+        const parsed = parseRemoteDebugPortValue(valuePart);
+        if (parsed === undefined) {
+          console.warn(`[PlayerShell] ${variant}=${valuePart} 無效，忽略此參數`);
+          break;
+        }
+        return parsed;
+      }
+    }
+  }
+  return undefined;
+}
+
+function resolveRemoteDebuggingPort() {
+  const cliValue = findRemoteDebugPortFromArgv();
+  if (cliValue !== undefined) {
+    return { source: "cli", value: cliValue };
+  }
+
+  if (process.env.PLAYER_DESKTOP_REMOTE_DEBUG_PORT !== undefined) {
+    const parsed = parseRemoteDebugPortValue(process.env.PLAYER_DESKTOP_REMOTE_DEBUG_PORT);
+    if (parsed === null) {
+      return { source: "env", value: null };
+    }
+    if (typeof parsed === "number") {
+      return { source: "env", value: parsed };
+    }
+    console.warn(
+      `[PlayerShell] PLAYER_DESKTOP_REMOTE_DEBUG_PORT='${process.env.PLAYER_DESKTOP_REMOTE_DEBUG_PORT}' 無效，將使用預設值`,
+    );
+  }
+
+  return { source: "default", value: DEFAULT_REMOTE_DEBUG_PORT };
+}
+
+function configureRemoteDebuggingPort() {
+  const resolution = resolveRemoteDebuggingPort();
+  const resolvedPort = resolution?.value;
+  const source = resolution?.source ?? "default";
+
+  if (source === "cli") {
+    if (resolvedPort === null) {
+      console.info("[PlayerShell] remote debugging 已由 CLI 停用");
+    } else {
+      console.info(`[PlayerShell] remote debugging 依 CLI 設定為 127.0.0.1:${resolvedPort}`);
+    }
+    return;
+  }
+
+  if (resolvedPort === null) {
+    const sourceLabel = source === "env" ? "環境變數" : "預設值";
+    console.info(`[PlayerShell] remote debugging 已透過 ${sourceLabel} 停用`);
+    return;
+  }
+
+  app.commandLine.appendSwitch("remote-debugging-port", String(resolvedPort));
+  const sourceLabel = source === "env" ? "環境變數" : "預設值";
+  console.info(`[PlayerShell] remote debugging port (${sourceLabel}) 已啟用：127.0.0.1:${resolvedPort}`);
+}
+
+configureRemoteDebuggingPort();
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
