@@ -8,7 +8,14 @@ from typing import Dict, List, Optional, Tuple
 
 from ..config import settings
 from ..models.iframe import IframeConfig
-from ..models.iframe_timeline import IframeTimeline, IframeTimelineStep
+from ..models.iframe_timeline import (
+    IframeTimeline,
+    IframeTimelineStep,
+    TimelineRemoteClickAction,
+    TimelineSpeechAction,
+    TimelineTimedTextAction,
+    TimelineVideoControlAction,
+)
 from .iframe_config import (
     config_payload_for_response,
     load_iframe_config_snapshot_config,
@@ -110,6 +117,93 @@ def _split_snapshot_reference(value: str, default_client: Optional[str]) -> Tupl
     return default_client, cleaned
 
 
+def resolve_timed_text_action(
+    action: TimelineTimedTextAction | None, fallback_client: Optional[str]
+) -> Optional[Dict[str, object]]:
+    if action is None:
+        return None
+    payload = action.model_dump(exclude_none=True)
+    target = sanitize_client_id(action.target_client_id) or fallback_client
+    if target:
+        payload["target_client_id"] = target
+    if payload.get("clear"):
+        payload.pop("text", None)
+        payload.pop("language", None)
+        payload.pop("duration_seconds", None)
+    else:
+        payload.pop("clear", None)
+        payload["text"] = action.text
+    if not payload.get("clear"):
+        payload.pop("clear", None)
+    return payload
+
+
+def resolve_speech_action(
+    action: TimelineSpeechAction | None, fallback_client: Optional[str]
+) -> Optional[Dict[str, object]]:
+    if action is None:
+        return None
+    payload = action.model_dump(exclude_none=True)
+    target = sanitize_client_id(action.target_client_id) or fallback_client
+    if target:
+        payload["target_client_id"] = target
+    if payload.get("mode") == "speak_with_subtitle" and not payload.get("subtitle_text"):
+        payload["subtitle_text"] = action.subtitle_text or action.text
+    return payload
+
+
+def resolve_remote_click_action(
+    action: TimelineRemoteClickAction | None, fallback_client: Optional[str]
+) -> Optional[Dict[str, object]]:
+    if action is None:
+        return None
+    payload: Dict[str, object] = {}
+    if action.selector:
+        payload["selector"] = action.selector
+    if action.target_selector:
+        payload["target"] = action.target_selector
+    if action.x is not None:
+        payload["x"] = action.x
+    if action.y is not None:
+        payload["y"] = action.y
+    offset = action.offset_seconds
+    if offset is not None:
+        payload["offset_seconds"] = max(0.0, float(offset))
+    if action.label:
+        payload["label"] = action.label
+    target = sanitize_client_id(action.target_client_id) or fallback_client
+    if target:
+        payload["target_client_id"] = target
+    if not (
+        payload.get("selector")
+        or payload.get("target")
+        or ("x" in payload and "y" in payload)
+    ):
+        raise ValueError("remote_click 缺少 selector/target 或 x/y 座標")
+    return payload
+
+
+def resolve_video_control_action(
+    action: TimelineVideoControlAction | None, fallback_client: Optional[str]
+) -> Optional[Dict[str, object]]:
+    if action is None:
+        return None
+    payload: Dict[str, object] = {"action": action.action}
+    if action.volume is not None:
+        payload["volume"] = max(0.0, min(1.0, float(action.volume)))
+    if action.muted is not None:
+        payload["muted"] = bool(action.muted)
+    if action.time is not None:
+        payload["time"] = max(0.0, float(action.time))
+    offset = action.offset_seconds
+    if offset is not None:
+        payload["offset_seconds"] = max(0.0, float(offset))
+    target = sanitize_client_id(action.target_client_id) or fallback_client
+    if target:
+        payload["target_client_id"] = target
+    return payload
+
+
 def load_iframe_timeline_definition(timeline_id: str) -> IframeTimeline:
     path = _timeline_path_for(timeline_id)
     if not path.exists():
@@ -166,89 +260,14 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
 
         fallback_client = step_client_override or client_for_step
 
-        def _resolve_timed_text_action(action) -> Optional[Dict[str, object]]:
-            if action is None:
-                return None
-            payload = action.model_dump(exclude_none=True)
-            target = sanitize_client_id(action.target_client_id) or fallback_client
-            if target:
-                payload["target_client_id"] = target
-            if payload.get("clear"):
-                payload.pop("text", None)
-                payload.pop("language", None)
-                payload.pop("duration_seconds", None)
-            else:
-                payload.pop("clear", None)
-                payload["text"] = action.text
-            if not payload.get("clear"):
-                payload.pop("clear", None)
-            return payload
-
-        def _resolve_speech_action(action) -> Optional[Dict[str, object]]:
-            if action is None:
-                return None
-            payload = action.model_dump(exclude_none=True)
-            target = sanitize_client_id(action.target_client_id) or fallback_client
-            if target:
-                payload["target_client_id"] = target
-            if payload.get("mode") == "speak_with_subtitle" and not payload.get("subtitle_text"):
-                payload["subtitle_text"] = action.subtitle_text or action.text
-            return payload
-
-        def _resolve_remote_click_action(action) -> Optional[Dict[str, object]]:
-            if action is None:
-                return None
-            payload: Dict[str, object] = {}
-            if action.selector:
-                payload["selector"] = action.selector
-            if action.target_selector:
-                payload["target"] = action.target_selector
-            if action.x is not None:
-                payload["x"] = action.x
-            if action.y is not None:
-                payload["y"] = action.y
-            offset = action.offset_seconds
-            if offset is not None:
-                payload["offset_seconds"] = max(0.0, float(offset))
-            if action.label:
-                payload["label"] = action.label
-            target = sanitize_client_id(action.target_client_id) or fallback_client
-            if target:
-                payload["target_client_id"] = target
-            if not (
-                payload.get("selector")
-                or payload.get("target")
-                or ("x" in payload and "y" in payload)
-            ):
-                raise ValueError("remote_click 缺少 selector/target 或 x/y 座標")
-            return payload
-
-        def _resolve_video_control_action(action) -> Optional[Dict[str, object]]:
-            if action is None:
-                return None
-            payload: Dict[str, object] = {"action": action.action}
-            if action.volume is not None:
-                payload["volume"] = max(0.0, min(1.0, float(action.volume)))
-            if action.muted is not None:
-                payload["muted"] = bool(action.muted)
-            if action.time is not None:
-                payload["time"] = max(0.0, float(action.time))
-            offset = action.offset_seconds
-            if offset is not None:
-                payload["offset_seconds"] = max(0.0, float(offset))
-            target = sanitize_client_id(action.target_client_id) or fallback_client
-            if target:
-                payload["target_client_id"] = target
-            return payload
-
-        subtitle_payload = _resolve_timed_text_action(step.subtitle)
-        caption_payload = _resolve_timed_text_action(step.caption)
-        tts_payload = _resolve_speech_action(step.tts)
+        subtitle_payload = resolve_timed_text_action(step.subtitle, fallback_client)
+        caption_payload = resolve_timed_text_action(step.caption, fallback_client)
+        tts_payload = resolve_speech_action(step.tts, fallback_client)
         remote_click_payloads = None
         if step.remote_clicks:
             remote_click_payloads = []
             for action in step.remote_clicks:
-                resolved_click = _resolve_remote_click_action(action)
+                resolved_click = resolve_remote_click_action(action, fallback_client)
                 if resolved_click:
                     remote_click_payloads.append(resolved_click)
             if not remote_click_payloads:
@@ -258,7 +277,7 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
         if step.video_controls:
             video_control_payloads = []
             for action in step.video_controls:
-                resolved_control = _resolve_video_control_action(action)
+                resolved_control = resolve_video_control_action(action, fallback_client)
                 if resolved_control:
                     video_control_payloads.append(resolved_control)
             if not video_control_payloads:
