@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import secrets
+import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from .realtime_bus import RealtimeBroadcaster, realtime_broadcaster
 
@@ -17,10 +18,24 @@ def _utc_timestamp() -> str:
 class ScreenshotRequestQueue:
     """Track screenshot requests and emit lifecycle events."""
 
-    def __init__(self, broadcaster: RealtimeBroadcaster | None = None) -> None:
+    def __init__(
+        self,
+        broadcaster: RealtimeBroadcaster | None = None,
+        *,
+        max_entries: int | None = 1000,
+        max_age_seconds: int | None = 3600,
+        cleanup_interval_seconds: int | None = 30,
+        time_provider: Callable[[], float] | None = None,
+    ) -> None:
         self._lock = asyncio.Lock()
         self._requests: Dict[str, Dict[str, Any]] = {}
+        self._request_timestamps: Dict[str, float] = {}
         self._broadcaster = broadcaster
+        self._max_entries = max_entries
+        self._max_age_seconds = max_age_seconds
+        self._cleanup_interval_seconds = cleanup_interval_seconds
+        self._time_provider = time_provider or time.time
+        self._last_cleanup_ts = 0.0
 
     def set_broadcaster(self, broadcaster: RealtimeBroadcaster | None) -> None:
         self._broadcaster = broadcaster
@@ -52,6 +67,8 @@ class ScreenshotRequestQueue:
         }
         async with self._lock:
             self._requests[request_id] = record
+            self._touch_request_locked(request_id)
+            self._maybe_cleanup_locked()
 
         await self._emit(
             {
@@ -80,6 +97,8 @@ class ScreenshotRequestQueue:
             record["updated_at"] = _utc_timestamp()
             record["processed_by"] = processed_by
             snapshot = dict(record)
+            self._touch_request_locked(request_id)
+            self._maybe_cleanup_locked()
 
         await self._emit(
             {"type": "screenshot_completed", "request_id": request_id},
@@ -102,6 +121,8 @@ class ScreenshotRequestQueue:
             record["updated_at"] = _utc_timestamp()
             record["processed_by"] = processed_by
             snapshot = dict(record)
+            self._touch_request_locked(request_id)
+            self._maybe_cleanup_locked()
 
         await self._emit(
             {"type": "screenshot_failed", "request_id": request_id, "error": message},
@@ -119,6 +140,8 @@ class ScreenshotRequestQueue:
             record["sound_effect"] = sound_result
             record["updated_at"] = _utc_timestamp()
             snapshot = dict(record)
+            self._touch_request_locked(request_id)
+            self._maybe_cleanup_locked()
 
         await self._emit(
             {
@@ -166,6 +189,58 @@ class ScreenshotRequestQueue:
         if self._broadcaster is None:
             return
         await self._broadcaster.broadcast(message, target_client_id=target_client_id)
+
+    def _touch_request_locked(self, request_id: str) -> None:
+        self._request_timestamps[request_id] = self._time_provider()
+
+    def _maybe_cleanup_locked(self) -> None:
+        if self._max_entries is None and self._max_age_seconds is None:
+            return
+        now = self._time_provider()
+        size_limit_exceeded = (
+            self._max_entries is not None and len(self._requests) > self._max_entries
+        )
+        should_run = size_limit_exceeded
+        if not should_run:
+            if self._cleanup_interval_seconds is None:
+                return
+            if now - self._last_cleanup_ts < self._cleanup_interval_seconds:
+                return
+        self._perform_cleanup_locked(now)
+
+    def _perform_cleanup_locked(self, now: float) -> None:
+        expired_ids: List[str] = []
+        if self._max_age_seconds is not None:
+            cutoff = now - self._max_age_seconds
+            for request_id, ts in list(self._request_timestamps.items()):
+                if ts < cutoff:
+                    record = self._requests.get(request_id)
+                    if record is None:
+                        expired_ids.append(request_id)
+                        continue
+                    if record.get("status") == "pending":
+                        # Keep pending requests regardless of age.
+                        continue
+                    expired_ids.append(request_id)
+        for request_id in expired_ids:
+            self._remove_request_locked(request_id)
+
+        if self._max_entries is not None and len(self._requests) > self._max_entries:
+            overflow = len(self._requests) - self._max_entries
+            sorted_items = sorted(
+                self._request_timestamps.items(),
+                key=lambda item: (self._requests.get(item[0], {}).get("status") == "pending", item[1]),
+            )
+            for request_id, _ in sorted_items:
+                if overflow <= 0:
+                    break
+                self._remove_request_locked(request_id)
+                overflow -= 1
+        self._last_cleanup_ts = now
+
+    def _remove_request_locked(self, request_id: str) -> None:
+        self._requests.pop(request_id, None)
+        self._request_timestamps.pop(request_id, None)
 
 
 screenshot_request_queue = ScreenshotRequestQueue(realtime_broadcaster)
