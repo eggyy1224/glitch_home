@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Dict
 
 from fastapi import HTTPException
 
@@ -101,3 +102,34 @@ def build_auto_sound_prompt(analysis: dict, duration: float) -> str:
         prompt = prefix + combined_trimmed
 
     return prompt
+
+
+def build_request_metadata(
+    snapshot_record: Dict[str, Any] | None, include_sound: bool = False
+) -> Dict[str, Any] | None:
+    if not snapshot_record:
+        return None
+
+    fields = (
+        "status",
+        "target_client_id",
+        "processed_by",
+        "created_at",
+        "updated_at",
+        "metadata",
+    )
+
+    metadata: Dict[str, Any] = {}
+    for field in fields:
+        value = snapshot_record.get(field)
+        if value is not None:
+            metadata[field] = value
+
+    if include_sound:
+        sound_effect = snapshot_record.get("sound_effect")
+        if sound_effect is not None:
+            metadata["sound_effect"] = sound_effect
+
+    if not metadata:
+        return None
+    return metadata

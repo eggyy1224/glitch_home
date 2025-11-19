@@ -7,7 +7,11 @@ from ..models.schemas import AnalyzeAndSoundRequest, AnalyzeScreenshotRequest, G
 from ..services.image_analysis import analyze_screenshot
 from ..services.screenshot_queue import screenshot_request_queue
 from ..services.sound_effects import generate_sound_effect
-from .screenshot_helpers import build_auto_sound_prompt, resolve_image_and_snapshot
+from .screenshot_helpers import (
+    build_auto_sound_prompt,
+    build_request_metadata,
+    resolve_image_and_snapshot,
+)
 
 router = APIRouter()
 
@@ -25,15 +29,9 @@ async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
 
     if body.request_id:
         response["request_id"] = body.request_id
-    if snapshot_record:
-        response["request_metadata"] = {
-            "status": snapshot_record.get("status"),
-            "target_client_id": snapshot_record.get("target_client_id"),
-            "processed_by": snapshot_record.get("processed_by"),
-            "created_at": snapshot_record.get("created_at"),
-            "updated_at": snapshot_record.get("updated_at"),
-            "metadata": snapshot_record.get("metadata"),
-        }
+    request_metadata = build_request_metadata(snapshot_record)
+    if request_metadata:
+        response["request_metadata"] = request_metadata
 
     return response
 
@@ -63,13 +61,9 @@ async def api_generate_sound(body: GenerateSoundRequest) -> dict:
         updated = await screenshot_request_queue.attach_sound_effect(body.request_id, sound_result)
         response["request_id"] = body.request_id
         if updated:
-            response["request_metadata"] = {
-                "status": updated.get("status"),
-                "target_client_id": updated.get("target_client_id"),
-                "processed_by": updated.get("processed_by"),
-                "sound_effect": updated.get("sound_effect"),
-                "updated_at": updated.get("updated_at"),
-            }
+            request_metadata = build_request_metadata(updated, include_sound=True)
+            if request_metadata:
+                response["request_metadata"] = request_metadata
 
     return response
 
@@ -108,12 +102,8 @@ async def api_analyze_and_sound(body: AnalyzeAndSoundRequest) -> dict:
         updated = await screenshot_request_queue.attach_sound_effect(body.request_id, sound_result)
         response["request_id"] = body.request_id
         if updated:
-            response["request_metadata"] = {
-                "status": updated.get("status"),
-                "target_client_id": updated.get("target_client_id"),
-                "processed_by": updated.get("processed_by"),
-                "sound_effect": updated.get("sound_effect"),
-                "updated_at": updated.get("updated_at"),
-            }
+            request_metadata = build_request_metadata(updated, include_sound=True)
+            if request_metadata:
+                response["request_metadata"] = request_metadata
 
     return response
