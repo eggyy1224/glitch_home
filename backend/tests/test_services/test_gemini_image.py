@@ -1,13 +1,14 @@
-import json
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Optional
 
 import pytest
 from PIL import Image
 
 from app.services import gemini_image
+from app.services.image_outputs import DefaultImagePreprocessor, LocalOutputWriter
 
 
 def _fake_response_with_bytes(image_bytes: bytes) -> SimpleNamespace:
@@ -47,99 +48,50 @@ def _create_parent_images(tmp_path: Path, count: int = 2) -> list[str]:
     return parents
 
 
-def _make_generator(**kwargs) -> gemini_image.GeminiImageGenerator:
-    return gemini_image.GeminiImageGenerator(**kwargs)
-
-
-def test_prepare_inputs_returns_metadata(tmp_path):
-    parents = _create_parent_images(tmp_path)
-    generator = _make_generator(client=SimpleNamespace())
-
-    images, input_details = generator._prepare_inputs(parents)
-
-    assert len(images) == len(parents)
-    assert input_details[0]["name"].startswith("parent_0")
-    assert "x" in input_details[0]["dimensions"]
-
-
-def test_call_gemini_returns_image(tmp_path):
-    parents = _create_parent_images(tmp_path)
+def test_call_gemini_returns_image():
     fake_client = _fake_response_with_bytes(_make_sample_image_bytes())
-    generator = _make_generator(client=fake_client)
-    images, details = generator._prepare_inputs(parents)
+    generator = gemini_image.GeminiImageGenerator(client=fake_client)
 
-    result = generator._call_gemini("prompt", images, details)
+    sample_image = Image.new("RGB", (16, 16), (255, 0, 0))
+    details = [
+        {
+            "name": "parent.png",
+            "path": "parent.png",
+            "dimensions": "16x16",
+            "file_size": "1KB",
+        }
+    ]
+
+    result = generator._call_gemini("prompt", [sample_image], details)
 
     assert isinstance(result, Image.Image)
 
 
-def test_call_gemini_raises_when_no_inline(tmp_path):
-    parents = _create_parent_images(tmp_path)
+def test_call_gemini_raises_when_no_inline():
     fake_client = _fake_response_without_inline()
-    generator = _make_generator(client=fake_client)
-    images, details = generator._prepare_inputs(parents)
+    generator = gemini_image.GeminiImageGenerator(client=fake_client)
+
+    sample_image = Image.new("RGB", (16, 16), (255, 0, 0))
+    details = [
+        {
+            "name": "parent.png",
+            "path": "parent.png",
+            "dimensions": "16x16",
+            "file_size": "1KB",
+        }
+    ]
 
     with pytest.raises(RuntimeError) as exc:
-        generator._call_gemini("prompt", images, details)
+        generator._call_gemini("prompt", [sample_image], details)
 
     assert "Gemini 回傳未包含影像資料" in str(exc.value)
 
 
-def test_resize_image_fit_mode(tmp_path):
-    img = Image.new("RGB", (400, 200), (255, 0, 0))
-    generator = _make_generator(client=SimpleNamespace())
-
-    resized = generator._resize_image(
-        img,
-        output_format="png",
-        output_width=200,
-        output_height=200,
-        output_max_side=None,
-        resize_mode="fit",
-    )
-
-    assert resized.size == (200, 200)
-
-
-def test_write_output_uses_filename_strategy(monkeypatch, tmp_path):
-    parents = _create_parent_images(tmp_path)
-    generator = _make_generator(
-        client=_fake_response_with_bytes(_make_sample_image_bytes()),
-        timestamp_factory=lambda: datetime(2024, 1, 1, 12, 0, 0),
-        filename_builder=lambda fmt, ts: f"custom_name.{fmt}",
-    )
-    monkeypatch.setattr(gemini_image.settings, "offspring_dir", str(tmp_path))
-    ensure_dir = Path(tmp_path)
-    ensure_dir.mkdir(parents=True, exist_ok=True)
-
-    images, details = generator._prepare_inputs(parents)
-    generated = generator._call_gemini("prompt", images, details)
-    resized = generator._resize_image(
-        generated,
-        output_format="png",
-        output_width=None,
-        output_height=None,
-        output_max_side=None,
-        resize_mode=None,
-    )
-
-    output_path, fmt, width, height = generator._write_output(
-        resized,
-        output_format="png",
-        input_details=details,
-    )
-
-    assert Path(output_path).name == "custom_name.png"
-    assert fmt == "png"
-    assert width == resized.width
-    assert height == resized.height
-    assert Path(output_path).exists()
-
-
 def test_build_metadata_contains_expected_fields(tmp_path):
     parents = _create_parent_images(tmp_path)
-    generator = _make_generator(client=SimpleNamespace())
-    images, details = generator._prepare_inputs(parents)
+    preprocessor = DefaultImagePreprocessor()
+    images, details = preprocessor.prepare(parents)
+    generator = gemini_image.GeminiImageGenerator(client=SimpleNamespace())
     dummy_path = tmp_path / "output.png"
     dummy_path.write_bytes(_make_sample_image_bytes())
 
@@ -156,22 +108,91 @@ def test_build_metadata_contains_expected_fields(tmp_path):
 
     assert metadata["output_format"] == "png"
     assert metadata["output_size"] == {"width": 32, "height": 32}
+    assert metadata["parents_full_paths"] == parents
+
+
+class _StubParentSelector:
+    def __init__(self, resolved: list[str]):
+        self._resolved = resolved
+        self.calls: list[tuple[Optional[list[str]], Optional[int]]] = []
+
+    def select(self, *, parents=None, count=None):  # type: ignore[override]
+        self.calls.append((parents, count))
+        return self._resolved
+
+
+class _StubPreprocessor:
+    def prepare(self, parent_paths):  # type: ignore[override]
+        self.received = parent_paths
+        return [Image.new("RGB", (8, 8), (0, 255, 0))], [
+            {
+                "name": "parent.png",
+                "path": parent_paths[0],
+                "dimensions": "8x8",
+                "file_size": "1KB",
+            }
+        ]
+
+
+class _StubOutputWriter:
+    def __init__(self, tmp_path: Path):
+        self.tmp_path = tmp_path
+        self.received_images: list[Image.Image] = []
+
+    def write(self, img, **kwargs):  # type: ignore[override]
+        self.received_images.append(img)
+        out_path = self.tmp_path / "offspring.png"
+        img.save(out_path)
+        return str(out_path), "png", img.width, img.height
+
+
+def test_generate_uses_injected_services(monkeypatch, tmp_path):
+    parents = ["p0.png", "p1.png"]
+    parent_selector = _StubParentSelector(parents)
+    preprocessor = _StubPreprocessor()
+    output_writer = _StubOutputWriter(tmp_path)
+    fake_client = _fake_response_with_bytes(_make_sample_image_bytes())
+
+    monkeypatch.setattr(gemini_image.settings, "offspring_dir", str(tmp_path / "offspring"))
+    monkeypatch.setattr(gemini_image.settings, "metadata_dir", str(tmp_path / "meta"))
+
+    generator = gemini_image.GeminiImageGenerator(
+        client=fake_client,
+        parent_selector=parent_selector,
+        image_preprocessor=preprocessor,
+        output_writer=output_writer,
+    )
+
+    result = generator.generate(parents=parents, prompt="Hello")
+
+    assert parent_selector.calls[0] == (parents, None)
+    assert preprocessor.received == parents
+    assert Path(result["output_image_path"]).exists()
+    assert Path(result["metadata_path"]).exists()
+    assert result["parents_full_paths"] == parents
 
 
 def test_generate_mixed_offspring_v2_writes_outputs(monkeypatch, tmp_path):
     parents = _create_parent_images(tmp_path)
     image_bytes = _make_sample_image_bytes()
     fake_client = _fake_response_with_bytes(image_bytes)
-    generator = _make_generator(client=fake_client)
     monkeypatch.setattr(gemini_image.settings, "offspring_dir", str(tmp_path))
     monkeypatch.setattr(gemini_image.settings, "metadata_dir", str(tmp_path / "meta"))
 
-    original_generate = gemini_image._generate_and_store_image
+    parent_selector = _StubParentSelector(parents)
+    writer = LocalOutputWriter(
+        output_dir=str(tmp_path),
+        timestamp_factory=lambda: datetime(2024, 1, 1, 12, 0, 0),
+        filename_builder=lambda fmt, ts: f"custom.{fmt}",
+    )
+    generator = gemini_image.GeminiImageGenerator(
+        client=fake_client,
+        parent_selector=parent_selector,
+        image_preprocessor=DefaultImagePreprocessor(),
+        output_writer=writer,
+    )
 
-    def _patched_generate(**kwargs):
-        return original_generate(generator=generator, **kwargs)
-
-    monkeypatch.setattr(gemini_image, "_generate_and_store_image", _patched_generate)
+    monkeypatch.setattr(gemini_image, "GeminiImageGenerator", lambda: generator)
 
     result = gemini_image.generate_mixed_offspring_v2(parents=parents, prompt="Test prompt")
 
@@ -179,55 +200,3 @@ def test_generate_mixed_offspring_v2_writes_outputs(monkeypatch, tmp_path):
     metadata_path = Path(result["metadata_path"])
     assert output_path.exists()
     assert metadata_path.exists()
-
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    assert metadata["parents_full_paths"] == parents
-    assert metadata["output_format"] == "png"
-    assert metadata["output_size"]["width"] == result["width"]
-    assert metadata["prompt"].startswith("Test prompt")
-
-
-def test_generate_and_store_image_raises_without_inline(tmp_path):
-    parents = _create_parent_images(tmp_path)
-    fake_client = _fake_response_without_inline()
-    generator = _make_generator(client=fake_client)
-
-    with pytest.raises(RuntimeError) as exc:
-        gemini_image._generate_and_store_image(
-            parent_paths=parents,
-            prompt="No data",
-            strength=None,
-            output_format="png",
-            output_width=None,
-            output_height=None,
-            output_max_side=None,
-            resize_mode=None,
-            generator=generator,
-        )
-
-    message = str(exc.value)
-    assert "Gemini 回傳未包含影像資料" in message
-    assert "inputs=(2 images)" in message
-    assert "parent_0.png" in message
-
-
-def test_generate_and_store_image_invalid_output_format(tmp_path):
-    parents = _create_parent_images(tmp_path)
-    fake_client = _fake_response_with_bytes(_make_sample_image_bytes((0, 255, 0)))
-    generator = _make_generator(client=fake_client)
-
-    with pytest.raises(RuntimeError) as exc:
-        gemini_image._generate_and_store_image(
-            parent_paths=parents,
-            prompt="Bad format",
-            strength=None,
-            output_format="invalid-format",
-            output_width=None,
-            output_height=None,
-            output_max_side=None,
-            resize_mode=None,
-            generator=generator,
-        )
-
-    assert "輸出影像存檔失敗" in str(exc.value)
-    assert "inputs=(2 images)" in str(exc.value)
