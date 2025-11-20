@@ -12,6 +12,7 @@ import {
   deleteIframeTimeline,
   cloneIframeTimeline,
 } from "./api.js";
+import { buildQueryFromIframeConfig } from "./utils/iframeConfig.js";
 
 const boxStyle = {
   border: "1px solid #ccc",
@@ -440,12 +441,44 @@ function _defaultTimelinePayload(targetClient) {
 
 function _previewSrcFromConfig(config) {
   if (!config || !Array.isArray(config.panels)) return null;
-  for (const panel of config.panels) {
-    if (panel && panel.url) return panel.url;
-    if (panel && panel.image) {
+
+  const panels = [];
+  config.panels.forEach((panel, index) => {
+    if (!panel || typeof panel !== "object") return;
+    let src = null;
+    if (panel.url) {
+      src = panel.url;
+    } else if (panel.image) {
       const query = new URLSearchParams({ img: panel.image, static_mode: "true" });
-      return `/?${query.toString()}`;
+      if (panel.params && typeof panel.params === "object") {
+        Object.entries(panel.params).forEach(([k, v]) => {
+          if (v === null || v === undefined) return;
+          query.set(String(k), String(v));
+        });
+      }
+      src = `/?${query.toString()}`;
     }
-  }
-  return null;
+    if (!src) return;
+    panels.push({
+      id: panel.id || `p${index + 1}`,
+      src,
+      ratio: panel.ratio || 1,
+      label: panel.label,
+    });
+  });
+
+  if (!panels.length) return null;
+  const cfg = {
+    layout: config.layout || "grid",
+    gap: config.gap ?? 0,
+    columns: config.columns ?? 1,
+    panels,
+  };
+  const entries = buildQueryFromIframeConfig(cfg);
+  if (!entries) return null;
+  const qs = new URLSearchParams(entries);
+  qs.set("iframe_mode", "true");
+  qs.set("iframe_preview", "true");
+  qs.set("client", "snapshot-preview");
+  return `/?${qs.toString()}`;
 }

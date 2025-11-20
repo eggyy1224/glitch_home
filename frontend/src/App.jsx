@@ -113,6 +113,7 @@ export default function App() {
     iframeMode: activeMode === DisplayModes.IFRAME,
     clientId,
     defaultConfig: IFRAME_DEFAULT_CONFIG,
+    skipServerFetch: false,
   });
 
   const {

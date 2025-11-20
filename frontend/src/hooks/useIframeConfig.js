@@ -8,7 +8,7 @@ import {
 const PERSIST_IFRAME_QUERY =
   String(import.meta.env.VITE_IFRAME_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
 
-export function useIframeConfig({ initialParams, iframeMode, clientId, defaultConfig }) {
+export function useIframeConfig({ initialParams, iframeMode, clientId, defaultConfig, skipServerFetch = false }) {
   const initialConfigFromParams = useMemo(
     () => sanitizeIframeConfig(parseIframeConfigFromParams(initialParams), defaultConfig),
     [initialParams, defaultConfig],
@@ -99,7 +99,8 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
   }, [defaultConfig, localConfig, updateQueryWithIframeConfig]);
 
   useEffect(() => {
-    if (!iframeMode) {
+    const skipFetch = skipServerFetch || (initialParams && initialParams.get("iframe_preview") === "true");
+    if (!iframeMode || skipFetch) {
       setServerConfig(null);
       setError(null);
       return undefined;
@@ -136,7 +137,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
       cancelled = true;
       controller.abort();
     };
-  }, [iframeMode, clientId, applyServerSnapshot]);
+  }, [iframeMode, clientId, applyServerSnapshot, skipServerFetch, initialParams]);
 
   return {
     activeConfig: serverConfig || localConfig || defaultConfig,
