@@ -51,6 +51,7 @@ export default function AdminPanel({ clientId }) {
   const [snapshotMessage, setSnapshotMessage] = useState("");
   const [snapshotCloneTarget, setSnapshotCloneTarget] = useState(clientId || "desktop2");
   const [snapshotCloneName, setSnapshotCloneName] = useState("");
+  const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
 
   const [timelineList, setTimelineList] = useState([]);
   const [timelineClientFilter, setTimelineClientFilter] = useState("");
@@ -103,6 +104,7 @@ export default function AdminPanel({ clientId }) {
       const raw = data.raw || data.snapshot || data;
       setSnapshotName(name);
       setSnapshotJson(pretty(raw));
+      setSnapshotPreviewSrc(_previewSrcFromConfig(raw));
       setSnapshotMessage(`已載入 snapshot ${name}`);
     } catch (err) {
       setSnapshotMessage(err.message || "載入 snapshot 失敗");
@@ -118,6 +120,7 @@ export default function AdminPanel({ clientId }) {
       const parsed = JSON.parse(snapshotJson);
       const data = await saveIframeSnapshot(snapshotClient, snapshotName.trim(), parsed);
       setSnapshotMessage(`已儲存 snapshot ${data.snapshot?.name || snapshotName}`);
+      setSnapshotPreviewSrc(_previewSrcFromConfig(parsed));
       await refreshSnapshots();
     } catch (err) {
       setSnapshotMessage(err.message || "儲存失敗");
@@ -149,6 +152,15 @@ export default function AdminPanel({ clientId }) {
       setSnapshotMessage(err.message || "複製失敗");
     }
   };
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(snapshotJson);
+      setSnapshotPreviewSrc(_previewSrcFromConfig(parsed));
+    } catch (err) {
+      setSnapshotPreviewSrc(null);
+    }
+  }, [snapshotJson]);
 
   const handleLoadTimeline = async (id) => {
     try {
@@ -296,6 +308,20 @@ export default function AdminPanel({ clientId }) {
                     填入預設
                   </button>
                 </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ marginBottom: 6, fontWeight: 600 }}>預覽</div>
+                  {snapshotPreviewSrc ? (
+                    <iframe
+                      title="snapshot-preview"
+                      src={snapshotPreviewSrc}
+                      style={{ width: "100%", height: 240, border: "1px solid #ccc", borderRadius: 6 }}
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  ) : (
+                    <div style={{ color: "#888" }}>無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image</div>
+                  )}
+                </div>
               </div>
             </div>
             {snapshotMessage && <div style={{ marginTop: 8, color: "#444" }}>{snapshotMessage}</div>}
@@ -410,4 +436,16 @@ function _defaultTimelinePayload(targetClient) {
       { snapshot: `${targetClient}/snapshot_b`, duration: 5, label: "第二段" },
     ],
   };
+}
+
+function _previewSrcFromConfig(config) {
+  if (!config || !Array.isArray(config.panels)) return null;
+  for (const panel of config.panels) {
+    if (panel && panel.url) return panel.url;
+    if (panel && panel.image) {
+      const query = new URLSearchParams({ img: panel.image, static_mode: "true" });
+      return `/?${query.toString()}`;
+    }
+  }
+  return null;
 }
