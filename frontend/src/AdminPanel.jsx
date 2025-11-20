@@ -71,6 +71,8 @@ export default function AdminPanel({ clientId }) {
   const [timelineMessage, setTimelineMessage] = useState("");
   const [timelineCloneId, setTimelineCloneId] = useState("");
   const [timelineCloneTarget, setTimelineCloneTarget] = useState(clientId || "desktop2");
+  const [timelinePreviewSrc, setTimelinePreviewSrc] = useState(null);
+  const [timelinePreviewError, setTimelinePreviewError] = useState(null);
 
   const resolvedClientLabel = useMemo(() => snapshotClient || "(未設定)", [snapshotClient]);
 
@@ -162,6 +164,36 @@ export default function AdminPanel({ clientId }) {
       setSnapshotPreviewSrc(null);
     }
   }, [snapshotJson]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    const updatePreview = async () => {
+      try {
+        const parsed = JSON.parse(timelineJson);
+        const firstRef = _firstSnapshotRef(parsed);
+        if (!firstRef) {
+          setTimelinePreviewSrc(null);
+          setTimelinePreviewError(null);
+          return;
+        }
+        setTimelinePreviewError(null);
+        const snapshot = await getIframeSnapshot(firstRef.client, firstRef.name, { signal: controller.signal });
+        if (cancelled) return;
+        const raw = snapshot.raw || snapshot.snapshot || snapshot;
+        setTimelinePreviewSrc(_previewSrcFromConfig(raw));
+      } catch (err) {
+        if (cancelled || err?.name === "AbortError") return;
+        setTimelinePreviewSrc(null);
+        setTimelinePreviewError(err.message || "預覽取得失敗");
+      }
+    };
+    void updatePreview();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [timelineJson]);
 
   const handleLoadTimeline = async (id) => {
     try {
@@ -399,6 +431,22 @@ export default function AdminPanel({ clientId }) {
                     填入預設
                   </button>
                 </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ marginBottom: 6, fontWeight: 600 }}>預覽（取第一段 snapshot）</div>
+                  {timelinePreviewSrc ? (
+                    <iframe
+                      title="timeline-preview"
+                      src={timelinePreviewSrc}
+                      style={{ width: "100%", height: 240, border: "1px solid #ccc", borderRadius: 6 }}
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  ) : (
+                    <div style={{ color: "#888" }}>
+                      {timelinePreviewError || "無法產生預覽，請確認 steps 有 snapshot，且對應 snapshot 有 panel.url 或 image"}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
@@ -481,4 +529,26 @@ function _previewSrcFromConfig(config) {
   qs.set("iframe_preview", "true");
   qs.set("client", "snapshot-preview");
   return `/?${qs.toString()}`;
+}
+
+function _firstSnapshotRef(timeline) {
+  if (!timeline || !Array.isArray(timeline.steps)) return null;
+  const firstStep = timeline.steps.find((step) => step && step.snapshot);
+  if (!firstStep) return null;
+
+  const snapshotRef = String(firstStep.snapshot || "").trim();
+  if (!snapshotRef) return null;
+
+  const timelineClient = timeline.clientId || timeline.client_id || null;
+  const stepClient = firstStep.clientId || firstStep.client_id || null;
+  const defaultClient = stepClient || timelineClient || null;
+
+  if (snapshotRef.includes("/")) {
+    const [clientPart, namePart] = snapshotRef.split("/", 2).map((s) => s.trim());
+    if (!namePart) return null;
+    return { client: clientPart || defaultClient, name: namePart };
+  }
+
+  if (!defaultClient) return null;
+  return { client: defaultClient, name: snapshotRef };
 }
