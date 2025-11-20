@@ -434,6 +434,29 @@ export async function cloneIframeTimeline(timelineId, payload, { resolve = true,
   );
 }
 
+export async function playIframeTimeline(timelineId, payload = {}, { targetClientId = null, signal } = {}) {
+  if (!timelineId) {
+    throw new Error("timelineId is required");
+  }
+  const params = new URLSearchParams();
+  if (targetClientId) {
+    params.set("target_client_id", targetClientId);
+  }
+  const qs = params.toString();
+  const url = `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}/play${qs ? `?${qs}` : ""}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+    signal,
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
 export async function listIframeSnapshots(clientId = null) {
   let url = `${API_BASE}/api/iframe-config/snapshots`;
   if (clientId) {

@@ -11,6 +11,7 @@ import {
   updateIframeTimeline,
   deleteIframeTimeline,
   cloneIframeTimeline,
+  playIframeTimeline,
 } from "./api.js";
 import { buildQueryFromIframeConfig } from "./utils/iframeConfig.js";
 
@@ -151,6 +152,8 @@ export default function AdminPanel({ clientId }) {
   const [timelinePreviewError, setTimelinePreviewError] = useState(null);
   const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);
   const [timelinePlayError, setTimelinePlayError] = useState(null);
+  const [timelinePlayTarget, setTimelinePlayTarget] = useState(clientId || "desktop");
+  const [timelinePlayStatus, setTimelinePlayStatus] = useState("");
   const [timelinePreviewWidth, setTimelinePreviewWidth] = useState(defaultPreviewWidth);
 
   const resolvedClientLabel = useMemo(() => snapshotClient || "(未設定)", [snapshotClient]);
@@ -310,6 +313,7 @@ export default function AdminPanel({ clientId }) {
   useEffect(() => {
     setTimelinePlaySrc(null);
     setTimelinePlayError(null);
+    setTimelinePlayStatus("");
   }, [timelineJson, timelineId]);
 
   const handleLoadTimeline = async (id) => {
@@ -317,6 +321,10 @@ export default function AdminPanel({ clientId }) {
       const data = await fetchIframeTimeline(id, { resolve: false });
       setTimelineId(id);
       setTimelineJson(pretty(data.timeline || data));
+      const resolvedTarget = data?.timeline?.clientId || data?.timeline?.client_id || timelinePlayTarget;
+      if (resolvedTarget) {
+        setTimelinePlayTarget(resolvedTarget);
+      }
       setTimelineMessage(`已載入 timeline ${id}`);
       setTimelinePlaySrc(null);
       setTimelinePlayError(null);
@@ -339,6 +347,9 @@ export default function AdminPanel({ clientId }) {
         await createIframeTimeline(payload, { resolve: false });
       }
       setTimelineId(targetId);
+      if (payload.clientId || payload.client_id) {
+        setTimelinePlayTarget(payload.clientId || payload.client_id);
+      }
       setTimelineMessage(`${mode === "update" ? "已更新" : "已建立"} timeline ${targetId}`);
       setTimelinePlaySrc(null);
       setTimelinePlayError(null);
@@ -358,6 +369,7 @@ export default function AdminPanel({ clientId }) {
       }
       setTimelinePlaySrc(null);
       setTimelinePlayError(null);
+      setTimelinePlayStatus("");
     } catch (err) {
       setTimelineMessage(err.message || "刪除失敗");
     }
@@ -396,6 +408,24 @@ export default function AdminPanel({ clientId }) {
       setTimelinePlaySrc(_timelinePlaybackSrc(id));
     } catch (err) {
       setTimelinePlayError("JSON 解析失敗，無法播放");
+    }
+  };
+
+  const handlePlayToClient = async () => {
+    if (!timelineId) {
+      setTimelinePlayStatus("請先載入或儲存 timeline");
+      return;
+    }
+    if (!timelinePlayTarget.trim()) {
+      setTimelinePlayStatus("請輸入 target client");
+      return;
+    }
+    try {
+      setTimelinePlayStatus("發送中...");
+      await playIframeTimeline(timelineId, {}, { targetClientId: timelinePlayTarget.trim() });
+      setTimelinePlayStatus(`已送出播放到 ${timelinePlayTarget.trim()}`);
+    } catch (err) {
+      setTimelinePlayStatus(err.message || "播放指令失敗");
     }
   };
 
@@ -586,6 +616,19 @@ export default function AdminPanel({ clientId }) {
                 <button type="button" onClick={() => setTimelineJson(pretty(_defaultTimelinePayload(clientId || "desktop")))}>
                   填入預設
                 </button>
+              </div>
+
+              <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <label style={{ fontWeight: 600 }}>播放到 client</label>
+                <input
+                  type="text"
+                  value={timelinePlayTarget}
+                  onChange={(e) => setTimelinePlayTarget(e.target.value)}
+                  placeholder="client id"
+                  style={{ width: 150 }}
+                />
+                <button type="button" onClick={handlePlayToClient}>播放</button>
+                {timelinePlayStatus && <span style={{ color: "#444" }}>{timelinePlayStatus}</span>}
               </div>
             </div>
           </div>
