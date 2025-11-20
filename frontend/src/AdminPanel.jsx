@@ -48,7 +48,9 @@ export default function AdminPanel({ clientId }) {
   const [snapshotClient, setSnapshotClient] = useState(clientId || "desktop");
   const [snapshotList, setSnapshotList] = useState([]);
   const [snapshotName, setSnapshotName] = useState("");
-  const [snapshotJson, setSnapshotJson] = useState("{\n  \"layout\": \"grid\",\n  \"gap\": 0,\n  \"columns\": 1,\n  \"panels\": [\n    { \"id\": \"p1\", \"url\": \/\" }\n  ]\n}");
+  const [snapshotJson, setSnapshotJson] = useState(
+    "{\n  \"layout\": \"grid\",\n  \"gap\": 0,\n  \"columns\": 1,\n  \"panels\": [\n    { \"id\": \"p1\", \"url\": \"/\" }\n  ]\n}",
+  );
   const [snapshotMessage, setSnapshotMessage] = useState("");
   const [snapshotCloneTarget, setSnapshotCloneTarget] = useState(clientId || "desktop2");
   const [snapshotCloneName, setSnapshotCloneName] = useState("");
