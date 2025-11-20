@@ -231,6 +231,82 @@ def load_iframe_config_snapshot_config(client_id: Optional[str], snapshot_name: 
     return config
 
 
+def load_iframe_config_snapshot_payload(client_id: Optional[str], snapshot_name: str) -> dict:
+    """載入指定 snapshot 的原始設定 payload。"""
+
+    sanitized_client_id = _sanitize_client_id(client_id)
+    safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
+    path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
+    if not path.exists():
+        raise FileNotFoundError("snapshot 不存在")
+
+    with path.open("r", encoding="utf-8") as fp:
+        raw = json.load(fp)
+
+    config = IframeConfig(**raw)
+    _validate_images(config)
+    return raw
+
+
+def get_iframe_snapshot_metadata(client_id: Optional[str], snapshot_name: str) -> dict:
+    sanitized_client_id = _sanitize_client_id(client_id)
+    safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
+    path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
+    if not path.exists():
+        raise FileNotFoundError("snapshot 不存在")
+    stats = path.stat()
+    return {
+        "client_id": sanitized_client_id,
+        "name": safe_snapshot_name,
+        "created_at": isoformat(stats.st_mtime),
+        "size_bytes": stats.st_size,
+    }
+
+
+def save_iframe_config_snapshot_payload(client_id: Optional[str], snapshot_name: str, payload: dict) -> dict:
+    """覆寫/建立 snapshot 檔，回傳 metadata。"""
+
+    if not isinstance(payload, dict):
+        raise ValueError("payload 必須為 JSON 物件")
+    sanitized_client_id = _sanitize_client_id(client_id)
+    safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
+    config = IframeConfig(**payload)
+    _validate_images(config)
+
+    path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fp:
+        json.dump(config.model_dump(), fp, ensure_ascii=False, indent=2)
+
+    stats = path.stat()
+    return {
+        "client_id": sanitized_client_id,
+        "name": safe_snapshot_name,
+        "created_at": isoformat(stats.st_mtime),
+        "size_bytes": stats.st_size,
+    }
+
+
+def delete_iframe_config_snapshot(client_id: Optional[str], snapshot_name: str) -> None:
+    sanitized_client_id = _sanitize_client_id(client_id)
+    safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
+    path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
+    if not path.exists():
+        raise FileNotFoundError("snapshot 不存在")
+    path.unlink()
+
+
+def clone_iframe_config_snapshot(
+    source_client_id: Optional[str],
+    source_snapshot_name: str,
+    target_client_id: Optional[str],
+    target_snapshot_name: Optional[str] = None,
+) -> dict:
+    payload = load_iframe_config_snapshot_payload(source_client_id, source_snapshot_name)
+    target_name = target_snapshot_name or source_snapshot_name
+    return save_iframe_config_snapshot_payload(target_client_id, target_name, payload)
+
+
 def resolve_iframe_config(config: IframeConfig, client_id: Optional[str] = None) -> ResolvedIframeConfig:
     base_url = "/"
     panels: List[ResolvedPanel] = []

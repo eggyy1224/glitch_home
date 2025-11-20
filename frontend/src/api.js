@@ -43,16 +43,28 @@ export async function fetchCollageConfig(clientId = null) {
   return res.json();
 }
 
-export async function fetchIframeTimeline(timelineId, { signal } = {}) {
+export async function fetchIframeTimeline(timelineId, { signal, resolve = true } = {}) {
   if (!timelineId) {
     throw new Error("timelineId is required");
   }
-  const url = `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}`;
+  const params = resolve === false ? "?resolve=false" : "";
+  const url = `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}${params}`;
   const res = await fetch(url, { signal });
   if (!res.ok) {
     const detail = await res.text();
     throw new Error(`API ${res.status}: ${detail || "failed"}`);
   }
+  return res.json();
+}
+
+export async function listIframeTimelines(clientId = null) {
+  let url = `${API_BASE}/api/iframe-timelines`;
+  if (clientId) {
+    const qs = new URLSearchParams({ client: clientId });
+    url = `${url}?${qs.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
 
@@ -379,4 +391,96 @@ export async function generateMixTwo(params) {
     ...result,
     imageUrl,
   };
+}
+
+export async function createIframeTimeline(payload, { resolve = true, signal } = {}) {
+  const qs = resolve === false ? "?resolve=false" : "";
+  return postJson(`${API_BASE}/api/iframe-timelines${qs}`, payload, { signal });
+}
+
+export async function updateIframeTimeline(timelineId, payload, { resolve = true, signal } = {}) {
+  const qs = resolve === false ? "?resolve=false" : "";
+  const res = await fetch(`${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}${qs}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal,
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function deleteIframeTimeline(timelineId, { signal } = {}) {
+  const res = await fetch(`${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}`, {
+    method: "DELETE",
+    signal,
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function cloneIframeTimeline(timelineId, payload, { resolve = true, signal } = {}) {
+  const qs = resolve === false ? "?resolve=false" : "";
+  return postJson(
+    `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}/clone${qs}`,
+    payload,
+    { signal },
+  );
+}
+
+export async function listIframeSnapshots(clientId = null) {
+  let url = `${API_BASE}/api/iframe-config/snapshots`;
+  if (clientId) {
+    const qs = new URLSearchParams({ client: clientId });
+    url = `${url}?${qs.toString()}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function getIframeSnapshot(clientId, name, { signal } = {}) {
+  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function saveIframeSnapshot(clientId, name, payload, { signal } = {}) {
+  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal,
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function deleteIframeSnapshot(clientId, name, { signal } = {}) {
+  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
+  const res = await fetch(url, { method: "DELETE", signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function cloneIframeSnapshot(clientId, name, payload, { signal } = {}) {
+  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}/clone`;
+  return postJson(url, payload, { signal });
 }

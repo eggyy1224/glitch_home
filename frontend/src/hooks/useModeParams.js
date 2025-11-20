@@ -11,6 +11,7 @@ const KINSHIP_DATA_EXCLUDED = new Set([
   DisplayModes.IFRAME,
   DisplayModes.STATIC,
   DisplayModes.VIDEO,
+  DisplayModes.ADMIN,
 ]);
 
 export const readSearchParams = () => new URLSearchParams(window.location.search);

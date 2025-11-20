@@ -12,9 +12,11 @@ export const DisplayModes = Object.freeze({
   GENERATE: "generate",
   STATIC: "static",
   VIDEO: "video",
+  ADMIN: "admin",
 });
 
 const PARAM_SEQUENCE = [
+  { type: DisplayModes.ADMIN, key: "admin_mode" },
   { type: DisplayModes.IFRAME, key: "iframe_mode" },
   { type: DisplayModes.SLIDE, key: "slide_mode" },
   { type: DisplayModes.ORGANIC, key: "organic_mode" },

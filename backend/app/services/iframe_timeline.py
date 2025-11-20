@@ -101,6 +101,57 @@ def _timeline_path_for(timeline_id: str) -> Path:
     return _TIMELINE_DIR / f"{safe_id}.json"
 
 
+def save_iframe_timeline_definition(payload: dict, timeline_id: Optional[str] = None) -> IframeTimeline:
+    if not isinstance(payload, dict):
+        raise ValueError("payload 必須為 JSON 物件")
+
+    candidate_id = timeline_id or payload.get("id")
+    if not candidate_id:
+        raise ValueError("timeline id 必填")
+    safe_id = _sanitize_timeline_id(candidate_id)
+
+    payload = {**payload, "id": safe_id}
+    timeline = IframeTimeline.model_validate(payload)
+
+    path = _timeline_path_for(safe_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fp:
+        json.dump(timeline.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    return timeline
+
+
+def delete_iframe_timeline_definition(timeline_id: str) -> None:
+    path = _timeline_path_for(timeline_id)
+    if not path.exists():
+        raise FileNotFoundError("timeline 不存在")
+    path.unlink()
+
+
+def clone_iframe_timeline_definition(
+    source_id: str, new_id: str, target_client_id: Optional[str] = None
+) -> IframeTimeline:
+    source = load_iframe_timeline_definition(source_id)
+    payload = source.model_dump(mode="json")
+    payload["id"] = _sanitize_timeline_id(new_id)
+
+    if target_client_id:
+        target_clean = sanitize_client_id(target_client_id)
+        payload["clientId"] = target_clean
+        payload.pop("client_id", None)
+        steps = payload.get("steps") or []
+        for step in steps:
+            snapshot_value = step.get("snapshot")
+            if isinstance(snapshot_value, str) and "/" in snapshot_value:
+                _, snap_name = snapshot_value.split("/", 1)
+                step["snapshot"] = f"{target_clean}/{snap_name}"
+            step_client = step.get("clientId")
+            if step_client is None or step_client == source.client_id:
+                step["clientId"] = target_clean
+            step.pop("client_id", None)
+
+    return save_iframe_timeline_definition(payload)
+
+
 def _split_snapshot_reference(value: str, default_client: Optional[str]) -> Tuple[Optional[str], str]:
     cleaned = value.strip()
     if not cleaned:

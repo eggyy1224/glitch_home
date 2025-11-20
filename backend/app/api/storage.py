@@ -16,10 +16,16 @@ from ..services.collage_config import (
 from ..services.iframe_config import (
     config_payload_for_response as iframe_config_payload_for_response,
     load_iframe_config,
+    load_iframe_config_snapshot_payload,
+    load_iframe_config_snapshot_config,
     save_iframe_config,
     save_iframe_config_snapshot,
     list_iframe_config_snapshots,
     restore_iframe_config_snapshot,
+    save_iframe_config_snapshot_payload,
+    delete_iframe_config_snapshot,
+    clone_iframe_config_snapshot,
+    get_iframe_snapshot_metadata,
 )
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
@@ -113,6 +119,68 @@ async def api_restore_iframe_config(body: dict = Body(...)) -> dict:
     payload = iframe_config_payload_for_response(config, target_client_id)
     await realtime_broadcaster.broadcast_iframe_config(payload, target_client_id=target_client_id)
     return payload
+
+
+@router.get("/api/iframe-config/snapshots/{client_id}/{snapshot_name}")
+def api_get_iframe_config_snapshot(client_id: str, snapshot_name: str) -> dict:
+    try:
+        raw = load_iframe_config_snapshot_payload(client_id, snapshot_name)
+        metadata = get_iframe_snapshot_metadata(client_id, snapshot_name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    config = load_iframe_config_snapshot_config(client_id, snapshot_name)
+    payload = iframe_config_payload_for_response(config, client_id)
+    payload["snapshot"] = metadata
+    payload["raw"] = raw
+    return payload
+
+
+@router.put("/api/iframe-config/snapshots/{client_id}/{snapshot_name}")
+def api_put_iframe_config_snapshot(client_id: str, snapshot_name: str, body: dict = Body(...)) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    try:
+        metadata = save_iframe_config_snapshot_payload(client_id, snapshot_name, body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    config = load_iframe_config_snapshot_config(client_id, snapshot_name)
+    payload = iframe_config_payload_for_response(config, client_id)
+    payload["snapshot"] = metadata
+    return payload
+
+
+@router.delete("/api/iframe-config/snapshots/{client_id}/{snapshot_name}")
+def api_delete_iframe_config_snapshot(client_id: str, snapshot_name: str) -> dict:
+    try:
+        delete_iframe_config_snapshot(client_id, snapshot_name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "deleted", "client_id": client_id, "snapshot": snapshot_name}
+
+
+@router.post("/api/iframe-config/snapshots/{client_id}/{snapshot_name}/clone", status_code=201)
+def api_clone_iframe_config_snapshot(client_id: str, snapshot_name: str, body: dict = Body(...)) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    target_client = body.get("target_client") or body.get("targetClient") or client_id
+    target_name = body.get("target_name") or body.get("targetName") or snapshot_name
+    try:
+        metadata = clone_iframe_config_snapshot(client_id, snapshot_name, target_client, target_name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"snapshot": metadata}
 
 
 @router.get("/api/collage-config")

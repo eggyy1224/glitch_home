@@ -9,6 +9,7 @@ import GenerateMode from "../GenerateMode.jsx";
 import StaticMode from "../StaticMode.jsx";
 import VideoMode from "../VideoMode.jsx";
 import KinshipScene from "../ThreeKinshipScene.jsx";
+import AdminPanel from "../AdminPanel.jsx";
 import { DisplayModes } from "../hooks/useDisplayMode.js";
 
 export function createModeRenderMap({
@@ -35,6 +36,7 @@ export function createModeRenderMap({
   pendingPreset,
   topbarContent,
   screenshotContent,
+  clientId,
 }) {
   return {
     [DisplayModes.IFRAME]: {
@@ -126,6 +128,12 @@ export function createModeRenderMap({
       },
       beforeContent: topbarContent,
       afterContent: screenshotContent,
+    },
+    [DisplayModes.ADMIN]: {
+      component: AdminPanel,
+      componentProps: {
+        clientId,
+      },
     },
   };
 }

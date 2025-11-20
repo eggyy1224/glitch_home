@@ -18,7 +18,7 @@ node_modules/
 screen_shots
 
 backend/generated_sounds
-backend/metadata/narration_*.json
+backend/metadata
 
 frontend/dist
 

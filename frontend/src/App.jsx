@@ -335,6 +335,7 @@ export default function App() {
     pendingPreset,
     topbarContent,
     screenshotContent,
+    clientId,
   });
 
   const activeModeEntry = modeRenderMap[activeMode];
