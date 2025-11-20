@@ -1,0 +1,20 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?img=wc6725_A_highly_realistic_nighttime_flash_photograph_with_sligh_d5568810-f530-46a4-b24c-c31a1f33a543.png&static_mode=true&img_base=/nightwalk_assets/AI生成靜態影像/",
+      "params": {
+        "static_mode": "true",
+        "img_base": "/nightwalk_assets/AI生成靜態影像/"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

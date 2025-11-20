@@ -1,0 +1,30 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left",
+      "image": null,
+      "url": "/?img=wc6725_A_highly_realistic_nighttime_flash_photograph_with_sligh_d5568810-f530-46a4-b24c-c31a1f33a543.png&static_mode=true&img_base=/nightwalk_assets/AI生成靜態影像/",
+      "params": {
+        "static_mode": "true",
+        "img_base": "/nightwalk_assets/AI生成靜態影像/"
+      },
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
