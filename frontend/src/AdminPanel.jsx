@@ -21,6 +21,18 @@ const boxStyle = {
   background: "#fafafa",
 };
 
+const columnsStyle = {
+  display: "flex",
+  gap: 16,
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+};
+
+const columnStyle = {
+  flex: 1,
+  minWidth: 420,
+};
+
 const labelStyle = { display: "block", fontWeight: 600, marginBottom: 6 };
 
 function pretty(value) {
@@ -35,7 +47,7 @@ export default function AdminPanel({ clientId }) {
   const [snapshotClient, setSnapshotClient] = useState(clientId || "desktop");
   const [snapshotList, setSnapshotList] = useState([]);
   const [snapshotName, setSnapshotName] = useState("");
-  const [snapshotJson, setSnapshotJson] = useState("{\n  \"layout\": \"grid\",\n  \"gap\": 0,\n  \"columns\": 1,\n  \"panels\": [\n    { \"id\": \"p1\", \"url\": \"/\" }\n  ]\n}");
+  const [snapshotJson, setSnapshotJson] = useState("{\n  \"layout\": \"grid\",\n  \"gap\": 0,\n  \"columns\": 1,\n  \"panels\": [\n    { \"id\": \"p1\", \"url\": \/\" }\n  ]\n}");
   const [snapshotMessage, setSnapshotMessage] = useState("");
   const [snapshotCloneTarget, setSnapshotCloneTarget] = useState(clientId || "desktop2");
   const [snapshotCloneName, setSnapshotCloneName] = useState("");
@@ -189,10 +201,14 @@ export default function AdminPanel({ clientId }) {
       return;
     }
     try {
-      await cloneIframeTimeline(timelineId, {
-        new_id: timelineCloneId,
-        target_client_id: timelineCloneTarget || undefined,
-      }, { resolve: false });
+      await cloneIframeTimeline(
+        timelineId,
+        {
+          new_id: timelineCloneId,
+          target_client_id: timelineCloneTarget || undefined,
+        },
+        { resolve: false },
+      );
       setTimelineMessage(`已複製 timeline 為 ${timelineCloneId}`);
       await refreshTimelines();
     } catch (err) {
@@ -202,149 +218,165 @@ export default function AdminPanel({ clientId }) {
 
   return (
     <div style={{ padding: 16 }}>
-      <h2>Snapshot 管理</h2>
-      <div style={boxStyle}>
-        <div style={{ marginBottom: 8 }}>
-          <label style={labelStyle}>Client</label>
-          <input
-            type="text"
-            value={snapshotClient}
-            onChange={(e) => setSnapshotClient(e.target.value)}
-            style={{ width: "200px" }}
-          />
-          <button type="button" onClick={refreshSnapshots} style={{ marginLeft: 8 }}>
-            重新載入列表
-          </button>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ marginBottom: 6 }}>已有 snapshots：</div>
-            <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-              {snapshotList.length === 0 && <div>尚無 snapshot</div>}
-              {snapshotList.map((item) => (
-                <div key={item.name} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ flex: 1 }}>{item.name}</span>
-                  <button type="button" onClick={() => handleLoadSnapshot(item.name)} style={{ marginRight: 4 }}>
-                    查看
-                  </button>
-                  <button type="button" onClick={() => handleCloneSnapshot(item.name)} style={{ marginRight: 4 }}>
-                    複製
-                  </button>
-                  <button type="button" onClick={() => handleDeleteSnapshot(item.name)}>刪除</button>
+      <div style={columnsStyle}>
+        <div style={columnStyle}>
+          <h2>Snapshot 管理</h2>
+          <div style={boxStyle}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={labelStyle}>Client</label>
+              <input
+                type="text"
+                value={snapshotClient}
+                onChange={(e) => setSnapshotClient(e.target.value)}
+                style={{ width: "200px" }}
+              />
+              <button type="button" onClick={refreshSnapshots} style={{ marginLeft: 8 }}>
+                重新載入列表
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ marginBottom: 6 }}>已有 snapshots：</div>
+                <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
+                  {snapshotList.length === 0 && <div>尚無 snapshot</div>}
+                  {snapshotList.map((item) => (
+                    <div key={item.name} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ flex: 1 }}>{item.name}</span>
+                      <button type="button" onClick={() => handleLoadSnapshot(item.name)} style={{ marginRight: 4 }}>
+                        查看
+                      </button>
+                      <button type="button" onClick={() => handleCloneSnapshot(item.name)} style={{ marginRight: 4 }}>
+                        複製
+                      </button>
+                      <button type="button" onClick={() => handleDeleteSnapshot(item.name)}>刪除</button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ marginBottom: 4 }}>複製到：</div>
+                  <input
+                    type="text"
+                    placeholder="target client"
+                    value={snapshotCloneTarget}
+                    onChange={(e) => setSnapshotCloneTarget(e.target.value)}
+                    style={{ width: "160px", marginRight: 4 }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="target name (可空)"
+                    value={snapshotCloneName}
+                    onChange={(e) => setSnapshotCloneName(e.target.value)}
+                    style={{ width: "160px", marginRight: 4 }}
+                  />
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>Snapshot 名稱</label>
+                <input
+                  type="text"
+                  value={snapshotName}
+                  onChange={(e) => setSnapshotName(e.target.value)}
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <label style={labelStyle}>JSON</label>
+                <textarea
+                  style={{ width: "100%", height: 220, fontFamily: "monospace" }}
+                  value={snapshotJson}
+                  onChange={(e) => setSnapshotJson(e.target.value)}
+                />
+                <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                  <button type="button" onClick={handleSaveSnapshot}>儲存/覆寫</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSnapshotJson(pretty(_minimalConfigPayload(snapshotClient)));
+                      setSnapshotName("new_snapshot");
+                    }}
+                  >
+                    填入預設
+                  </button>
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: 8 }}>
-              <div style={{ marginBottom: 4 }}>複製到：</div>
-              <input
-                type="text"
-                placeholder="target client"
-                value={snapshotCloneTarget}
-                onChange={(e) => setSnapshotCloneTarget(e.target.value)}
-                style={{ width: "160px", marginRight: 4 }}
-              />
-              <input
-                type="text"
-                placeholder="target name (可空)"
-                value={snapshotCloneName}
-                onChange={(e) => setSnapshotCloneName(e.target.value)}
-                style={{ width: "160px", marginRight: 4 }}
-              />
-            </div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Snapshot 名稱</label>
-            <input
-              type="text"
-              value={snapshotName}
-              onChange={(e) => setSnapshotName(e.target.value)}
-              style={{ width: "100%", marginBottom: 8 }}
-            />
-            <label style={labelStyle}>JSON</label>
-            <textarea
-              style={{ width: "100%", height: 220, fontFamily: "monospace" }}
-              value={snapshotJson}
-              onChange={(e) => setSnapshotJson(e.target.value)}
-            />
-            <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-              <button type="button" onClick={handleSaveSnapshot}>儲存/覆寫</button>
-              <button type="button" onClick={() => { setSnapshotJson(pretty(_minimalConfigPayload(snapshotClient))); setSnapshotName("new_snapshot"); }}>填入預設</button>
-            </div>
+            {snapshotMessage && <div style={{ marginTop: 8, color: "#444" }}>{snapshotMessage}</div>}
           </div>
         </div>
-        {snapshotMessage && <div style={{ marginTop: 8, color: "#444" }}>{snapshotMessage}</div>}
-      </div>
 
-      <h2>Timeline 管理</h2>
-      <div style={boxStyle}>
-        <div style={{ marginBottom: 8 }}>
-          <label style={labelStyle}>篩選 client</label>
-          <input
-            type="text"
-            value={timelineClientFilter}
-            onChange={(e) => setTimelineClientFilter(e.target.value)}
-            placeholder="空白=全部"
-            style={{ width: "200px", marginRight: 6 }}
-          />
-          <button type="button" onClick={refreshTimelines}>重新載入列表</button>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ marginBottom: 6 }}>Timeline 列表：</div>
-            <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-              {timelineList.length === 0 && <div>尚無 timeline</div>}
-              {timelineList.map((item) => (
-                <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ flex: 1 }}>{item.id} ({item.client_id || "n/a"})</span>
-                  <button type="button" onClick={() => handleLoadTimeline(item.id)} style={{ marginRight: 4 }}>
-                    載入
-                  </button>
-                  <button type="button" onClick={() => handleDeleteTimeline(item.id)}>刪除</button>
+        <div style={columnStyle}>
+          <h2>Timeline 管理</h2>
+          <div style={boxStyle}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={labelStyle}>篩選 client</label>
+              <input
+                type="text"
+                value={timelineClientFilter}
+                onChange={(e) => setTimelineClientFilter(e.target.value)}
+                placeholder="空白=全部"
+                style={{ width: "200px", marginRight: 6 }}
+              />
+              <button type="button" onClick={refreshTimelines}>重新載入列表</button>
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ marginBottom: 6 }}>Timeline 列表：</div>
+                <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
+                  {timelineList.length === 0 && <div>尚無 timeline</div>}
+                  {timelineList.map((item) => (
+                    <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ flex: 1 }}>{item.id} ({item.client_id || "n/a"})</span>
+                      <button type="button" onClick={() => handleLoadTimeline(item.id)} style={{ marginRight: 4 }}>
+                        載入
+                      </button>
+                      <button type="button" onClick={() => handleDeleteTimeline(item.id)}>刪除</button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ marginBottom: 4 }}>複製：</div>
+                  <input
+                    type="text"
+                    placeholder="new id"
+                    value={timelineCloneId}
+                    onChange={(e) => setTimelineCloneId(e.target.value)}
+                    style={{ width: "140px", marginRight: 4 }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="target client (可空)"
+                    value={timelineCloneTarget}
+                    onChange={(e) => setTimelineCloneTarget(e.target.value)}
+                    style={{ width: "160px", marginRight: 4 }}
+                  />
+                  <button type="button" onClick={handleCloneTimeline}>複製 timeline</button>
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>當前 timeline id</label>
+                <input
+                  type="text"
+                  value={timelineId}
+                  onChange={(e) => setTimelineId(e.target.value)}
+                  placeholder="新建請輸入 id 或在 JSON 設定"
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <label style={labelStyle}>JSON</label>
+                <textarea
+                  style={{ width: "100%", height: 260, fontFamily: "monospace" }}
+                  value={timelineJson}
+                  onChange={(e) => setTimelineJson(e.target.value)}
+                />
+                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => handleSaveTimeline("create")}>新增</button>
+                  <button type="button" onClick={() => handleSaveTimeline("update")}>覆寫</button>
+                  <button type="button" onClick={() => setTimelineJson(pretty(_defaultTimelinePayload(clientId || "desktop")))}>
+                    填入預設
+                  </button>
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: 8 }}>
-              <div style={{ marginBottom: 4 }}>複製：</div>
-              <input
-                type="text"
-                placeholder="new id"
-                value={timelineCloneId}
-                onChange={(e) => setTimelineCloneId(e.target.value)}
-                style={{ width: "140px", marginRight: 4 }}
-              />
-              <input
-                type="text"
-                placeholder="target client (可空)"
-                value={timelineCloneTarget}
-                onChange={(e) => setTimelineCloneTarget(e.target.value)}
-                style={{ width: "160px", marginRight: 4 }}
-              />
-              <button type="button" onClick={handleCloneTimeline}>複製 timeline</button>
-            </div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>當前 timeline id</label>
-            <input
-              type="text"
-              value={timelineId}
-              onChange={(e) => setTimelineId(e.target.value)}
-              placeholder="新建請輸入 id 或在 JSON 設定"
-              style={{ width: "100%", marginBottom: 8 }}
-            />
-            <label style={labelStyle}>JSON</label>
-            <textarea
-              style={{ width: "100%", height: 260, fontFamily: "monospace" }}
-              value={timelineJson}
-              onChange={(e) => setTimelineJson(e.target.value)}
-            />
-            <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" onClick={() => handleSaveTimeline("create")}>新增</button>
-              <button type="button" onClick={() => handleSaveTimeline("update")}>覆寫</button>
-              <button type="button" onClick={() => setTimelineJson(pretty(_defaultTimelinePayload(clientId || "desktop")))}>填入預設</button>
-            </div>
+            {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
           </div>
         </div>
-        {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
       </div>
     </div>
   );
