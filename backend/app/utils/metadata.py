@@ -3,21 +3,21 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from ..config import settings
 
 PathLike = Union[str, os.PathLike[str]]
 
 
-def write_metadata(data: Dict[str, Any], base_name: str) -> str:
-    base_dir = Path(settings.metadata_dir).resolve()
-    base_dir.mkdir(parents=True, exist_ok=True)
+def write_metadata(data: Dict[str, Any], base_name: str, base_dir: Optional[PathLike] = None) -> str:
+    base_dir_path = Path(base_dir or settings.metadata_dir).resolve()
+    base_dir_path.mkdir(parents=True, exist_ok=True)
 
-    target_path = base_dir / f"{base_name}.json"
+    target_path = base_dir_path / f"{base_name}.json"
     resolved = target_path.resolve()
 
-    if base_dir not in resolved.parents and resolved != base_dir:
+    if base_dir_path not in resolved.parents and resolved != base_dir_path:
         raise ValueError("非法 metadata 路徑：越界目錄")
 
     resolved.parent.mkdir(parents=True, exist_ok=True)

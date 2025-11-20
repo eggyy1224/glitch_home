@@ -22,6 +22,7 @@ pip install -r requirements.txt
 - `GENES_POOL_DIR`（單一資料夾，舊設定）
 - `OFFSPRING_DIR`（預設 `backend/offspring_images`）
 - `METADATA_DIR`（預設 `backend/metadata`）
+- `NARATION_METADATA_DIR`（預設 `backend/metadata/naration`，用於 TTS metadata 存放）
 - `FIXED_PROMPT`（可自訂融合風格）
 - `IMAGE_SIZE`（預設 `1024`，送進模型前會把每張輸入圖等比例縮到最長邊不超過此值，降低因輸入過大導致的偶發失敗）
 - `OPENAI_TTS_MODEL`（預設 `gpt-4o-mini-tts`）

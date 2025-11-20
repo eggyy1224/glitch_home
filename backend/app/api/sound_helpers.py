@@ -33,7 +33,11 @@ def list_sound_files(with_metadata: bool) -> list[dict]:
         return []
 
     metadata_dir = Path(settings.metadata_dir)
-    naration_dir = metadata_dir / "naration"
+    naration_bases = [Path(settings.naration_metadata_dir)]
+
+    legacy_naration_dir = metadata_dir / "naration"
+    if legacy_naration_dir not in naration_bases:
+        naration_bases.append(legacy_naration_dir)
     files: list[dict] = []
     for path in sorted(directory.iterdir()):
         if not path.is_file() or path.suffix.lower() not in ALLOWED_SOUND_EXTS:
@@ -46,12 +50,20 @@ def list_sound_files(with_metadata: bool) -> list[dict]:
             "modified_at": _format_iso(stat.st_mtime),
         }
         if with_metadata:
-            meta_candidates = [
-                naration_dir / f"{path.stem}.json",
-                naration_dir / f"{path.name}.json",
-                metadata_dir / f"{path.stem}.json",
-                metadata_dir / f"{path.name}.json",
-            ]
+            seen: set[Path] = set()
+            meta_candidates: list[Path] = []
+
+            for base in naration_bases:
+                for cand in [base / f"{path.stem}.json", base / f"{path.name}.json"]:
+                    if cand not in seen:
+                        seen.add(cand)
+                        meta_candidates.append(cand)
+
+            for cand in [metadata_dir / f"{path.stem}.json", metadata_dir / f"{path.name}.json"]:
+                if cand not in seen:
+                    seen.add(cand)
+                    meta_candidates.append(cand)
+
             for meta_path in meta_candidates:
                 if not meta_path.exists():
                     continue
