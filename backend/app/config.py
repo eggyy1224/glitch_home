@@ -24,7 +24,7 @@ _load_dotenv_if_present()
 class Settings:
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
     elevenlabs_api_key: Optional[str] = os.getenv("ELEVENLABS_API_KEY")
-    model_name: str = os.getenv("MODEL_NAME", "gemini-2.5-flash-image-preview")
+    model_name: str = os.getenv("MODEL_NAME", "gemini-3-pro-image-preview")
     # Backward-compatible single dir
     genes_pool_dir: str = os.getenv("GENES_POOL_DIR", "genes_pool")
     # New: multiple dirs, comma-separated

@@ -17,7 +17,7 @@ pip install -r requirements.txt
 - `GEMINI_API_KEY` 或 `GOOGLE_API_KEY`
 - `OPENAI_API_KEY`（用於 embeddings、圖像分析、TTS）
 - `ELEVENLABS_API_KEY`（若使用音效功能）
-- `MODEL_NAME`（預設 `gemini-2.5-flash-image-preview`）
+- `MODEL_NAME`（預設 `gemini-3-pro-image-preview`）
 - `GENES_POOL_DIRS`（多資料夾，逗號分隔；若設定此值則優先於 `GENES_POOL_DIR`）
 - `GENES_POOL_DIR`（單一資料夾，舊設定）
 - `OFFSPRING_DIR`（預設 `backend/offspring_images`）
@@ -76,7 +76,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
     "output_image_path": "backend/offspring_images/offspring_20250101_120000_123.png",
     "metadata_path": "backend/metadata/offspring_20250101_120000_123.json",
     "parents": ["a.png", "b.jpg", "c.jpg"],
-    "model_name": "gemini-2.5-flash-image-preview",
+    "model_name": "gemini-3-pro-image-preview",
     "output_format": "png",
     "width": 1024,
     "height": 768

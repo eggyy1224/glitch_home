@@ -549,7 +549,7 @@ def test_generate_mix_two_with_body(mock_generate: MagicMock, client: TestClient
         "output_image_path": "/generated_images/offspring1.png",
         "metadata_path": "/metadata/offspring1.json",
         "parents": ["parent1.png", "parent2.png"],
-        "model_name": "gemini-2.5-flash-image-preview",
+        "model_name": "gemini-3-pro-image-preview",
     }
     mock_generate.return_value = expected
 

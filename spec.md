@@ -106,7 +106,7 @@
 - **支援格式**: PNG, JPG, JPEG
 
 #### 1.2 圖像生成參數
-- **模型**: `gemini-2.5-flash-image-preview`
+- **模型**: `gemini-3-pro-image-preview`
 - **輸入處理**: 自動 EXIF 校正、RGB 轉換、縮放至 1024px（可配置）
 - **Prompt**: 可自訂，預設為大畫幅相機風格的真實感影像合成指令
 - **輸出選項**:
@@ -135,7 +135,7 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
 {
   "parents": ["offspring_20251020_120000_123.png", "offspring_20251021_150000_456.png"],
   "parents_full_paths": ["/absolute/path/to/parent1.png", "/absolute/path/to/parent2.png"],
-  "model_name": "gemini-2.5-flash-image-preview",
+  "model_name": "gemini-3-pro-image-preview",
   "prompt": "...",
   "strength": 0.6,
   "created_at": "2025-10-23T14:35:27Z",
@@ -724,7 +724,7 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
   "output_image_path": "/abs/path/to/offspring_xxx.png",
   "metadata_path": "/abs/path/to/metadata/offspring_xxx.json",
   "parents": ["offspring_20251020_100000_123.png", "parent2.jpg"],
-  "model_name": "gemini-2.5-flash-image-preview",
+  "model_name": "gemini-3-pro-image-preview",
   "output_format": "png",
   "width": 1024,
   "height": 768
@@ -1332,7 +1332,7 @@ GENES_POOL_DIR="genes_pool"
 
 ### 第三方服務
 - **Google Gemini API**: 圖像生成
-  - 模型: `gemini-2.5-flash-image-preview`
+  - 模型: `gemini-3-pro-image-preview`
   - 需要: `GEMINI_API_KEY`
 - **OpenAI API**: 
   - Embedding: `text-embedding-3-small`
@@ -1361,7 +1361,7 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key_here  # 若使用音效功能
 #### 可選變數
 ```bash
 # 模型設定
-MODEL_NAME=gemini-2.5-flash-image-preview
+MODEL_NAME=gemini-3-pro-image-preview
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 OPENAI_VISION_MODEL=gpt-4o-mini
 OPENAI_TTS_MODEL=gpt-4o-mini-tts
