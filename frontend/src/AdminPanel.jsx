@@ -35,6 +35,72 @@ const columnStyle = {
 };
 
 const labelStyle = { display: "block", fontWeight: 600, marginBottom: 6 };
+const tabRowStyle = { display: "flex", gap: 8, marginBottom: 12 };
+const tabButtonStyle = {
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid #ccc",
+  background: "#111",
+  color: "#f5f5f5",
+  cursor: "pointer",
+  fontWeight: 600,
+};
+const activeTabButtonStyle = {
+  ...tabButtonStyle,
+  background: "#fff",
+  color: "#111",
+  borderColor: "#333",
+};
+const previewContainerStyle = {
+  marginTop: 12,
+  background: "#000",
+  borderRadius: 10,
+  padding: 12,
+  position: "relative",
+};
+const previewTitleStyle = { marginBottom: 6, fontWeight: 700, color: "#ddd" };
+const snapshotPreviewIframeStyle = {
+  width: "100%",
+  aspectRatio: "16 / 9",
+  minHeight: 400,
+  border: "1px solid #333",
+  borderRadius: 8,
+  background: "#111",
+};
+const timelinePreviewGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 12,
+  marginTop: 12,
+};
+const timelinePreviewIframeStyle = {
+  width: "100%",
+  aspectRatio: "16 / 9",
+  minHeight: 340,
+  border: "1px solid #333",
+  borderRadius: 8,
+  background: "#111",
+};
+const resizerHandleStyle = {
+  position: "absolute",
+  right: 8,
+  bottom: 8,
+  width: 14,
+  height: 14,
+  borderRadius: 4,
+  background: "#888",
+  border: "1px solid #555",
+  cursor: "nwse-resize",
+  boxShadow: "0 0 0 2px #000",
+};
+const resizerHitboxStyle = {
+  position: "absolute",
+  right: 0,
+  bottom: 0,
+  width: 32,
+  height: 32,
+  cursor: "nwse-resize",
+};
 
 function pretty(value) {
   try {
@@ -45,6 +111,7 @@ function pretty(value) {
 }
 
 export default function AdminPanel({ clientId }) {
+  const [activeTab, setActiveTab] = useState("snapshot");
   const [snapshotClient, setSnapshotClient] = useState(clientId || "desktop");
   const [snapshotList, setSnapshotList] = useState([]);
   const [snapshotName, setSnapshotName] = useState("");
@@ -55,6 +122,13 @@ export default function AdminPanel({ clientId }) {
   const [snapshotCloneTarget, setSnapshotCloneTarget] = useState(clientId || "desktop2");
   const [snapshotCloneName, setSnapshotCloneName] = useState("");
   const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
+  const defaultPreviewWidth = useMemo(() => {
+    if (typeof window !== "undefined") {
+      return Math.min(window.innerWidth - 160, 1400);
+    }
+    return 960;
+  }, []);
+  const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState(defaultPreviewWidth);
 
   const [timelineList, setTimelineList] = useState([]);
   const [timelineClientFilter, setTimelineClientFilter] = useState("");
@@ -77,8 +151,42 @@ export default function AdminPanel({ clientId }) {
   const [timelinePreviewError, setTimelinePreviewError] = useState(null);
   const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);
   const [timelinePlayError, setTimelinePlayError] = useState(null);
+  const [timelinePreviewWidth, setTimelinePreviewWidth] = useState(defaultPreviewWidth);
 
   const resolvedClientLabel = useMemo(() => snapshotClient || "(未設定)", [snapshotClient]);
+  const snapshotFrameHeight = useMemo(
+    () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
+    [snapshotPreviewWidth],
+  );
+  const timelineFrameHeight = useMemo(() => {
+    const colWidth = (timelinePreviewWidth - 12) / 2;
+    const width = colWidth > 0 ? colWidth : timelinePreviewWidth / 2;
+    return Math.max(320, Math.round((width * 9) / 16));
+  }, [timelinePreviewWidth]);
+  const clampPreviewWidth = (width) => {
+    const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
+    return Math.min(Math.max(width, 560), Math.min(max, 1800));
+  };
+  const startResize = (event, target) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = target === "snapshot" ? snapshotPreviewWidth : timelinePreviewWidth;
+    const onMove = (e) => {
+      const delta = e.clientX - startX;
+      const next = clampPreviewWidth(startWidth + delta);
+      if (target === "snapshot") {
+        setSnapshotPreviewWidth(next);
+      } else {
+        setTimelinePreviewWidth(next);
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   const refreshSnapshots = async () => {
     try {
@@ -293,217 +401,243 @@ export default function AdminPanel({ clientId }) {
 
   return (
     <div style={{ padding: 16 }}>
-      <div style={columnsStyle}>
-        <div style={columnStyle}>
-          <h2>Snapshot 管理</h2>
-          <div style={boxStyle}>
-            <div style={{ marginBottom: 8 }}>
-              <label style={labelStyle}>Client</label>
-              <input
-                type="text"
-                value={snapshotClient}
-                onChange={(e) => setSnapshotClient(e.target.value)}
-                style={{ width: "200px" }}
-              />
-              <button type="button" onClick={refreshSnapshots} style={{ marginLeft: 8 }}>
-                重新載入列表
-              </button>
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ marginBottom: 6 }}>已有 snapshots：</div>
-                <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-                  {snapshotList.length === 0 && <div>尚無 snapshot</div>}
-                  {snapshotList.map((item) => (
-                    <div key={item.name} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ flex: 1 }}>{item.name}</span>
-                      <button type="button" onClick={() => handleLoadSnapshot(item.name)} style={{ marginRight: 4 }}>
-                        查看
-                      </button>
-                      <button type="button" onClick={() => handleCloneSnapshot(item.name)} style={{ marginRight: 4 }}>
-                        複製
-                      </button>
-                      <button type="button" onClick={() => handleDeleteSnapshot(item.name)}>刪除</button>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ marginBottom: 4 }}>複製到：</div>
-                  <input
-                    type="text"
-                    placeholder="target client"
-                    value={snapshotCloneTarget}
-                    onChange={(e) => setSnapshotCloneTarget(e.target.value)}
-                    style={{ width: "160px", marginRight: 4 }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="target name (可空)"
-                    value={snapshotCloneName}
-                    onChange={(e) => setSnapshotCloneName(e.target.value)}
-                    style={{ width: "160px", marginRight: 4 }}
-                  />
-                </div>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Snapshot 名稱</label>
-                <input
-                  type="text"
-                  value={snapshotName}
-                  onChange={(e) => setSnapshotName(e.target.value)}
-                  style={{ width: "100%", marginBottom: 8 }}
-                />
-                <label style={labelStyle}>JSON</label>
-                <textarea
-                  style={{ width: "100%", height: 220, fontFamily: "monospace" }}
-                  value={snapshotJson}
-                  onChange={(e) => setSnapshotJson(e.target.value)}
-                />
-                <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                  <button type="button" onClick={handleSaveSnapshot}>儲存/覆寫</button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSnapshotJson(pretty(_minimalConfigPayload(snapshotClient)));
-                      setSnapshotName("new_snapshot");
-                    }}
-                  >
-                    填入預設
-                  </button>
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ marginBottom: 6, fontWeight: 600 }}>預覽</div>
-                  {snapshotPreviewSrc ? (
-                    <iframe
-                      title="snapshot-preview"
-                      src={snapshotPreviewSrc}
-                      style={{ width: "100%", height: 240, border: "1px solid #ccc", borderRadius: 6 }}
-                      sandbox="allow-scripts allow-same-origin"
-                    />
-                  ) : (
-                    <div style={{ color: "#888" }}>無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image</div>
-                  )}
-                </div>
-              </div>
-            </div>
-            {snapshotMessage && <div style={{ marginTop: 8, color: "#444" }}>{snapshotMessage}</div>}
-          </div>
-        </div>
-
-        <div style={columnStyle}>
-          <h2>Timeline 管理</h2>
-          <div style={boxStyle}>
-            <div style={{ marginBottom: 8 }}>
-              <label style={labelStyle}>篩選 client</label>
-              <input
-                type="text"
-                value={timelineClientFilter}
-                onChange={(e) => setTimelineClientFilter(e.target.value)}
-                placeholder="空白=全部"
-                style={{ width: "200px", marginRight: 6 }}
-              />
-              <button type="button" onClick={refreshTimelines}>重新載入列表</button>
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ marginBottom: 6 }}>Timeline 列表：</div>
-                <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-                  {timelineList.length === 0 && <div>尚無 timeline</div>}
-                  {timelineList.map((item) => (
-                    <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ flex: 1 }}>{item.id} ({item.client_id || "n/a"})</span>
-                      <button type="button" onClick={() => handleLoadTimeline(item.id)} style={{ marginRight: 4 }}>
-                        載入
-                      </button>
-                      <button type="button" onClick={() => handleDeleteTimeline(item.id)}>刪除</button>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ marginBottom: 4 }}>複製：</div>
-                  <input
-                    type="text"
-                    placeholder="new id"
-                    value={timelineCloneId}
-                    onChange={(e) => setTimelineCloneId(e.target.value)}
-                    style={{ width: "140px", marginRight: 4 }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="target client (可空)"
-                    value={timelineCloneTarget}
-                    onChange={(e) => setTimelineCloneTarget(e.target.value)}
-                    style={{ width: "160px", marginRight: 4 }}
-                  />
-                  <button type="button" onClick={handleCloneTimeline}>複製 timeline</button>
-                </div>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>當前 timeline id</label>
-                <input
-                  type="text"
-                  value={timelineId}
-                  onChange={(e) => setTimelineId(e.target.value)}
-                  placeholder="新建請輸入 id 或在 JSON 設定"
-                  style={{ width: "100%", marginBottom: 8 }}
-                />
-                <label style={labelStyle}>JSON</label>
-                <textarea
-                  style={{ width: "100%", height: 260, fontFamily: "monospace" }}
-                  value={timelineJson}
-                  onChange={(e) => setTimelineJson(e.target.value)}
-                />
-                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button type="button" onClick={() => handleSaveTimeline("create")}>新增</button>
-                  <button type="button" onClick={() => handleSaveTimeline("update")}>覆寫</button>
-                  <button type="button" onClick={() => setTimelineJson(pretty(_defaultTimelinePayload(clientId || "desktop")))}>
-                    填入預設
-                  </button>
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ marginBottom: 6, fontWeight: 600 }}>預覽（取第一段 snapshot）</div>
-                  {timelinePreviewSrc ? (
-                    <iframe
-                      title="timeline-preview"
-                      src={timelinePreviewSrc}
-                      style={{ width: "100%", height: 240, border: "1px solid #ccc", borderRadius: 6 }}
-                      sandbox="allow-scripts allow-same-origin"
-                    />
-                  ) : (
-                    <div style={{ color: "#888" }}>
-                      {timelinePreviewError || "無法產生預覽，請確認 steps 有 snapshot，且對應 snapshot 有 panel.url 或 image"}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontWeight: 600 }}>播放預覽（整段 timeline）</div>
-                    <button type="button" onClick={handlePlayTimelinePreview}>播放</button>
-                    {timelinePlayError && <span style={{ color: "#c00" }}>{timelinePlayError}</span>}
-                  </div>
-                  {timelinePlaySrc ? (
-                    <iframe
-                      key={timelinePlaySrc}
-                      title="timeline-play-preview"
-                      src={timelinePlaySrc}
-                      style={{ width: "100%", height: 260, border: "1px solid #ccc", borderRadius: 6, marginTop: 6 }}
-                      sandbox="allow-scripts allow-same-origin"
-                    />
-                  ) : (
-                    <div style={{ color: "#888", marginTop: 6 }}>
-                      點擊「播放」會以 iframe_mode 在下方預覽完整 timeline（需先儲存服務端資料）
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
-          </div>
-        </div>
+      <div style={tabRowStyle}>
+        <button
+          type="button"
+          style={activeTab === "snapshot" ? activeTabButtonStyle : tabButtonStyle}
+          onClick={() => setActiveTab("snapshot")}
+        >
+          Snapshot 管理
+        </button>
+        <button
+          type="button"
+          style={activeTab === "timeline" ? activeTabButtonStyle : tabButtonStyle}
+          onClick={() => setActiveTab("timeline")}
+        >
+          Timeline 管理
+        </button>
       </div>
+
+      {activeTab === "snapshot" && (
+        <div style={boxStyle}>
+          <div style={{ marginBottom: 8 }}>
+            <label style={labelStyle}>Client</label>
+            <input
+              type="text"
+              value={snapshotClient}
+              onChange={(e) => setSnapshotClient(e.target.value)}
+              style={{ width: "200px" }}
+            />
+            <button type="button" onClick={refreshSnapshots} style={{ marginLeft: 8 }}>
+              重新載入列表
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ marginBottom: 6 }}>已有 snapshots：</div>
+              <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
+                {snapshotList.length === 0 && <div>尚無 snapshot</div>}
+                {snapshotList.map((item) => (
+                  <div key={item.name} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ flex: 1 }}>{item.name}</span>
+                    <button type="button" onClick={() => handleLoadSnapshot(item.name)} style={{ marginRight: 4 }}>
+                      查看
+                    </button>
+                    <button type="button" onClick={() => handleCloneSnapshot(item.name)} style={{ marginRight: 4 }}>
+                      複製
+                    </button>
+                    <button type="button" onClick={() => handleDeleteSnapshot(item.name)}>刪除</button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ marginBottom: 4 }}>複製到：</div>
+                <input
+                  type="text"
+                  placeholder="target client"
+                  value={snapshotCloneTarget}
+                  onChange={(e) => setSnapshotCloneTarget(e.target.value)}
+                  style={{ width: "160px", marginRight: 4 }}
+                />
+                <input
+                  type="text"
+                  placeholder="target name (可空)"
+                  value={snapshotCloneName}
+                  onChange={(e) => setSnapshotCloneName(e.target.value)}
+                  style={{ width: "160px", marginRight: 4 }}
+                />
+              </div>
+            </div>
+            <div style={{ flex: 1.2 }}>
+              <label style={labelStyle}>Snapshot 名稱</label>
+              <input
+                type="text"
+                value={snapshotName}
+                onChange={(e) => setSnapshotName(e.target.value)}
+                style={{ width: "100%", marginBottom: 8 }}
+              />
+              <label style={labelStyle}>JSON</label>
+              <textarea
+                style={{ width: "100%", height: 260, fontFamily: "monospace" }}
+                value={snapshotJson}
+                onChange={(e) => setSnapshotJson(e.target.value)}
+              />
+              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" onClick={handleSaveSnapshot}>儲存/覆寫</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSnapshotJson(pretty(_minimalConfigPayload(snapshotClient)));
+                    setSnapshotName("new_snapshot");
+                  }}
+                >
+                  填入預設
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ ...previewContainerStyle, width: snapshotPreviewWidth, maxWidth: "100%" }}>
+            <div style={previewTitleStyle}>預覽</div>
+            {snapshotPreviewSrc ? (
+              <iframe
+                title="snapshot-preview"
+                src={snapshotPreviewSrc}
+                style={{ ...snapshotPreviewIframeStyle, height: snapshotFrameHeight }}
+                sandbox="allow-scripts allow-same-origin"
+              />
+            ) : (
+              <div style={{ color: "#888" }}>無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image</div>
+            )}
+            <div style={resizerHitboxStyle} onMouseDown={(e) => startResize(e, "snapshot")}>
+              <div style={resizerHandleStyle} />
+            </div>
+          </div>
+
+          {snapshotMessage && <div style={{ marginTop: 8, color: "#444" }}>{snapshotMessage}</div>}
+        </div>
+      )}
+
+      {activeTab === "timeline" && (
+        <div style={boxStyle}>
+          <div style={{ marginBottom: 8 }}>
+            <label style={labelStyle}>篩選 client</label>
+            <input
+              type="text"
+              value={timelineClientFilter}
+              onChange={(e) => setTimelineClientFilter(e.target.value)}
+              placeholder="空白=全部"
+              style={{ width: "200px", marginRight: 6 }}
+            />
+            <button type="button" onClick={refreshTimelines}>重新載入列表</button>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ marginBottom: 6 }}>Timeline 列表：</div>
+              <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
+                {timelineList.length === 0 && <div>尚無 timeline</div>}
+                {timelineList.map((item) => (
+                  <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ flex: 1 }}>{item.id} ({item.client_id || "n/a"})</span>
+                    <button type="button" onClick={() => handleLoadTimeline(item.id)} style={{ marginRight: 4 }}>
+                      載入
+                    </button>
+                    <button type="button" onClick={() => handleDeleteTimeline(item.id)}>刪除</button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ marginBottom: 4 }}>複製：</div>
+                <input
+                  type="text"
+                  placeholder="new id"
+                  value={timelineCloneId}
+                  onChange={(e) => setTimelineCloneId(e.target.value)}
+                  style={{ width: "140px", marginRight: 4 }}
+                />
+                <input
+                  type="text"
+                  placeholder="target client (可空)"
+                  value={timelineCloneTarget}
+                  onChange={(e) => setTimelineCloneTarget(e.target.value)}
+                  style={{ width: "160px", marginRight: 4 }}
+                />
+                <button type="button" onClick={handleCloneTimeline}>複製 timeline</button>
+              </div>
+            </div>
+            <div style={{ flex: 1.2 }}>
+              <label style={labelStyle}>當前 timeline id</label>
+              <input
+                type="text"
+                value={timelineId}
+                onChange={(e) => setTimelineId(e.target.value)}
+                placeholder="新建請輸入 id 或在 JSON 設定"
+                style={{ width: "100%", marginBottom: 8 }}
+              />
+              <label style={labelStyle}>JSON</label>
+              <textarea
+                style={{ width: "100%", height: 260, fontFamily: "monospace" }}
+                value={timelineJson}
+                onChange={(e) => setTimelineJson(e.target.value)}
+              />
+              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" onClick={() => handleSaveTimeline("create")}>新增</button>
+                <button type="button" onClick={() => handleSaveTimeline("update")}>覆寫</button>
+                <button type="button" onClick={() => setTimelineJson(pretty(_defaultTimelinePayload(clientId || "desktop")))}>
+                  填入預設
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ ...previewContainerStyle, width: timelinePreviewWidth, maxWidth: "100%" }}>
+            <div style={{ ...previewTitleStyle, marginBottom: 10 }}>Timeline 預覽</div>
+            <div style={timelinePreviewGridStyle}>
+              <div>
+                <div style={{ ...previewTitleStyle, marginBottom: 6 }}>取第一段 snapshot</div>
+                {timelinePreviewSrc ? (
+                  <iframe
+                    title="timeline-preview"
+                    src={timelinePreviewSrc}
+                    style={{ ...timelinePreviewIframeStyle, height: timelineFrameHeight }}
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                ) : (
+                  <div style={{ color: "#888" }}>
+                    {timelinePreviewError || "無法產生預覽，請確認 steps 有 snapshot，且對應 snapshot 有 panel.url 或 image"}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={previewTitleStyle}>播放預覽（整段 timeline）</div>
+                  <button type="button" onClick={handlePlayTimelinePreview}>播放</button>
+                  {timelinePlayError && <span style={{ color: "#c00" }}>{timelinePlayError}</span>}
+                </div>
+                {timelinePlaySrc ? (
+                  <iframe
+                    key={timelinePlaySrc}
+                    title="timeline-play-preview"
+                    src={timelinePlaySrc}
+                    style={{ ...timelinePreviewIframeStyle, height: timelineFrameHeight }}
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                ) : (
+                  <div style={{ color: "#888" }}>
+                    點擊「播放」會以 iframe_mode 在下方預覽完整 timeline（需先儲存服務端資料）
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={resizerHitboxStyle} onMouseDown={(e) => startResize(e, "timeline")}>
+              <div style={resizerHandleStyle} />
+            </div>
+          </div>
+
+          {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
+        </div>
+      )}
     </div>
   );
 }
