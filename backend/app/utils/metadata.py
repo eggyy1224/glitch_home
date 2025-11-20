@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Union
 
 from ..config import settings
@@ -10,11 +11,19 @@ PathLike = Union[str, os.PathLike[str]]
 
 
 def write_metadata(data: Dict[str, Any], base_name: str) -> str:
-    os.makedirs(settings.metadata_dir, exist_ok=True)
-    path = os.path.join(settings.metadata_dir, f"{base_name}.json")
-    with open(path, "w", encoding="utf-8") as f:
+    base_dir = Path(settings.metadata_dir).resolve()
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    target_path = base_dir / f"{base_name}.json"
+    resolved = target_path.resolve()
+
+    if base_dir not in resolved.parents and resolved != base_dir:
+        raise ValueError("非法 metadata 路徑：越界目錄")
+
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    with open(resolved, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    return path
+    return str(resolved)
 
 
 def utc_now_iso_z() -> str:
@@ -29,4 +38,3 @@ def compute_sha256(path: PathLike, chunk_size: int = 65536) -> str:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
-

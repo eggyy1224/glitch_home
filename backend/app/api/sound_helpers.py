@@ -33,6 +33,7 @@ def list_sound_files(with_metadata: bool) -> list[dict]:
         return []
 
     metadata_dir = Path(settings.metadata_dir)
+    naration_dir = metadata_dir / "naration"
     files: list[dict] = []
     for path in sorted(directory.iterdir()):
         if not path.is_file() or path.suffix.lower() not in ALLOWED_SOUND_EXTS:
@@ -46,6 +47,8 @@ def list_sound_files(with_metadata: bool) -> list[dict]:
         }
         if with_metadata:
             meta_candidates = [
+                naration_dir / f"{path.stem}.json",
+                naration_dir / f"{path.name}.json",
                 metadata_dir / f"{path.stem}.json",
                 metadata_dir / f"{path.name}.json",
             ]

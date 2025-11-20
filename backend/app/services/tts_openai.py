@@ -219,7 +219,7 @@ def synthesize_speech_openai(
         "size_bytes": stat.st_size,
         "checksum_sha256": compute_sha256(output_path),
     }
-    metadata_path = write_metadata(metadata, base_name=output_path.name)
+    metadata_path = write_metadata(metadata, base_name=f"naration/{output_path.name}")
 
     return {
         "text": cleaned,
