@@ -73,6 +73,8 @@ export default function AdminPanel({ clientId }) {
   const [timelineCloneTarget, setTimelineCloneTarget] = useState(clientId || "desktop2");
   const [timelinePreviewSrc, setTimelinePreviewSrc] = useState(null);
   const [timelinePreviewError, setTimelinePreviewError] = useState(null);
+  const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);
+  const [timelinePlayError, setTimelinePlayError] = useState(null);
 
   const resolvedClientLabel = useMemo(() => snapshotClient || "(未設定)", [snapshotClient]);
 
@@ -195,12 +197,19 @@ export default function AdminPanel({ clientId }) {
     };
   }, [timelineJson]);
 
+  useEffect(() => {
+    setTimelinePlaySrc(null);
+    setTimelinePlayError(null);
+  }, [timelineJson, timelineId]);
+
   const handleLoadTimeline = async (id) => {
     try {
       const data = await fetchIframeTimeline(id, { resolve: false });
       setTimelineId(id);
       setTimelineJson(pretty(data.timeline || data));
       setTimelineMessage(`已載入 timeline ${id}`);
+      setTimelinePlaySrc(null);
+      setTimelinePlayError(null);
     } catch (err) {
       setTimelineMessage(err.message || "載入 timeline 失敗");
     }
@@ -221,6 +230,8 @@ export default function AdminPanel({ clientId }) {
       }
       setTimelineId(targetId);
       setTimelineMessage(`${mode === "update" ? "已更新" : "已建立"} timeline ${targetId}`);
+      setTimelinePlaySrc(null);
+      setTimelinePlayError(null);
       await refreshTimelines();
     } catch (err) {
       setTimelineMessage(err.message || "儲存失敗");
@@ -235,6 +246,8 @@ export default function AdminPanel({ clientId }) {
       if (timelineId === id) {
         setTimelineId("");
       }
+      setTimelinePlaySrc(null);
+      setTimelinePlayError(null);
     } catch (err) {
       setTimelineMessage(err.message || "刪除失敗");
     }
@@ -258,6 +271,21 @@ export default function AdminPanel({ clientId }) {
       await refreshTimelines();
     } catch (err) {
       setTimelineMessage(err.message || "複製失敗");
+    }
+  };
+
+  const handlePlayTimelinePreview = () => {
+    try {
+      const parsed = JSON.parse(timelineJson);
+      const id = (timelineId || parsed.id || "").trim();
+      if (!id) {
+        setTimelinePlayError("請先設定 timeline id，並儲存後再播放");
+        return;
+      }
+      setTimelinePlayError(null);
+      setTimelinePlaySrc(_timelinePlaybackSrc(id));
+    } catch (err) {
+      setTimelinePlayError("JSON 解析失敗，無法播放");
     }
   };
 
@@ -447,6 +475,27 @@ export default function AdminPanel({ clientId }) {
                     </div>
                   )}
                 </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontWeight: 600 }}>播放預覽（整段 timeline）</div>
+                    <button type="button" onClick={handlePlayTimelinePreview}>播放</button>
+                    {timelinePlayError && <span style={{ color: "#c00" }}>{timelinePlayError}</span>}
+                  </div>
+                  {timelinePlaySrc ? (
+                    <iframe
+                      key={timelinePlaySrc}
+                      title="timeline-play-preview"
+                      src={timelinePlaySrc}
+                      style={{ width: "100%", height: 260, border: "1px solid #ccc", borderRadius: 6, marginTop: 6 }}
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  ) : (
+                    <div style={{ color: "#888", marginTop: 6 }}>
+                      點擊「播放」會以 iframe_mode 在下方預覽完整 timeline（需先儲存服務端資料）
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
@@ -528,6 +577,17 @@ function _previewSrcFromConfig(config) {
   qs.set("iframe_mode", "true");
   qs.set("iframe_preview", "true");
   qs.set("client", "snapshot-preview");
+  return `/?${qs.toString()}`;
+}
+
+function _timelinePlaybackSrc(timelineId) {
+  if (!timelineId) return null;
+  const qs = new URLSearchParams();
+  qs.set("iframe_mode", "true");
+  qs.set("iframe_preview", "true");
+  qs.set("client", "timeline-preview");
+  qs.set("iframe_timeline", timelineId);
+  qs.set("ts", `${Date.now()}`);
   return `/?${qs.toString()}`;
 }
 
