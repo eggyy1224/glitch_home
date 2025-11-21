@@ -967,11 +967,15 @@ function _previewSrcFromConfig(config) {
       src = `/?${query.toString()}`;
     }
     if (!src) return;
+    const colSpan = panel.colSpan ?? panel.col_span;
+    const rowSpan = panel.rowSpan ?? panel.row_span;
     panels.push({
       id: panel.id || `p${index + 1}`,
       src,
       ratio: panel.ratio || 1,
       label: panel.label,
+      ...(colSpan ? { colSpan } : {}),
+      ...(rowSpan ? { rowSpan } : {}),
     });
   });
 

@@ -48,11 +48,15 @@ export const parseIframeConfigFromParams = (params) => {
       if (!src) return;
       const ratio = parseRatio(params.get(`iframe_${key}_ratio`), 1);
       const label = params.get(`iframe_${key}_label`) || undefined;
+      const colSpan = clampInt(params.get(`iframe_${key}_col_span`), undefined, { min: 1 });
+      const rowSpan = clampInt(params.get(`iframe_${key}_row_span`), undefined, { min: 1 });
       panels.push({
         id: key || `panel_${index + 1}`,
         src,
         ratio,
         label,
+        colSpan: Number.isFinite(colSpan) ? colSpan : undefined,
+        rowSpan: Number.isFinite(rowSpan) ? rowSpan : undefined,
       });
     });
   } else {
@@ -62,11 +66,15 @@ export const parseIframeConfigFromParams = (params) => {
       if (!src) break;
       const ratio = parseRatio(params.get(`iframe_${key}_ratio`), 1);
       const label = params.get(`iframe_${key}_label`) || undefined;
+      const colSpan = clampInt(params.get(`iframe_${key}_col_span`), undefined, { min: 1 });
+      const rowSpan = clampInt(params.get(`iframe_${key}_row_span`), undefined, { min: 1 });
       panels.push({
         id: key,
         src,
         ratio,
         label,
+        colSpan: Number.isFinite(colSpan) ? colSpan : undefined,
+        rowSpan: Number.isFinite(rowSpan) ? rowSpan : undefined,
       });
     }
   }
@@ -133,6 +141,11 @@ export const buildQueryFromIframeConfig = (config) => {
   if (!config || typeof config !== "object") return null;
   const panels = Array.isArray(config.panels) ? config.panels : [];
   if (!panels.length) return null;
+  const normalizeSpan = (value) => {
+    if (value === null || value === undefined) return undefined;
+    const span = clampInt(value, undefined, { min: 1 });
+    return Number.isFinite(span) ? span : undefined;
+  };
   const keys = panels.map((_, index) => `p${index + 1}`);
   const entries = [];
   entries.push(["iframe_panels", keys.join(",")]);
@@ -150,6 +163,14 @@ export const buildQueryFromIframeConfig = (config) => {
     }
     if (panel.ratio && panel.ratio !== 1) {
       entries.push([`iframe_${key}_ratio`, String(panel.ratio)]);
+    }
+    const colSpan = normalizeSpan(panel.colSpan ?? panel.col_span);
+    const rowSpan = normalizeSpan(panel.rowSpan ?? panel.row_span);
+    if (colSpan) {
+      entries.push([`iframe_${key}_col_span`, String(colSpan)]);
+    }
+    if (rowSpan) {
+      entries.push([`iframe_${key}_row_span`, String(rowSpan)]);
     }
   });
   return entries;

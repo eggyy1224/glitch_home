@@ -267,8 +267,8 @@ export default function IframeMode({
       return {
         ...base,
         display: "grid",
-        gridTemplateColumns: `repeat(${Math.max(1, Math.min(sanitizedConfig.columns, Math.max(1, panels.length)))}, minmax(0, 1fr))`,
-        gridAutoRows: "1fr",
+        gridTemplateColumns: `repeat(${Math.max(1, sanitizedConfig.columns)}, minmax(0, 1fr))`,
+        gridAutoRows: "minmax(0, 1fr)",
         gridAutoFlow: "dense",
         gap: `${sanitizedConfig.gap}px`,
       };
