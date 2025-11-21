@@ -1,0 +1,45 @@
+{
+  "id": "opening_stage_sequence",
+  "title": "Opening Stages 1-5",
+  "description": "依序播放 opening_stage1 到 opening_stage5，供 desktop2 兩螢幕開場使用。",
+  "client_id": "desktop2",
+  "loop": false,
+  "steps": [
+    {
+      "label": "opening_stage1",
+      "snapshot": "opening_stage1",
+      "at": 0,
+      "duration": 8
+    },
+    {
+      "label": "opening_stage2",
+      "snapshot": "opening_stage2",
+      "at": 8,
+      "duration": 8
+    },
+    {
+      "label": "opening_stage3",
+      "snapshot": "opening_stage3",
+      "at": 16,
+      "duration": 8
+    },
+    {
+      "label": "opening_stage4",
+      "snapshot": "opening_stage4",
+      "at": 24,
+      "duration": 8
+    },
+    {
+      "label": "opening_stage5",
+      "snapshot": "opening_stage5",
+      "at": 32,
+      "duration": 8
+    },
+    {
+      "label": "opening_stage6",
+      "snapshot": "opening_stage6",
+      "at": 40,
+      "duration": 8
+    }
+  ]
+}

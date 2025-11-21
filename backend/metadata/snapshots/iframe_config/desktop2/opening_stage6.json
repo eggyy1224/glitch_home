@@ -1,0 +1,19 @@
+{
+  "layout": "horizontal",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left_mix",
+      "url": "/?iframe_layout=grid&iframe_gap=12&iframe_columns=5&iframe_panels=p1%2Cp2%2Cp3%2Cp4%2Cp5%2Cp6%2Cp7%2Cp8%2Cp9%2Cp10%2Cp11&iframe_p1=%2F%3Fimg%3Doffspring_20250923_162223_271.png%26slide_mode%3Dtrue%26slide_source%3Dmacrocosm%26continuous%3Dtrue&iframe_p1_label=%E5%B7%A8%E5%B9%85%E5%B9%BB%E7%87%88&iframe_p1_ratio=0.85&iframe_p1_col_span=4&iframe_p1_row_span=8&iframe_p2=%2F%3Fimg%3Doffspring_20250923_161747_194.png%26slide_mode%3Dtrue%26slide_source%3Dkinship%26continuous%3Dtrue&iframe_p2_label=Kinship+%E4%B8%B2%E6%B5%81&iframe_p2_ratio=1.0&iframe_p2_col_span=3&iframe_p2_row_span=5&iframe_p3=%2F%3Fvideo_mode%3Dtrue%26video%3DDrive_in_stormy.mp4%26client%3Ddesktop2-drivein&iframe_p3_label=Drive-in+Stormy&iframe_p3_ratio=1.2&iframe_p3_col_span=4&iframe_p3_row_span=4&iframe_p4=%2F%3Fvideo_mode%3Dtrue%26video%3DBirdmanTalk.mp4%26loop%3Dtrue%26client%3Ddesktop2-birdman&iframe_p4_label=BirdmanTalk+%E5%BD%B1%E7%89%87&iframe_p4_ratio=0.75&iframe_p4_col_span=5&iframe_p4_row_span=12&iframe_p5=%2F%3Fvideo_mode%3Dtrue%26video%3D%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4%26client%3Ddesktop2-sequence&iframe_p5_label=Sequence+01&iframe_p5_ratio=0.85&iframe_p5_col_span=2&iframe_p5_row_span=3&iframe_p6=%2F%3Fimg%3Doffspring_20250923_161828_524.png%26static_mode%3Dtrue&iframe_p6_label=Archive+%E9%9D%9C%E6%85%8B&iframe_p6_ratio=0.9&iframe_p6_col_span=2&iframe_p6_row_span=3&iframe_p7=%2F%3Fimg%3Doffspring_20250923_162135_155.png%26static_mode%3Dtrue&iframe_p7_label=%E7%94%B0%E9%87%8E%E7%AD%86%E8%A8%98%E9%9D%9C%E5%B9%80&iframe_p7_ratio=0.8&iframe_p7_col_span=2&iframe_p7_row_span=3&iframe_p8=%2F%3Fimg%3Doffspring_20250923_162258_533.png%26slide_mode%3Dtrue%26slide_source%3Darchive%26continuous%3Dtrue&iframe_p8_label=Archive+%E5%B9%BB%E7%87%88&iframe_p8_ratio=1.2&iframe_p8_col_span=3&iframe_p8_row_span=4&iframe_p9=%2F%3Fimg%3Doffspring_20250923_162512_773.png%26static_mode%3Dtrue&iframe_p9_label=%E5%BE%AE%E8%B7%9D%E9%9D%9C%E6%85%8B&iframe_p9_ratio=1.0&iframe_p9_col_span=2&iframe_p9_row_span=2&iframe_p10=%2F%3Fvideo_mode%3Dtrue%26video%3Dphotoshooting.mp4%26client%3Ddesktop2-photoshoot&iframe_p10_label=Photoshooting&iframe_p10_ratio=1.0&iframe_p10_col_span=2&iframe_p10_row_span=2&iframe_p11=%2F%3Fimg%3Doffspring_20250923_162600_328.png%26slide_mode%3Dtrue%26slide_source%3Dfieldnotes%26continuous%3Dtrue&iframe_p11_label=Fieldnotes+%E5%B9%BB%E7%87%88&iframe_p11_ratio=1.5&iframe_p11_col_span=5&iframe_p11_row_span=3&iframe_mode=true&iframe_preview=true&client=desktop2-left",
+      "ratio": 1,
+      "label": "Left Cluster"
+    },
+    {
+      "id": "right_owl",
+      "url": "/?iframe_layout=grid&iframe_gap=12&iframe_columns=1&iframe_panels=p1&iframe_p1=%2F%3Fvideo_mode%3Dtrue%26video%3D%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4%26client%3Ddesktop2-birds&iframe_p1_label=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9&iframe_p1_ratio=1.0&iframe_p1_col_span=1&iframe_p1_row_span=1&iframe_mode=true&iframe_preview=true&client=desktop2-owl",
+      "ratio": 1,
+      "label": "Owl Full"
+    }
+  ]
+}
