@@ -84,19 +84,24 @@ def api_create_episode(body: dict = Body(...), resolve: bool = Query(default=Tru
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
-        episode = save_episode_definition(body)
+        raw_id = body.get("id")
+        if not raw_id or not isinstance(raw_id, str):
+            raise ValueError("episode id 必填")
+        safe_id = sanitize_episode_id(raw_id)
+        payload = {**body, "id": safe_id}
+        episode = Episode.model_validate(payload)
+        resolved = resolve_episode(episode)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+    episode = save_episode_definition(episode.model_dump(mode="json", by_alias=True))
+
     if not resolve:
         return {"episode": _raw_episode_payload(episode)}
-
-    try:
-        resolved = resolve_episode(episode)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"episode": resolved.to_payload()}
 
 
@@ -109,7 +114,17 @@ def api_update_episode(
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
-        episode = save_episode_definition(body, episode_id=episode_id)
+        # 確認檔案存在，避免 PUT 意外新建
+        load_episode_definition(episode_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        safe_id = sanitize_episode_id(episode_id)
+        payload = {**body, "id": safe_id}
+        episode = Episode.model_validate(payload)
+        resolved = resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -117,12 +132,10 @@ def api_update_episode(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+    episode = save_episode_definition(episode.model_dump(mode="json", by_alias=True), episode_id=episode_id)
+
     if not resolve:
         return {"episode": _raw_episode_payload(episode)}
-    try:
-        resolved = resolve_episode(episode)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"episode": resolved.to_payload()}
 
 
