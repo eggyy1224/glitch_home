@@ -1,6 +1,8 @@
 import pytest
 
 from app.services.iframe_timeline import save_iframe_timeline_definition
+from pathlib import Path
+import shutil
 
 
 def _make_timeline(timeline_id: str, client_id: str) -> None:
@@ -80,13 +82,10 @@ def test_update_missing_episode_returns_404(client):
 
 def test_create_resolution_failure_does_not_persist(client, tmp_path, monkeypatch):
     from app.config import settings
-    import shutil
-    from pathlib import Path
 
     episodes_dir = Path(settings.metadata_dir) / "episodes"
     shutil.rmtree(episodes_dir, ignore_errors=True)
     episodes_dir.mkdir(parents=True, exist_ok=True)
-
     episodes_path = episodes_dir / "ep_bad.json"
 
     payload = {
@@ -102,8 +101,6 @@ def test_create_resolution_failure_does_not_persist(client, tmp_path, monkeypatc
 
 def test_update_resolution_failure_does_not_change_file(client, tmp_path, monkeypatch):
     from app.config import settings
-    import shutil
-    from pathlib import Path
 
     episodes_dir = Path(settings.metadata_dir) / "episodes"
     shutil.rmtree(episodes_dir, ignore_errors=True)
@@ -131,3 +128,36 @@ def test_update_resolution_failure_does_not_change_file(client, tmp_path, monkey
     assert episode_file.exists()
     content = episode_file.read_text(encoding="utf-8")
     assert "missing_timeline" not in content
+
+
+def test_clone_resolution_failure_does_not_persist(client):
+    from app.config import settings
+
+    episodes_dir = Path(settings.metadata_dir) / "episodes"
+    timelines_dir = Path(settings.metadata_dir) / "timelines" / "iframe"
+    shutil.rmtree(episodes_dir, ignore_errors=True)
+    shutil.rmtree(timelines_dir, ignore_errors=True)
+    episodes_dir.mkdir(parents=True, exist_ok=True)
+    timelines_dir.mkdir(parents=True, exist_ok=True)
+
+    _make_timeline("t1", "c1")
+    create_payload = {
+        "id": "ep_source",
+        "title": "source",
+        "tracks": [{"timelineId": "t1", "targetClientId": "c1"}],
+    }
+    ok_resp = client.post("/api/episodes", json=create_payload)
+    assert ok_resp.status_code == 201
+
+    # remove the timeline so clone resolution will fail
+    target_timeline = timelines_dir / "t1.json"
+    if target_timeline.exists():
+        target_timeline.unlink()
+
+    resp = client.post("/api/episodes/ep_source/clone", json={"new_id": "ep_clone"})
+    assert resp.status_code == 404
+
+    clone_path = episodes_dir / "ep_clone.json"
+    assert not clone_path.exists()
+    # source file should remain
+    assert (episodes_dir / "ep_source.json").exists()

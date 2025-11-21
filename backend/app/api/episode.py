@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, model_validator
 
 from ..models.episode import Episode
 from ..services.episode import (
-    clone_episode_definition,
     delete_episode_definition,
     list_episodes,
     load_episode_definition,
@@ -162,7 +161,12 @@ def api_clone_episode(
     if not new_id or not isinstance(new_id, str):
         raise HTTPException(status_code=400, detail="new_id 必須提供")
     try:
-        episode = clone_episode_definition(episode_id, new_id)
+        source = load_episode_definition(episode_id)
+        clean_id = sanitize_episode_id(new_id)
+        payload = source.model_dump(mode="json", by_alias=True)
+        payload["id"] = clean_id
+        episode = Episode.model_validate(payload)
+        resolved = resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -170,12 +174,10 @@ def api_clone_episode(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+    episode = save_episode_definition(episode.model_dump(mode="json", by_alias=True))
+
     if not resolve:
         return {"episode": _raw_episode_payload(episode)}
-    try:
-        resolved = resolve_episode(episode)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"episode": resolved.to_payload()}
 
 
