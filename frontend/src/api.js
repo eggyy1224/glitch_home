@@ -68,6 +68,27 @@ export async function listIframeTimelines(clientId = null) {
   return res.json();
 }
 
+export async function fetchEpisode(episodeId, { signal, resolve = true } = {}) {
+  if (!episodeId) {
+    throw new Error("episodeId is required");
+  }
+  const params = resolve === false ? "?resolve=false" : "";
+  const url = `${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}${params}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function listEpisodes() {
+  const url = `${API_BASE}/api/episodes`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
 export async function saveCollageConfig(config) {
   const url = `${API_BASE}/api/collage-config`;
   const res = await fetch(url, {
@@ -220,6 +241,50 @@ async function postJson(url, payload, { signal } = {}) {
     throw new Error(`API ${res.status}: ${detail || "failed"}`);
   }
   return res.json();
+}
+
+export async function createEpisode(payload, { resolve = true, signal } = {}) {
+  const qs = resolve === false ? "?resolve=false" : "";
+  return postJson(`${API_BASE}/api/episodes${qs}`, payload, { signal });
+}
+
+export async function updateEpisode(episodeId, payload, { resolve = true, signal } = {}) {
+  if (!episodeId) throw new Error("episodeId is required");
+  const qs = resolve === false ? "?resolve=false" : "";
+  const res = await fetch(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}${qs}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal,
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function deleteEpisode(episodeId) {
+  if (!episodeId) throw new Error("episodeId is required");
+  const res = await fetch(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}`, { method: "DELETE" });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API ${res.status}: ${detail || "failed"}`);
+  }
+  return res.json();
+}
+
+export async function cloneEpisode(episodeId, payload, { resolve = true, signal } = {}) {
+  if (!episodeId) throw new Error("episodeId is required");
+  if (!payload || typeof payload !== "object") throw new Error("payload is required");
+  const qs = resolve === false ? "?resolve=false" : "";
+  return postJson(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}/clone${qs}`, payload, { signal });
+}
+
+export async function playEpisode(episodeId, payload = {}, { signal } = {}) {
+  if (!episodeId) throw new Error("episodeId is required");
+  const body = payload && typeof payload === "object" ? payload : {};
+  return postJson(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}/play`, body, { signal });
 }
 
 export async function triggerTts(payload, options = {}) {

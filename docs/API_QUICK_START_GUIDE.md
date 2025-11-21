@@ -942,6 +942,45 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
 
 > 提醒：API 只會觸發 WebSocket 指令，實際畫面變化要等目標 client 在線、且以 `?client=<id>` 連上後端控制通道。
 
+## 🧭 Episode/Show 編排（多 timeline × 多 client）
+
+> 在 timeline 之上新增 Episode/Show 抽象，一次封裝多條 timeline 與目標 client，並以同一組 commandId 前綴廣播播放指令。
+
+- metadata 位置：`backend/metadata/episodes/{id}.json`（與 timeline/snapshot 分開存放）
+- 基本結構：
+
+```jsonc
+{
+  "id": "ep_opening",
+  "title": "開場雙螢幕",
+  "tracks": [
+    { "timelineId": "desktop_opening", "targetClientId": "desktop" },
+    { "timelineId": "wall_intro", "targetClientId": "desktop2", "loopOverride": true }
+  ],
+  "tags": ["live", "opening"]
+}
+```
+
+### API
+
+- `GET /api/episodes`：列出 Episode（id/title/track_count/clients/tags）
+- `GET /api/episodes/{id}`：取回詳細內容；加 `?resolve=false` 可拿未解析的原始 JSON
+- `POST /api/episodes`：建立；`PUT /api/episodes/{id}`：覆寫；`DELETE /api/episodes/{id}`：刪除；`POST /api/episodes/{id}/clone`：複製為新 id
+- `POST /api/episodes/{id}/play`：依 tracks 逐一廣播 timeline play，預設沿用 track 的 targetClientId/autoPlay/loopOverride
+
+播放範例（覆寫特定 timeline 的 client，並指定共用 commandId 前綴）：
+
+```bash
+curl -X POST http://localhost:8000/api/episodes/ep_opening/play \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_client_map": { "wall_intro": "desktop_wall" },
+    "command_id_prefix": "run_ep_opening"
+  }' | jq .
+```
+
+回傳的 `tracks[]` 會列出實際發送的 target_client_id 與 options（autoPlay/loop/forceIframeMode/startStep/startAt/commandId），以便調試。
+
 ### Step 動作欄位：subtitle / caption / tts
 
 每個 `steps[]` 可以同時指定多媒體動作，Timeline Player 會根據順序自動呼叫對應 API：

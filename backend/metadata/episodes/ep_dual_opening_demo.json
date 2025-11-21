@@ -1,0 +1,29 @@
+{
+  "id": "ep_dual_opening_demo",
+  "title": "雙螢幕開場示範",
+  "description": null,
+  "tags": [
+    "demo",
+    "opening"
+  ],
+  "tracks": [
+    {
+      "timelineId": "desktop_opening_demo",
+      "targetClientId": "desktop",
+      "startAt": null,
+      "autoPlay": true,
+      "loopOverride": null,
+      "startStep": null,
+      "forceIframeMode": null
+    },
+    {
+      "timelineId": "desktop2_opening_demo",
+      "targetClientId": "desktop2",
+      "startAt": null,
+      "autoPlay": true,
+      "loopOverride": null,
+      "startStep": null,
+      "forceIframeMode": null
+    }
+  ]
+}

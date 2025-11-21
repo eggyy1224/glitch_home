@@ -16,6 +16,13 @@ const {
   mockDeleteIframeTimeline,
   mockCloneIframeTimeline,
   mockPlayIframeTimeline,
+  mockListEpisodes,
+  mockFetchEpisode,
+  mockCreateEpisode,
+  mockUpdateEpisode,
+  mockDeleteEpisode,
+  mockCloneEpisode,
+  mockPlayEpisode,
 } = vi.hoisted(() => ({
   mockListIframeSnapshots: vi.fn(),
   mockGetIframeSnapshot: vi.fn(),
@@ -29,6 +36,13 @@ const {
   mockDeleteIframeTimeline: vi.fn(),
   mockCloneIframeTimeline: vi.fn(),
   mockPlayIframeTimeline: vi.fn(),
+  mockListEpisodes: vi.fn(),
+  mockFetchEpisode: vi.fn(),
+  mockCreateEpisode: vi.fn(),
+  mockUpdateEpisode: vi.fn(),
+  mockDeleteEpisode: vi.fn(),
+  mockCloneEpisode: vi.fn(),
+  mockPlayEpisode: vi.fn(),
 }));
 
 vi.mock("../../src/api.js", () => ({
@@ -45,6 +59,13 @@ vi.mock("../../src/api.js", () => ({
   deleteIframeTimeline: (...args) => mockDeleteIframeTimeline(...args),
   cloneIframeTimeline: (...args) => mockCloneIframeTimeline(...args),
   playIframeTimeline: (...args) => mockPlayIframeTimeline(...args),
+  listEpisodes: (...args) => mockListEpisodes(...args),
+  fetchEpisode: (...args) => mockFetchEpisode(...args),
+  createEpisode: (...args) => mockCreateEpisode(...args),
+  updateEpisode: (...args) => mockUpdateEpisode(...args),
+  deleteEpisode: (...args) => mockDeleteEpisode(...args),
+  cloneEpisode: (...args) => mockCloneEpisode(...args),
+  playEpisode: (...args) => mockPlayEpisode(...args),
 }));
 
 const snapshotConfig = {
@@ -58,6 +79,12 @@ const timelineData = {
   id: "t1",
   clientId: "c1",
   steps: [{ snapshot: "c1/snap1", duration: 3, label: "step1" }],
+};
+
+const episodeData = {
+  id: "ep1",
+  title: "demo",
+  tracks: [{ timelineId: "t1", targetClientId: "c1" }],
 };
 
 beforeEach(() => {
@@ -75,6 +102,14 @@ beforeEach(() => {
   mockDeleteIframeTimeline.mockResolvedValue({});
   mockCloneIframeTimeline.mockResolvedValue({});
   mockPlayIframeTimeline.mockResolvedValue({});
+
+  mockListEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", title: "demo", track_count: 1 }] });
+  mockFetchEpisode.mockResolvedValue({ episode: episodeData });
+  mockCreateEpisode.mockResolvedValue({});
+  mockUpdateEpisode.mockResolvedValue({});
+  mockDeleteEpisode.mockResolvedValue({});
+  mockCloneEpisode.mockResolvedValue({});
+  mockPlayEpisode.mockResolvedValue({ tracks: [] });
 });
 
 describe("AdminPanel", () => {
@@ -108,5 +143,19 @@ describe("AdminPanel", () => {
     const playButtons = screen.getAllByRole("button", { name: "播放" });
     fireEvent.click(playButtons[playButtons.length - 1]);
     expect(screen.getByText("JSON 解析失敗，無法播放")).toBeInTheDocument();
+  });
+
+  it("切換到 episode 標籤後可載入並播放", async () => {
+    render(<AdminPanel clientId="desktop" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Episode 管理" }));
+    await waitFor(() => expect(mockListEpisodes).toHaveBeenCalled());
+
+    const loadButtons = screen.getAllByRole("button", { name: "載入" });
+    fireEvent.click(loadButtons[loadButtons.length - 1]);
+    await waitFor(() => expect(mockFetchEpisode).toHaveBeenCalledWith("ep1", { resolve: false }));
+
+    fireEvent.click(screen.getByRole("button", { name: "播放 Episode" }));
+    await waitFor(() => expect(mockPlayEpisode).toHaveBeenCalled());
   });
 });

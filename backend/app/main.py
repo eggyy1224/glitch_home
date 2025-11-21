@@ -11,6 +11,7 @@ from .api import (
     generation_router,
     indexing_router,
     kinship_router,
+    episode_router,
     realtime_router,
     screenshot_router,
     sound_router,
@@ -59,6 +60,7 @@ app.include_router(screenshot_router)
 app.include_router(kinship_router)
 app.include_router(collage_router)
 app.include_router(realtime_router)
+app.include_router(episode_router)
 app.include_router(timeline_router)
 
 
