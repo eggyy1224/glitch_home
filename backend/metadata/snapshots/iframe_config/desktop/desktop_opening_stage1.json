@@ -1,0 +1,27 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "hero",
+      "image": "offspring_20250923_161624_066.png",
+      "url": null,
+      "params": {},
+      "ratio": 1.6,
+      "label": "Hero",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "side",
+      "image": "offspring_20250923_161704_451.png",
+      "url": null,
+      "params": {},
+      "ratio": 1.0,
+      "label": "Side",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

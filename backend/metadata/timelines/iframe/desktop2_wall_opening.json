@@ -1,0 +1,34 @@
+{
+  "id": "desktop2_wall_opening",
+  "title": "壁面開場",
+  "clientId": "desktop2",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop2/desktop2_opening_stage1",
+      "duration": 10.0,
+      "at": null,
+      "label": "Wall Hero",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop2/opening_stage2",
+      "duration": 8.0,
+      "at": null,
+      "label": "分割延展",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}

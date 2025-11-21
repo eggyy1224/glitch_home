@@ -1,0 +1,29 @@
+{
+  "id": "ep_dual_wallflow",
+  "title": "雙機壁面流動",
+  "description": null,
+  "tags": [
+    "live",
+    "opening"
+  ],
+  "tracks": [
+    {
+      "timelineId": "desktop_dual_opening_v2",
+      "targetClientId": "desktop",
+      "startAt": null,
+      "autoPlay": true,
+      "loopOverride": null,
+      "startStep": null,
+      "forceIframeMode": null
+    },
+    {
+      "timelineId": "desktop2_wall_opening_v2",
+      "targetClientId": "desktop2",
+      "startAt": null,
+      "autoPlay": true,
+      "loopOverride": null,
+      "startStep": null,
+      "forceIframeMode": null
+    }
+  ]
+}

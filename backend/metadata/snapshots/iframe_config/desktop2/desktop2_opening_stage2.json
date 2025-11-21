@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 4,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "main",
+      "image": "offspring_20250923_162223_271.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.6,
+      "label": "Wall Hero",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

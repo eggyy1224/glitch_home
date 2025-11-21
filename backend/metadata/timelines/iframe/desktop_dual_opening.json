@@ -1,0 +1,34 @@
+{
+  "id": "desktop_dual_opening",
+  "title": "Desktop 主舞台開場",
+  "clientId": "desktop",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop/desktop_opening_stage1",
+      "duration": 8.0,
+      "at": null,
+      "label": "雙視窗暖場",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/closing_focus",
+      "duration": 6.0,
+      "at": null,
+      "label": "收束定格",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}

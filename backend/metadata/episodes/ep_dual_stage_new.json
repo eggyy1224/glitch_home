@@ -1,0 +1,29 @@
+{
+  "id": "ep_dual_stage_new",
+  "title": "雙機開場走位",
+  "description": null,
+  "tags": [
+    "live",
+    "opening"
+  ],
+  "tracks": [
+    {
+      "timelineId": "desktop_dual_opening",
+      "targetClientId": "desktop",
+      "startAt": null,
+      "autoPlay": true,
+      "loopOverride": null,
+      "startStep": null,
+      "forceIframeMode": null
+    },
+    {
+      "timelineId": "desktop2_wall_opening",
+      "targetClientId": "desktop2",
+      "startAt": null,
+      "autoPlay": true,
+      "loopOverride": null,
+      "startStep": null,
+      "forceIframeMode": null
+    }
+  ]
+}

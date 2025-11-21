@@ -1,0 +1,59 @@
+{
+  "id": "desktop_dual_opening_v2",
+  "title": "Desktop 主舞台開場 v2",
+  "clientId": "desktop",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop/desktop_opening_stage1",
+      "duration": 6.0,
+      "at": null,
+      "label": "雙視窗暖場",
+      "clientId": null,
+      "subtitle": {
+        "text": "展演即將開始",
+        "language": null,
+        "duration_seconds": 4.0,
+        "targetClientId": null,
+        "clear": false
+      },
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/desktop_opening_stage2",
+      "duration": 6.0,
+      "at": null,
+      "label": "雙視窗展開",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/closing_focus",
+      "duration": 6.0,
+      "at": null,
+      "label": "收束定格",
+      "clientId": null,
+      "subtitle": null,
+      "caption": {
+        "text": "收束定格",
+        "language": null,
+        "duration_seconds": 5.0,
+        "targetClientId": null,
+        "clear": false
+      },
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}

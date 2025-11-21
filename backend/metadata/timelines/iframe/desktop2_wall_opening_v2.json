@@ -1,0 +1,57 @@
+{
+  "id": "desktop2_wall_opening_v2",
+  "title": "壁面開場 v2",
+  "clientId": "desktop2",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop2/desktop2_opening_stage1",
+      "duration": 8.0,
+      "at": null,
+      "label": "Wall Hero",
+      "clientId": null,
+      "subtitle": {
+        "text": "展演即將開始",
+        "language": null,
+        "duration_seconds": 4.0,
+        "targetClientId": null,
+        "clear": false
+      },
+      "caption": null,
+      "tts": {
+        "mode": "tts",
+        "text": "歡迎來到雙機開場",
+        "instructions": null,
+        "voice": null,
+        "model": null,
+        "output_format": null,
+        "filename_base": null,
+        "speed": null,
+        "auto_play": true,
+        "targetClientId": null,
+        "subtitle_text": null,
+        "subtitle_language": null,
+        "subtitle_duration_seconds": null,
+        "sound_filename": null
+      },
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": [
+        "desktop2"
+      ]
+    },
+    {
+      "snapshot": "desktop2/desktop2_opening_stage2",
+      "duration": 10.0,
+      "at": null,
+      "label": "分割延展",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}
