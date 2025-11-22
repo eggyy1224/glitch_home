@@ -88,7 +88,6 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
     setPreview(null);
     setResults([]);
     setError(null);
-    setSearching(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -107,7 +106,6 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
     setTextQuery("");
     setResults([]);
     setError(null);
-    setSearching(false);
   }, [abortTextSearch]);
 
   const runImageSearch = useCallback(
