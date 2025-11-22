@@ -48,7 +48,8 @@ export default function EpisodeManager() {
     async (mode) => {
       try {
         const parsed = JSON.parse(episodeJson);
-        const targetId = (mode === "update" ? episodeId : parsed.id) || parsed.id;
+        const inputId = (episodeId || "").trim();
+        const targetId = (mode === "update" ? inputId || parsed.id : parsed.id || inputId) || parsed.id;
         if (!targetId) {
           throw new Error("episode id 必須提供在 JSON 內或輸入框");
         }

@@ -78,4 +78,25 @@ describe("TimelineManager", () => {
     fireEvent.click(playButtons[playButtons.length - 1]);
     expect(screen.getByText("JSON 解析失敗，無法播放")).toBeInTheDocument();
   });
+
+  it("新增 timeline 時會使用輸入欄位的 id", async () => {
+    renderWithContext(<TimelineManager />);
+
+    await waitFor(() => expect(mockListIframeTimelines).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByPlaceholderText("新建請輸入 id 或在 JSON 設定"), { target: { value: "typed-id" } });
+    const minimalJson = JSON.stringify({ title: "tmp", steps: [] }, null, 2);
+    fireEvent.change(
+      screen.getByDisplayValue((value) => typeof value === "string" && value.includes("new_timeline")),
+      { target: { value: minimalJson } },
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    await waitFor(() =>
+      expect(mockCreateIframeTimeline).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "typed-id" }),
+        { resolve: false },
+      ),
+    );
+  });
 });

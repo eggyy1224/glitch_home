@@ -105,7 +105,8 @@ export default function TimelineManager() {
     async (mode) => {
       try {
         const parsed = JSON.parse(timelineJson);
-        const targetId = (mode === "update" ? timelineId : parsed.id) || parsed.id;
+        const inputId = (timelineId || "").trim();
+        const targetId = (mode === "update" ? inputId || parsed.id : parsed.id || inputId) || parsed.id;
         if (!targetId) {
           throw new Error("timeline id 必須提供在 JSON 內或輸入框");
         }

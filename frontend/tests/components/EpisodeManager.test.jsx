@@ -69,4 +69,22 @@ describe("EpisodeManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "播放 Episode" }));
     await waitFor(() => expect(mockPlayEpisode).toHaveBeenCalled());
   });
+
+  it("新增 episode 時會使用輸入欄位的 id", async () => {
+    renderWithContext(<EpisodeManager />);
+
+    await waitFor(() => expect(mockListEpisodes).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByPlaceholderText("新建請輸入 id 或在 JSON 設定"), { target: { value: "new-ep" } });
+    const minimalJson = JSON.stringify({ title: "demo", tracks: [] }, null, 2);
+    fireEvent.change(
+      screen.getByDisplayValue((value) => typeof value === "string" && value.includes("new_episode")),
+      { target: { value: minimalJson } },
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    await waitFor(() =>
+      expect(mockCreateEpisode).toHaveBeenCalledWith(expect.objectContaining({ id: "new-ep" }), { resolve: false }),
+    );
+  });
 });
