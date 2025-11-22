@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import errno
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 
@@ -14,8 +15,25 @@ from fastapi import WebSocket
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class EventPayloadConfig:
+    fields: tuple[str, ...] = ()
+    merge_payload: bool = False
+    include_target_in_payload: bool = False
+
+
 class RealtimeBroadcaster:
     """Manage active WebSocket connections and broadcast JSON payloads."""
+
+    EVENT_PAYLOAD_CONFIGS: dict[str, EventPayloadConfig] = {
+        "sound_play": EventPayloadConfig(fields=("filename", "url")),
+        "iframe_config": EventPayloadConfig(fields=("config",), include_target_in_payload=True),
+        "subtitle_update": EventPayloadConfig(fields=("subtitle",), include_target_in_payload=True),
+        "caption_update": EventPayloadConfig(fields=("caption",), include_target_in_payload=True),
+        "remote_click": EventPayloadConfig(merge_payload=True, include_target_in_payload=True),
+        "unlock_audio": EventPayloadConfig(include_target_in_payload=True),
+        "video_control": EventPayloadConfig(merge_payload=True, include_target_in_payload=True),
+    }
 
     def __init__(self, send_timeout: float = 1.0) -> None:
         self._lock = asyncio.Lock()
@@ -94,11 +112,12 @@ class RealtimeBroadcaster:
         url: str,
         target_client_id: Optional[str] = None,
     ) -> None:
-        payload = {
-            "type": "sound_play",
-            "filename": filename,
-            "url": url,
-        }
+        payload_data = {"filename": filename, "url": url}
+        payload = self._build_payload(
+            "sound_play",
+            payload_data,
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_iframe_config(
@@ -106,12 +125,11 @@ class RealtimeBroadcaster:
         config_payload: dict,
         target_client_id: Optional[str] = None,
     ) -> None:
-        payload = {
-            "type": "iframe_config",
-            "config": config_payload,
-        }
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+        payload = self._build_payload(
+            "iframe_config",
+            {"config": config_payload},
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_collage_config(
@@ -120,20 +138,24 @@ class RealtimeBroadcaster:
         target_client_id: Optional[str] = None,
     ) -> None:
         owner_client_id = None
+        config_payload = config_payload if isinstance(config_payload, dict) else {}
         if isinstance(config_payload, dict):
             owner_candidate = config_payload.get("owner_client_id") or config_payload.get("target_client_id")
             if isinstance(owner_candidate, str):
                 owner_client_id = owner_candidate
-        payload = {
-            "type": "collage_config",
-            "config": config_payload.get("config") if isinstance(config_payload, dict) else None,
-            "source": config_payload.get("source") if isinstance(config_payload, dict) else None,
-            "updated_at": config_payload.get("updated_at") if isinstance(config_payload, dict) else None,
+        payload_data = {
+            "config": config_payload.get("config"),
+            "source": config_payload.get("source"),
+            "updated_at": config_payload.get("updated_at"),
         }
+        payload = self._build_payload(
+            "collage_config",
+            payload_data,
+            target_client_id=target_client_id,
+            config=EventPayloadConfig(fields=("config", "source", "updated_at"), include_target_in_payload=True),
+        )
         if owner_client_id:
             payload["owner_client_id"] = owner_client_id
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_subtitle(
@@ -141,12 +163,11 @@ class RealtimeBroadcaster:
         subtitle_payload: Optional[dict],
         target_client_id: Optional[str] = None,
     ) -> None:
-        payload = {
-            "type": "subtitle_update",
-            "subtitle": subtitle_payload,
-        }
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+        payload = self._build_payload(
+            "subtitle_update",
+            {"subtitle": subtitle_payload},
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_caption(
@@ -154,12 +175,11 @@ class RealtimeBroadcaster:
         caption_payload: Optional[dict],
         target_client_id: Optional[str] = None,
     ) -> None:
-        payload = {
-            "type": "caption_update",
-            "caption": caption_payload,
-        }
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+        payload = self._build_payload(
+            "caption_update",
+            {"caption": caption_payload},
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_remote_click(
@@ -167,18 +187,19 @@ class RealtimeBroadcaster:
         click_payload: dict[str, Any],
         target_client_id: Optional[str] = None,
     ) -> None:
-        payload = {
-            "type": "remote_click",
-            **click_payload,
-        }
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+        payload = self._build_payload(
+            "remote_click",
+            click_payload,
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_unlock_audio(self, target_client_id: Optional[str] = None) -> None:
-        payload = {"type": "unlock_audio"}
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+        payload = self._build_payload(
+            "unlock_audio",
+            None,
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_video_control(
@@ -186,12 +207,11 @@ class RealtimeBroadcaster:
         control_payload: dict[str, Any],
         target_client_id: Optional[str] = None,
     ) -> None:
-        payload = {
-            "type": "video_control",
-            **control_payload,
-        }
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+        payload = self._build_payload(
+            "video_control",
+            control_payload,
+            target_client_id=target_client_id,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
 
     async def broadcast_timeline_control(
@@ -201,18 +221,48 @@ class RealtimeBroadcaster:
         target_client_id: Optional[str],
         options: Optional[dict[str, Any]] = None,
     ) -> None:
-        payload: dict[str, Any] = {
-            "type": "timeline_control",
+        extra_fields: dict[str, Any] = {
             "action": action,
             "issued_at": datetime.now(timezone.utc).isoformat(),
         }
         if timeline_id:
-            payload["timeline_id"] = timeline_id
-        if target_client_id:
-            payload["target_client_id"] = target_client_id
+            extra_fields["timeline_id"] = timeline_id
         if options:
-            payload["options"] = options
+            extra_fields["options"] = options
+        payload = self._build_payload(
+            "timeline_control",
+            None,
+            target_client_id=target_client_id,
+            config=EventPayloadConfig(include_target_in_payload=True),
+            extra=extra_fields,
+        )
         await self.broadcast(payload, target_client_id=target_client_id)
+
+    def _build_payload(
+        self,
+        event_type: str,
+        payload_data: Optional[dict[str, Any]],
+        *,
+        target_client_id: Optional[str] = None,
+        config: Optional[EventPayloadConfig] = None,
+        extra: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        cfg = config or self.EVENT_PAYLOAD_CONFIGS.get(event_type, EventPayloadConfig())
+        payload: dict[str, Any] = {"type": event_type}
+
+        if cfg.merge_payload and payload_data:
+            payload.update(payload_data)
+
+        for field in cfg.fields:
+            payload[field] = payload_data.get(field) if payload_data else None
+
+        if extra:
+            payload.update(extra)
+
+        if cfg.include_target_in_payload and target_client_id:
+            payload["target_client_id"] = target_client_id
+
+        return payload
 
     @staticmethod
     def _is_retryable_error(exc: Exception) -> bool:
