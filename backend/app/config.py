@@ -1,20 +1,32 @@
+import logging
 import os
 from dataclasses import dataclass
 from typing import Optional
 
 
+logger = logging.getLogger(__name__)
+
+
 def _load_dotenv_if_present() -> None:
     try:
         from dotenv import load_dotenv
-    except Exception:
+    except ImportError:
+        logger.info("python-dotenv not installed; skipping .env loading")
         return
     # Try load from project root and backend dir to be flexible
     here = os.path.dirname(__file__)
     backend_dir = os.path.abspath(os.path.join(here, ".."))
     project_root = os.path.abspath(os.path.join(backend_dir, ".."))
     # Load root first, then backend/.env (later does not override earlier by default)
-    load_dotenv(dotenv_path=os.path.join(project_root, ".env"), override=False)
-    load_dotenv(dotenv_path=os.path.join(backend_dir, ".env"), override=False)
+    for base_dir in (project_root, backend_dir):
+        dotenv_path = os.path.join(base_dir, ".env")
+        try:
+            loaded = load_dotenv(dotenv_path=dotenv_path, override=False)
+        except Exception as exc:
+            logger.warning("Failed to load .env from %s: %s", dotenv_path, exc)
+            raise
+        if not loaded:
+            logger.warning("No .env found at %s", dotenv_path)
 
 
 _load_dotenv_if_present()
