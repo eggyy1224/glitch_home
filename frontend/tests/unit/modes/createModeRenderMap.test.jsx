@@ -125,9 +125,12 @@ describe("createModeRenderMap", () => {
       applyPreset: baseProps.pendingPreset,
     });
 
+    expect(map[DisplayModes.COLLAGE_VERSION]).toEqual({ component: CollageVersionModeMock });
+    expect(map[DisplayModes.GENERATE]).toEqual({ component: GenerateModeMock });
+    expect(map[DisplayModes.SEARCH]).toEqual({
+      component: SearchModeMock,
+      componentProps: { imagesBase: baseProps.imagesBase },
+    });
     expect(map[DisplayModes.ADMIN].component).toBe(AdminPanelMock);
-    expect(map[DisplayModes.GENERATE].component).toBe(GenerateModeMock);
-    expect(map[DisplayModes.COLLAGE_VERSION].component).toBe(CollageVersionModeMock);
-    expect(map[DisplayModes.SEARCH].component).toBe(SearchModeMock);
   });
 });

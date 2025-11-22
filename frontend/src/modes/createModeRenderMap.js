@@ -12,6 +12,49 @@ import KinshipScene from "../ThreeKinshipScene.jsx";
 import AdminPanel from "../AdminPanel.jsx";
 import { DisplayModes } from "../hooks/useDisplayMode.js";
 
+const modeBaseConfigs = {
+  [DisplayModes.IFRAME]: { component: IframeMode, withCaptureReady: true },
+  [DisplayModes.SLIDE]: { component: SlideMode, withCaptureReady: true },
+  [DisplayModes.ORGANIC]: { component: OrganicRoomScene, withCaptureReady: true },
+  [DisplayModes.SEARCH]: { component: SearchMode },
+  [DisplayModes.COLLAGE]: { component: CollageMode, withCaptureReady: true },
+  [DisplayModes.CAPTION]: { component: CaptionMode },
+  [DisplayModes.COLLAGE_VERSION]: { component: CollageVersionMode },
+  [DisplayModes.GENERATE]: { component: GenerateMode },
+  [DisplayModes.STATIC]: { component: StaticMode, withCaptureReady: true },
+  [DisplayModes.VIDEO]: { component: VideoMode, withCaptureReady: true },
+  [DisplayModes.KINSHIP]: { component: KinshipScene, withCaptureReady: true },
+  [DisplayModes.ADMIN]: { component: AdminPanel },
+};
+
+function buildModeEntry(baseConfig, overrides = {}) {
+  const { component, withCaptureReady } = baseConfig;
+  const { componentProps, beforeContent, afterContent, ...restOverrides } = overrides;
+
+  const entry = {
+    component,
+    ...restOverrides,
+  };
+
+  if (withCaptureReady) {
+    entry.withCaptureReady = true;
+  }
+
+  if (componentProps !== undefined) {
+    entry.componentProps = componentProps;
+  }
+
+  if (beforeContent !== undefined) {
+    entry.beforeContent = beforeContent;
+  }
+
+  if (afterContent !== undefined) {
+    entry.afterContent = afterContent;
+  }
+
+  return entry;
+}
+
 export function createModeRenderMap({
   iframeActiveConfig,
   iframeControlsEnabled,
@@ -39,44 +82,35 @@ export function createModeRenderMap({
   clientId,
 }) {
   return {
-    [DisplayModes.IFRAME]: {
-      component: IframeMode,
-      withCaptureReady: true,
+    [DisplayModes.IFRAME]: buildModeEntry(modeBaseConfigs[DisplayModes.IFRAME], {
       componentProps: {
         config: iframeActiveConfig,
         controlsEnabled: iframeControlsEnabled,
         onApplyConfig: iframeControlsEnabled ? handleLocalIframeConfigApply : undefined,
       },
       beforeContent: iframeTimelineOverlay,
-    },
-    [DisplayModes.SLIDE]: {
-      component: SlideMode,
-      withCaptureReady: true,
+    }),
+    [DisplayModes.SLIDE]: buildModeEntry(modeBaseConfigs[DisplayModes.SLIDE], {
       componentProps: {
         imagesBase,
         anchorImage: imgId,
         intervalMs: slideIntervalMs,
       },
-    },
-    [DisplayModes.ORGANIC]: {
-      component: OrganicRoomScene,
-      withCaptureReady: true,
+    }),
+    [DisplayModes.ORGANIC]: buildModeEntry(modeBaseConfigs[DisplayModes.ORGANIC], {
       componentProps: {
         imagesBase,
         anchorImage: imgId,
         onSelectImage: navigateToImage,
         showInfo,
       },
-    },
-    [DisplayModes.SEARCH]: {
-      component: SearchMode,
+    }),
+    [DisplayModes.SEARCH]: buildModeEntry(modeBaseConfigs[DisplayModes.SEARCH], {
       componentProps: {
         imagesBase,
       },
-    },
-    [DisplayModes.COLLAGE]: {
-      component: CollageMode,
-      withCaptureReady: true,
+    }),
+    [DisplayModes.COLLAGE]: buildModeEntry(modeBaseConfigs[DisplayModes.COLLAGE], {
       componentProps: {
         imagesBase,
         anchorImage: imgId,
@@ -84,37 +118,26 @@ export function createModeRenderMap({
         controlsEnabled: collageControlsEnabled,
         remoteSource: collageRemoteSource,
       },
-    },
-    [DisplayModes.CAPTION]: {
-      component: CaptionMode,
+    }),
+    [DisplayModes.CAPTION]: buildModeEntry(modeBaseConfigs[DisplayModes.CAPTION], {
       componentProps: {
         caption,
       },
-    },
-    [DisplayModes.COLLAGE_VERSION]: {
-      component: CollageVersionMode,
-    },
-    [DisplayModes.GENERATE]: {
-      component: GenerateMode,
-    },
-    [DisplayModes.STATIC]: {
-      component: StaticMode,
-      withCaptureReady: true,
+    }),
+    [DisplayModes.COLLAGE_VERSION]: buildModeEntry(modeBaseConfigs[DisplayModes.COLLAGE_VERSION]),
+    [DisplayModes.GENERATE]: buildModeEntry(modeBaseConfigs[DisplayModes.GENERATE]),
+    [DisplayModes.STATIC]: buildModeEntry(modeBaseConfigs[DisplayModes.STATIC], {
       componentProps: {
         imagesBase,
         imgId,
       },
-    },
-    [DisplayModes.VIDEO]: {
-      component: VideoMode,
-      withCaptureReady: true,
+    }),
+    [DisplayModes.VIDEO]: buildModeEntry(modeBaseConfigs[DisplayModes.VIDEO], {
       componentProps: {
         controlRef: videoControllerRef,
       },
-    },
-    [DisplayModes.KINSHIP]: {
-      component: KinshipScene,
-      withCaptureReady: true,
+    }),
+    [DisplayModes.KINSHIP]: buildModeEntry(modeBaseConfigs[DisplayModes.KINSHIP], {
       componentProps: {
         imagesBase,
         clusters,
@@ -128,12 +151,11 @@ export function createModeRenderMap({
       },
       beforeContent: topbarContent,
       afterContent: screenshotContent,
-    },
-    [DisplayModes.ADMIN]: {
-      component: AdminPanel,
+    }),
+    [DisplayModes.ADMIN]: buildModeEntry(modeBaseConfigs[DisplayModes.ADMIN], {
       componentProps: {
         clientId,
       },
-    },
+    }),
   };
 }
