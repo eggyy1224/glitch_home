@@ -5,15 +5,17 @@ import GenerateMode from "../../src/GenerateMode.jsx";
 
 const mockGenerateMixTwo = vi.fn();
 const mockListOffspringImages = vi.fn();
-const mockSearchImagesByText = vi.fn();
-const mockSearchImagesByImage = vi.fn();
+const mockCreateTextSearchRequest = vi.fn();
+const mockCreateImageUploadRequest = vi.fn();
+const mockCreateImageSearchRequest = vi.fn();
 
 vi.mock("../../src/api.js", () => ({
   __esModule: true,
   generateMixTwo: (...args) => mockGenerateMixTwo(...args),
   listOffspringImages: (...args) => mockListOffspringImages(...args),
-  searchImagesByText: (...args) => mockSearchImagesByText(...args),
-  searchImagesByImage: (...args) => mockSearchImagesByImage(...args),
+  createTextSearchRequest: (...args) => mockCreateTextSearchRequest(...args),
+  createImageUploadRequest: (...args) => mockCreateImageUploadRequest(...args),
+  createImageSearchRequest: (...args) => mockCreateImageSearchRequest(...args),
 }));
 
 const sampleImages = [
@@ -24,6 +26,10 @@ const sampleImages = [
 beforeEach(() => {
   vi.clearAllMocks();
   mockListOffspringImages.mockResolvedValue({ images: sampleImages });
+  const resolvedRequest = (value) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
+  mockCreateTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
+  mockCreateImageUploadRequest.mockReturnValue(resolvedRequest({ searchPath: "", fallbackPath: "" }));
+  mockCreateImageSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
 });
 
 describe("GenerateMode", () => {
@@ -63,9 +69,11 @@ describe("GenerateMode", () => {
   });
 
   it("文字搜尋會切換到搜尋結果並提供返回", async () => {
-    mockSearchImagesByText.mockResolvedValue({
-      results: [{ id: "found-img", distance: 0.1 }],
-    });
+    const resolvedRequest = {
+      controller: new AbortController(),
+      promise: Promise.resolve({ results: [{ id: "found-img", distance: 0.1 }] }),
+    };
+    mockCreateTextSearchRequest.mockReturnValue(resolvedRequest);
 
     render(<GenerateMode />);
     await waitFor(() => screen.getByPlaceholderText(/輸入搜尋詞/));
@@ -73,7 +81,7 @@ describe("GenerateMode", () => {
     fireEvent.change(screen.getByPlaceholderText(/輸入搜尋詞/), { target: { value: "horse" } });
     fireEvent.click(screen.getByRole("button", { name: "搜尋" }));
 
-    await waitFor(() => expect(mockSearchImagesByText).toHaveBeenCalledWith("horse", 50));
+    await waitFor(() => expect(mockCreateTextSearchRequest).toHaveBeenCalledWith("horse", 50));
 
     await waitFor(() => {
       expect(screen.getByText("顯示：搜尋結果 (1 張)")).toBeInTheDocument();
@@ -83,6 +91,24 @@ describe("GenerateMode", () => {
     fireEvent.click(screen.getByRole("button", { name: "返回全部" }));
     await waitFor(() => {
       expect(screen.getByText("a.png")).toBeInTheDocument();
+    });
+  });
+
+  it("搜尋失敗會顯示錯誤並重置狀態", async () => {
+    const error = new Error("boom");
+    mockCreateTextSearchRequest.mockImplementation(() => {
+      throw error;
+    });
+
+    render(<GenerateMode />);
+    await waitFor(() => screen.getByPlaceholderText(/輸入搜尋詞/));
+
+    fireEvent.change(screen.getByPlaceholderText(/輸入搜尋詞/), { target: { value: "horse" } });
+    fireEvent.click(screen.getByRole("button", { name: "搜尋" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("boom")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "搜尋" })).toBeEnabled();
     });
   });
 });

@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./CollageVersionMode.css";
-import { generateCollageVersionFromNames, listOffspringImages, searchImagesByText, searchImagesByImage, getCollageProgress } from "./api.js";
+import {
+  createImageSearchRequest,
+  createImageUploadRequest,
+  createTextSearchRequest,
+  generateCollageVersionFromNames,
+  getCollageProgress,
+  listOffspringImages,
+} from "./api.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const API_BASE = import.meta.env.VITE_API_BASE || "";
@@ -29,6 +36,9 @@ export default function CollageVersionMode() {
   const [searching, setSearching] = useState(false);
   const [displayMode, setDisplayMode] = useState("all"); // "all" | "search"
   const fileInputRef = useRef(null);
+  const uploadControllerRef = useRef(null);
+  const imageSearchControllerRef = useRef(null);
+  const textSearchControllerRef = useRef(null);
   
   // Parameters
   const [rows, setRows] = useState(12);
@@ -60,6 +70,20 @@ export default function CollageVersionMode() {
     };
     loadImages();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (uploadControllerRef.current) {
+        uploadControllerRef.current.abort();
+      }
+      if (imageSearchControllerRef.current) {
+        imageSearchControllerRef.current.abort();
+      }
+      if (textSearchControllerRef.current) {
+        textSearchControllerRef.current.abort();
+      }
+    };
+  }, []);
   
   const handleImageToggle = (imageName) => {
     setSelectedImages((prev) => {
@@ -71,7 +95,43 @@ export default function CollageVersionMode() {
     });
     setError(null);
   };
-  
+
+  const abortImageSearch = () => {
+    if (uploadControllerRef.current) {
+      uploadControllerRef.current.abort();
+      uploadControllerRef.current = null;
+    }
+    if (imageSearchControllerRef.current) {
+      imageSearchControllerRef.current.abort();
+      imageSearchControllerRef.current = null;
+    }
+  };
+
+  const abortTextSearch = () => {
+    if (textSearchControllerRef.current) {
+      textSearchControllerRef.current.abort();
+      textSearchControllerRef.current = null;
+    }
+  };
+
+  const handleSearchResults = (resultList, emptyMessage) => {
+    if (!resultList?.length) {
+      setError(emptyMessage);
+      setDisplayMode("all");
+      return;
+    }
+
+    const convertedResults = resultList.map((result) => {
+      const cleanId = result.id.replace(/:(en|zh)$/, "");
+      return {
+        filename: cleanId,
+        url: `${IMAGES_BASE}${cleanId}`,
+      };
+    });
+    setSearchResults(convertedResults);
+    setDisplayMode("search");
+  };
+
   // Search handlers
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -92,115 +152,79 @@ export default function CollageVersionMode() {
       setError("請先選擇圖片");
       return;
     }
-    
+
+    abortTextSearch();
+    abortImageSearch();
+
     setSearching(true);
     setError(null);
-    
+
     try {
-      const formData = new FormData();
-      formData.append("file", searchFile);
-      
-      const uploadUrl = `${API_BASE}/api/screenshots`;
-      
-      const uploadRes = await fetch(uploadUrl, {
-        method: "POST",
-        body: formData,
-      });
-      
-      if (!uploadRes.ok) {
-        const errorText = await uploadRes.text();
-        throw new Error(`圖片上傳失敗 (${uploadRes.status}): ${errorText}`);
-      }
-      
-      const uploadData = await uploadRes.json();
-      const uploadedPath = uploadData.absolute_path || uploadData.relative_path;
-      
-      if (!uploadedPath) {
-        throw new Error("上傳成功但無法取得檔案路徑");
-      }
-      
-      let searchPath = uploadedPath;
-      if (uploadData.original_filename) {
-        searchPath = `backend/offspring_images/${uploadData.original_filename}`;
-      }
-      
+      const { controller: uploadController, promise: uploadPromise } = createImageUploadRequest(searchFile);
+      uploadControllerRef.current = uploadController;
+
+      const { searchPath, fallbackPath } = await uploadPromise;
+      uploadControllerRef.current = null;
+
+      const runSearch = async (path) => {
+        const { controller, promise } = createImageSearchRequest(path, 50);
+        imageSearchControllerRef.current = controller;
+        const searchResultsData = await promise;
+        imageSearchControllerRef.current = null;
+        return searchResultsData;
+      };
+
+      let searchResultsData;
       try {
-        const searchResultsData = await searchImagesByImage(searchPath, 50);
-        const resultList = searchResultsData.results || [];
-        
-        if (resultList.length === 0) {
-          setError("搜尋完成，但沒有找到相似的圖像");
-          setDisplayMode("all");
-        } else {
-          // Convert search results to image format
-          const convertedResults = resultList.map((result) => {
-            const cleanId = result.id.replace(/:(en|zh)$/, "");
-            return {
-              filename: cleanId,
-              url: `${IMAGES_BASE}${cleanId}`,
-            };
-          });
-          setSearchResults(convertedResults);
-          setDisplayMode("search");
-        }
+        searchResultsData = await runSearch(searchPath);
       } catch (searchErr) {
-        if (searchPath !== uploadedPath) {
-          const searchResultsData = await searchImagesByImage(uploadedPath, 50);
-          const resultList = searchResultsData.results || [];
-          if (resultList.length === 0) {
-            setError("搜尋完成，但沒有找到相似的圖像");
-            setDisplayMode("all");
-          } else {
-            const convertedResults = resultList.map((result) => {
-              const cleanId = result.id.replace(/:(en|zh)$/, "");
-              return {
-                filename: cleanId,
-                url: `${IMAGES_BASE}${cleanId}`,
-              };
-            });
-            setSearchResults(convertedResults);
-            setDisplayMode("search");
-          }
+        if (searchErr.name === "AbortError") {
+          return;
+        }
+        if (fallbackPath && fallbackPath !== searchPath) {
+          searchResultsData = await runSearch(fallbackPath);
         } else {
           throw searchErr;
         }
       }
+
+      const resultList = searchResultsData?.results || [];
+      handleSearchResults(resultList, "搜尋完成，但沒有找到相似的圖像");
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       setError(err.message || "搜尋出錯");
     } finally {
       setSearching(false);
     }
   };
-  
+
   const handleTextSearch = async () => {
     if (!textQuery.trim()) {
       setError("請輸入搜尋詞");
       return;
     }
-    
+
+    abortImageSearch();
+    abortTextSearch();
+
     setSearching(true);
     setError(null);
-    
+
     try {
-      const searchResultsData = await searchImagesByText(textQuery, 50);
+      const { controller, promise } = createTextSearchRequest(textQuery, 50);
+      textSearchControllerRef.current = controller;
+
+      const searchResultsData = await promise;
+      textSearchControllerRef.current = null;
+
       const resultList = searchResultsData.results || [];
-      
-      if (resultList.length === 0) {
-        setError(`未找到與「${textQuery}」相關的圖像`);
-        setDisplayMode("all");
-      } else {
-        // Convert search results to image format
-        const convertedResults = resultList.map((result) => {
-          const cleanId = result.id.replace(/:(en|zh)$/, "");
-          return {
-            filename: cleanId,
-            url: `${IMAGES_BASE}${cleanId}`,
-          };
-        });
-        setSearchResults(convertedResults);
-        setDisplayMode("search");
-      }
+      handleSearchResults(resultList, `未找到與「${textQuery}」相關的圖像`);
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       setError(err.message || "搜尋出錯");
     } finally {
       setSearching(false);
@@ -208,12 +232,15 @@ export default function CollageVersionMode() {
   };
   
   const handleSearchClear = () => {
+    abortImageSearch();
+    abortTextSearch();
     setTextQuery("");
     setSearchFile(null);
     setSearchPreview(null);
     setSearchResults([]);
     setDisplayMode("all");
     setError(null);
+    setSearching(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }

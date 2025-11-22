@@ -135,7 +135,7 @@ export async function reportScreenshotFailure(requestId, errorMessage = "", clie
 }
 
 // 以圖搜圖 API
-export async function searchImagesByImage(imagePath, topK = 10) {
+export async function searchImagesByImage(imagePath, topK = 10, { signal } = {}) {
   const url = `${API_BASE}/api/search/image`;
   const payload = {
     image_path: imagePath,
@@ -145,13 +145,14 @@ export async function searchImagesByImage(imagePath, topK = 10) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal,
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
 
 // 文字搜尋 API
-export async function searchImagesByText(query, topK = 10) {
+export async function searchImagesByText(query, topK = 10, { signal } = {}) {
   const url = `${API_BASE}/api/search/text`;
   const payload = {
     query,
@@ -161,6 +162,7 @@ export async function searchImagesByText(query, topK = 10) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal,
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
@@ -571,4 +573,59 @@ export async function deleteIframeSnapshot(clientId, name, { signal } = {}) {
 export async function cloneIframeSnapshot(clientId, name, payload, { signal } = {}) {
   const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}/clone`;
   return postJson(url, payload, { signal });
+}
+
+async function uploadImageForSearch(file, { signal } = {}) {
+  if (!file) {
+    throw new Error("請先選擇圖片");
+  }
+
+  const url = `${API_BASE}/api/screenshots`;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(url, {
+    method: "POST",
+    body: formData,
+    signal,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`圖片上傳失敗 (${res.status}): ${errorText}`);
+  }
+
+  const data = await res.json();
+  const uploadedPath = data.absolute_path || data.relative_path;
+
+  if (!uploadedPath) {
+    throw new Error("上傳成功但無法取得檔案路徑");
+  }
+
+  const searchPath = data.original_filename
+    ? `backend/offspring_images/${data.original_filename}`
+    : uploadedPath;
+
+  return {
+    searchPath,
+    fallbackPath: uploadedPath,
+  };
+}
+
+export function createImageUploadRequest(file) {
+  const controller = new AbortController();
+  const promise = uploadImageForSearch(file, { signal: controller.signal });
+  return { controller, promise };
+}
+
+export function createImageSearchRequest(imagePath, topK = 10) {
+  const controller = new AbortController();
+  const promise = searchImagesByImage(imagePath, topK, { signal: controller.signal });
+  return { controller, promise };
+}
+
+export function createTextSearchRequest(query, topK = 10) {
+  const controller = new AbortController();
+  const promise = searchImagesByText(query, topK, { signal: controller.signal });
+  return { controller, promise };
 }

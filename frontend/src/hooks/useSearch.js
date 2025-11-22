@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState } from "react";
-import { searchImagesByImage, searchImagesByText } from "../api";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "";
-const UPLOAD_ENDPOINT = `${API_BASE}/api/screenshots`;
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createImageSearchRequest,
+  createImageUploadRequest,
+  createTextSearchRequest,
+} from "../api";
 const DEFAULT_LIMIT = 15;
 
 const normalizeResults = (payload) => {
@@ -21,6 +22,32 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
+  const uploadControllerRef = useRef(null);
+  const imageSearchControllerRef = useRef(null);
+  const textSearchControllerRef = useRef(null);
+
+  const abortImageSearch = useCallback(() => {
+    if (uploadControllerRef.current) {
+      uploadControllerRef.current.abort();
+      uploadControllerRef.current = null;
+    }
+    if (imageSearchControllerRef.current) {
+      imageSearchControllerRef.current.abort();
+      imageSearchControllerRef.current = null;
+    }
+  }, []);
+
+  const abortTextSearch = useCallback(() => {
+    if (textSearchControllerRef.current) {
+      textSearchControllerRef.current.abort();
+      textSearchControllerRef.current = null;
+    }
+  }, []);
+
+  const abortAll = useCallback(() => {
+    abortImageSearch();
+    abortTextSearch();
+  }, [abortImageSearch, abortTextSearch]);
 
   const updateResults = useCallback((list, emptyMessage) => {
     if (!list.length && emptyMessage) {
@@ -28,8 +55,15 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
       setError(emptyMessage);
       return;
     }
+    setError(null);
     setResults(list);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      abortAll();
+    };
+  }, [abortAll]);
 
   const handleFilePreview = useCallback((file) => {
     if (!file) return;
@@ -49,14 +83,16 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
   }, [handleFilePreview]);
 
   const clearFileSelection = useCallback(() => {
+    abortImageSearch();
     setSelectedFile(null);
     setPreview(null);
     setResults([]);
     setError(null);
+    setSearching(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  }, []);
+  }, [abortImageSearch]);
 
   const updateTextQuery = useCallback((value) => {
     setTextQuery(value);
@@ -67,33 +103,38 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
   }, []);
 
   const clearTextQuery = useCallback(() => {
+    abortTextSearch();
     setTextQuery("");
     setResults([]);
     setError(null);
-  }, []);
-
-  const fetchImageResults = useCallback(async (path) => {
-    const searchResults = await searchImagesByImage(path, limit);
-    const normalized = normalizeResults(searchResults);
-    updateResults(
-      normalized,
-      normalized.length ? null : "搜尋完成，但沒有找到相似的圖像"
-    );
-    return normalized;
-  }, [limit, updateResults]);
+    setSearching(false);
+  }, [abortTextSearch]);
 
   const runImageSearch = useCallback(
-    async (primaryPath, fallbackPath = primaryPath) => {
+    async (primaryPath, fallbackPath = primaryPath, emptyMessage = "搜尋完成，但沒有找到相似的圖像") => {
+      const execute = async (path) => {
+        const { controller, promise } = createImageSearchRequest(path, limit);
+        imageSearchControllerRef.current = controller;
+        const searchResults = await promise;
+        imageSearchControllerRef.current = null;
+        const normalized = normalizeResults(searchResults);
+        updateResults(normalized, normalized.length ? null : emptyMessage);
+        return normalized;
+      };
+
       try {
-        return await fetchImageResults(primaryPath);
+        return await execute(primaryPath);
       } catch (primaryError) {
+        if (primaryError.name === "AbortError") {
+          throw primaryError;
+        }
         if (fallbackPath && fallbackPath !== primaryPath) {
-          return fetchImageResults(fallbackPath);
+          return execute(fallbackPath);
         }
         throw primaryError;
       }
     },
-    [fetchImageResults]
+    [limit, updateResults]
   );
 
   const uploadImage = useCallback(async () => {
@@ -101,34 +142,11 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
       throw new Error("請先選擇圖片");
     }
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
-    const uploadRes = await fetch(UPLOAD_ENDPOINT, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!uploadRes.ok) {
-      const errorText = await uploadRes.text();
-      throw new Error(`圖片上傳失敗 (${uploadRes.status}): ${errorText}`);
-    }
-
-    const uploadData = await uploadRes.json();
-    const uploadedPath = uploadData.absolute_path || uploadData.relative_path;
-
-    if (!uploadedPath) {
-      throw new Error("上傳成功但無法取得檔案路徑");
-    }
-
-    const searchPath = uploadData.original_filename
-      ? `backend/offspring_images/${uploadData.original_filename}`
-      : uploadedPath;
-
-    return {
-      searchPath,
-      fallbackPath: uploadedPath,
-    };
+    const { controller, promise } = createImageUploadRequest(selectedFile);
+    uploadControllerRef.current = controller;
+    const uploadResult = await promise;
+    uploadControllerRef.current = null;
+    return uploadResult;
   }, [selectedFile]);
 
   const searchByImage = useCallback(async () => {
@@ -137,6 +155,7 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
       return;
     }
 
+    abortAll();
     setSearching(true);
     setError(null);
     setResults([]);
@@ -145,6 +164,9 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
       const { searchPath, fallbackPath } = await uploadImage();
       await runImageSearch(searchPath, fallbackPath);
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.error("搜尋出錯:", err);
       setError(err.message || "搜尋出錯，請檢查瀏覽器控制台");
     } finally {
@@ -159,18 +181,22 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
       return;
     }
 
+    abortAll();
     setSearching(true);
     setError(null);
     setResults([]);
 
     try {
-      const searchResults = await searchImagesByText(query, limit);
+      const { controller, promise } = createTextSearchRequest(query, limit);
+      textSearchControllerRef.current = controller;
+      const searchResults = await promise;
+      textSearchControllerRef.current = null;
       const normalized = normalizeResults(searchResults);
-      updateResults(
-        normalized,
-        normalized.length ? null : `未找到與「${query}」相關的圖像`
-      );
+      updateResults(normalized, normalized.length ? null : `未找到與「${query}」相關的圖像`);
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.error("搜尋出錯:", err);
       setError(err.message || "搜尋出錯");
     } finally {
@@ -180,12 +206,16 @@ export default function useSearch({ limit = DEFAULT_LIMIT } = {}) {
 
   const searchFromResult = useCallback(
     async (imageId) => {
+      abortAll();
       setSearching(true);
       setError(null);
 
       try {
         await runImageSearch(`backend/offspring_images/${imageId}`);
       } catch (err) {
+        if (err.name === "AbortError") {
+          return;
+        }
         console.error("搜尋出錯:", err);
         setError(err.message || "搜尋出錯，請重試");
       } finally {
