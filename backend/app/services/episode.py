@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import json
 import re
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from pydantic import ValidationError
 
 from ..config import settings
 from ..models.episode import Episode
 from .iframe_config import sanitize_client_id
 from .iframe_timeline import load_iframe_timeline_definition, sanitize_timeline_id
 from .realtime_bus import realtime_broadcaster
+
+
+logger = logging.getLogger(__name__)
 
 
 _EPISODE_DIR = Path(settings.metadata_dir) / "episodes"
@@ -133,7 +139,8 @@ def list_episodes() -> List[Dict[str, object]]:
             raw.setdefault("id", path.stem)
             raw["id"] = _sanitize_episode_id(raw["id"])
             episode = Episode.model_validate(raw)
-        except Exception:
+        except (json.JSONDecodeError, ValidationError, ValueError) as exc:
+            logger.warning("略過 Episode 檔案 %s：%s", path.name, exc)
             continue
         clients: List[str] = []
         for track in episode.tracks:
