@@ -37,10 +37,34 @@ class KinshipIndex:
         self._parents_map: Dict[str, List[str]] = {}
         self._children_map: Dict[str, List[str]] = {}
         self._loaded: bool = False
-        self._index_path = Path(settings.metadata_dir) / INDEX_FILENAME
+        self._settings_obj = settings
+        self._settings_metadata_dir = settings.metadata_dir
+        self._index_path = Path(self._settings_metadata_dir) / INDEX_FILENAME
+
+    def _sync_settings(self) -> None:
+        """
+        Keep index paths aligned with the latest Settings instance.
+
+        Some tests reload app.config (creating a new Settings object), so we
+        need to refresh cached paths to avoid pointing at stale metadata dirs.
+        """
+        from .. import config as live_config  # local import to pick up reloads
+
+        live_settings = live_config.settings
+        live_metadata_dir = getattr(live_settings, "metadata_dir", self._settings_metadata_dir)
+
+        if (live_settings is not self._settings_obj) or (live_metadata_dir != self._settings_metadata_dir):
+            self._settings_obj = live_settings
+            self._settings_metadata_dir = live_metadata_dir
+            self._index_path = Path(live_metadata_dir) / INDEX_FILENAME
+            # Force reload to avoid mixing old maps with new paths
+            self._loaded = False
+            self._parents_map = {}
+            self._children_map = {}
     
     def load(self) -> bool:
         """Load index from disk. Returns True if successful."""
+        self._sync_settings()
         if not self._index_path.exists():
             return False
         
@@ -63,9 +87,10 @@ class KinshipIndex:
     
     def build_and_save(self) -> Dict[str, any]:
         """Scan all metadata/*.json, build index, and save to disk."""
+        self._sync_settings()
         print("🔨 Building kinship index from metadata...")
         
-        metadata_dir = Path(settings.metadata_dir)
+        metadata_dir = self._index_path.parent
         parents_map: Dict[str, Set[str]] = {}
         children_map: Dict[str, Set[str]] = {}
         
@@ -141,6 +166,7 @@ class KinshipIndex:
     
     def ensure_loaded(self) -> None:
         """Ensure index is loaded. If not on disk, build it."""
+        self._sync_settings()
         if self._loaded:
             return
         
@@ -227,4 +253,3 @@ class KinshipIndex:
 
 # Singleton instance
 kinship_index = KinshipIndex()
-
