@@ -6,18 +6,26 @@ from app.services.realtime_bus import RealtimeBroadcaster
 
 
 class DummyWebSocket:
-    def __init__(self, fail_times: int = 0, exception: Exception | None = None) -> None:
+    def __init__(
+        self,
+        fail_times: int = 0,
+        exception: Exception | None = None,
+        delay: float = 0.0,
+    ) -> None:
         self.accepted = False
         self.sent_messages: list[dict] = []
         self.fail_times = fail_times
         self.exception = exception or RuntimeError("send failed")
         self.attempts = 0
+        self.delay = delay
 
     async def accept(self) -> None:  # pragma: no cover - trivial
         self.accepted = True
 
     async def send_json(self, message: dict) -> None:
         self.attempts += 1
+        if self.delay:
+            await asyncio.sleep(self.delay)
         if self.fail_times > 0:
             self.fail_times -= 1
             raise self.exception
@@ -160,3 +168,23 @@ async def test_non_retryable_send_logs_and_returns_false(caplog: pytest.LogCaptu
     clients = await broadcaster.list_clients()
     assert clients == []
     assert "Non-retryable WebSocket send_json failure for client None" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_slow_client_timeout_does_not_block_broadcast() -> None:
+    broadcaster = RealtimeBroadcaster(send_timeout=0.05)
+    fast_ws = DummyWebSocket()
+    slow_ws = DummyWebSocket(delay=0.2)
+
+    await broadcaster.add_connection(fast_ws)
+    await broadcaster.add_connection(slow_ws)
+    await broadcaster.register_client(fast_ws, "fast")
+    await broadcaster.register_client(slow_ws, "slow")
+
+    payload = {"type": "test", "value": "broadcast"}
+
+    await asyncio.wait_for(broadcaster.broadcast(payload), timeout=0.15)
+
+    assert fast_ws.sent_messages == [payload]
+    clients = await broadcaster.list_clients()
+    assert clients == [{"client_id": "fast", "connections": 1}]

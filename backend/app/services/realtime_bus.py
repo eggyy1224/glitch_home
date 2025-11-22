@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 class RealtimeBroadcaster:
     """Manage active WebSocket connections and broadcast JSON payloads."""
 
-    def __init__(self) -> None:
+    def __init__(self, send_timeout: float = 1.0) -> None:
         self._lock = asyncio.Lock()
         self._connections: dict[WebSocket, dict[str | None]] = {}
+        self._send_timeout = send_timeout
 
     async def add_connection(self, websocket: WebSocket) -> None:
         """Register a new WebSocket connection."""
@@ -72,14 +73,20 @@ class RealtimeBroadcaster:
                 for ws, info in self._connections.items()
                 if target_client_id is None or info.get("client_id") == target_client_id
             ]
-        for connection in targets:
-            await self._send(connection, message)
+
+        if not targets:
+            return
+
+        await asyncio.gather(
+            *(self._send_with_timeout(connection, message) for connection in targets),
+            return_exceptions=True,
+        )
 
     async def send_messages(self, websocket: WebSocket, messages: Iterable[dict[str, Any]]) -> None:
         """Send a collection of messages to a specific WebSocket."""
 
         for message in messages:
-            await self._send(websocket, message)
+            await self._send_with_timeout(websocket, message)
 
     async def broadcast_sound_play(
         self,
@@ -253,6 +260,15 @@ class RealtimeBroadcaster:
                         exc_info=retry_exc,
                     )
 
+            await self.remove_connection(websocket)
+            return False
+
+    async def _send_with_timeout(self, websocket: WebSocket, message: dict[str, Any]) -> bool:
+        try:
+            return await asyncio.wait_for(self._send(websocket, message), timeout=self._send_timeout)
+        except asyncio.TimeoutError:
+            client_id = self._connections.get(websocket, {}).get("client_id")
+            logger.error("WebSocket send_json timed out for client %s", client_id)
             await self.remove_connection(websocket)
             return False
 
