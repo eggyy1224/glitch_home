@@ -10,8 +10,12 @@ import {
   clamp,
   computeBoardLayout,
   computeStageWidthBounds,
-  mulberry32,
 } from "../utils/collageMath.js";
+import {
+  defaultImageProcessing,
+  edgeKeyForPiece,
+} from "../utils/collageImageProcessing.js";
+import { defaultCollageStateUtils } from "../utils/collageStateUtils.js";
 import {
   COLLAGE_DEFAULT_COLS as DEFAULT_COLS,
   COLLAGE_DEFAULT_IMAGE_COUNT as DEFAULT_IMAGE_COUNT,
@@ -32,347 +36,6 @@ import {
 
 const PERSIST_COLLAGE_QUERY =
   String(import.meta.env.VITE_COLLAGE_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
-const EDGE_SAMPLE_CACHE = new Map();
-const IMAGE_DIMENSION_CACHE = new Map();
-const MAX_CACHE_SIZE = 50;
-
-const cleanupCache = (cache) => {
-  if (cache.size > MAX_CACHE_SIZE) {
-    const entriesToDelete = Math.floor(cache.size * 0.25);
-    const keysToDelete = Array.from(cache.keys()).slice(0, entriesToDelete);
-    keysToDelete.forEach((key) => cache.delete(key));
-  }
-};
-
-const loadImageElement = (url) =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = "async";
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`無法載入圖像 ${url}`));
-    img.src = url;
-  });
-
-const ensureImageDimensions = (imageUrl) => {
-  if (!imageUrl) {
-    return Promise.resolve(null);
-  }
-  const cached = IMAGE_DIMENSION_CACHE.get(imageUrl);
-  if (cached) {
-    return cached instanceof Promise ? cached : Promise.resolve(cached);
-  }
-  const promise = loadImageElement(imageUrl)
-    .then((img) => {
-      const width = img.naturalWidth || img.width;
-      const height = img.naturalHeight || img.height;
-      if (!width || !height) {
-        throw new Error(`圖像尺寸為 0：${imageUrl}`);
-      }
-      const payload = { width, height, ratio: width / height };
-      IMAGE_DIMENSION_CACHE.set(imageUrl, payload);
-      cleanupCache(IMAGE_DIMENSION_CACHE);
-      return payload;
-    })
-    .catch((err) => {
-      const cachedValue = IMAGE_DIMENSION_CACHE.get(imageUrl);
-      if (cachedValue === promise) {
-        IMAGE_DIMENSION_CACHE.delete(imageUrl);
-      }
-      throw err;
-    });
-  IMAGE_DIMENSION_CACHE.set(imageUrl, promise);
-  return promise;
-};
-
-const averageRectColor = (data, width, height, startX, startY, rectWidth, rectHeight) => {
-  if (!rectWidth || !rectHeight) return [0, 0, 0];
-  const stepX = Math.max(1, Math.floor(rectWidth / 6));
-  const stepY = Math.max(1, Math.floor(rectHeight / 6));
-  let samples = 0;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  const maxX = Math.min(width, startX + rectWidth);
-  const maxY = Math.min(height, startY + rectHeight);
-  for (let y = startY; y < maxY; y += stepY) {
-    for (let x = startX; x < maxX; x += stepX) {
-      const idx = (y * width + x) * 4;
-      r += data[idx];
-      g += data[idx + 1];
-      b += data[idx + 2];
-      samples += 1;
-    }
-  }
-  if (!samples) return [0, 0, 0];
-  return [r / samples, g / samples, b / samples];
-};
-
-const colorDistance = (a, b) => {
-  if (!a || !b) return 255 * 5;
-  const dr = a[0] - b[0];
-  const dg = a[1] - b[1];
-  const db = a[2] - b[2];
-  return Math.sqrt(dr * dr + dg * dg + db * db);
-};
-
-const edgeKeyForPiece = (piece) => `${piece.imageId}|${piece.sourceRow}|${piece.sourceCol}`;
-
-const computeEdgesForImage = async (imageId, imageUrl, rows, cols) => {
-  const cacheKey = `${imageUrl}|${rows}|${cols}`;
-  if (EDGE_SAMPLE_CACHE.has(cacheKey)) {
-    return EDGE_SAMPLE_CACHE.get(cacheKey);
-  }
-
-  const img = await loadImageElement(imageUrl);
-  const sourceWidth = img.naturalWidth || img.width;
-  const sourceHeight = img.naturalHeight || img.height;
-  if (!sourceWidth || !sourceHeight) {
-    throw new Error(`圖像尺寸為 0：${imageUrl}`);
-  }
-
-  const pieceSourceWidth = sourceWidth / cols;
-  const pieceSourceHeight = sourceHeight / rows;
-
-  const workCanvas = document.createElement("canvas");
-  const workCtx = workCanvas.getContext("2d", { willReadFrequently: true });
-
-  const result = new Map();
-
-  try {
-    for (let row = 0; row < rows; row += 1) {
-      for (let col = 0; col < cols; col += 1) {
-        const key = `${imageId}|${row}|${col}`;
-        const sourceX = col * pieceSourceWidth;
-        const sourceY = row * pieceSourceHeight;
-        const drawWidth = Math.max(1, Math.round(pieceSourceWidth));
-        const drawHeight = Math.max(1, Math.round(pieceSourceHeight));
-
-        workCanvas.width = drawWidth;
-        workCanvas.height = drawHeight;
-        workCtx.clearRect(0, 0, drawWidth, drawHeight);
-        workCtx.drawImage(img, sourceX, sourceY, pieceSourceWidth, pieceSourceHeight, 0, 0, drawWidth, drawHeight);
-
-        const imageData = workCtx.getImageData(0, 0, drawWidth, drawHeight);
-        const data = imageData.data;
-
-        const stripWidth = Math.max(1, Math.round(drawWidth * 0.12));
-        const stripHeight = Math.max(1, Math.round(drawHeight * 0.12));
-        const centerWidth = Math.max(1, Math.round(drawWidth * 0.5));
-        const centerHeight = Math.max(1, Math.round(drawHeight * 0.5));
-        const centerStartX = Math.max(0, Math.round((drawWidth - centerWidth) / 2));
-        const centerStartY = Math.max(0, Math.round((drawHeight - centerHeight) / 2));
-
-        result.set(key, {
-          top: averageRectColor(data, drawWidth, drawHeight, 0, 0, drawWidth, stripHeight),
-          bottom: averageRectColor(
-            data,
-            drawWidth,
-            drawHeight,
-            0,
-            Math.max(0, drawHeight - stripHeight),
-            drawWidth,
-            stripHeight,
-          ),
-          left: averageRectColor(data, drawWidth, drawHeight, 0, 0, stripWidth, drawHeight),
-          right: averageRectColor(
-            data,
-            drawWidth,
-            drawHeight,
-            Math.max(0, drawWidth - stripWidth),
-            0,
-            stripWidth,
-            drawHeight,
-          ),
-          center: averageRectColor(data, drawWidth, drawHeight, centerStartX, centerStartY, centerWidth, centerHeight),
-        });
-      }
-    }
-  } finally {
-    workCanvas.width = 0;
-    workCanvas.height = 0;
-    workCtx.clearRect(0, 0, 0, 0);
-    img.src = "";
-  }
-
-  EDGE_SAMPLE_CACHE.set(cacheKey, result);
-  cleanupCache(EDGE_SAMPLE_CACHE);
-  return result;
-};
-
-const evaluateSlotScore = (matrix, row, col, rows, cols, edgeLookup) => {
-  const piece = matrix[row][col];
-  if (!piece) return Number.POSITIVE_INFINITY;
-  const edges = edgeLookup.get(edgeKeyForPiece(piece));
-  if (!edges) return Number.POSITIVE_INFINITY;
-
-  let total = 0;
-  let matches = 0;
-
-  const accumulate = (neighborRow, neighborCol, selfEdgeKey, neighborEdgeKey) => {
-    const neighbor = matrix[neighborRow][neighborCol];
-    if (!neighbor) return;
-    const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
-    if (!neighborEdges) return;
-    total += colorDistance(edges[selfEdgeKey], neighborEdges[neighborEdgeKey]);
-    matches += 1;
-  };
-
-  if (col > 0) accumulate(row, col - 1, "left", "right");
-  if (col < cols - 1) accumulate(row, col + 1, "right", "left");
-  if (row > 0) accumulate(row - 1, col, "top", "bottom");
-  if (row < rows - 1) accumulate(row + 1, col, "bottom", "top");
-
-  if (!matches) return Number.POSITIVE_INFINITY;
-  return total / matches;
-};
-
-const optimizeBottomRightPlacement = (matrix, rows, cols, edgeLookup) => {
-  const targetRow = rows - 1;
-  const targetCol = cols - 1;
-  let bestSwap = null;
-  let bestImprovement = 0;
-
-  const baseline = evaluateSlotScore(matrix, targetRow, targetCol, rows, cols, edgeLookup);
-  if (!Number.isFinite(baseline)) return;
-
-  for (let row = Math.max(0, rows - 3); row < rows; row += 1) {
-    for (let col = Math.max(0, cols - 3); col < cols; col += 1) {
-      if (row === targetRow && col === targetCol) continue;
-      const candidate = matrix[row][col];
-      matrix[row][col] = matrix[targetRow][targetCol];
-      matrix[targetRow][targetCol] = candidate;
-      const afterScore = evaluateSlotScore(matrix, targetRow, targetCol, rows, cols, edgeLookup);
-      matrix[targetRow][targetCol] = matrix[row][col];
-      matrix[row][col] = candidate;
-
-      if (!Number.isFinite(afterScore)) continue;
-      const improvement = baseline - afterScore;
-      if (improvement > bestImprovement + 0.5) {
-        bestImprovement = improvement;
-        bestSwap = { row, col };
-      }
-    }
-  }
-
-  if (bestSwap && bestImprovement > 1.5) {
-    const { row, col } = bestSwap;
-    const targetPiece = matrix[targetRow][targetCol];
-    matrix[targetRow][targetCol] = matrix[row][col];
-    matrix[row][col] = targetPiece;
-  }
-};
-
-const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
-  if (!pieces.length || !rows || !cols) return [];
-  const capacity = rows * cols;
-  const piecesPool = [];
-  while (piecesPool.length < capacity) {
-    piecesPool.push(...pieces.map((piece) => ({ ...piece })));
-  }
-  const availablePieces = piecesPool.slice(0, capacity);
-
-  const rand = mulberry32(seed ^ 0xabcdef);
-  const available = availablePieces.map((piece) => ({ piece }));
-  const placedMatrix = Array.from({ length: rows }, () => Array(cols).fill(null));
-
-  const slotOrder = Array.from({ length: capacity }, (_, index) => ({
-    row: Math.floor(index / cols),
-    col: index % cols,
-  }));
-
-  slotOrder.forEach(({ row, col }) => {
-    let bestIdx = -1;
-    let bestScore = Number.POSITIVE_INFINITY;
-
-    for (let i = 0; i < available.length; i += 1) {
-      const candidate = available[i].piece;
-      const candidateEdges = edgeLookup.get(edgeKeyForPiece(candidate));
-      if (!candidateEdges) continue;
-
-      let score = 0;
-      let matches = 0;
-
-      if (col > 0 && placedMatrix[row][col - 1]) {
-        const neighbor = placedMatrix[row][col - 1];
-        const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
-        if (neighborEdges) {
-          score += colorDistance(neighborEdges.right, candidateEdges.left);
-          matches += 1;
-        }
-      }
-
-      if (row > 0 && placedMatrix[row - 1][col]) {
-        const neighbor = placedMatrix[row - 1][col];
-        const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
-        if (neighborEdges) {
-          score += colorDistance(neighborEdges.bottom, candidateEdges.top);
-          matches += 1;
-        }
-      }
-
-      if (matches === 0) {
-        score = colorDistance(candidateEdges.center, [128, 128, 128]) + rand() * 5;
-      } else {
-        score = score / matches + rand() * 0.1;
-      }
-
-      if (score < bestScore) {
-        bestScore = score;
-        bestIdx = i;
-      }
-    }
-
-    let chosen;
-    if (bestIdx < 0) {
-      const fallbackIdx = Math.floor(rand() * available.length);
-      chosen = available.splice(fallbackIdx, 1)[0].piece;
-    } else {
-      chosen = available.splice(bestIdx, 1)[0].piece;
-    }
-
-    placedMatrix[row][col] = chosen;
-  });
-
-  optimizeBottomRightPlacement(placedMatrix, rows, cols, edgeLookup);
-
-  const results = [];
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      const chosen = placedMatrix[row][col];
-      if (!chosen) continue;
-      results.push({
-        ...chosen,
-        row,
-        col,
-        key: `${row}-${col}-${chosen.key}-${row * cols + col}`,
-      });
-    }
-  }
-
-  return results;
-};
-
-const readInitialParam = (key, fallback, min, max) => {
-  if (typeof window === "undefined") return fallback;
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get(key);
-  if (!raw) return fallback;
-  const parsed = Number.parseInt(raw, 10);
-  if (Number.isNaN(parsed)) return fallback;
-  return clamp(parsed, min, max);
-};
-
-const readInitialBooleanParam = (key, fallback) => {
-  if (typeof window === "undefined") return fallback;
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get(key);
-  if (!raw) return fallback;
-  const normalized = raw.trim().toLowerCase();
-  if (["1", "true", "yes", "on"].includes(normalized)) return true;
-  if (["0", "false", "no", "off"].includes(normalized)) return false;
-  return fallback;
-};
 
 export function useCollageControls({
   imagesBase,
@@ -381,6 +44,8 @@ export function useCollageControls({
   remoteConfig = null,
   controlsEnabled = true,
   remoteSource = null,
+  imageProcessing = defaultImageProcessing,
+  stateUtils = defaultCollageStateUtils,
 }) {
   const rootRef = useRef(null);
   const resizeHandleRef = useRef(null);
@@ -397,28 +62,28 @@ export function useCollageControls({
   }, [ensureHtml2canvasReady]);
 
   const initialStageWidth = useMemo(
-    () => readInitialParam("collage_width", DEFAULT_STAGE_WIDTH, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH),
-    [],
+    () => stateUtils.readInitialParam("collage_width", DEFAULT_STAGE_WIDTH, STAGE_MIN_WIDTH, STAGE_MAX_WIDTH),
+    [stateUtils],
   );
   const initialStageHeight = useMemo(
-    () => readInitialParam("collage_height", DEFAULT_STAGE_HEIGHT, STAGE_MIN_HEIGHT, STAGE_MAX_HEIGHT),
-    [],
+    () => stateUtils.readInitialParam("collage_height", DEFAULT_STAGE_HEIGHT, STAGE_MIN_HEIGHT, STAGE_MAX_HEIGHT),
+    [stateUtils],
   );
   const initialDesiredRatio = useMemo(
-    () => clamp(initialStageHeight / Math.max(initialStageWidth, 1), RATIO_MIN, RATIO_MAX),
-    [initialStageHeight, initialStageWidth],
+    () => stateUtils.calculateDesiredRatio(initialStageWidth, initialStageHeight),
+    [initialStageHeight, initialStageWidth, stateUtils],
   );
 
   const [imagePool, setImagePool] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [seed, setSeed] = useState(() => Date.now());
+  const [seed, setSeed] = useState(() => stateUtils.nextSeed());
   const [imageCount, setImageCount] = useState(() =>
-    readInitialParam("collage_images", DEFAULT_IMAGE_COUNT, 1, MAX_IMAGES),
+    stateUtils.readInitialParam("collage_images", DEFAULT_IMAGE_COUNT, 1, MAX_IMAGES),
   );
-  const [rows, setRows] = useState(() => readInitialParam("collage_rows", DEFAULT_ROWS, 1, MAX_ROWS));
-  const [cols, setCols] = useState(() => readInitialParam("collage_cols", DEFAULT_COLS, 1, MAX_COLS));
-  const [mixPieces, setMixPieces] = useState(() => readInitialBooleanParam("collage_mix", false));
+  const [rows, setRows] = useState(() => stateUtils.readInitialParam("collage_rows", DEFAULT_ROWS, 1, MAX_ROWS));
+  const [cols, setCols] = useState(() => stateUtils.readInitialParam("collage_cols", DEFAULT_COLS, 1, MAX_COLS));
+  const [mixPieces, setMixPieces] = useState(() => stateUtils.readInitialBooleanParam("collage_mix", false));
   const [edgeLookup, setEdgeLookup] = useState(() => new Map());
   const [edgeStatus, setEdgeStatus] = useState("idle");
   const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
@@ -853,7 +518,7 @@ export function useCollageControls({
     }
     missing.forEach((imageId) => {
       const imageUrl = buildImageUrl(imagesBase, imageId);
-      ensureImageDimensions(imageUrl)
+      imageProcessing.ensureImageDimensions(imageUrl)
         .then((dimensions) => {
           if (cancelled || !dimensions) return;
           setImageMetrics((prev) => {
@@ -883,7 +548,7 @@ export function useCollageControls({
     return () => {
       cancelled = true;
     };
-  }, [selectedImages, imagesBase]);
+  }, [selectedImages, imagesBase, imageProcessing]);
 
   const edgesReady = useMemo(
     () => pieces.every((piece) => edgeLookup.has(edgeKeyForPiece(piece))),
@@ -893,10 +558,16 @@ export function useCollageControls({
   const mixedPieces = useMemo(() => {
     if (!mixPieces) return [];
     if (edgesReady) {
-      return buildEdgeAwareMixedPieces(pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup);
+      return imageProcessing.buildEdgeAwareMixedPieces(
+        pieces,
+        mixBoard.rows,
+        mixBoard.cols,
+        seed,
+        edgeLookup,
+      );
     }
     return buildRandomMixedPieces(pieces, mixBoard.rows, mixBoard.cols, seed);
-  }, [mixPieces, pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup, edgesReady]);
+  }, [mixPieces, pieces, mixBoard.rows, mixBoard.cols, seed, edgeLookup, edgesReady, imageProcessing]);
 
   useEffect(() => {
     let changed = false;
@@ -908,7 +579,7 @@ export function useCollageControls({
       return next;
     });
     if (changed) {
-      setSeed(Date.now());
+      setSeed(stateUtils.nextSeed());
     }
   }, [maxSelectableImages]);
 
@@ -949,7 +620,7 @@ export function useCollageControls({
         await Promise.all(
           selectedImages.map(async (imageId) => {
             const imageUrl = buildImageUrl(imagesBase, imageId);
-            const map = await computeEdgesForImage(imageId, imageUrl, rows, cols);
+            const map = await imageProcessing.computeEdgesForImage(imageId, imageUrl, rows, cols);
             map.forEach((value, key) => {
               aggregate.set(key, value);
             });
@@ -971,7 +642,7 @@ export function useCollageControls({
     return () => {
       cancelled = true;
     };
-  }, [mixPieces, selectedImages, rows, cols, imagesBase]);
+  }, [mixPieces, selectedImages, rows, cols, imagesBase, imageProcessing]);
 
   const handleImageCountChange = useCallback(
     (eventOrValue) => {
@@ -980,9 +651,9 @@ export function useCollageControls({
       const parsed = Number.parseInt(raw, 10);
       if (Number.isNaN(parsed)) return;
       setImageCount(clamp(parsed, 1, maxSelectableImages));
-      setSeed(Date.now());
+      setSeed(stateUtils.nextSeed());
     },
-    [controlsEnabled, maxSelectableImages],
+    [controlsEnabled, maxSelectableImages, stateUtils],
   );
 
   const handleRowsChange = useCallback(
@@ -992,9 +663,9 @@ export function useCollageControls({
       const parsed = Number.parseInt(raw, 10);
       if (Number.isNaN(parsed)) return;
       setRows(clamp(parsed, 1, MAX_ROWS));
-      setSeed(Date.now());
+      setSeed(stateUtils.nextSeed());
     },
-    [controlsEnabled],
+    [controlsEnabled, stateUtils],
   );
 
   const handleColsChange = useCallback(
@@ -1004,21 +675,21 @@ export function useCollageControls({
       const parsed = Number.parseInt(raw, 10);
       if (Number.isNaN(parsed)) return;
       setCols(clamp(parsed, 1, MAX_COLS));
-      setSeed(Date.now());
+      setSeed(stateUtils.nextSeed());
     },
-    [controlsEnabled],
+    [controlsEnabled, stateUtils],
   );
 
   const toggleMixPieces = useCallback(() => {
     if (!controlsEnabled) return;
     setMixPieces((prev) => !prev);
-    setSeed(Date.now());
-  }, [controlsEnabled]);
+    setSeed(stateUtils.nextSeed());
+  }, [controlsEnabled, stateUtils]);
 
   const handleShuffle = useCallback(() => {
     if (!controlsEnabled) return;
-    setSeed(Date.now());
-  }, [controlsEnabled]);
+    setSeed(stateUtils.nextSeed());
+  }, [controlsEnabled, stateUtils]);
 
   const latestBoundsRef = useRef(stageWidthBounds);
   useEffect(() => {
