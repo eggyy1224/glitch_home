@@ -34,25 +34,27 @@ const parseBooleanParam = (params, key, defaultValue = "false") => {
   return (rawValue ?? defaultValue) === "true";
 };
 
+const buildKinshipConfig = (incubatorMode, phylogenyMode) => ({
+  incubator: incubatorMode,
+  phylogeny: phylogenyMode,
+});
+
 export const getActiveMode = (params) => {
   const incubatorMode = parseBooleanParam(params, "incubator");
   const phylogenyMode = parseBooleanParam(params, "phylogeny");
 
-  if (incubatorMode) {
-    return { type: DisplayModes.KINSHIP, config: { incubator: true, phylogeny: phylogenyMode } };
-  }
+  const modePriority = [
+    { type: DisplayModes.KINSHIP, isActive: () => incubatorMode },
+    ...PARAM_SEQUENCE.map((entry) => ({
+      type: entry.type,
+      isActive: () => parseBooleanParam(params, entry.key),
+    })),
+    { type: DisplayModes.KINSHIP, isActive: () => phylogenyMode },
+  ];
 
-  for (const entry of PARAM_SEQUENCE) {
-    if (parseBooleanParam(params, entry.key)) {
-      return { type: entry.type, config: { incubator: false, phylogeny: phylogenyMode } };
-    }
-  }
+  const activeType = modePriority.find((entry) => entry.isActive())?.type ?? DisplayModes.KINSHIP;
 
-  if (phylogenyMode) {
-    return { type: DisplayModes.KINSHIP, config: { incubator: false, phylogeny: phylogenyMode } };
-  }
-
-  return { type: DisplayModes.KINSHIP, config: { incubator: false, phylogeny: phylogenyMode } };
+  return { type: activeType, config: buildKinshipConfig(incubatorMode, phylogenyMode) };
 };
 
 export const useDisplayMode = (initialParams) => {

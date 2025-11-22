@@ -16,6 +16,12 @@ describe("getActiveMode", () => {
     expect(result).toEqual({ type: DisplayModes.KINSHIP, config: { incubator: true, phylogeny: false } });
   });
 
+  it("keeps kinship when both incubator and phylogeny are set", () => {
+    const params = buildParams("incubator=true&phylogeny=true&slide_mode=true");
+    const result = getActiveMode(params);
+    expect(result).toEqual({ type: DisplayModes.KINSHIP, config: { incubator: true, phylogeny: true } });
+  });
+
   it("uses the first matching mode in the priority list", () => {
     const params = buildParams("slide_mode=true&iframe_mode=true");
     const result = getActiveMode(params);
@@ -26,6 +32,18 @@ describe("getActiveMode", () => {
     const params = buildParams("phylogeny=true");
     const result = getActiveMode(params);
     expect(result.config.phylogeny).toBe(true);
+  });
+
+  it("keeps other modes ahead of phylogeny when applicable", () => {
+    const params = buildParams("phylogeny=true&search_mode=true");
+    const result = getActiveMode(params);
+    expect(result).toEqual({ type: DisplayModes.SEARCH, config: { incubator: false, phylogeny: true } });
+  });
+
+  it("returns kinship when only phylogeny is provided", () => {
+    const params = buildParams("phylogeny=true");
+    const result = getActiveMode(params);
+    expect(result).toEqual({ type: DisplayModes.KINSHIP, config: { incubator: false, phylogeny: true } });
   });
 
   it("detects downstream modes like video", () => {
