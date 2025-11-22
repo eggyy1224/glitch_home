@@ -1,0 +1,72 @@
+import React from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import EpisodeManager from "../../src/components/EpisodeManager.jsx";
+import { AdminPanelContext } from "../../src/AdminPanelContext.js";
+
+const {
+  mockListEpisodes,
+  mockFetchEpisode,
+  mockCreateEpisode,
+  mockUpdateEpisode,
+  mockDeleteEpisode,
+  mockCloneEpisode,
+  mockPlayEpisode,
+} = vi.hoisted(() => ({
+  mockListEpisodes: vi.fn(),
+  mockFetchEpisode: vi.fn(),
+  mockCreateEpisode: vi.fn(),
+  mockUpdateEpisode: vi.fn(),
+  mockDeleteEpisode: vi.fn(),
+  mockCloneEpisode: vi.fn(),
+  mockPlayEpisode: vi.fn(),
+}));
+
+vi.mock("../../src/api.js", () => ({
+  __esModule: true,
+  listEpisodes: (...args) => mockListEpisodes(...args),
+  fetchEpisode: (...args) => mockFetchEpisode(...args),
+  createEpisode: (...args) => mockCreateEpisode(...args),
+  updateEpisode: (...args) => mockUpdateEpisode(...args),
+  deleteEpisode: (...args) => mockDeleteEpisode(...args),
+  cloneEpisode: (...args) => mockCloneEpisode(...args),
+  playEpisode: (...args) => mockPlayEpisode(...args),
+}));
+
+const episodeData = {
+  id: "ep1",
+  title: "demo",
+  tracks: [{ timelineId: "t1", targetClientId: "c1" }],
+};
+
+function renderWithContext(ui) {
+  return render(
+    <AdminPanelContext.Provider value={{ defaultClientId: "desktop" }}>{ui}</AdminPanelContext.Provider>,
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockListEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", title: "demo", track_count: 1 }] });
+  mockFetchEpisode.mockResolvedValue({ episode: episodeData });
+  mockCreateEpisode.mockResolvedValue({});
+  mockUpdateEpisode.mockResolvedValue({});
+  mockDeleteEpisode.mockResolvedValue({});
+  mockCloneEpisode.mockResolvedValue({});
+  mockPlayEpisode.mockResolvedValue({ tracks: [] });
+});
+
+describe("EpisodeManager", () => {
+  it("切換到 episode 後可載入並播放", async () => {
+    renderWithContext(<EpisodeManager />);
+
+    await waitFor(() => expect(mockListEpisodes).toHaveBeenCalled());
+
+    const loadButtons = screen.getAllByRole("button", { name: "載入" });
+    fireEvent.click(loadButtons[loadButtons.length - 1]);
+    await waitFor(() => expect(mockFetchEpisode).toHaveBeenCalledWith("ep1", { resolve: false }));
+
+    fireEvent.click(screen.getByRole("button", { name: "播放 Episode" }));
+    await waitFor(() => expect(mockPlayEpisode).toHaveBeenCalled());
+  });
+});
