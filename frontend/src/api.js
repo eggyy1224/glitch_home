@@ -1,46 +1,32 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "";
-const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
-export async function fetchKinship(img, depth = -1) {
-  const url = `${API_BASE}/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+import { API_BASE, IMAGES_BASE, buildImageUrl, request } from "./utils/request";
+export async function fetchKinship(img, depth = -1, { signal } = {}) {
+  const url = `/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
+  return request(url, { signal });
 }
 
-export async function fetchCameraPresets() {
-  const url = `${API_BASE}/api/camera-presets`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+export async function fetchCameraPresets({ signal } = {}) {
+  const url = `/api/camera-presets`;
+  return request(url, { signal });
 }
 
 export async function saveCameraPreset(preset) {
-  const url = `${API_BASE}/api/camera-presets`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(preset),
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  const url = `/api/camera-presets`;
+  return request(url, { method: "POST", body: preset });
 }
 
 export async function deleteCameraPreset(name) {
-  const url = `${API_BASE}/api/camera-presets/${encodeURIComponent(name)}`;
-  const res = await fetch(url, { method: "DELETE" });
-  if (!res.ok) throw new Error(`API ${res.status}`);
+  const url = `/api/camera-presets/${encodeURIComponent(name)}`;
+  await request(url, { method: "DELETE" });
   return true;
 }
 
-export async function fetchCollageConfig(clientId = null) {
-  let url = `${API_BASE}/api/collage-config`;
+export async function fetchCollageConfig(clientId = null, { signal } = {}) {
+  let url = `/api/collage-config`;
   if (clientId) {
     const params = new URLSearchParams({ client: clientId });
     url = `${url}?${params.toString()}`;
   }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { signal });
 }
 
 export async function fetchIframeTimeline(timelineId, { signal, resolve = true } = {}) {
@@ -48,24 +34,17 @@ export async function fetchIframeTimeline(timelineId, { signal, resolve = true }
     throw new Error("timelineId is required");
   }
   const params = resolve === false ? "?resolve=false" : "";
-  const url = `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}${params}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/iframe-timelines/${encodeURIComponent(timelineId)}${params}`;
+  return request(url, { signal });
 }
 
-export async function listIframeTimelines(clientId = null) {
-  let url = `${API_BASE}/api/iframe-timelines`;
+export async function listIframeTimelines(clientId = null, { signal } = {}) {
+  let url = `/api/iframe-timelines`;
   if (clientId) {
     const qs = new URLSearchParams({ client: clientId });
     url = `${url}?${qs.toString()}`;
   }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { signal });
 }
 
 export async function fetchEpisode(episodeId, { signal, resolve = true } = {}) {
@@ -73,35 +52,22 @@ export async function fetchEpisode(episodeId, { signal, resolve = true } = {}) {
     throw new Error("episodeId is required");
   }
   const params = resolve === false ? "?resolve=false" : "";
-  const url = `${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}${params}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/episodes/${encodeURIComponent(episodeId)}${params}`;
+  return request(url, { signal });
 }
 
-export async function listEpisodes() {
-  const url = `${API_BASE}/api/episodes`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+export async function listEpisodes({ signal } = {}) {
+  const url = `/api/episodes`;
+  return request(url, { signal });
 }
 
 export async function saveCollageConfig(config) {
-  const url = `${API_BASE}/api/collage-config`;
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(config),
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  const url = `/api/collage-config`;
+  return request(url, { method: "PUT", body: config });
 }
 
 export async function uploadScreenshot(blob, requestId = null, clientId = null) {
-  const url = `${API_BASE}/api/screenshots`;
+  const url = `/api/screenshots`;
   const form = new FormData();
   const filename = `scene-${Date.now()}.png`;
   form.append("file", blob, filename);
@@ -111,70 +77,42 @@ export async function uploadScreenshot(blob, requestId = null, clientId = null) 
   if (clientId) {
     form.append("client_id", clientId);
   }
-  const res = await fetch(url, {
-    method: "POST",
-    body: form,
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { method: "POST", body: form });
 }
 
 export async function reportScreenshotFailure(requestId, errorMessage = "", clientId = null) {
-  const url = `${API_BASE}/api/screenshots/${encodeURIComponent(requestId)}/fail`;
+  const url = `/api/screenshots/${encodeURIComponent(requestId)}/fail`;
   const payload = { error: errorMessage };
   if (clientId) {
     payload.client_id = clientId;
   }
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { method: "POST", body: payload });
 }
 
 // 以圖搜圖 API
 export async function searchImagesByImage(imagePath, topK = 10, { signal } = {}) {
-  const url = `${API_BASE}/api/search/image`;
+  const url = `/api/search/image`;
   const payload = {
     image_path: imagePath,
     top_k: topK,
   };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal,
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { method: "POST", body: payload, signal });
 }
 
 // 文字搜尋 API
 export async function searchImagesByText(query, topK = 10, { signal } = {}) {
-  const url = `${API_BASE}/api/search/text`;
+  const url = `/api/search/text`;
   const payload = {
     query,
     top_k: topK,
   };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal,
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { method: "POST", body: payload, signal });
 }
 
-export async function fetchSoundFiles() {
-  const url = `${API_BASE}/api/sound-files`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
+export async function fetchSoundFiles({ signal } = {}) {
+  const { data, response } = await request(`/api/sound-files`, { signal, returnResponse: true });
   const list = Array.isArray(data?.files) ? data.files : [];
-  const requestUrl = new URL(res.url);
+  const requestUrl = new URL(response.url);
   const mapped = list.map((file) => {
     if (!file?.url) return file;
     try {
@@ -198,28 +136,24 @@ export async function fetchSoundFiles() {
 }
 
 export async function fetchSubtitleState(clientId = null) {
-  let url = `${API_BASE}/api/subtitles`;
+  let url = `/api/subtitles`;
   if (clientId) {
     const params = new URLSearchParams({ client: clientId });
     url = `${url}?${params.toString()}`;
   }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
+  const data = await request(url);
   return {
     subtitle: data?.subtitle ?? null,
   };
 }
 
 export async function fetchCaptionState(clientId = null) {
-  let url = `${API_BASE}/api/captions`;
+  let url = `/api/captions`;
   if (clientId) {
     const params = new URLSearchParams({ client: clientId });
     url = `${url}?${params.toString()}`;
   }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
+  const data = await request(url);
   return {
     caption: data?.caption ?? null,
   };
@@ -232,69 +166,48 @@ function buildTargetQuery(targetClientId) {
 }
 
 async function postJson(url, payload, { signal } = {}) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal,
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  return request(url, { method: "POST", body: payload, signal });
 }
 
 export async function createEpisode(payload, { resolve = true, signal } = {}) {
   const qs = resolve === false ? "?resolve=false" : "";
-  return postJson(`${API_BASE}/api/episodes${qs}`, payload, { signal });
+  return postJson(`/api/episodes${qs}`, payload, { signal });
 }
 
 export async function updateEpisode(episodeId, payload, { resolve = true, signal } = {}) {
   if (!episodeId) throw new Error("episodeId is required");
   const qs = resolve === false ? "?resolve=false" : "";
-  const res = await fetch(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}${qs}`, {
+  return request(`/api/episodes/${encodeURIComponent(episodeId)}${qs}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: payload,
     signal,
   });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
 }
 
 export async function deleteEpisode(episodeId) {
   if (!episodeId) throw new Error("episodeId is required");
-  const res = await fetch(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}`, { method: "DELETE" });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  return request(`/api/episodes/${encodeURIComponent(episodeId)}`, { method: "DELETE" });
 }
 
 export async function cloneEpisode(episodeId, payload, { resolve = true, signal } = {}) {
   if (!episodeId) throw new Error("episodeId is required");
   if (!payload || typeof payload !== "object") throw new Error("payload is required");
   const qs = resolve === false ? "?resolve=false" : "";
-  return postJson(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}/clone${qs}`, payload, { signal });
+  return postJson(`/api/episodes/${encodeURIComponent(episodeId)}/clone${qs}`, payload, { signal });
 }
 
 export async function playEpisode(episodeId, payload = {}, { signal } = {}) {
   if (!episodeId) throw new Error("episodeId is required");
   const body = payload && typeof payload === "object" ? payload : {};
-  return postJson(`${API_BASE}/api/episodes/${encodeURIComponent(episodeId)}/play`, body, { signal });
+  return postJson(`/api/episodes/${encodeURIComponent(episodeId)}/play`, body, { signal });
 }
 
 export async function triggerTts(payload, options = {}) {
-  return postJson(`${API_BASE}/api/tts`, payload, options);
+  return postJson(`/api/tts`, payload, options);
 }
 
 export async function speakWithSubtitle(payload, options = {}) {
-  return postJson(`${API_BASE}/api/speak-with-subtitle`, payload, options);
+  return postJson(`/api/speak-with-subtitle`, payload, options);
 }
 
 export async function queueSoundPlay(filename, targetClientId = null, options = {}) {
@@ -302,65 +215,52 @@ export async function queueSoundPlay(filename, targetClientId = null, options = 
   if (targetClientId) {
     body.target_client_id = targetClientId;
   }
-  return postJson(`${API_BASE}/api/sound-play`, body, options);
+  return postJson(`/api/sound-play`, body, options);
 }
 
 export async function setSubtitle(payload, targetClientId = null, options = {}) {
-  const url = `${API_BASE}/api/subtitles${buildTargetQuery(targetClientId)}`;
+  const url = `/api/subtitles${buildTargetQuery(targetClientId)}`;
   return postJson(url, payload, options);
 }
 
 export async function clearSubtitle(targetClientId = null, { signal } = {}) {
-  const url = `${API_BASE}/api/subtitles${buildTargetQuery(targetClientId)}`;
-  const res = await fetch(url, { method: "DELETE", signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
+  const url = `/api/subtitles${buildTargetQuery(targetClientId)}`;
+  await request(url, { method: "DELETE", signal });
   return true;
 }
 
 export async function setCaption(payload, targetClientId = null, options = {}) {
-  const url = `${API_BASE}/api/captions${buildTargetQuery(targetClientId)}`;
+  const url = `/api/captions${buildTargetQuery(targetClientId)}`;
   return postJson(url, payload, options);
 }
 
 export async function clearCaption(targetClientId = null, { signal } = {}) {
-  const url = `${API_BASE}/api/captions${buildTargetQuery(targetClientId)}`;
-  const res = await fetch(url, { method: "DELETE", signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
+  const url = `/api/captions${buildTargetQuery(targetClientId)}`;
+  await request(url, { method: "DELETE", signal });
   return true;
 }
 
 export async function unlockAudio(targetClientId = null, { signal } = {}) {
-  const url = `${API_BASE}/api/unlock-audio${buildTargetQuery(targetClientId)}`;
-  const res = await fetch(url, { method: "POST", signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/unlock-audio${buildTargetQuery(targetClientId)}`;
+  return request(url, { method: "POST", signal });
 }
 
 export async function sendRemoteClick(payload, options = {}) {
   if (!payload || typeof payload !== "object") {
     throw new Error("remote click payload is required");
   }
-  return postJson(`${API_BASE}/api/remote-click`, payload, options);
+  return postJson(`/api/remote-click`, payload, options);
 }
 
 export async function sendVideoControl(payload, options = {}) {
   if (!payload || typeof payload !== "object") {
     throw new Error("video control payload is required");
   }
-  return postJson(`${API_BASE}/api/video-control`, payload, options);
+  return postJson(`/api/video-control`, payload, options);
 }
 
 export async function generateCollageVersion(files, params) {
-  const url = `${API_BASE}/api/generate-collage-version`;
+  const url = `/api/generate-collage-version`;
   const formData = new FormData();
   
   // Add files
@@ -371,20 +271,10 @@ export async function generateCollageVersion(files, params) {
   // Add params as JSON string
   formData.append("params", JSON.stringify(params));
   
-  const res = await fetch(url, {
-    method: "POST",
-    body: formData,
-  });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`API ${res.status}: ${errorText}`);
-  }
-  
-  const result = await res.json();
+  const result = await request(url, { method: "POST", body: formData });
   
   // Build image URL
-  const imageUrl = `${API_BASE}/generated_images/${result.output_image}`;
+  const imageUrl = buildImageUrl(result.output_image, `${API_BASE}/generated_images/`);
   
   return {
     ...result,
@@ -392,60 +282,30 @@ export async function generateCollageVersion(files, params) {
   };
 }
 
-export async function listOffspringImages() {
-  const url = `${API_BASE}/api/offspring-images`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+export async function listOffspringImages({ signal } = {}) {
+  const url = `/api/offspring-images`;
+  return request(url, { signal });
 }
 
 export async function generateCollageVersionFromNames(imageNames, params) {
-  const url = `${API_BASE}/api/generate-collage-version`;
-  const res = await fetch(url, {
+  const url = `/api/generate-collage-version`;
+  return request(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    body: {
       image_names: imageNames,
       ...params,
-    }),
+    },
   });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`API ${res.status}: ${errorText}`);
-  }
-  
-  const result = await res.json();
-  
-  return result;
 }
 
 export async function getCollageProgress(taskId) {
-  const url = `${API_BASE}/api/collage-version/${taskId}/progress`;
-  const res = await fetch(url);
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`API ${res.status}: ${errorText}`);
-  }
-  
-  return res.json();
+  const url = `/api/collage-version/${taskId}/progress`;
+  return request(url);
 }
 
 export async function generateMixTwo(params) {
-  const url = `${API_BASE}/api/generate/mix-two`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`API ${res.status}: ${errorText}`);
-  }
-  
-  const result = await res.json();
+  const url = `/api/generate/mix-two`;
+  const result = await request(url, { method: "POST", body: params });
   
   // Build image URL from output_image_path
   // output_image_path is a full path like "backend/offspring_images/offspring_xxx.png"
@@ -462,40 +322,26 @@ export async function generateMixTwo(params) {
 
 export async function createIframeTimeline(payload, { resolve = true, signal } = {}) {
   const qs = resolve === false ? "?resolve=false" : "";
-  return postJson(`${API_BASE}/api/iframe-timelines${qs}`, payload, { signal });
+  return postJson(`/api/iframe-timelines${qs}`, payload, { signal });
 }
 
 export async function updateIframeTimeline(timelineId, payload, { resolve = true, signal } = {}) {
   const qs = resolve === false ? "?resolve=false" : "";
-  const res = await fetch(`${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}${qs}`, {
+  return request(`/api/iframe-timelines/${encodeURIComponent(timelineId)}${qs}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: payload,
     signal,
   });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
 }
 
 export async function deleteIframeTimeline(timelineId, { signal } = {}) {
-  const res = await fetch(`${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}`, {
-    method: "DELETE",
-    signal,
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  return request(`/api/iframe-timelines/${encodeURIComponent(timelineId)}`, { method: "DELETE", signal });
 }
 
 export async function cloneIframeTimeline(timelineId, payload, { resolve = true, signal } = {}) {
   const qs = resolve === false ? "?resolve=false" : "";
   return postJson(
-    `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}/clone${qs}`,
+    `/api/iframe-timelines/${encodeURIComponent(timelineId)}/clone${qs}`,
     payload,
     { signal },
   );
@@ -510,68 +356,36 @@ export async function playIframeTimeline(timelineId, payload = {}, { targetClien
     params.set("target_client_id", targetClientId);
   }
   const qs = params.toString();
-  const url = `${API_BASE}/api/iframe-timelines/${encodeURIComponent(timelineId)}/play${qs ? `?${qs}` : ""}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload || {}),
-    signal,
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/iframe-timelines/${encodeURIComponent(timelineId)}/play${qs ? `?${qs}` : ""}`;
+  return request(url, { method: "POST", body: payload || {}, signal });
 }
 
-export async function listIframeSnapshots(clientId = null) {
-  let url = `${API_BASE}/api/iframe-config/snapshots`;
+export async function listIframeSnapshots(clientId = null, { signal } = {}) {
+  let url = `/api/iframe-config/snapshots`;
   if (clientId) {
     const qs = new URLSearchParams({ client: clientId });
     url = `${url}?${qs.toString()}`;
   }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request(url, { signal });
 }
 
 export async function getIframeSnapshot(clientId, name, { signal } = {}) {
-  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
+  return request(url, { signal });
 }
 
 export async function saveIframeSnapshot(clientId, name, payload, { signal } = {}) {
-  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal,
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
+  return request(url, { method: "PUT", body: payload, signal });
 }
 
 export async function deleteIframeSnapshot(clientId, name, { signal } = {}) {
-  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
-  const res = await fetch(url, { method: "DELETE", signal });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail || "failed"}`);
-  }
-  return res.json();
+  const url = `/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}`;
+  return request(url, { method: "DELETE", signal });
 }
 
 export async function cloneIframeSnapshot(clientId, name, payload, { signal } = {}) {
-  const url = `${API_BASE}/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}/clone`;
+  const url = `/api/iframe-config/snapshots/${encodeURIComponent(clientId)}/${encodeURIComponent(name)}/clone`;
   return postJson(url, payload, { signal });
 }
 
@@ -580,22 +394,11 @@ async function uploadImageForSearch(file, { signal } = {}) {
     throw new Error("請先選擇圖片");
   }
 
-  const url = `${API_BASE}/api/screenshots`;
+  const url = `/api/screenshots`;
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(url, {
-    method: "POST",
-    body: formData,
-    signal,
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`圖片上傳失敗 (${res.status}): ${errorText}`);
-  }
-
-  const data = await res.json();
+  const data = await request(url, { method: "POST", body: formData, signal });
   const uploadedPath = data.absolute_path || data.relative_path;
 
   if (!uploadedPath) {

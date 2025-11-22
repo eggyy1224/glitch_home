@@ -8,10 +8,18 @@ import {
 } from "../../src/api.js";
 
 const originalFetch = global.fetch;
-const createResponse = ({ ok = true, status = 200, jsonData = {}, textData = "ok", url = "http://localhost/test" } = {}) => ({
+const createResponse = ({
+  ok = true,
+  status = 200,
+  jsonData = {},
+  textData = "ok",
+  url = "http://localhost/test",
+  contentType = "application/json",
+} = {}) => ({
   ok,
   status,
   url,
+  headers: { get: vi.fn().mockReturnValue(contentType) },
   json: vi.fn().mockResolvedValue(jsonData),
   text: vi.fn().mockResolvedValue(textData),
 });
@@ -33,7 +41,10 @@ describe("api.js fetch helpers", () => {
     const payload = { data: [1, 2] };
     fetchMock.mockResolvedValueOnce(createResponse({ jsonData: payload }));
     const result = await fetchKinship("kinship image", 2);
-    expect(fetchMock).toHaveBeenCalledWith("/api/kinship?img=kinship%20image&depth=2");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/kinship?img=kinship%20image&depth=2",
+      expect.objectContaining({ method: "GET", signal: undefined }),
+    );
     expect(result).toEqual(payload);
 
     fetchMock.mockResolvedValueOnce(createResponse({ ok: false, status: 500 }));
@@ -46,11 +57,14 @@ describe("api.js fetch helpers", () => {
     const timelinePayload = { steps: [] };
     fetchMock.mockResolvedValueOnce(createResponse({ jsonData: timelinePayload }));
     const result = await fetchIframeTimeline("timeline-1");
-    expect(fetchMock).toHaveBeenCalledWith("/api/iframe-timelines/timeline-1", { signal: undefined });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/iframe-timelines/timeline-1",
+      expect.objectContaining({ method: "GET", signal: undefined }),
+    );
     expect(result).toEqual(timelinePayload);
 
     fetchMock.mockResolvedValueOnce(
-      createResponse({ ok: false, status: 404, textData: "missing timeline" }),
+      createResponse({ ok: false, status: 404, textData: "missing timeline", contentType: "text/plain" }),
     );
     await expect(fetchIframeTimeline("ghost")).rejects.toThrow("API 404: missing timeline");
   });
@@ -80,7 +94,9 @@ describe("api.js fetch helpers", () => {
     const body = JSON.parse(fetchMock.mock.lastCall[1].body);
     expect(body).toMatchObject({ filename: "effect.wav", target_client_id: "client-z" });
 
-    fetchMock.mockResolvedValueOnce(createResponse({ ok: false, status: 400, textData: "bad" }));
+    fetchMock.mockResolvedValueOnce(
+      createResponse({ ok: false, status: 400, textData: "bad", contentType: "text/plain" }),
+    );
     await expect(queueSoundPlay("broken")).rejects.toThrow("API 400: bad");
   });
 
@@ -96,7 +112,9 @@ describe("api.js fetch helpers", () => {
     }));
     expect(result.imageUrl).toBe("/generated_images/offspring_123.png");
 
-    fetchMock.mockResolvedValueOnce(createResponse({ ok: false, status: 500, textData: "boom" }));
+    fetchMock.mockResolvedValueOnce(
+      createResponse({ ok: false, status: 500, textData: "boom", contentType: "text/plain" }),
+    );
     await expect(generateMixTwo({})).rejects.toThrow("API 500: boom");
   });
 });
