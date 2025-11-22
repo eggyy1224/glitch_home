@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from app.services.screenshot_queue import ScreenshotRequestQueue
@@ -37,6 +39,7 @@ async def test_pending_messages_filtered_by_client() -> None:
 
     pending_other = await queue.list_pending_messages("beta")
     assert all(msg.get("target_client_id") in (None, "beta") for msg in pending_other)
+    await queue.close()
 
 
 @pytest.mark.asyncio
@@ -52,6 +55,7 @@ async def test_queue_emits_events_via_broadcaster() -> None:
     result = {"filename": "test.png"}
     await queue.mark_completed(record["id"], result, processed_by="alpha")
     assert broadcaster.events == [({"type": "screenshot_completed", "request_id": record["id"]}, "alpha")]
+    await queue.close()
 
 
 @pytest.mark.asyncio
@@ -72,6 +76,7 @@ async def test_completed_requests_pruned_after_expiration() -> None:
     # Trigger cleanup via another action.
     await queue.create_request({})
     assert await queue.get_request(record["id"]) is None
+    await queue.close()
 
 
 @pytest.mark.asyncio
@@ -105,3 +110,28 @@ async def test_queue_enforces_max_entries_and_prefers_finished_records() -> None
     assert await queue.get_request(second["id"]) is None
     assert await queue.get_request(third["id"]) is not None
     assert await queue.get_request(fourth["id"]) is not None
+    await queue.close()
+
+
+@pytest.mark.asyncio
+async def test_background_cleanup_runs_without_new_events() -> None:
+    clock = FakeClock(start=0)
+    queue = ScreenshotRequestQueue(
+        broadcaster=None,
+        max_age_seconds=5,
+        cleanup_interval_seconds=60,
+        background_cleanup_interval_seconds=0.01,
+        time_provider=clock,
+    )
+
+    completed = await queue.create_request({})
+    await queue.mark_completed(completed["id"], {"filename": "done.png"})
+    pending = await queue.create_request({})
+
+    clock.advance(10)
+    await asyncio.sleep(0.05)
+
+    assert await queue.get_request(completed["id"]) is None
+    assert await queue.get_request(pending["id"]) is not None
+
+    await queue.close()

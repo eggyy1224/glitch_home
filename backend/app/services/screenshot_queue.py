@@ -25,6 +25,8 @@ class ScreenshotRequestQueue:
         max_entries: int | None = 1000,
         max_age_seconds: int | None = 3600,
         cleanup_interval_seconds: int | None = 30,
+        background_cleanup_enabled: bool = True,
+        background_cleanup_interval_seconds: float | None = None,
         time_provider: Callable[[], float] | None = None,
     ) -> None:
         self._lock = asyncio.Lock()
@@ -34,13 +36,22 @@ class ScreenshotRequestQueue:
         self._max_entries = max_entries
         self._max_age_seconds = max_age_seconds
         self._cleanup_interval_seconds = cleanup_interval_seconds
+        self._background_cleanup_enabled = background_cleanup_enabled
+        self._background_cleanup_interval_seconds = (
+            background_cleanup_interval_seconds
+            if background_cleanup_interval_seconds is not None
+            else cleanup_interval_seconds
+        )
         self._time_provider = time_provider or time.time
         self._last_cleanup_ts = 0.0
+        self._background_task: asyncio.Task[None] | None = None
+        self._maybe_start_background_cleanup_task()
 
     def set_broadcaster(self, broadcaster: RealtimeBroadcaster | None) -> None:
         self._broadcaster = broadcaster
 
     async def create_request(self, metadata: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        self._maybe_start_background_cleanup_task()
         request_id = secrets.token_hex(8)
         now = _utc_timestamp()
         meta_copy = dict(metadata or {})
@@ -87,6 +98,7 @@ class ScreenshotRequestQueue:
         result: Dict[str, Any],
         processed_by: Optional[str] = None,
     ) -> Dict[str, Any] | None:
+        self._maybe_start_background_cleanup_task()
         async with self._lock:
             record = self._requests.get(request_id)
             if record is None:
@@ -112,6 +124,7 @@ class ScreenshotRequestQueue:
         message: str,
         processed_by: Optional[str] = None,
     ) -> Dict[str, Any] | None:
+        self._maybe_start_background_cleanup_task()
         async with self._lock:
             record = self._requests.get(request_id)
             if record is None:
@@ -133,6 +146,7 @@ class ScreenshotRequestQueue:
     async def attach_sound_effect(
         self, request_id: str, sound_result: Dict[str, Any]
     ) -> Dict[str, Any] | None:
+        self._maybe_start_background_cleanup_task()
         async with self._lock:
             record = self._requests.get(request_id)
             if record is None:
@@ -158,6 +172,7 @@ class ScreenshotRequestQueue:
         return snapshot
 
     async def get_request(self, request_id: str) -> Dict[str, Any] | None:
+        self._maybe_start_background_cleanup_task()
         async with self._lock:
             record = self._requests.get(request_id)
             if record is None:
@@ -165,6 +180,7 @@ class ScreenshotRequestQueue:
             return dict(record)
 
     async def list_pending_messages(self, client_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        self._maybe_start_background_cleanup_task()
         async with self._lock:
             pending = [
                 dict(rec)
@@ -192,6 +208,20 @@ class ScreenshotRequestQueue:
 
     def _touch_request_locked(self, request_id: str) -> None:
         self._request_timestamps[request_id] = self._time_provider()
+
+    def _maybe_start_background_cleanup_task(self) -> None:
+        if (
+            not self._background_cleanup_enabled
+            or self._background_cleanup_interval_seconds is None
+        ):
+            return
+        if self._background_task is not None and not self._background_task.done():
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        self._background_task = loop.create_task(self._run_background_cleanup())
 
     def _maybe_cleanup_locked(self) -> None:
         if self._max_entries is None and self._max_age_seconds is None:
@@ -241,6 +271,27 @@ class ScreenshotRequestQueue:
     def _remove_request_locked(self, request_id: str) -> None:
         self._requests.pop(request_id, None)
         self._request_timestamps.pop(request_id, None)
+
+    async def _run_background_cleanup(self) -> None:
+        try:
+            while (
+                self._background_cleanup_enabled
+                and self._background_cleanup_interval_seconds is not None
+            ):
+                await asyncio.sleep(self._background_cleanup_interval_seconds)
+                async with self._lock:
+                    self._perform_cleanup_locked(self._time_provider())
+        except asyncio.CancelledError:
+            return
+
+    async def close(self) -> None:
+        if self._background_task is None:
+            return
+        self._background_task.cancel()
+        try:
+            await self._background_task
+        except asyncio.CancelledError:
+            pass
 
 
 screenshot_request_queue = ScreenshotRequestQueue(realtime_broadcaster)
