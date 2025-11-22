@@ -3,12 +3,13 @@
 import json
 import time
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
-from PIL import Image
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
+from PIL import Image
 
+from app.exceptions import ExternalServiceError, GenerationIOError
 from app.services.collage_version import task_manager
 
 
@@ -610,7 +611,47 @@ def test_generate_mix_two_unexpected_error(mock_generate: MagicMock, client: Tes
     )
 
     assert response.status_code == 500
-    assert "boom" in response.json()["detail"]
+    assert response.json()["detail"] == "伺服器發生非預期錯誤，請稍後再試"
+
+
+@pytest.mark.api
+@patch("app.api.generation.generate_mixed_offspring_v2")
+def test_generate_mix_two_external_service_error(mock_generate: MagicMock, client: TestClient):
+    """External service issues return 502 without exposing internals."""
+    mock_generate.side_effect = ExternalServiceError(
+        "外部影像生成服務回傳異常，請稍後再試",
+        log_message="Gemini parsing failed",
+    )
+
+    response = client.post(
+        "/api/generate/mix-two",
+        json={"parents": ["a.png", "b.png"], "count": 2},
+    )
+
+    assert response.status_code == 502
+    detail = response.json()["detail"]
+    assert detail == "外部影像生成服務回傳異常，請稍後再試"
+    assert "Gemini" not in detail
+
+
+@pytest.mark.api
+@patch("app.api.generation.generate_mixed_offspring_v2")
+def test_generate_mix_two_io_error(mock_generate: MagicMock, client: TestClient):
+    """I/O errors map to 503 with friendly message."""
+    mock_generate.side_effect = GenerationIOError(
+        "生成檔案時發生 I/O 錯誤，請稍後再試",
+        log_message="disk full",
+    )
+
+    response = client.post(
+        "/api/generate/mix-two",
+        json={"parents": ["a.png", "b.png"], "count": 2},
+    )
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail == "生成檔案時發生 I/O 錯誤，請稍後再試"
+    assert "disk" not in detail
 
 
 @pytest.mark.api

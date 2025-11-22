@@ -7,6 +7,7 @@ from typing import List, Optional
 from PIL import Image
 
 from ..config import settings
+from ..exceptions import ExternalServiceError, GenerationIOError
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import write_metadata
 from ..utils.gemini_client import get_gemini_client
@@ -53,7 +54,13 @@ class GeminiImageGenerator:
         output_max_side: Optional[int] = None,
         resize_mode: Optional[str] = None,
     ) -> dict:
-        ensure_dirs([settings.offspring_dir, settings.metadata_dir])
+        try:
+            ensure_dirs([settings.offspring_dir, settings.metadata_dir])
+        except OSError as exc:
+            raise GenerationIOError(
+                "伺服器儲存空間異常，請稍後再試",
+                log_message=f"Ensure dirs failed: {exc}",
+            ) from exc
 
         parent_paths = self._parent_selector.select(parents=parents, count=count)
         if len(parent_paths) < 2:
@@ -61,28 +68,34 @@ class GeminiImageGenerator:
 
         images, input_details = self._image_preprocessor.prepare(parent_paths)
         generated_image = self._call_gemini(prompt, images, input_details)
-        output_path, fmt, width, height = self._output_writer.write(
-            generated_image,
-            output_format=output_format,
-            output_width=output_width,
-            output_height=output_height,
-            output_max_side=output_max_side,
-            resize_mode=resize_mode,
-            input_details=input_details,
-        )
-        metadata = self._build_metadata(
-            parent_paths=parent_paths,
-            input_details=input_details,
-            prompt=prompt,
-            strength=strength,
-            fmt=fmt,
-            width=width,
-            height=height,
-            output_path=output_path,
-        )
-        metadata_path = write_metadata(
-            metadata, base_name=os.path.splitext(os.path.basename(output_path))[0]
-        )
+        try:
+            output_path, fmt, width, height = self._output_writer.write(
+                generated_image,
+                output_format=output_format,
+                output_width=output_width,
+                output_height=output_height,
+                output_max_side=output_max_side,
+                resize_mode=resize_mode,
+                input_details=input_details,
+            )
+            metadata = self._build_metadata(
+                parent_paths=parent_paths,
+                input_details=input_details,
+                prompt=prompt,
+                strength=strength,
+                fmt=fmt,
+                width=width,
+                height=height,
+                output_path=output_path,
+            )
+            metadata_path = write_metadata(
+                metadata, base_name=os.path.splitext(os.path.basename(output_path))[0]
+            )
+        except OSError as exc:
+            raise GenerationIOError(
+                "生成檔案時發生 I/O 錯誤，請稍後再試",
+                log_message=f"Write output failed: {exc}",
+            ) from exc
 
         return {
             "output_image_path": output_path,
@@ -109,8 +122,9 @@ class GeminiImageGenerator:
                 contents=[prompt, *images],
             )
         except Exception as e:
-            raise RuntimeError(
-                f"呼叫 Gemini 產生影像失敗：{e}{_format_input_diagnostics(input_details)}"
+            raise ExternalServiceError(
+                "外部影像生成服務呼叫失敗，請稍後再試",
+                log_message=f"Gemini call failed: {e}{_format_input_diagnostics(input_details)}",
             ) from e
 
         image_bytes: bytes | None = None
@@ -144,8 +158,9 @@ class GeminiImageGenerator:
                     "Gemini 回傳未包含影像資料 (inline_data/inlineData 缺失)" + extra
                 )
         except Exception as e:
-            raise RuntimeError(
-                f"解析 Gemini 回傳失敗：{e}{_format_input_diagnostics(input_details)}"
+            raise ExternalServiceError(
+                "外部影像生成服務回傳異常，請稍後再試",
+                log_message=f"Failed to parse Gemini response: {e}{_format_input_diagnostics(input_details)}",
             ) from e
 
         if isinstance(image_bytes, str):
@@ -161,8 +176,9 @@ class GeminiImageGenerator:
         try:
             return Image.open(BytesIO(image_bytes))
         except Exception as e:
-            raise RuntimeError(
-                f"無法解析生成影像：{e}{_format_input_diagnostics(input_details)}"
+            raise ExternalServiceError(
+                "外部影像生成服務回傳異常，請稍後再試",
+                log_message=f"Unable to parse generated image: {e}{_format_input_diagnostics(input_details)}",
             ) from e
 
 
