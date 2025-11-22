@@ -10,6 +10,7 @@ All vectors are produced externally (Google GenAI); we pass them to Chroma
 via `embeddings=` to avoid relying on an internal embedding function.
 """
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -30,6 +31,7 @@ import os
 
 _client: chromadb.ClientAPI | None = None
 _IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+logger = logging.getLogger(__name__)
 
 
 def get_client() -> chromadb.ClientAPI:
@@ -86,33 +88,62 @@ def index_offspring_image(basename: str, *, force: bool = False) -> Dict[str, An
         return {"id": doc_id, "status": "exists"}
 
     # Prefer true image embeddings if a supported image model exists; otherwise caption->text embedding
+    embedding_error: Optional[str] = None
+    fallback_used = False
+    hint = None
+    meta_json = Path(settings.metadata_dir) / f"{image_path.stem}.json"
+
     try:
         vec = embed_image(str(image_path))
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        embedding_error = f"image embedding failed: {exc}"
+        logger.warning("Primary image embedding failed for %s: %s", image_path, exc, exc_info=True)
+
         # Fallback to captioning + text embedding
-        # Optionally include a short hint from metadata
-        hint = None
-        meta_json = Path(settings.metadata_dir) / f"{image_path.stem}.json"
         if meta_json.exists():
             try:
                 import json
+
                 md = json.loads(meta_json.read_text(encoding="utf-8"))
                 hint = md.get("prompt") or None
-            except Exception:
-                pass
-        vec = embed_image_as_text(str(image_path), extra_hint=hint)
+            except Exception as hint_exc:  # noqa: BLE001
+                logger.warning(
+                    "Failed to read prompt hint from metadata for %s: %s",
+                    image_path,
+                    hint_exc,
+                    exc_info=True,
+                )
+        try:
+            vec = embed_image_as_text(str(image_path), extra_hint=hint)
+            fallback_used = True
+        except Exception as fallback_exc:  # noqa: BLE001
+            logger.error(
+                "Fallback embed_image_as_text failed for %s: %s",
+                image_path,
+                fallback_exc,
+                exc_info=True,
+            )
+            raise RuntimeError(
+                f"{embedding_error}; fallback failed: {fallback_exc}"
+            ) from fallback_exc
 
     # Prepare metadata by reading companion JSON if available
     meta: Dict[str, Any] = {"path": str(image_path)}
     
-    meta_json = Path(settings.metadata_dir) / f"{image_path.stem}.json"
+    metadata_error: Optional[str] = None
     if meta_json.exists():
         try:
             import json
 
             meta.update(json.loads(meta_json.read_text(encoding="utf-8")))
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            metadata_error = f"failed to parse metadata JSON: {exc}"
+            logger.warning(
+                "Metadata parse failed for %s: %s",
+                meta_json,
+                exc,
+                exc_info=True,
+            )
     
     # 檢查圖片是否在 deprecated 目錄中，如果是則標記為 deprecated（覆蓋 metadata JSON 中的設定）
     deprecated_dir = Path(settings.offspring_dir) / "deprecated"
@@ -137,7 +168,15 @@ def index_offspring_image(basename: str, *, force: bool = False) -> Dict[str, An
         metadatas=[meta],
         documents=None,
     )
-    return {"id": doc_id, "status": "indexed", "dim": len(vec)}
+    result: Dict[str, Any] = {"id": doc_id, "status": "indexed", "dim": len(vec)}
+    if fallback_used:
+        result["fallback"] = "embed_image_as_text"
+    if embedding_error:
+        result["embedding_error"] = embedding_error
+    if metadata_error:
+        result["metadata_error"] = metadata_error
+
+    return result
 
 
 def _iter_offspring_images(limit: Optional[int] = None) -> Optional[List[Path]]:
@@ -187,6 +226,15 @@ def _index_files(files: Iterable[Path], *, force: bool) -> Dict[str, Any]:
         except Exception as exc:  # noqa: BLE001
             errors += 1
             results.append({"id": path.name, "status": "error", "error": str(exc)})
+
+    total = indexed + skipped + errors
+    logger.info(
+        "Index batch completed: total=%s, indexed=%s, skipped=%s, errors=%s",
+        total,
+        indexed,
+        skipped,
+        errors,
+    )
 
     return {"indexed": indexed, "skipped": skipped, "errors": errors, "results": results}
 
