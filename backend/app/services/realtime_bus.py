@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import errno
+import logging
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 
 from fastapi import WebSocket
+
+
+logger = logging.getLogger(__name__)
 
 
 class RealtimeBroadcaster:
@@ -202,10 +207,53 @@ class RealtimeBroadcaster:
             payload["options"] = options
         await self.broadcast(payload, target_client_id=target_client_id)
 
-    async def _send(self, websocket: WebSocket, message: dict[str, Any]) -> None:
+    @staticmethod
+    def _is_retryable_error(exc: Exception) -> bool:
+        retryable_exceptions = (
+            asyncio.TimeoutError,
+            TimeoutError,
+            ConnectionResetError,
+            BrokenPipeError,
+        )
+        if isinstance(exc, retryable_exceptions):
+            return True
+
+        error_number = getattr(exc, "errno", None)
+        if error_number in {errno.EAGAIN, errno.EWOULDBLOCK}:
+            return True
+
+        message = str(exc).lower()
+        return any(keyword in message for keyword in ("temporar", "backpressure", "timeout"))
+
+    async def _send(self, websocket: WebSocket, message: dict[str, Any]) -> bool:
+        client_id = self._connections.get(websocket, {}).get("client_id")
         try:
             await websocket.send_json(message)
-        except Exception:
+            return True
+        except Exception as exc:
+            retryable = self._is_retryable_error(exc)
+            log_template = (
+                "Retryable WebSocket send_json failure for client %s: %s"
+                if retryable
+                else "Non-retryable WebSocket send_json failure for client %s: %s"
+            )
+            log_func = logger.warning if retryable else logger.error
+            log_func(log_template, client_id, exc, exc_info=exc)
+
+            if retryable:
+                await asyncio.sleep(0.1)
+                try:
+                    await websocket.send_json(message)
+                    return True
+                except Exception as retry_exc:
+                    logger.error(
+                        "WebSocket send_json failed after retry for client %s: %s",
+                        client_id,
+                        retry_exc,
+                        exc_info=retry_exc,
+                    )
+
             await self.remove_connection(websocket)
+            return False
 
 realtime_broadcaster = RealtimeBroadcaster()

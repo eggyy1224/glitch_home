@@ -1,20 +1,26 @@
+import asyncio
+
 import pytest
 
 from app.services.realtime_bus import RealtimeBroadcaster
 
 
 class DummyWebSocket:
-    def __init__(self, should_fail: bool = False) -> None:
+    def __init__(self, fail_times: int = 0, exception: Exception | None = None) -> None:
         self.accepted = False
         self.sent_messages: list[dict] = []
-        self.should_fail = should_fail
+        self.fail_times = fail_times
+        self.exception = exception or RuntimeError("send failed")
+        self.attempts = 0
 
     async def accept(self) -> None:  # pragma: no cover - trivial
         self.accepted = True
 
     async def send_json(self, message: dict) -> None:
-        if self.should_fail:
-            raise RuntimeError("send failed")
+        self.attempts += 1
+        if self.fail_times > 0:
+            self.fail_times -= 1
+            raise self.exception
         self.sent_messages.append(message)
 
 
@@ -39,7 +45,7 @@ async def test_broadcast_filters_target_client() -> None:
 @pytest.mark.asyncio
 async def test_failed_send_removes_connection() -> None:
     broadcaster = RealtimeBroadcaster()
-    ws = DummyWebSocket(should_fail=True)
+    ws = DummyWebSocket(fail_times=1)
 
     await broadcaster.add_connection(ws)
     await broadcaster.register_client(ws, "alpha")
@@ -120,3 +126,37 @@ async def test_broadcast_video_control_includes_target() -> None:
             "target_client_id": "beta",
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_retryable_send_logs_and_succeeds_on_retry(caplog: pytest.LogCaptureFixture) -> None:
+    broadcaster = RealtimeBroadcaster()
+    ws = DummyWebSocket(fail_times=1, exception=asyncio.TimeoutError("temporary timeout"))
+
+    await broadcaster.add_connection(ws)
+    await broadcaster.register_client(ws, "client-123")
+
+    caplog.set_level("WARNING")
+    status = await broadcaster._send(ws, {"type": "test", "value": 1})
+
+    assert status is True
+    assert ws.sent_messages == [{"type": "test", "value": 1}]
+    assert "Retryable WebSocket send_json failure for client client-123" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_non_retryable_send_logs_and_returns_false(caplog: pytest.LogCaptureFixture) -> None:
+    broadcaster = RealtimeBroadcaster()
+    ws = DummyWebSocket(fail_times=1, exception=RuntimeError("fatal send failure"))
+
+    await broadcaster.add_connection(ws)
+    await broadcaster.register_client(ws, None)
+
+    caplog.set_level("WARNING")
+    status = await broadcaster._send(ws, {"type": "test"})
+
+    assert status is False
+    assert ws.sent_messages == []
+    clients = await broadcaster.list_clients()
+    assert clients == []
+    assert "Non-retryable WebSocket send_json failure for client None" in caplog.text
