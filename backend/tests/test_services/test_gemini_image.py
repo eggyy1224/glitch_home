@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import Optional
 
 import pytest
+from app.exceptions import ExternalServiceError
 from PIL import Image
 
 from app.services import gemini_image
@@ -81,10 +82,12 @@ def test_call_gemini_raises_when_no_inline():
         }
     ]
 
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(ExternalServiceError) as exc:
         generator._call_gemini("prompt", [sample_image], details)
 
-    assert "Gemini 回傳未包含影像資料" in str(exc.value)
+    err = exc.value
+    assert err.user_message == "外部影像生成服務回傳異常，請稍後再試"
+    assert "Gemini 回傳未包含影像資料" in (err.log_message or "")
 
 
 def test_build_metadata_contains_expected_fields(tmp_path):
