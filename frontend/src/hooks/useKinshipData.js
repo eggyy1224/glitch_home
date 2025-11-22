@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchKinship } from "../api.js";
+import { useKinshipNavigation } from "./useKinshipNavigation.js";
 
 const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
 
@@ -9,20 +10,30 @@ export function useKinshipData({
   incubatorMode,
   phylogenyMode,
   maxClusters = 3,
+  navigationFactory = useKinshipNavigation,
+  navigationOptions = {},
 }) {
   const [imgId, setImgId] = useState(initialImg);
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [clusters, setClusters] = useState([]);
 
-  const navigateToImage = useCallback((nextImg) => {
-    if (!nextImg) return;
-    const params = new URLSearchParams(window.location.search);
-    params.set("img", nextImg);
-    const qs = params.toString();
-    window.history.replaceState(null, "", `?${qs}`);
-    setImgId(nextImg);
-  }, []);
+  const {
+    updateUrlParams,
+    getAutoplayConfig,
+    readVisitedImages,
+    saveVisitedImages,
+    scheduleNavigation,
+  } = navigationFactory(navigationOptions);
+
+  const navigateToImage = useCallback(
+    (nextImg) => {
+      if (!nextImg) return;
+      updateUrlParams(nextImg);
+      setImgId(nextImg);
+    },
+    [updateUrlParams],
+  );
 
   useEffect(() => {
     if (!imgId || !shouldLoadKinshipData) return;
@@ -60,15 +71,10 @@ export function useKinshipData({
 
   useEffect(() => {
     if (!data || !shouldLoadKinshipData) return;
-    const params = new URLSearchParams(window.location.search);
-    const continuous = (params.get("continuous") ?? "false") === "true";
-    if (continuous) return;
-    const autoplay = (params.get("autoplay") ?? "1") !== "0";
-    if (!autoplay) return;
-    const stepSec = Math.max(2, parseInt(params.get("step") || "30"));
+    const { continuous, autoplay, stepSec } = getAutoplayConfig();
+    if (continuous || !autoplay) return;
 
-    const key = "visited_images";
-    const visited = new Set(JSON.parse(sessionStorage.getItem(key) || "[]"));
+    const visited = readVisitedImages();
     visited.add(data.original_image);
 
     const pickFirst = (arr) => arr.find((n) => n && !visited.has(n));
@@ -77,14 +83,19 @@ export function useKinshipData({
     if (!next) next = pickFirst(data.parents || []);
     if (!next) next = (data.children || [])[0] || (data.siblings || [])[0] || (data.parents || [])[0];
 
-    sessionStorage.setItem(key, JSON.stringify(Array.from(visited)));
+    saveVisitedImages(visited);
 
     if (!next) return;
-    const t = setTimeout(() => {
-      navigateToImage(next);
-    }, stepSec * 1000);
-    return () => clearTimeout(t);
-  }, [data, shouldLoadKinshipData, navigateToImage]);
+    return scheduleNavigation(next, navigateToImage, stepSec);
+  }, [
+    data,
+    shouldLoadKinshipData,
+    navigateToImage,
+    getAutoplayConfig,
+    readVisitedImages,
+    saveVisitedImages,
+    scheduleNavigation,
+  ]);
 
   return {
     imgId,

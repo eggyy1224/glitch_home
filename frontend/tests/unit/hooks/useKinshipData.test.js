@@ -48,27 +48,32 @@ describe("useKinshipData", () => {
     expect(result.current.clusters[0].original).toBe("seed.png");
   });
 
-  it("navigateToImage 會更新 history 與 imgId", async () => {
+  it("navigateToImage 會透過注入的 URL 更新器並設定 imgId", async () => {
     mockFetchKinship.mockResolvedValue(kinshipPayload);
-    const replaceSpy = vi.spyOn(window.history, "replaceState");
+    const navigation = {
+      updateUrlParams: vi.fn(),
+      getAutoplayConfig: () => ({ continuous: true, autoplay: false, stepSec: 2 }),
+      readVisitedImages: () => new Set(),
+      saveVisitedImages: vi.fn(),
+      scheduleNavigation: vi.fn(),
+    };
+    const navigationFactory = () => navigation;
     const { result } = renderHook(() =>
       useKinshipData({
         initialImg: "seed.png",
-        shouldLoadKinshipData: true,
+        shouldLoadKinshipData: false,
         incubatorMode: false,
         phylogenyMode: false,
+        navigationFactory,
       }),
     );
-
-    await waitFor(() => expect(result.current.data).not.toBeNull());
 
     act(() => {
       result.current.navigateToImage("next.png");
     });
 
-    expect(replaceSpy).toHaveBeenCalled();
+    expect(navigation.updateUrlParams).toHaveBeenCalledWith("next.png");
     expect(result.current.imgId).toBe("next.png");
-    replaceSpy.mockRestore();
   });
 
   it("當 fetch 失敗時回傳錯誤並不建立 clusters", async () => {
@@ -84,5 +89,42 @@ describe("useKinshipData", () => {
 
     await waitFor(() => expect(result.current.err).toBe("boom"));
     expect(result.current.clusters).toHaveLength(0);
+  });
+
+  it("會使用注入的導覽工具安排自動播放並更新 imgId", async () => {
+    mockFetchKinship.mockResolvedValue(kinshipPayload);
+    const navigation = {
+      updateUrlParams: vi.fn(),
+      readVisitedImages: vi.fn(() => new Set(["seed.png"])),
+      saveVisitedImages: vi.fn(),
+      scheduleNavigation: vi.fn((nextImg, onNavigate) => {
+        onNavigate(nextImg);
+        return vi.fn();
+      }),
+      getAutoplayConfig: () => ({ continuous: false, autoplay: true, stepSec: 3 }),
+    };
+    const navigationFactory = () => navigation;
+
+    const { result } = renderHook(() =>
+      useKinshipData({
+        initialImg: "seed.png",
+        shouldLoadKinshipData: true,
+        incubatorMode: false,
+        phylogenyMode: false,
+        navigationFactory,
+      }),
+    );
+
+    await waitFor(() => expect(result.current.data).not.toBeNull());
+    await waitFor(() => expect(result.current.imgId).toBe("child-1"));
+
+    expect(navigation.readVisitedImages).toHaveBeenCalled();
+    expect(navigation.saveVisitedImages).toHaveBeenCalled();
+    expect(navigation.scheduleNavigation).toHaveBeenCalledWith(
+      "child-1",
+      expect.any(Function),
+      3,
+    );
+    expect(navigation.updateUrlParams).toHaveBeenCalledWith("child-1");
   });
 });
