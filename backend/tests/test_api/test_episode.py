@@ -1,8 +1,10 @@
+import shutil
+from pathlib import Path
+
 import pytest
 
+from app.config import settings
 from app.services.iframe_timeline import save_iframe_timeline_definition
-from pathlib import Path
-import shutil
 
 
 def _make_timeline(timeline_id: str, client_id: str) -> None:
@@ -16,6 +18,34 @@ def _make_timeline(timeline_id: str, client_id: str) -> None:
         ],
     }
     save_iframe_timeline_definition(payload)
+
+
+def test_episode_dir_lazy_creation(client):
+    episodes_dir = Path(settings.metadata_dir) / "episodes"
+    timelines_dir = Path(settings.metadata_dir) / "timelines" / "iframe"
+    shutil.rmtree(episodes_dir, ignore_errors=True)
+    shutil.rmtree(timelines_dir, ignore_errors=True)
+
+    assert not episodes_dir.exists()
+
+    list_resp = client.get("/api/episodes")
+    assert list_resp.status_code == 200
+    assert not episodes_dir.exists()
+
+    _make_timeline("lazy_timeline", "lazy_client")
+    payload = {
+        "id": "lazy_ep",
+        "title": "lazy creation",
+        "tracks": [{"timelineId": "lazy_timeline", "targetClientId": "lazy_client"}],
+    }
+
+    create_resp = client.post("/api/episodes", json=payload)
+    assert create_resp.status_code == 201
+    assert episodes_dir.exists()
+    assert (episodes_dir / "lazy_ep.json").exists()
+
+    shutil.rmtree(episodes_dir, ignore_errors=True)
+    shutil.rmtree(timelines_dir, ignore_errors=True)
 
 
 def test_episode_crud_and_play(client):
@@ -81,11 +111,8 @@ def test_update_missing_episode_returns_404(client):
 
 
 def test_create_resolution_failure_does_not_persist(client, tmp_path, monkeypatch):
-    from app.config import settings
-
     episodes_dir = Path(settings.metadata_dir) / "episodes"
     shutil.rmtree(episodes_dir, ignore_errors=True)
-    episodes_dir.mkdir(parents=True, exist_ok=True)
     episodes_path = episodes_dir / "ep_bad.json"
 
     payload = {
@@ -97,14 +124,12 @@ def test_create_resolution_failure_does_not_persist(client, tmp_path, monkeypatc
     assert resp.status_code == 404
 
     assert not episodes_path.exists()
+    assert not episodes_dir.exists()
 
 
 def test_update_resolution_failure_does_not_change_file(client, tmp_path, monkeypatch):
-    from app.config import settings
-
     episodes_dir = Path(settings.metadata_dir) / "episodes"
     shutil.rmtree(episodes_dir, ignore_errors=True)
-    episodes_dir.mkdir(parents=True, exist_ok=True)
 
     _make_timeline("t1", "c1")
     create_payload = {
@@ -131,14 +156,10 @@ def test_update_resolution_failure_does_not_change_file(client, tmp_path, monkey
 
 
 def test_clone_resolution_failure_does_not_persist(client):
-    from app.config import settings
-
     episodes_dir = Path(settings.metadata_dir) / "episodes"
     timelines_dir = Path(settings.metadata_dir) / "timelines" / "iframe"
     shutil.rmtree(episodes_dir, ignore_errors=True)
     shutil.rmtree(timelines_dir, ignore_errors=True)
-    episodes_dir.mkdir(parents=True, exist_ok=True)
-    timelines_dir.mkdir(parents=True, exist_ok=True)
 
     _make_timeline("t1", "c1")
     create_payload = {

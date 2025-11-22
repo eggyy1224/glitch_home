@@ -14,7 +14,6 @@ from .realtime_bus import realtime_broadcaster
 
 
 _EPISODE_DIR = Path(settings.metadata_dir) / "episodes"
-_EPISODE_DIR.mkdir(parents=True, exist_ok=True)
 
 _EPISODE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -77,6 +76,11 @@ def _episode_path_for(episode_id: str) -> Path:
     return _EPISODE_DIR / f"{safe_id}.json"
 
 
+def _ensure_episode_dir() -> None:
+    if not _EPISODE_DIR.exists():
+        _EPISODE_DIR.mkdir(parents=True, exist_ok=True)
+
+
 def save_episode_definition(payload: dict, episode_id: Optional[str] = None) -> Episode:
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
@@ -88,8 +92,8 @@ def save_episode_definition(payload: dict, episode_id: Optional[str] = None) -> 
     payload = {**payload, "id": safe_id}
     episode = Episode.model_validate(payload)
 
+    _ensure_episode_dir()
     path = _episode_path_for(safe_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fp:
         json.dump(episode.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
     return episode
