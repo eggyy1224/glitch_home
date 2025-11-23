@@ -21,7 +21,7 @@ describe("useModeParams", () => {
     expect(result.current.initialImg).toBe("offspring.png");
     expect(result.current.soundPlayerEnabled).toBe(true);
     expect(result.current.slideIntervalMs).toBe(3000);
-    expect(result.current.clientId).toBe("default");
+    expect(result.current.clientId).toBe("desktop");
     expect(result.current.shouldLoadKinshipData).toBe(true);
   });
 

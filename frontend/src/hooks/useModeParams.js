@@ -41,7 +41,7 @@ export function useModeParams() {
     if (fromQuery && fromQuery.trim()) return fromQuery.trim();
     const fromEnv = import.meta?.env?.VITE_CLIENT_ID;
     if (fromEnv && `${fromEnv}`.trim()) return `${fromEnv}`.trim();
-    return "default";
+    return "desktop";
   }, []);
 
   const iframeTimelineId = useMemo(() => {
