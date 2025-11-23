@@ -1,0 +1,67 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "grass_top_left",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-1",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Grass man A",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grass_top_mid",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-2",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Grass man B",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grass_right_full",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-main",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.78,
+      "label": "Grass man Main",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "grass_bottom_left",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-3",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Grass man C",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "grass_bottom_mid",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Grass man D",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "id": "grass_man_series",
+  "title": "Grass Man 系列",
+  "clientId": "desktop",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop/grass_man_left_quad_right_full",
+      "duration": 10.0,
+      "at": null,
+      "label": "右主視角，左四格導入",
+      "clientId": null,
+      "subtitle": {
+        "text": "主畫面：草地雷雨入口\n左側：多視角導入",
+        "language": "zh-TW",
+        "duration_seconds": 6.0
+      },
+      "caption": null,
+      "tts": {
+        "mode": "tts",
+        "text": "右邊保持單一主畫面，左邊四格快速帶出不同視角。",
+        "voice": null,
+        "model": null,
+        "output_format": null,
+        "filename_base": null,
+        "speed": null,
+        "auto_play": true,
+        "target_client_id": null,
+        "subtitle_text": null,
+        "subtitle_language": null,
+        "subtitle_duration_seconds": null,
+        "sound_filename": null,
+        "instructions": null
+      },
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/grass_man_left_16_right_full",
+      "duration": 12.0,
+      "at": null,
+      "label": "左 16 格，右全景",
+      "clientId": null,
+      "subtitle": {
+        "text": "放大左側 16 格，掃描更多畫面細節",
+        "language": "zh-TW",
+        "duration_seconds": 8.0
+      },
+      "caption": null,
+      "tts": {
+        "mode": "tts",
+        "text": "讓左側變成十六格牆，右側保持主畫面，專注細節與節奏。",
+        "voice": null,
+        "model": null,
+        "output_format": null,
+        "filename_base": null,
+        "speed": null,
+        "auto_play": true,
+        "target_client_id": null,
+        "subtitle_text": null,
+        "subtitle_language": null,
+        "subtitle_duration_seconds": null,
+        "sound_filename": null,
+        "instructions": null
+      },
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/grass_man_quad",
+      "duration": 8.0,
+      "at": null,
+      "label": "回到四格特寫",
+      "clientId": null,
+      "subtitle": {
+        "text": "收斂為四格，聚焦核心鏡頭",
+        "language": "zh-TW",
+        "duration_seconds": 5.0
+      },
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/grass_man_100_grid",
+      "duration": 30.0,
+      "at": null,
+      "label": "100 格混合收束",
+      "clientId": null,
+      "subtitle": {
+        "text": "百格拼貼：追蹤每個小畫面的位置變化",
+        "language": "zh-TW",
+        "duration_seconds": 12.0
+      },
+      "caption": {
+        "text": "草地雷雨・百視角拼貼",
+        "language": "zh-TW",
+        "duration_seconds": 15.0
+      },
+      "tts": {
+        "mode": "tts",
+        "text": "最後以百格收束。留意放大的節點逐步掃過全局。",
+        "voice": null,
+        "model": null,
+        "output_format": null,
+        "filename_base": null,
+        "speed": null,
+        "auto_play": true,
+        "target_client_id": null,
+        "subtitle_text": null,
+        "subtitle_language": null,
+        "subtitle_duration_seconds": null,
+        "sound_filename": null,
+        "instructions": null
+      },
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}
