@@ -52,7 +52,7 @@ export const computeStyles = (sizeClass) => {
     maxHeight: "100%",
     objectFit: "contain",
     boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
-    borderRadius: "12px",
+    borderRadius: "0",
   };
 
   const caption = {
@@ -132,7 +132,7 @@ export const computeStyles = (sizeClass) => {
     stage.maxWidth = "100%";
     stage.maxHeight = "100%";
     image.boxShadow = "0 12px 40px rgba(0,0,0,0.55)";
-    image.borderRadius = "10px";
+    image.borderRadius = "0";
     caption.fontSize = "12px";
     caption.maxWidth = "100%";
     status.top = "18px";
@@ -147,7 +147,7 @@ export const computeStyles = (sizeClass) => {
     stage.maxWidth = "100%";
     stage.maxHeight = "100%";
     image.boxShadow = "0 10px 28px rgba(0,0,0,0.5)";
-    image.borderRadius = "10px";
+    image.borderRadius = "0";
     caption.fontSize = "11px";
     caption.padding = "8px 12px";
     caption.maxWidth = "100%";

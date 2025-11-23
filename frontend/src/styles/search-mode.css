@@ -84,7 +84,7 @@
 .search-mode__preview-img {
   max-width: 100%;
   max-height: 300px;
-  border-radius: 8px;
+  border-radius: 0;
   margin-bottom: 1rem;
 }
 

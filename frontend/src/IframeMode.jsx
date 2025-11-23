@@ -287,7 +287,7 @@ export default function IframeMode({
       display: "flex",
       flexDirection: "column",
       backgroundColor: "#050505",
-      borderRadius: "12px",
+      borderRadius: "0",
       overflow: "hidden",
       minWidth: 0,
       minHeight: 0,
