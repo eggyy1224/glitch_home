@@ -143,3 +143,99 @@ async def test_screenshot_request_lifecycle_and_bundle(
     queue_record = await screenshot_request_queue.get_request(request_id)
     assert queue_record is not None
     assert queue_record.get("sound_effect", {}).get("filename") == "scene.mp3"
+
+
+@pytest.mark.asyncio
+async def test_subtitles_and_captions_flow(async_client: AsyncClient) -> None:
+    subtitle_resp = await async_client.post(
+        "/api/subtitles",
+        params={"target_client_id": "display-alpha"},
+        json={"text": "字幕測試", "language": "zh-TW", "duration_seconds": 3},
+    )
+    assert subtitle_resp.status_code == 202
+    get_subtitle = await async_client.get("/api/subtitles", params={"client": "display-alpha"})
+    assert get_subtitle.status_code == 200
+    assert get_subtitle.json()["subtitle"]["text"] == "字幕測試"
+
+    clear_subtitle = await async_client.delete("/api/subtitles", params={"target_client_id": "display-alpha"})
+    assert clear_subtitle.status_code == 204
+    cleared = await async_client.get("/api/subtitles", params={"client": "display-alpha"})
+    assert cleared.status_code == 200
+    assert cleared.json().get("subtitle") is None
+
+    caption_resp = await async_client.post(
+        "/api/captions",
+        params={"target_client_id": "display-beta"},
+        json={"text": "標題測試", "language": "zh-TW"},
+    )
+    assert caption_resp.status_code == 202
+    get_caption = await async_client.get("/api/captions", params={"client": "display-beta"})
+    assert get_caption.status_code == 200
+    assert get_caption.json()["caption"]["text"] == "標題測試"
+
+    clear_caption = await async_client.delete("/api/captions", params={"target_client_id": "display-beta"})
+    assert clear_caption.status_code == 204
+    cleared_caption = await async_client.get("/api/captions", params={"client": "display-beta"})
+    assert cleared_caption.status_code == 200
+    assert cleared_caption.json().get("caption") is None
+
+
+@pytest.mark.asyncio
+async def test_screenshot_fail_and_status(async_client: AsyncClient) -> None:
+    create_resp = await async_client.post("/api/screenshots/request", json={"client_id": "display-err"})
+    assert create_resp.status_code == 202
+    request_id = create_resp.json()["id"]
+
+    fail_resp = await async_client.post(
+        f"/api/screenshots/{request_id}/fail",
+        json={"error": "worker crash", "client_id": "display-err"},
+    )
+    assert fail_resp.status_code == 200
+    assert fail_resp.json()["status"] == "failed"
+    assert fail_resp.json()["error"] == "worker crash"
+
+    status_resp = await async_client.get(f"/api/screenshots/{request_id}")
+    assert status_resp.status_code == 200
+    status_json = status_resp.json()
+    assert status_json["status"] == "failed"
+    assert status_json["error"] == "worker crash"
+
+
+@pytest.mark.asyncio
+async def test_sound_effects_with_request_metadata(
+    async_client: AsyncClient,
+    tmp_path: Path,
+    sample_png_bytes: bytes,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    create_resp = await async_client.post("/api/screenshots/request", json={"client_id": "display-sound"})
+    assert create_resp.status_code == 202
+    request_id = create_resp.json()["id"]
+
+    image_path = tmp_path / "sound.png"
+    image_path.write_bytes(sample_png_bytes)
+    await screenshot_request_queue.mark_completed(
+        request_id,
+        {"absolute_path": str(image_path)},
+        processed_by="worker-sound",
+    )
+
+    def fake_sound_effect(**kwargs) -> dict:
+        return {"filename": "fx.mp3", "relative_path": "generated_sounds/fx.mp3", "output_format": "mp3"}
+
+    monkeypatch.setattr("app.api.screenshot.generate_sound_effect", fake_sound_effect)
+
+    sound_resp = await async_client.post(
+        "/api/sound-effects",
+        json={
+            "request_id": request_id,
+            "prompt": "風聲",
+            "duration_seconds": 1.2,
+        },
+    )
+    assert sound_resp.status_code == 200
+    payload = sound_resp.json()
+    assert payload["sound"]["filename"] == "fx.mp3"
+    assert payload["request_id"] == request_id
+    assert payload["request_metadata"]["status"] == "completed"
+    assert payload["request_metadata"]["sound_effect"]["filename"] == "fx.mp3"
