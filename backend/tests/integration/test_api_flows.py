@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
@@ -10,7 +11,7 @@ from app.services.screenshot_queue import screenshot_request_queue
 pytestmark = pytest.mark.integration
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client():
     await app.router.startup()
     transport = ASGITransport(app=app)
