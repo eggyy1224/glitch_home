@@ -62,4 +62,28 @@ describe("SnapshotManager", () => {
     await waitFor(() => expect(mockGetIframeSnapshot).toHaveBeenCalledWith("desktop", "snapA"));
     expect(screen.getByTitle("snapshot-preview")).toBeInTheDocument();
   });
+
+  it("變更 client 時自動重新載入列表", async () => {
+    renderWithContext(<SnapshotManager />);
+
+    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
+
+    const clientInput = await screen.findByLabelText("snapshot-client");
+    fireEvent.change(clientInput, { target: { value: "mobile" } });
+
+    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenLastCalledWith("mobile"));
+  });
+
+  it("手動按下重新載入列表時仍會使用當前 client", async () => {
+    renderWithContext(<SnapshotManager />);
+
+    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
+
+    fireEvent.click(screen.getByRole("button", { name: "重新載入列表" }));
+
+    await waitFor(() => {
+      expect(mockListIframeSnapshots).toHaveBeenCalledTimes(2);
+      expect(mockListIframeSnapshots).toHaveBeenLastCalledWith("desktop");
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   cloneIframeSnapshot,
   deleteIframeSnapshot,
@@ -27,11 +27,12 @@ export default function SnapshotManager() {
   const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
   const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState(defaultPreviewWidth);
 
-  const resolvedClientLabel = useMemo(() => snapshotClient || "(未設定)", [snapshotClient]);
   const snapshotFrameHeight = useMemo(
     () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
     [snapshotPreviewWidth],
   );
+  const refreshTimerRef = useRef(null);
+  const refreshRequestIdRef = useRef(0);
 
   const clampPreviewWidth = useCallback((width) => {
     const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
@@ -57,15 +58,21 @@ export default function SnapshotManager() {
     [clampPreviewWidth, snapshotPreviewWidth],
   );
 
-  const refreshSnapshots = useCallback(async () => {
+  const refreshSnapshots = useCallback(async (clientOverride) => {
+    const client = clientOverride ?? snapshotClient;
+    const label = client || "(未設定)";
+    const requestId = Date.now();
+    refreshRequestIdRef.current = requestId;
     try {
-      const data = await listIframeSnapshots(snapshotClient || null);
+      const data = await listIframeSnapshots(client || null);
+      if (refreshRequestIdRef.current !== requestId) return;
       setSnapshotList(Array.isArray(data.snapshots) ? data.snapshots : []);
-      setSnapshotMessage(`已載入 ${data.snapshots?.length ?? 0} 筆 snapshot (${resolvedClientLabel})`);
+      setSnapshotMessage(`已載入 ${data.snapshots?.length ?? 0} 筆 snapshot (${label})`);
     } catch (err) {
+      if (refreshRequestIdRef.current !== requestId) return;
       setSnapshotMessage(err.message || "載入 snapshot 失敗");
     }
-  }, [resolvedClientLabel, snapshotClient]);
+  }, [snapshotClient]);
 
   const handleLoadSnapshot = useCallback(
     async (name) => {
@@ -129,8 +136,18 @@ export default function SnapshotManager() {
   }, [refreshSnapshots, snapshotClient, snapshotCloneName, snapshotCloneTarget, snapshotName]);
 
   useEffect(() => {
-    refreshSnapshots();
-  }, [refreshSnapshots]);
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+    refreshTimerRef.current = setTimeout(() => {
+      refreshSnapshots(snapshotClient);
+    }, 300);
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, [refreshSnapshots, snapshotClient]);
 
   useEffect(() => {
     try {
@@ -149,9 +166,10 @@ export default function SnapshotManager() {
           type="text"
           value={snapshotClient}
           onChange={(e) => setSnapshotClient(e.target.value)}
+          aria-label="snapshot-client"
           style={{ width: "200px" }}
         />
-        <button type="button" onClick={refreshSnapshots} style={{ marginLeft: 8 }}>
+        <button type="button" onClick={() => refreshSnapshots(snapshotClient)} style={{ marginLeft: 8 }}>
           重新載入列表
         </button>
       </div>
