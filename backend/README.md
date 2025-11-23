@@ -6,7 +6,7 @@
 
 ## 安裝
 ```bash
-cd /Volumes/2024data/glitch_home_project/backend
+cd backend  # 從專案根目錄進入後端程式碼
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -37,7 +37,25 @@ export METADATA_DIR="backend/metadata"
 export GEMINI_API_KEY="你的金鑰"
 ```
 
-> 相對路徑會自動以專案根目錄 `/Volumes/2024data/glitch_home_project` 為基準解析。
+> 相對路徑會自動以專案根目錄為基準解析。
+
+常見部署目錄結構（示意）：
+```text
+/srv/glitch_home/               # 專案根目錄
+├── backend/                    # 本 README 所在位置
+│   ├── app/
+│   ├── metadata/               # 預設 metadata 寫入目錄
+│   └── offspring_images/       # 預設輸出影像目錄
+└── frontend/
+```
+
+若環境變數使用相對路徑（例如 `METADATA_DIR=backend/metadata`、`OFFSPRING_DIR=backend/offspring_images`），均會依據上述專案根目錄解析；部署至其他路徑時只需保留相同的相對階層即可。
+
+## 檔案系統一覽
+- `app/api/`：FastAPI 路由與 request/response 模型，處理 HTTP/WebSocket 端點。
+- `app/services/`：業務邏輯與協作服務，例如影像生成、嵌入索引、TTS 與拼貼工作流程。
+- `metadata/`：生成影像與 TTS 等流程的 metadata JSON，檔名通常與輸出影像對應。
+- `offspring_images/`：模型輸出的影像檔（PNG/JPEG），亦為索引與拼貼的主要輸入來源。
 
 ## 啟動（本地）
 ```bash
