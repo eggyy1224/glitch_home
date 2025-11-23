@@ -1,0 +1,67 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "drive_top_left",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-stormy-1",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Drive stormy A",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "drive_top_mid",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-stormy-2",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Drive stormy B",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "drive_right_full",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-stormy-main",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.78,
+      "label": "Drive stormy Main",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "drive_bottom_left",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-stormy-3",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Drive stormy C",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "drive_bottom_mid",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-stormy-4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Drive stormy D",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

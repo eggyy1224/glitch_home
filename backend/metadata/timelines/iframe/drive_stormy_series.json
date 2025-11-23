@@ -1,0 +1,60 @@
+{
+  "id": "drive_stormy_series",
+  "title": "Drive stormy 系列",
+  "clientId": "desktop",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop/drive_in_stormy_quad",
+      "duration": 8.0,
+      "at": null,
+      "label": "四格",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/drive_in_stormy_left_quad_right_full",
+      "duration": 8.0,
+      "at": null,
+      "label": "左四格右全",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/drive_in_stormy_left_16_right_full",
+      "duration": 10.0,
+      "at": null,
+      "label": "左16格右全",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/drive_in_stormy_100_grid",
+      "duration": 60.0,
+      "at": null,
+      "label": "100 格混合",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}
