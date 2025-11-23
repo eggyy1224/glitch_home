@@ -103,6 +103,9 @@ export function useRemoteTimelineControl({
       if (!payload || typeof payload !== "object") {
         return;
       }
+      if (activeMode === DisplayModes.ADMIN) {
+        return;
+      }
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
         return;
@@ -163,6 +166,7 @@ export function useRemoteTimelineControl({
       remoteTimelineControl,
       effectiveTimelineId,
       performTimelineStop,
+      activeMode,
       setActiveModeOverride,
     ],
   );
