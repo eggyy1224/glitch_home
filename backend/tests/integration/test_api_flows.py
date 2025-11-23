@@ -239,3 +239,96 @@ async def test_sound_effects_with_request_metadata(
     assert payload["request_id"] == request_id
     assert payload["request_metadata"]["status"] == "completed"
     assert payload["request_metadata"]["sound_effect"]["filename"] == "fx.mp3"
+
+
+@pytest.mark.asyncio
+async def test_iframe_snapshot_restore_flow(async_client: AsyncClient) -> None:
+    client_id = "snap-client"
+    base_payload = {
+        "target_client_id": client_id,
+        "layout": "horizontal",
+        "gap": 4,
+        "columns": 3,
+        "panels": [
+            {"id": "p1", "url": "/a?mode=one", "ratio": 1.0},
+            {"id": "p2", "url": "/b?mode=two", "ratio": 1.0},
+        ],
+    }
+
+    set_resp = await async_client.put("/api/iframe-config", json=base_payload)
+    assert set_resp.status_code == 200
+
+    snapshot_resp = await async_client.post(
+        "/api/iframe-config/snapshot",
+        json={"client_id": client_id, "snapshot_name": "int-test"},
+    )
+    assert snapshot_resp.status_code == 201
+    snapshot_name = snapshot_resp.json()["snapshot"]["name"]
+
+    modified_payload = {**base_payload, "panels": [{"id": "p3", "url": "/c?mode=three", "ratio": 1.0}]}
+    update_resp = await async_client.put("/api/iframe-config", json=modified_payload)
+    assert update_resp.status_code == 200
+    assert len(update_resp.json()["panels"]) == 1
+
+    restore_resp = await async_client.post(
+        "/api/iframe-config/restore",
+        json={"client_id": client_id, "snapshot_name": snapshot_name},
+    )
+    assert restore_resp.status_code == 200
+    restored = restore_resp.json()
+    assert restored["target_client_id"] == client_id
+    assert restored["layout"] == "horizontal"
+    panel_ids = [p["id"] for p in restored["panels"]]
+    assert panel_ids == ["p1", "p2"]
+
+    list_resp = await async_client.get("/api/iframe-config/snapshots", params={"client": client_id})
+    assert list_resp.status_code == 200
+    assert any(s["name"] == snapshot_name for s in list_resp.json()["snapshots"])
+
+
+@pytest.mark.asyncio
+async def test_camera_preset_crud(async_client: AsyncClient) -> None:
+    preset_body = {
+        "name": "preset-int",
+        "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+        "target": {"x": 0.0, "y": 0.0, "z": -1.0},
+    }
+    create_resp = await async_client.post("/api/camera-presets", json=preset_body)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    assert created["name"] == "preset-int"
+
+    list_resp = await async_client.get("/api/camera-presets")
+    assert list_resp.status_code == 200
+    names = [item["name"] for item in list_resp.json()]
+    assert "preset-int" in names
+
+    delete_resp = await async_client.delete("/api/camera-presets/preset-int")
+    assert delete_resp.status_code == 204
+
+    delete_again = await async_client.delete("/api/camera-presets/preset-int")
+    assert delete_again.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_remote_controls_validation_and_success(async_client: AsyncClient) -> None:
+    bad_click = await async_client.post("/api/remote-click", json={})
+    assert bad_click.status_code == 422 or bad_click.status_code == 400
+
+    good_click = await async_client.post(
+        "/api/remote-click",
+        json={"selector": ".video", "x": 10, "y": 20},
+        params={"target_client_id": "rc-client"},
+    )
+    assert good_click.status_code == 200
+    assert good_click.json()["status"] == "queued"
+
+    bad_video = await async_client.post("/api/video-control", json={"action": "set_volume"})
+    assert bad_video.status_code in (400, 422)
+
+    good_video = await async_client.post(
+        "/api/video-control",
+        json={"action": "play", "client_id": "rc-client"},
+    )
+    assert good_video.status_code == 200
+    assert good_video.json()["status"] == "queued"
