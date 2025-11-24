@@ -6,6 +6,7 @@ import GenerateSearchInput from "./components/generate/GenerateSearchInput.jsx";
 import useGenerateParams from "./hooks/useGenerateParams.js";
 import useGenerateSearch from "./hooks/useGenerateSearch.js";
 import { generateMixTwo, listOffspringImages } from "./api.js";
+import CollageVersionMode from "./CollageVersionMode.jsx";
 import {
   buildImageUrl,
   extractImageIdentifier,
@@ -13,7 +14,7 @@ import {
   resolveImageUrl,
 } from "./utils/generate.js";
 
-export default function GenerateMode() {
+function GenerateModeContent() {
   const [availableImages, setAvailableImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -230,6 +231,50 @@ export default function GenerateMode() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+export default function GenerateMode() {
+  const [activeTab, setActiveTab] = useState("collage");
+  const [mountedTabs, setMountedTabs] = useState({ collage: true, generate: false });
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
+  };
+
+  return (
+    <div className="generate-tabs-shell">
+      <div className="generate-tabbar">
+        <button
+          type="button"
+          className={`generate-tab-button ${activeTab === "collage" ? "active" : ""}`}
+          onClick={() => switchTab("collage")}
+        >
+          拼貼模式
+        </button>
+        <button
+          type="button"
+          className={`generate-tab-button ${activeTab === "generate" ? "active" : ""}`}
+          onClick={() => switchTab("generate")}
+        >
+          生成模式
+        </button>
+      </div>
+
+      <div className="generate-tabpanels">
+        {mountedTabs.collage && (
+          <div className="generate-tabpanel" style={{ display: activeTab === "collage" ? "block" : "none" }}>
+            <CollageVersionMode />
+          </div>
+        )}
+        {mountedTabs.generate && (
+          <div className="generate-tabpanel" style={{ display: activeTab === "generate" ? "block" : "none" }}>
+            <GenerateModeContent />
+          </div>
+        )}
       </div>
     </div>
   );
