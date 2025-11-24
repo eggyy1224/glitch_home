@@ -123,40 +123,8 @@ export default function GenerateMode() {
   return (
     <div className="generate-mode">
       <div className="generate-container">
-        <div className="generate-left">
+        <div className="generate-column generate-params-pane">
           <h2>圖像生成</h2>
-
-          <div className="generate-section">
-            <h3>選擇圖片（至少 2 張，或留空使用隨機抽樣）</h3>
-
-            <GenerateSearchInput
-              searchType={searchType}
-              onSearchTypeChange={setSearchType}
-              textQuery={textQuery}
-              onTextQueryChange={setTextQuery}
-              onTextSearch={handleTextSearch}
-              searchFile={searchFile}
-              searchPreview={searchPreview}
-              onFileSelect={handleFileSelect}
-              onImageSearch={handleImageSearch}
-              onClear={handleSearchClear}
-              searching={searching}
-              fileInputRef={fileInputRef}
-              onKeyPress={handleKeyPress}
-            />
-
-            <GenerateResultsList
-              displayMode={displayMode}
-              searchResultsLength={searchResults.length}
-              onDisplayAll={() => setDisplayMode("all")}
-              loadingImages={loadingImages}
-              images={displayImages}
-              selectedImages={selectedImages}
-              onToggleImage={handleImageToggle}
-              onClearSelection={() => setSelectedImages([])}
-              resolveImageUrl={resolveImageUrl}
-            />
-          </div>
 
           <div className="generate-section">
             <h3>參數設定</h3>
@@ -202,7 +170,41 @@ export default function GenerateMode() {
           {error && <div className="generate-error">{error}</div>}
         </div>
 
-        <div className="generate-right">
+        <div className="generate-column generate-image-pane">
+          <div className="generate-section">
+            <h3>圖片選擇（至少 2 張，或留空使用隨機抽樣）</h3>
+
+            <GenerateSearchInput
+              searchType={searchType}
+              onSearchTypeChange={setSearchType}
+              textQuery={textQuery}
+              onTextQueryChange={setTextQuery}
+              onTextSearch={handleTextSearch}
+              searchFile={searchFile}
+              searchPreview={searchPreview}
+              onFileSelect={handleFileSelect}
+              onImageSearch={handleImageSearch}
+              onClear={handleSearchClear}
+              searching={searching}
+              fileInputRef={fileInputRef}
+              onKeyPress={handleKeyPress}
+            />
+
+            <GenerateResultsList
+              displayMode={displayMode}
+              searchResultsLength={searchResults.length}
+              onDisplayAll={() => setDisplayMode("all")}
+              loadingImages={loadingImages}
+              images={displayImages}
+              selectedImages={selectedImages}
+              onToggleImage={handleImageToggle}
+              onClearSelection={() => setSelectedImages([])}
+              resolveImageUrl={resolveImageUrl}
+            />
+          </div>
+        </div>
+
+        <div className="generate-column generate-result-pane">
           <h3>結果</h3>
           {loading && (
             <div className="generate-loading">
