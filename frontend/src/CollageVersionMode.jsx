@@ -346,165 +346,8 @@ export default function CollageVersionMode() {
   return (
     <div className="collage-version-mode">
       <div className="collage-version-container">
-        <div className="collage-version-left">
+        <div className="collage-version-column collage-version-params-pane">
           <h2>拼貼生成</h2>
-          
-          {/* Image Selection */}
-          <div className="collage-version-section">
-            <h3>選擇圖片（至少 {minRequired} 張）</h3>
-            
-            {/* Search Bar */}
-            <div className="collage-version-search">
-              <div className="collage-version-search-mode">
-                <button
-                  type="button"
-                  className={`collage-version-search-mode-btn ${searchType === "text" ? "active" : ""}`}
-                  onClick={() => setSearchType("text")}
-                >
-                  📝 文字搜尋
-                </button>
-                <button
-                  type="button"
-                  className={`collage-version-search-mode-btn ${searchType === "image" ? "active" : ""}`}
-                  onClick={() => setSearchType("image")}
-                >
-                  📸 圖片搜尋
-                </button>
-              </div>
-              
-              {searchType === "text" ? (
-                <div className="collage-version-search-text">
-                  <input
-                    type="text"
-                    value={textQuery}
-                    onChange={(e) => setTextQuery(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="輸入搜尋詞... 例如：白馬、夜晚、人物"
-                    className="collage-version-search-input"
-                  />
-                  <div className="collage-version-search-controls">
-                    <button
-                      type="button"
-                      onClick={handleTextSearch}
-                      disabled={!textQuery.trim() || searching}
-                      className="collage-version-search-btn"
-                    >
-                      {searching ? "搜尋中..." : "搜尋"}
-                    </button>
-                    {textQuery && (
-                      <button
-                        type="button"
-                        onClick={handleSearchClear}
-                        disabled={searching}
-                        className="collage-version-search-clear"
-                      >
-                        清除
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="collage-version-search-image">
-                  {searchPreview ? (
-                    <div className="collage-version-search-preview">
-                      <img src={searchPreview} alt="預覽" />
-                      <p>{searchFile.name}</p>
-                    </div>
-                  ) : (
-                    <div
-                      className="collage-version-search-upload"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <div className="collage-version-search-upload-icon">📸</div>
-                      <p>點擊上傳圖片或拖放</p>
-                      <p className="collage-version-search-upload-hint">支援 PNG, JPG, JPEG</p>
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={handleFileSelect}
-                    style={{ display: "none" }}
-                  />
-                  <div className="collage-version-search-controls">
-                    <button
-                      type="button"
-                      onClick={handleImageSearch}
-                      disabled={!searchFile || searching}
-                      className="collage-version-search-btn"
-                    >
-                      {searching ? "搜尋中..." : "搜尋"}
-                    </button>
-                    {searchFile && (
-                      <button
-                        type="button"
-                        onClick={handleSearchClear}
-                        disabled={searching}
-                        className="collage-version-search-clear"
-                      >
-                        清除
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Display Mode Toggle */}
-            {displayMode === "search" && (
-              <div className="collage-version-display-mode">
-                <span className="collage-version-display-mode-label">顯示：搜尋結果 ({searchResults.length} 張)</span>
-                <button
-                  type="button"
-                  onClick={() => setDisplayMode("all")}
-                  className="collage-version-display-mode-btn"
-                >
-                  返回全部
-                </button>
-              </div>
-            )}
-            
-            {loadingImages ? (
-              <div className="collage-version-loading">
-                <div className="collage-version-spinner"></div>
-                <p>載入圖片列表中...</p>
-              </div>
-            ) : (
-              <>
-                <div className="collage-version-image-grid">
-                  {displayImages.map((image) => {
-                    const isSelected = selectedImages.includes(image.filename);
-                    return (
-                      <div
-                        key={image.filename}
-                        className={`collage-version-image-item ${isSelected ? "selected" : ""}`}
-                        onClick={() => handleImageToggle(image.filename)}
-                      >
-                        <img src={image.url || `${IMAGES_BASE}${image.filename}`} alt={image.filename} />
-                        <div className="collage-version-image-overlay">
-                          {isSelected && <span className="collage-version-check">✓</span>}
-                        </div>
-                        <div className="collage-version-image-name">{image.filename}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {selectedImages.length > 0 && (
-                  <div className="collage-version-selected-count">
-                    <span>已選擇 {selectedImages.length} 張圖片</span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedImages([])}
-                      className="collage-version-clear-selection"
-                    >
-                      清除選擇
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
           
           {/* Parameters */}
           <div className="collage-version-section">
@@ -663,9 +506,167 @@ export default function CollageVersionMode() {
             </div>
           )}
         </div>
-        
+
+        <div className="collage-version-column collage-version-image-pane">
+          <div className="collage-version-section">
+            <h3>圖片選擇（至少 {minRequired} 張）</h3>
+
+            {/* Search Bar */}
+            <div className="collage-version-search">
+              <div className="collage-version-search-mode">
+                <button
+                  type="button"
+                  className={`collage-version-search-mode-btn ${searchType === "text" ? "active" : ""}`}
+                  onClick={() => setSearchType("text")}
+                >
+                  📝 文字搜尋
+                </button>
+                <button
+                  type="button"
+                  className={`collage-version-search-mode-btn ${searchType === "image" ? "active" : ""}`}
+                  onClick={() => setSearchType("image")}
+                >
+                  📸 圖片搜尋
+                </button>
+              </div>
+              
+              {searchType === "text" ? (
+                <div className="collage-version-search-text">
+                  <input
+                    type="text"
+                    value={textQuery}
+                    onChange={(e) => setTextQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="輸入搜尋詞... 例如：白馬、夜晚、人物"
+                    className="collage-version-search-input"
+                  />
+                  <div className="collage-version-search-controls">
+                    <button
+                      type="button"
+                      onClick={handleTextSearch}
+                      disabled={!textQuery.trim() || searching}
+                      className="collage-version-search-btn"
+                    >
+                      {searching ? "搜尋中..." : "搜尋"}
+                    </button>
+                    {textQuery && (
+                      <button
+                        type="button"
+                        onClick={handleSearchClear}
+                        disabled={searching}
+                        className="collage-version-search-clear"
+                      >
+                        清除
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="collage-version-search-image">
+                  {searchPreview ? (
+                    <div className="collage-version-search-preview">
+                      <img src={searchPreview} alt="預覽" />
+                      <p>{searchFile.name}</p>
+                    </div>
+                  ) : (
+                    <div
+                      className="collage-version-search-upload"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <div className="collage-version-search-upload-icon">📸</div>
+                      <p>點擊上傳圖片或拖放</p>
+                      <p className="collage-version-search-upload-hint">支援 PNG, JPG, JPEG</p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleFileSelect}
+                    style={{ display: "none" }}
+                  />
+                  <div className="collage-version-search-controls">
+                    <button
+                      type="button"
+                      onClick={handleImageSearch}
+                      disabled={!searchFile || searching}
+                      className="collage-version-search-btn"
+                    >
+                      {searching ? "搜尋中..." : "搜尋"}
+                    </button>
+                    {searchFile && (
+                      <button
+                        type="button"
+                        onClick={handleSearchClear}
+                        disabled={searching}
+                        className="collage-version-search-clear"
+                      >
+                        清除
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Display Mode Toggle */}
+            {displayMode === "search" && (
+              <div className="collage-version-display-mode">
+                <span className="collage-version-display-mode-label">顯示：搜尋結果 ({searchResults.length} 張)</span>
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode("all")}
+                  className="collage-version-display-mode-btn"
+                >
+                  返回全部
+                </button>
+              </div>
+            )}
+
+            {loadingImages ? (
+              <div className="collage-version-loading">
+                <div className="collage-version-spinner"></div>
+                <p>載入圖片列表中...</p>
+              </div>
+            ) : (
+              <>
+                <div className="collage-version-image-grid">
+                  {displayImages.map((image) => {
+                    const isSelected = selectedImages.includes(image.filename);
+                    return (
+                      <div
+                        key={image.filename}
+                        className={`collage-version-image-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => handleImageToggle(image.filename)}
+                      >
+                        <img src={image.url || `${IMAGES_BASE}${image.filename}`} alt={image.filename} />
+                        <div className="collage-version-image-overlay">
+                          {isSelected && <span className="collage-version-check">✓</span>}
+                        </div>
+                        <div className="collage-version-image-name">{image.filename}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {selectedImages.length > 0 && (
+                  <div className="collage-version-selected-count">
+                    <span>已選擇 {selectedImages.length} 張圖片</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedImages([])}
+                      className="collage-version-clear-selection"
+                    >
+                      清除選擇
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Result Display */}
-        <div className="collage-version-right">
+        <div className="collage-version-column collage-version-result-pane">
           <h3>結果</h3>
           {loading && (
             <div className="collage-version-loading">
