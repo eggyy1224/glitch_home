@@ -244,7 +244,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
-  max-height: 520px;
+  max-height: calc(100vh - 220px);
   overflow-y: auto;
   padding: 12px;
   background: #1a1a1a;
@@ -258,6 +258,8 @@
   border-radius: 0;
   overflow: hidden;
   transition: border-color 0.2s;
+  aspect-ratio: 1 / 1;
+  background: #0d0d0f;
 }
 
 .collage-version-image-item:hover {
@@ -271,8 +273,8 @@
 
 .collage-version-image-item img {
   width: 100%;
-  height: 120px;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
