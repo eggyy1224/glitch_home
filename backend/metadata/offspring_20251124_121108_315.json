@@ -1,0 +1,58 @@
+{
+  "parents": [
+    "offspring_20251004_220447_139.png",
+    "offspring_20251005_143054_575.png",
+    "offspring_20251120_184649_562.png",
+    "offspring_20251116_141015_346.png",
+    "offspring_20251116_135954_970.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251004_220447_139.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_143054_575.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251120_184649_562.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251116_141015_346.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251116_135954_970.png"
+  ],
+  "input_details": [
+    {
+      "path": "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251004_220447_139.png",
+      "name": "offspring_20251004_220447_139.png",
+      "file_size": "1.74MB",
+      "dimensions": "796x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_143054_575.png",
+      "name": "offspring_20251005_143054_575.png",
+      "file_size": "1.92MB",
+      "dimensions": "796x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251120_184649_562.png",
+      "name": "offspring_20251120_184649_562.png",
+      "file_size": "152B",
+      "dimensions": "64x64"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251116_141015_346.png",
+      "name": "offspring_20251116_141015_346.png",
+      "file_size": "6.67MB",
+      "dimensions": "742x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251116_135954_970.png",
+      "name": "offspring_20251116_135954_970.png",
+      "file_size": "7.17MB",
+      "dimensions": "748x1024"
+    }
+  ],
+  "model_name": "gemini-3-pro-image-preview",
+  "prompt": "Study the provided images and identify their most distinctive subjects, forms, textures, colors, lighting, and spatial rhythms. Treat these as raw material and extend them into a new scene that feels like a natural continuation or variation of the originals, rather than a collage or copy. Reinterpret composition, perspective, and scale freely; you are not constrained to camera-accurate or strictly photorealistic rendering, as long as the key visual qualities and atmosphere remain recognizable. Avoid generic stock aesthetics; preserve idiosyncratic details, imperfections, and local character. Do not simply paste or overlay entire backgrounds; build a fresh arrangement that clearly grows out of the source images.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",
+  "strength": 0.5,
+  "created_at": "2025-11-24T04:11:08Z",
+  "output_image": "offspring_20251124_121108_315.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 1024,
+    "height": 1024
+  }
+}
