@@ -3,14 +3,12 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import useGenerateSearch from "../../../src/hooks/useGenerateSearch.js";
 import {
   createImageSearchRequest,
-  createImageUploadRequest,
   createTextSearchRequest,
 } from "../../../src/api.js";
 
 vi.mock("../../../src/api.js", () => ({
   __esModule: true,
   createImageSearchRequest: vi.fn(),
-  createImageUploadRequest: vi.fn(),
   createTextSearchRequest: vi.fn(),
 }));
 
@@ -19,12 +17,38 @@ const resolvedRequest = (value) => ({ controller: new AbortController(), promise
 beforeEach(() => {
   vi.clearAllMocks();
   createTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
-  createImageUploadRequest.mockReturnValue(resolvedRequest({ searchPath: "", fallbackPath: "" }));
   createImageSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
 });
 
 describe("useGenerateSearch", () => {
-  it("文字搜尋後會清理語系後綴並切換到搜尋結果模式", async () => {
+  it("檔名匹配時會以圖搜圖（去除語系後綴）並切換到搜尋結果", async () => {
+    const onError = vi.fn();
+    const payload = { results: [{ id: "image-1:en", distance: 0.42 }] };
+    createImageSearchRequest.mockReturnValue(resolvedRequest(payload));
+
+    const availableImages = [{ filename: "horse.png" }];
+    const { result } = renderHook(() => useGenerateSearch({ onError, availableImages }));
+
+    act(() => {
+      result.current.setTextQuery("horse");
+    });
+
+    await act(async () => {
+      await result.current.handleTextSearch();
+    });
+
+    await waitFor(() => {
+      expect(createImageSearchRequest).toHaveBeenCalledWith("/generated_images/horse.png", 50);
+      expect(createTextSearchRequest).not.toHaveBeenCalled();
+      expect(result.current.searchResults).toEqual([
+        { filename: "image-1", url: "/generated_images/image-1" },
+      ]);
+      expect(result.current.displayMode).toBe("search");
+      expect(onError).toHaveBeenLastCalledWith(null);
+    });
+  });
+
+  it("沒有檔名匹配時會退回文字語意搜尋", async () => {
     const onError = vi.fn();
     const payload = { results: [{ id: "image-1:en", distance: 0.42 }] };
     createTextSearchRequest.mockReturnValue(resolvedRequest(payload));
@@ -40,9 +64,8 @@ describe("useGenerateSearch", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.searchResults).toEqual([
-        { filename: "image-1", url: "/generated_images/image-1" },
-      ]);
+      expect(createImageSearchRequest).not.toHaveBeenCalled();
+      expect(result.current.searchResults).toEqual([{ filename: "image-1", url: "/generated_images/image-1" }]);
       expect(result.current.displayMode).toBe("search");
       expect(onError).toHaveBeenLastCalledWith(null);
     });

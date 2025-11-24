@@ -85,7 +85,7 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
 
     try {
       const { controller, promise } = imageName
-        ? createImageSearchRequest(`${imagesBase}${imageName}`, 50)
+        ? createImageSearchRequest(buildImageUrl(imagesBase, imageName), 50)
         : createTextSearchRequest(query, 50);
       textSearchControllerRef.current = controller;
 

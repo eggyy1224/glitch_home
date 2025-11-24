@@ -654,6 +654,8 @@ http://localhost:5173/?img=<filename>&<mode>&<options>&client=<id>&sound_player=
 | **圖像生成** | `/?generate_mode=true` | 圖像生成介面 |
 | **說明文字** | `/?caption_mode=true` | 說明文字模式 |
 
+> 拼貼版本生成 / 圖像生成頁的搜尋欄：若輸入的文字能匹配現有檔名（完整或部分、大小寫不敏感），會用該檔案跑「以圖搜圖」；找不到檔名時會改用文字語意搜尋。
+
 ### 高級參數
 
 ```
