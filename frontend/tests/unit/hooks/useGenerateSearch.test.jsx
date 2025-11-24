@@ -38,7 +38,7 @@ describe("useGenerateSearch", () => {
     });
 
     await waitFor(() => {
-      expect(createImageSearchRequest).toHaveBeenCalledWith("/generated_images/horse.png", 50);
+      expect(createImageSearchRequest).toHaveBeenCalledWith("horse.png", 50);
       expect(createTextSearchRequest).not.toHaveBeenCalled();
       expect(result.current.searchResults).toEqual([
         { filename: "image-1", url: "/generated_images/image-1" },

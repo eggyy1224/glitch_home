@@ -132,7 +132,7 @@ export default function CollageVersionMode() {
 
     try {
       const { controller, promise } = imageName
-        ? createImageSearchRequest(`${IMAGES_BASE}${imageName}`, 50)
+        ? createImageSearchRequest(imageName, 50)
         : createTextSearchRequest(textQuery, 50);
       textSearchControllerRef.current = controller;
 
