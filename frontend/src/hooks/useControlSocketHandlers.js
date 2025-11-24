@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 export function useControlSocketHandlers({
   clientId,
@@ -229,14 +229,28 @@ export function useControlSocketHandlers({
     [clientId, videoControllerRef],
   );
 
-  return {
-    handleScreenshotLifecycle,
-    handleSubtitleMessage,
-    handleCaptionMessage,
-    handleIframeConfigMessage,
-    handleCollageConfigMessage,
-    handleUnlockAudioMessage,
-    handleRemoteClickMessage,
-    handleVideoControlMessage,
-  };
+  const handlers = useMemo(
+    () => ({
+      handleScreenshotLifecycle,
+      handleSubtitleMessage,
+      handleCaptionMessage,
+      handleIframeConfigMessage,
+      handleCollageConfigMessage,
+      handleUnlockAudioMessage,
+      handleRemoteClickMessage,
+      handleVideoControlMessage,
+    }),
+    [
+      handleScreenshotLifecycle,
+      handleSubtitleMessage,
+      handleCaptionMessage,
+      handleIframeConfigMessage,
+      handleCollageConfigMessage,
+      handleUnlockAudioMessage,
+      handleRemoteClickMessage,
+      handleVideoControlMessage,
+    ],
+  );
+
+  return handlers;
 }
