@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
 import { useIframeConfig } from "./hooks/useIframeConfig.js";
@@ -321,18 +321,20 @@ export default function App() {
   }
 
   return (
-    <ModeLayout
-      component={activeModeEntry.component}
-      componentProps={activeModeEntry.componentProps}
-      withCaptureReady={activeModeEntry.withCaptureReady}
-      beforeContent={activeModeEntry.beforeContent}
-      afterContent={activeModeEntry.afterContent}
-      soundPlayerEnabled={soundPlayerEnabled}
-      soundPlayRequest={soundPlayerEnabled ? soundPlayRequest : null}
-      onSoundHandled={handleSoundHandled}
-      showInfo={showInfo}
-      subtitle={subtitle}
-      onCaptureReady={handleCaptureReady}
-    />
+    <Suspense fallback={<div style={{ padding: 16 }}>載入中…</div>}>
+      <ModeLayout
+        component={activeModeEntry.component}
+        componentProps={activeModeEntry.componentProps}
+        withCaptureReady={activeModeEntry.withCaptureReady}
+        beforeContent={activeModeEntry.beforeContent}
+        afterContent={activeModeEntry.afterContent}
+        soundPlayerEnabled={soundPlayerEnabled}
+        soundPlayRequest={soundPlayerEnabled ? soundPlayRequest : null}
+        onSoundHandled={handleSoundHandled}
+        showInfo={showInfo}
+        subtitle={subtitle}
+        onCaptureReady={handleCaptureReady}
+      />
+    </Suspense>
   );
 }

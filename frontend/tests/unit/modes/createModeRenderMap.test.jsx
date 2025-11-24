@@ -75,16 +75,33 @@ const baseProps = {
   clientId: "client-a",
 };
 
+const resolveComponent = async (component) => {
+  if (component?.$$typeof === Symbol.for("react.lazy")) {
+    const payloadResult = component._payload?._result;
+    if (typeof payloadResult === "function") {
+      const mod = await payloadResult();
+      return mod.default ?? mod;
+    }
+
+    if (payloadResult && typeof payloadResult.then === "function") {
+      const mod = await payloadResult;
+      return mod.default ?? mod;
+    }
+  }
+
+  return component;
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe("createModeRenderMap", () => {
-  it("建構所有 mode 對應並帶入正確 props/overlay", () => {
+  it("建構所有 mode 對應並帶入正確 props/overlay", async () => {
     const map = createModeRenderMap(baseProps);
 
     const iframe = map[DisplayModes.IFRAME];
-    expect(iframe.component).toBe(IframeModeMock);
+    await expect(resolveComponent(iframe.component)).resolves.toBe(IframeModeMock);
     expect(iframe.withCaptureReady).toBe(true);
     expect(iframe.componentProps).toMatchObject({
       config: baseProps.iframeActiveConfig,
@@ -94,11 +111,11 @@ describe("createModeRenderMap", () => {
     expect(iframe.beforeContent).toBe(baseProps.iframeTimelineOverlay);
 
     const slide = map[DisplayModes.SLIDE];
-    expect(slide.component).toBe(SlideModeMock);
+    await expect(resolveComponent(slide.component)).resolves.toBe(SlideModeMock);
     expect(slide.componentProps).toMatchObject({ imagesBase: "/imgs/", anchorImage: "img-1", intervalMs: 3000 });
 
     const collage = map[DisplayModes.COLLAGE];
-    expect(collage.component).toBe(CollageModeMock);
+    await expect(resolveComponent(collage.component)).resolves.toBe(CollageModeMock);
     expect(collage.componentProps).toMatchObject({
       remoteConfig: baseProps.collageRemoteConfig,
       controlsEnabled: false,
@@ -116,7 +133,7 @@ describe("createModeRenderMap", () => {
     expect(video.componentProps).toMatchObject({ controlRef: baseProps.videoControllerRef });
 
     const kinship = map[DisplayModes.KINSHIP];
-    expect(kinship.component).toBe(KinshipSceneMock);
+    await expect(resolveComponent(kinship.component)).resolves.toBe(KinshipSceneMock);
     expect(kinship.beforeContent).toBe(baseProps.topbarContent);
     expect(kinship.afterContent).toBe(baseProps.screenshotContent);
     expect(kinship.componentProps).toMatchObject({
@@ -125,12 +142,10 @@ describe("createModeRenderMap", () => {
       applyPreset: baseProps.pendingPreset,
     });
 
-    expect(map[DisplayModes.COLLAGE_VERSION]).toEqual({ component: CollageVersionModeMock });
-    expect(map[DisplayModes.GENERATE]).toEqual({ component: GenerateModeMock });
-    expect(map[DisplayModes.SEARCH]).toEqual({
-      component: SearchModeMock,
-      componentProps: { imagesBase: baseProps.imagesBase },
-    });
-    expect(map[DisplayModes.ADMIN].component).toBe(AdminPanelMock);
+    await expect(resolveComponent(map[DisplayModes.COLLAGE_VERSION].component)).resolves.toBe(CollageVersionModeMock);
+    await expect(resolveComponent(map[DisplayModes.GENERATE].component)).resolves.toBe(GenerateModeMock);
+    expect(map[DisplayModes.SEARCH].componentProps).toEqual({ imagesBase: baseProps.imagesBase });
+    await expect(resolveComponent(map[DisplayModes.SEARCH].component)).resolves.toBe(SearchModeMock);
+    await expect(resolveComponent(map[DisplayModes.ADMIN].component)).resolves.toBe(AdminPanelMock);
   });
 });

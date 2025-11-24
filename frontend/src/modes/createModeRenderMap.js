@@ -1,16 +1,18 @@
-import IframeMode from "../IframeMode.jsx";
-import SlideMode from "../SlideMode.jsx";
-import OrganicRoomScene from "../OrganicRoomScene.jsx";
-import SearchMode from "../SearchMode.jsx";
-import CollageMode from "../CollageMode.jsx";
-import CaptionMode from "../CaptionMode.jsx";
-import CollageVersionMode from "../CollageVersionMode.jsx";
-import GenerateMode from "../GenerateMode.jsx";
-import StaticMode from "../StaticMode.jsx";
-import VideoMode from "../VideoMode.jsx";
-import KinshipScene from "../ThreeKinshipScene.jsx";
-import AdminPanel from "../AdminPanel.jsx";
+import { lazy } from "react";
 import { DisplayModes } from "../hooks/useDisplayMode.js";
+
+const IframeMode = lazy(() => import("../IframeMode.jsx"));
+const SlideMode = lazy(() => import("../SlideMode.jsx"));
+const OrganicRoomScene = lazy(() => import("../OrganicRoomScene.jsx"));
+const SearchMode = lazy(() => import("../SearchMode.jsx"));
+const CollageMode = lazy(() => import("../CollageMode.jsx"));
+const CaptionMode = lazy(() => import("../CaptionMode.jsx"));
+const CollageVersionMode = lazy(() => import("../CollageVersionMode.jsx"));
+const GenerateMode = lazy(() => import("../GenerateMode.jsx"));
+const StaticMode = lazy(() => import("../StaticMode.jsx"));
+const VideoMode = lazy(() => import("../VideoMode.jsx"));
+const KinshipScene = lazy(() => import("../ThreeKinshipScene.jsx"));
+const AdminPanel = lazy(() => import("../AdminPanel.jsx"));
 
 const modeBaseConfigs = {
   [DisplayModes.IFRAME]: { component: IframeMode, withCaptureReady: true },
