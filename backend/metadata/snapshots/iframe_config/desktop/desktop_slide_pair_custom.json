@@ -1,0 +1,37 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left_slide",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250924_161431_222.png&client=desktop-left-slide&continuous=true",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20250924_161431_222.png",
+        "continuous": "true",
+        "client": "desktop-left-slide"
+      },
+      "ratio": 1.0,
+      "label": "Left Panel",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "right_slide",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250923_171042_144.png&client=desktop-right-slide&continuous=true",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20250923_171042_144.png",
+        "continuous": "true",
+        "client": "desktop-right-slide"
+      },
+      "ratio": 1.0,
+      "label": "Right Panel",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}
