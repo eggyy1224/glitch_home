@@ -51,13 +51,12 @@ class Settings:
     fixed_prompt: str = os.getenv(
         "FIXED_PROMPT",
         (
-            "Extract the most distinctive subjects, forms, textures, and lighting cues from the provided images and recombine them "
-            "into a freshly composed scene. Build a new layout from scratch—do not preserve or layer whole backgrounds; reinterpret "
-            "placement, perspective, and scale so every element feels re-staged rather than pasted. Render as photorealistic "
-            "large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when "
-            "appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical "
-            "falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly "
-            "stylization or obvious digital compositing artifacts."
+            "Study the provided images and identify their most distinctive subjects, forms, textures, colors, lighting, and spatial rhythms. "
+            "Treat these as raw material and extend them into a new scene that feels like a natural continuation or variation of the originals, "
+            "rather than a collage or copy. Reinterpret composition, perspective, and scale freely; you are not constrained to camera-accurate "
+            "or strictly photorealistic rendering, as long as the key visual qualities and atmosphere remain recognizable. Avoid generic stock "
+            "aesthetics; preserve idiosyncratic details, imperfections, and local character. Do not simply paste or overlay entire backgrounds; "
+            "build a fresh arrangement that clearly grows out of the source images."
         ),
     )
     # Resize input images before sending to model to reduce flaky errors due to size limits
