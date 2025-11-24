@@ -18,7 +18,7 @@
   - Setup: `cd frontend && npm install`
   - Dev server: `npm run dev` (proxies `/api`, `/generated_images`, `/ws` to `:8000`)
   - Build/preview: `npm run build` / `npm run preview`
-  - Tests: `npm test` or `npm run test:coverage`
+  - Tests: `npm test -- --watch=false --coverage`
 - Integration
   - Ensure backend (8000) and/or frontend are running, then `bash integration_tests/collage.sh` (see script headers for options).
 
