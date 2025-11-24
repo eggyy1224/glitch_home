@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import "./CollageVersionMode.css";
 import {
   createImageSearchRequest,
-  createImageUploadRequest,
   createTextSearchRequest,
   generateCollageVersionFromNames,
   getCollageProgress,
@@ -27,17 +26,11 @@ export default function CollageVersionMode() {
   const [progressMessage, setProgressMessage] = useState("");
   const progressIntervalRef = useRef(null);
   
-  // Search states
-  const [searchType, setSearchType] = useState("text"); // "text" | "image"
+  // Search states (名稱搜尋)
   const [textQuery, setTextQuery] = useState("");
-  const [searchFile, setSearchFile] = useState(null);
-  const [searchPreview, setSearchPreview] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [displayMode, setDisplayMode] = useState("all"); // "all" | "search"
-  const fileInputRef = useRef(null);
-  const uploadControllerRef = useRef(null);
-  const imageSearchControllerRef = useRef(null);
   const textSearchControllerRef = useRef(null);
   
   // Parameters
@@ -73,12 +66,6 @@ export default function CollageVersionMode() {
 
   useEffect(() => {
     return () => {
-      if (uploadControllerRef.current) {
-        uploadControllerRef.current.abort();
-      }
-      if (imageSearchControllerRef.current) {
-        imageSearchControllerRef.current.abort();
-      }
       if (textSearchControllerRef.current) {
         textSearchControllerRef.current.abort();
       }
@@ -94,17 +81,6 @@ export default function CollageVersionMode() {
       }
     });
     setError(null);
-  };
-
-  const abortImageSearch = () => {
-    if (uploadControllerRef.current) {
-      uploadControllerRef.current.abort();
-      uploadControllerRef.current = null;
-    }
-    if (imageSearchControllerRef.current) {
-      imageSearchControllerRef.current.abort();
-      imageSearchControllerRef.current = null;
-    }
   };
 
   const abortTextSearch = () => {
@@ -132,88 +108,32 @@ export default function CollageVersionMode() {
     setDisplayMode("search");
   };
 
-  // Search handlers
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setSearchFile(file);
-    setError(null);
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setSearchPreview(event.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
-  
-  const handleImageSearch = async () => {
-    if (!searchFile) {
-      setError("請先選擇圖片");
-      return;
-    }
-
-    abortTextSearch();
-    abortImageSearch();
-
-    setSearching(true);
-    setError(null);
-
-    try {
-      const { controller: uploadController, promise: uploadPromise } = createImageUploadRequest(searchFile);
-      uploadControllerRef.current = uploadController;
-
-      const { searchPath, fallbackPath } = await uploadPromise;
-      uploadControllerRef.current = null;
-
-      const runSearch = async (path) => {
-        const { controller, promise } = createImageSearchRequest(path, 50);
-        imageSearchControllerRef.current = controller;
-        const searchResultsData = await promise;
-        imageSearchControllerRef.current = null;
-        return searchResultsData;
-      };
-
-      let searchResultsData;
-      try {
-        searchResultsData = await runSearch(searchPath);
-      } catch (searchErr) {
-        if (searchErr.name === "AbortError") {
-          return;
-        }
-        if (fallbackPath && fallbackPath !== searchPath) {
-          searchResultsData = await runSearch(fallbackPath);
-        } else {
-          throw searchErr;
-        }
-      }
-
-      const resultList = searchResultsData?.results || [];
-      handleSearchResults(resultList, "搜尋完成，但沒有找到相似的圖像");
-    } catch (err) {
-      if (err.name === "AbortError") {
-        return;
-      }
-      setError(err.message || "搜尋出錯");
-    } finally {
-      setSearching(false);
-    }
+  const resolveImagePath = (query) => {
+    const trimmed = query.trim();
+    if (!trimmed) return null;
+    const lower = trimmed.toLowerCase();
+    const exact = availableImages.find((img) => img.filename.toLowerCase() === lower);
+    if (exact) return exact.filename;
+    const partial = availableImages.find((img) => img.filename.toLowerCase().includes(lower));
+    return partial?.filename ?? null;
   };
 
   const handleTextSearch = async () => {
     if (!textQuery.trim()) {
-      setError("請輸入搜尋詞");
+      setError("請輸入圖片名稱或關鍵字");
       return;
     }
 
-    abortImageSearch();
+    const imageName = resolveImagePath(textQuery);
     abortTextSearch();
 
     setSearching(true);
     setError(null);
 
     try {
-      const { controller, promise } = createTextSearchRequest(textQuery, 50);
+      const { controller, promise } = imageName
+        ? createImageSearchRequest(`${IMAGES_BASE}${imageName}`, 50)
+        : createTextSearchRequest(textQuery, 50);
       textSearchControllerRef.current = controller;
 
       const searchResultsData = await promise;
@@ -232,18 +152,12 @@ export default function CollageVersionMode() {
   };
   
   const handleSearchClear = () => {
-    abortImageSearch();
     abortTextSearch();
     setTextQuery("");
-    setSearchFile(null);
-    setSearchPreview(null);
     setSearchResults([]);
     setDisplayMode("all");
     setError(null);
     setSearching(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
   
   const handleKeyPress = (e) => {
@@ -513,100 +427,36 @@ export default function CollageVersionMode() {
 
             {/* Search Bar */}
             <div className="collage-version-search">
-              <div className="collage-version-search-mode">
-                <button
-                  type="button"
-                  className={`collage-version-search-mode-btn ${searchType === "text" ? "active" : ""}`}
-                  onClick={() => setSearchType("text")}
-                >
-                  📝 文字搜尋
-                </button>
-                <button
-                  type="button"
-                  className={`collage-version-search-mode-btn ${searchType === "image" ? "active" : ""}`}
-                  onClick={() => setSearchType("image")}
-                >
-                  📸 圖片搜尋
-                </button>
-              </div>
-              
-              {searchType === "text" ? (
-                <div className="collage-version-search-text">
-                  <input
-                    type="text"
-                    value={textQuery}
-                    onChange={(e) => setTextQuery(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="輸入搜尋詞... 例如：白馬、夜晚、人物"
-                    className="collage-version-search-input"
-                  />
-                  <div className="collage-version-search-controls">
+              <div className="collage-version-search-text">
+                <input
+                  type="text"
+                  value={textQuery}
+                  onChange={(e) => setTextQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="輸入圖片名稱或關鍵字，例如：白馬、夜晚、人物"
+                  className="collage-version-search-input"
+                />
+                <div className="collage-version-search-controls">
+                  <button
+                    type="button"
+                    onClick={handleTextSearch}
+                    disabled={!textQuery.trim() || searching}
+                    className="collage-version-search-btn"
+                  >
+                    {searching ? "搜尋中..." : "搜尋"}
+                  </button>
+                  {textQuery && (
                     <button
                       type="button"
-                      onClick={handleTextSearch}
-                      disabled={!textQuery.trim() || searching}
-                      className="collage-version-search-btn"
+                      onClick={handleSearchClear}
+                      disabled={searching}
+                      className="collage-version-search-clear"
                     >
-                      {searching ? "搜尋中..." : "搜尋"}
+                      清除
                     </button>
-                    {textQuery && (
-                      <button
-                        type="button"
-                        onClick={handleSearchClear}
-                        disabled={searching}
-                        className="collage-version-search-clear"
-                      >
-                        清除
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="collage-version-search-image">
-                  {searchPreview ? (
-                    <div className="collage-version-search-preview">
-                      <img src={searchPreview} alt="預覽" />
-                      <p>{searchFile.name}</p>
-                    </div>
-                  ) : (
-                    <div
-                      className="collage-version-search-upload"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <div className="collage-version-search-upload-icon">📸</div>
-                      <p>點擊上傳圖片或拖放</p>
-                      <p className="collage-version-search-upload-hint">支援 PNG, JPG, JPEG</p>
-                    </div>
                   )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={handleFileSelect}
-                    style={{ display: "none" }}
-                  />
-                  <div className="collage-version-search-controls">
-                    <button
-                      type="button"
-                      onClick={handleImageSearch}
-                      disabled={!searchFile || searching}
-                      className="collage-version-search-btn"
-                    >
-                      {searching ? "搜尋中..." : "搜尋"}
-                    </button>
-                    {searchFile && (
-                      <button
-                        type="button"
-                        onClick={handleSearchClear}
-                        disabled={searching}
-                        className="collage-version-search-clear"
-                      >
-                        清除
-                      </button>
-                    )}
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Display Mode Toggle */}

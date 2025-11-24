@@ -43,23 +43,16 @@ function GenerateModeContent() {
   } = useGenerateParams();
 
   const {
-    searchType,
-    setSearchType,
     textQuery,
     setTextQuery,
-    searchFile,
-    searchPreview,
     searchResults,
     searching,
     displayMode,
     setDisplayMode,
-    fileInputRef,
-    handleFileSelect,
-    handleImageSearch,
     handleTextSearch,
     handleSearchClear,
     handleKeyPress,
-  } = useGenerateSearch({ imagesBase: IMAGES_BASE, onError: setError });
+  } = useGenerateSearch({ imagesBase: IMAGES_BASE, onError: setError, availableImages });
 
   useEffect(() => {
     const loadImages = async () => {
@@ -176,18 +169,11 @@ function GenerateModeContent() {
             <h3>圖片選擇（至少 2 張，或留空使用隨機抽樣）</h3>
 
             <GenerateSearchInput
-              searchType={searchType}
-              onSearchTypeChange={setSearchType}
               textQuery={textQuery}
               onTextQueryChange={setTextQuery}
               onTextSearch={handleTextSearch}
-              searchFile={searchFile}
-              searchPreview={searchPreview}
-              onFileSelect={handleFileSelect}
-              onImageSearch={handleImageSearch}
               onClear={handleSearchClear}
               searching={searching}
-              fileInputRef={fileInputRef}
               onKeyPress={handleKeyPress}
             />
 
