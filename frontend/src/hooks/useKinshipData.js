@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchKinship } from "../api.js";
 import { useKinshipNavigation } from "./useKinshipNavigation.js";
 
@@ -17,6 +17,7 @@ export function useKinshipData({
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [clusters, setClusters] = useState([]);
+  const kinshipCacheRef = useRef(new Map());
 
   const {
     updateUrlParams,
@@ -37,35 +38,49 @@ export function useKinshipData({
 
   useEffect(() => {
     if (!imgId || !shouldLoadKinshipData) return;
-    let cancelled = false;
+    const controller = new AbortController();
     setErr(null);
-    fetchKinship(imgId, -1)
+
+    const applyKinshipData = (res) => {
+      setData(res);
+      if (phylogenyMode || incubatorMode) {
+        setClusters([]);
+      } else {
+        const originalImage = res?.original_image || imgId;
+        const cluster = {
+          id: `${originalImage}-${Date.now()}`,
+          original: originalImage,
+          anchor: { ...DEFAULT_ANCHOR },
+          data: res,
+        };
+        setClusters((prev) => {
+          const next = [...prev, cluster];
+          if (next.length > maxClusters) next.splice(0, next.length - maxClusters);
+          return next;
+        });
+      }
+    };
+
+    const cached = kinshipCacheRef.current.get(imgId);
+    if (cached) {
+      applyKinshipData(cached);
+      return () => {
+        controller.abort();
+      };
+    }
+
+    fetchKinship(imgId, -1, { signal: controller.signal })
       .then((res) => {
-        if (cancelled) return;
-        setData(res);
-        if (phylogenyMode || incubatorMode) {
-          setClusters([]);
-        } else {
-          const originalImage = res?.original_image || imgId;
-          const cluster = {
-            id: `${originalImage}-${Date.now()}`,
-            original: originalImage,
-            anchor: { ...DEFAULT_ANCHOR },
-            data: res,
-          };
-          setClusters((prev) => {
-            const next = [...prev, cluster];
-            if (next.length > maxClusters) next.splice(0, next.length - maxClusters);
-            return next;
-          });
-        }
+        kinshipCacheRef.current.set(imgId, res);
+        applyKinshipData(res);
       })
       .catch((e) => {
-        if (!cancelled) setErr(e.message);
+        if (e.name === "AbortError") return;
+        setErr(e.message);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [imgId, incubatorMode, phylogenyMode, shouldLoadKinshipData, maxClusters]);
 
