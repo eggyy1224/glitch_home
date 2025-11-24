@@ -92,7 +92,7 @@ describe("CollageVersionMode", () => {
     clearIntervalMock.mockRestore();
   });
 
-  it("文字搜尋切換到搜尋結果並可返回", async () => {
+  it("文字/檔名搜尋切換到搜尋結果並可返回", async () => {
     const resolvedRequest = {
       controller: new AbortController(),
       promise: Promise.resolve({ results: [{ id: "found-one", distance: 0.2 }] }),
@@ -100,9 +100,9 @@ describe("CollageVersionMode", () => {
     mockCreateTextSearchRequest.mockReturnValue(resolvedRequest);
 
     render(<CollageVersionMode />);
-    await waitFor(() => screen.getByPlaceholderText(/輸入搜尋詞/));
+    const searchInput = await screen.findByPlaceholderText(/圖片名稱或關鍵字/);
 
-    fireEvent.change(screen.getByPlaceholderText(/輸入搜尋詞/), { target: { value: "night" } });
+    fireEvent.change(searchInput, { target: { value: "night" } });
     fireEvent.click(screen.getByRole("button", { name: "搜尋" }));
 
     await waitFor(() => expect(mockCreateTextSearchRequest).toHaveBeenCalledWith("night", 50));

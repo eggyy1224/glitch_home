@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import GenerateMode from "../../src/GenerateMode.jsx";
 
 const mockGenerateMixTwo = vi.fn();
@@ -33,6 +33,14 @@ beforeEach(() => {
 });
 
 describe("GenerateMode", () => {
+  const renderGeneratePanel = async () => {
+    render(<GenerateMode />);
+    fireEvent.click(screen.getByRole("button", { name: "生成模式" }));
+    const panel = await screen.findByText("圖像生成");
+    const container = panel.closest(".generate-mode");
+    return { container };
+  };
+
   it("載入圖片後可選擇並生成，顯示結果", async () => {
     mockGenerateMixTwo.mockResolvedValue({
       output_image: "/gen/out.png",
@@ -42,17 +50,18 @@ describe("GenerateMode", () => {
       parents: ["a.png", "b.png"],
     });
 
-    render(<GenerateMode />);
+    const { container } = await renderGeneratePanel();
+    const scoped = within(container);
 
     await waitFor(() => {
-      expect(screen.getByText("a.png")).toBeInTheDocument();
-      expect(screen.getByText("b.png")).toBeInTheDocument();
+      expect(scoped.getAllByText("a.png").length).toBeGreaterThan(0);
+      expect(scoped.getAllByText("b.png").length).toBeGreaterThan(0);
     });
 
-    fireEvent.click(screen.getByAltText("a.png"));
-    fireEvent.click(screen.getByAltText("b.png"));
+    fireEvent.click(scoped.getAllByAltText("a.png")[0]);
+    fireEvent.click(scoped.getAllByAltText("b.png")[0]);
 
-    fireEvent.click(screen.getByRole("button", { name: "生成圖像" }));
+    fireEvent.click(scoped.getByRole("button", { name: "生成圖像" }));
     await waitFor(() =>
       expect(mockGenerateMixTwo).toHaveBeenCalledWith({
         parents: ["a.png", "b.png"],
@@ -63,8 +72,8 @@ describe("GenerateMode", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/檔名:/)).toBeInTheDocument();
-      expect(screen.getByAltText("Generated Image")).toBeInTheDocument();
+      expect(scoped.getByText(/檔名:/)).toBeInTheDocument();
+      expect(scoped.getByAltText("Generated Image")).toBeInTheDocument();
     });
   });
 
@@ -75,22 +84,23 @@ describe("GenerateMode", () => {
     };
     mockCreateTextSearchRequest.mockReturnValue(resolvedRequest);
 
-    render(<GenerateMode />);
-    await waitFor(() => screen.getByPlaceholderText(/輸入搜尋詞/));
+    const { container } = await renderGeneratePanel();
+    const scoped = within(container);
+    const input = await scoped.findByPlaceholderText(/圖片名稱或關鍵字/);
 
-    fireEvent.change(screen.getByPlaceholderText(/輸入搜尋詞/), { target: { value: "horse" } });
-    fireEvent.click(screen.getByRole("button", { name: "搜尋" }));
+    fireEvent.change(input, { target: { value: "horse" } });
+    fireEvent.click(scoped.getByRole("button", { name: "搜尋" }));
 
     await waitFor(() => expect(mockCreateTextSearchRequest).toHaveBeenCalledWith("horse", 50));
 
     await waitFor(() => {
-      expect(screen.getByText("顯示：搜尋結果 (1 張)")).toBeInTheDocument();
-      expect(screen.getByText("found-img")).toBeInTheDocument();
+      expect(scoped.getByText("顯示：搜尋結果 (1 張)")).toBeInTheDocument();
+      expect(scoped.getByText("found-img")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "返回全部" }));
+    fireEvent.click(scoped.getByRole("button", { name: "返回全部" }));
     await waitFor(() => {
-      expect(screen.getByText("a.png")).toBeInTheDocument();
+      expect(scoped.getAllByText("a.png").length).toBeGreaterThan(0);
     });
   });
 
@@ -100,15 +110,16 @@ describe("GenerateMode", () => {
       throw error;
     });
 
-    render(<GenerateMode />);
-    await waitFor(() => screen.getByPlaceholderText(/輸入搜尋詞/));
+    const { container } = await renderGeneratePanel();
+    const scoped = within(container);
+    const input = await scoped.findByPlaceholderText(/圖片名稱或關鍵字/);
 
-    fireEvent.change(screen.getByPlaceholderText(/輸入搜尋詞/), { target: { value: "horse" } });
-    fireEvent.click(screen.getByRole("button", { name: "搜尋" }));
+    fireEvent.change(input, { target: { value: "horse" } });
+    fireEvent.click(scoped.getByRole("button", { name: "搜尋" }));
 
     await waitFor(() => {
-      expect(screen.getByText("boom")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "搜尋" })).toBeEnabled();
+      expect(scoped.getByText("boom")).toBeInTheDocument();
+      expect(scoped.getByRole("button", { name: "搜尋" })).toBeEnabled();
     });
   });
 });

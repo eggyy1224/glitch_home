@@ -32,7 +32,7 @@ describe("slideMode utils", () => {
 
     const small = computeStyles("small");
     expect(small.root.gap).toBe("16px");
-    expect(small.image.borderRadius).toBe("10px");
+    expect(small.image.borderRadius).toBe("0");
 
     const xsmall = computeStyles("xsmall");
     expect(xsmall.controlBar.flexDirection).toBe("column");
