@@ -1,5 +1,6 @@
 """API routers for feature modules."""
 
+from .clients import router as clients_router
 from .collage import router as collage_router
 from .generation import router as generation_router
 from .indexing import router as indexing_router
@@ -12,6 +13,7 @@ from .storage import router as storage_router
 from .timeline import router as timeline_router
 
 __all__ = [
+    "clients_router",
     "collage_router",
     "generation_router",
     "indexing_router",

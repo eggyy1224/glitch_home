@@ -17,6 +17,7 @@ from .api import (
     sound_router,
     storage_router,
     timeline_router,
+    clients_router,
 )
 from .config import settings
 
@@ -62,6 +63,7 @@ app.include_router(collage_router)
 app.include_router(realtime_router)
 app.include_router(episode_router)
 app.include_router(timeline_router)
+app.include_router(clients_router)
 
 
 @app.get("/health")

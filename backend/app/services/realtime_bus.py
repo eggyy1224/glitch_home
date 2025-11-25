@@ -33,6 +33,7 @@ class RealtimeBroadcaster:
         "remote_click": EventPayloadConfig(merge_payload=True, include_target_in_payload=True),
         "unlock_audio": EventPayloadConfig(include_target_in_payload=True),
         "video_control": EventPayloadConfig(merge_payload=True, include_target_in_payload=True),
+        "client_state": EventPayloadConfig(merge_payload=True, include_target_in_payload=True),
     }
 
     def __init__(self, send_timeout: float = 1.0) -> None:
@@ -213,6 +214,19 @@ class RealtimeBroadcaster:
             target_client_id=target_client_id,
         )
         await self.broadcast(payload, target_client_id=target_client_id)
+
+    async def broadcast_client_state(
+        self,
+        payload: dict[str, Any],
+        target_client_id: Optional[str] = None,
+    ) -> None:
+        message = self._build_payload(
+            "client_state",
+            payload,
+            target_client_id=target_client_id,
+            config=EventPayloadConfig(merge_payload=True, include_target_in_payload=True),
+        )
+        await self.broadcast(message, target_client_id=target_client_id)
 
     async def broadcast_timeline_control(
         self,

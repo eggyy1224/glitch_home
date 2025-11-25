@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, HTTPException, Query, Response, WebSocket, 
 
 from ..models.schemas import RemoteClickRequest, SubtitleUpdateRequest, VideoControlRequest
 from ..services.captions import caption_manager
+from ..services.client_queue import client_state_store
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
 from ..services.subtitles import subtitle_manager
@@ -174,8 +175,31 @@ async def websocket_screenshots(websocket: WebSocket) -> None:
                 if isinstance(client_id_raw, str):
                     client_id = client_id_raw.strip() or None
                 await realtime_broadcaster.register_client(websocket, client_id)
+                if client_id:
+                    try:
+                        state = await client_state_store.record_heartbeat(client_id)
+                        await realtime_broadcaster.broadcast_client_state(
+                            {"client_id": client_id, "state": state},
+                            target_client_id=client_id,
+                        )
+                    except Exception:
+                        pass
                 pending = await screenshot_request_queue.list_pending_messages(client_id)
                 await realtime_broadcaster.send_messages(websocket, pending)
+            if msg_type == "heartbeat":
+                client_id_raw = message.get("client_id")
+                client_id = None
+                if isinstance(client_id_raw, str):
+                    client_id = client_id_raw.strip() or None
+                if client_id:
+                    try:
+                        state = await client_state_store.record_heartbeat(client_id)
+                        await realtime_broadcaster.broadcast_client_state(
+                            {"client_id": client_id, "state": state},
+                            target_client_id=client_id,
+                        )
+                    except Exception:
+                        continue
     except WebSocketDisconnect:
         await realtime_broadcaster.remove_connection(websocket)
     except Exception:
