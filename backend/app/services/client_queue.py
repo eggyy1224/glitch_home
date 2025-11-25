@@ -690,7 +690,11 @@ class ClientQueueManager:
         timeline = load_iframe_timeline_definition(item.target_id)
         resolved_timeline = resolve_iframe_timeline(timeline)
         target_from_payload = item.payload.get("target_client_id") if isinstance(item.payload, dict) else None
-        resolved_target = sanitize_client_id(target_from_payload) or sanitize_client_id(resolved_timeline.client_id)
+        resolved_target = sanitize_client_id(target_from_payload)
+        if not resolved_target:
+            resolved_target = sanitize_client_id(resolved_timeline.timeline.client_id)
+        if not resolved_target and resolved_timeline.steps:
+            resolved_target = sanitize_client_id(resolved_timeline.steps[0].client_id)
         if not resolved_target:
             raise ValueError("timeline 缺少 target_client_id，請在 payload 或 timeline 定義提供")
 
@@ -708,7 +712,7 @@ class ClientQueueManager:
 
         await realtime_broadcaster.broadcast_timeline_control(
             action="play",
-            timeline_id=resolved_timeline.id,
+            timeline_id=resolved_timeline.timeline.id,
             target_client_id=resolved_target,
             options=options,
         )

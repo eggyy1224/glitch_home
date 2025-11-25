@@ -178,10 +178,7 @@ async def websocket_screenshots(websocket: WebSocket) -> None:
                 if client_id:
                     try:
                         state = await client_state_store.record_heartbeat(client_id)
-                        await realtime_broadcaster.broadcast_client_state(
-                            {"client_id": client_id, "state": state},
-                            target_client_id=client_id,
-                        )
+                        await realtime_broadcaster.broadcast_client_state({"client_id": client_id, "state": state})
                     except Exception:
                         pass
                 pending = await screenshot_request_queue.list_pending_messages(client_id)
@@ -194,10 +191,7 @@ async def websocket_screenshots(websocket: WebSocket) -> None:
                 if client_id:
                     try:
                         state = await client_state_store.record_heartbeat(client_id)
-                        await realtime_broadcaster.broadcast_client_state(
-                            {"client_id": client_id, "state": state},
-                            target_client_id=client_id,
-                        )
+                        await realtime_broadcaster.broadcast_client_state({"client_id": client_id, "state": state})
                     except Exception:
                         continue
     except WebSocketDisconnect:
