@@ -1,0 +1,167 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 5,
+  "panels": [
+    {
+      "id": "illu_collage_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251109_114534_671.png&client=desktop-illu-1&continuous=true",
+      "params": {},
+      "ratio": 1.1,
+      "label": "Illustration Collage I",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "illu_collage_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251109_003915_874.png&client=desktop-illu-2&continuous=true",
+      "params": {},
+      "ratio": 1.1,
+      "label": "Illustration Collage II",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "illu_collage_3",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251109_160326_055.png&client=desktop-illu-3&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Illustration Collage III",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "illu_collage_4",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251124_120354_008.png&client=desktop-illu-4&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Illustration Collage IV",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "illu_collage_5",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251124_121010_576.png&client=desktop-illu-5&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Illustration Collage V",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "illu_collage_6",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251005_123455_580.png&client=desktop-illu-6&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Illustration Collage VI",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_ritual_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250928_203346_360.png&client=desktop-night-1&continuous=true",
+      "params": {},
+      "ratio": 1.1,
+      "label": "Night Ritual I",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "night_ritual_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250925_110840_697.png&client=desktop-night-2&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Night Ritual II",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_ritual_3",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250924_161214_989.png&client=desktop-night-3&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Night Ritual III",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_ritual_4",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250928_205326_521.png&client=desktop-night-4&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Night Ritual IV",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_ritual_5",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251001_181433_595.png&client=desktop-night-5&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Night Ritual V",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "banquet_scene_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251007_170712_921.png&client=desktop-banquet-1&continuous=true",
+      "params": {},
+      "ratio": 1.1,
+      "label": "Banquet I",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "banquet_scene_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251008_193149_473.png&client=desktop-banquet-2&continuous=true",
+      "params": {},
+      "ratio": 1.1,
+      "label": "Banquet II",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "banquet_scene_3",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251006_192234_783.png&client=desktop-banquet-3&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Banquet III",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "banquet_scene_4",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251005_144128_844.png&client=desktop-banquet-4&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Banquet IV",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "banquet_scene_5",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251005_150448_797.png&client=desktop-banquet-5&continuous=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "Banquet V",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}
