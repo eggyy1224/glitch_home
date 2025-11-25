@@ -66,7 +66,7 @@ describe("TimelineManager", () => {
 
     await waitFor(() => expect(mockListIframeTimelines).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole("button", { name: "載入" }));
+    fireEvent.click(screen.getByRole("button", { name: /^載入 timeline /i }));
     await waitFor(() => expect(mockFetchIframeTimeline).toHaveBeenCalledWith("t1", { resolve: false }));
     expect(screen.getByDisplayValue("t1")).toBeInTheDocument();
     await waitFor(() => expect(mockGetIframeSnapshot).toHaveBeenCalled());

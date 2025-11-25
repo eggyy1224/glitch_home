@@ -24,11 +24,16 @@ export default function AdminPanel({ clientId }) {
   return (
     <AdminPanelContext.Provider value={contextValue}>
       <div style={containerStyle}>
-        <div style={tabRowStyle}>
+        <div style={tabRowStyle} role="tablist" aria-label="Admin panel tabs" data-ai-id="admin.tablist">
           <button
             type="button"
             style={activeTab === "snapshot" ? activeTabButtonStyle : tabButtonStyle}
             onClick={() => handleTabChange("snapshot")}
+            role="tab"
+            aria-selected={activeTab === "snapshot"}
+            aria-controls="admin-tabpanel-snapshot"
+            id="admin-tab-snapshot"
+            data-ai-id="admin.tab.snapshot"
           >
             Snapshot 管理
           </button>
@@ -36,6 +41,11 @@ export default function AdminPanel({ clientId }) {
             type="button"
             style={activeTab === "timeline" ? activeTabButtonStyle : tabButtonStyle}
             onClick={() => handleTabChange("timeline")}
+            role="tab"
+            aria-selected={activeTab === "timeline"}
+            aria-controls="admin-tabpanel-timeline"
+            id="admin-tab-timeline"
+            data-ai-id="admin.tab.timeline"
           >
             Timeline 管理
           </button>
@@ -43,6 +53,11 @@ export default function AdminPanel({ clientId }) {
             type="button"
             style={activeTab === "episode" ? activeTabButtonStyle : tabButtonStyle}
             onClick={() => handleTabChange("episode")}
+            role="tab"
+            aria-selected={activeTab === "episode"}
+            aria-controls="admin-tabpanel-episode"
+            id="admin-tab-episode"
+            data-ai-id="admin.tab.episode"
           >
             Episode 管理
           </button>
@@ -53,6 +68,9 @@ export default function AdminPanel({ clientId }) {
             role="tabpanel"
             aria-hidden={activeTab !== "snapshot"}
             style={activeTab === "snapshot" ? tabPanelStyle : hiddenTabPanelStyle}
+            aria-labelledby="admin-tab-snapshot"
+            id="admin-tabpanel-snapshot"
+            data-ai-section="admin.tabpanel.snapshot"
           >
             <SnapshotManager />
           </div>
@@ -62,6 +80,9 @@ export default function AdminPanel({ clientId }) {
             role="tabpanel"
             aria-hidden={activeTab !== "timeline"}
             style={activeTab === "timeline" ? tabPanelStyle : hiddenTabPanelStyle}
+            aria-labelledby="admin-tab-timeline"
+            id="admin-tabpanel-timeline"
+            data-ai-section="admin.tabpanel.timeline"
           >
             <TimelineManager />
           </div>
@@ -71,6 +92,9 @@ export default function AdminPanel({ clientId }) {
             role="tabpanel"
             aria-hidden={activeTab !== "episode"}
             style={activeTab === "episode" ? tabPanelStyle : hiddenTabPanelStyle}
+            aria-labelledby="admin-tab-episode"
+            id="admin-tabpanel-episode"
+            data-ai-section="admin.tabpanel.episode"
           >
             <EpisodeManager />
           </div>

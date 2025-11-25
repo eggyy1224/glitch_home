@@ -62,7 +62,7 @@ describe("EpisodeManager", () => {
 
     await waitFor(() => expect(mockListEpisodes).toHaveBeenCalled());
 
-    const loadButtons = screen.getAllByRole("button", { name: "載入" });
+    const loadButtons = screen.getAllByRole("button", { name: /載入 episode/i });
     fireEvent.click(loadButtons[loadButtons.length - 1]);
     await waitFor(() => expect(mockFetchEpisode).toHaveBeenCalledWith("ep1", { resolve: false }));
 

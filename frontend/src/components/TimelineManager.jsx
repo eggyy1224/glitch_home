@@ -245,37 +245,65 @@ export default function TimelineManager() {
   }, [refreshTimelines]);
 
   return (
-    <div style={boxStyle}>
+    <div style={boxStyle} data-ai-id="admin.timeline.section">
       <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>篩選 client</label>
+        <label style={labelStyle} htmlFor="timeline-client-filter">
+          篩選 client
+        </label>
         <input
+          id="timeline-client-filter"
+          name="timeline-client-filter"
           type="text"
           value={timelineClientFilter}
           onChange={(e) => setTimelineClientFilter(e.target.value)}
           placeholder="空白=全部"
           style={{ width: "200px", marginRight: 6 }}
+          data-ai-field="timeline.filter-client"
         />
-        <button type="button" onClick={refreshTimelines}>
+        <button type="button" onClick={refreshTimelines} data-ai-action="timeline.reload-list" aria-label="重新載入 timeline 列表">
           重新載入列表
         </button>
       </div>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: 6 }}>Timeline 列表：</div>
-          <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-            {timelineList.length === 0 && <div>尚無 timeline</div>}
+          <ul
+            role="list"
+            data-ai-id="timeline.list"
+            style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8, listStyle: "none", margin: 0 }}
+          >
+            {timelineList.length === 0 && <li data-ai-state="empty">尚無 timeline</li>}
             {timelineList.map((item) => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+              <li
+                key={item.id}
+                role="listitem"
+                data-ai-item={`timeline:${item.id}`}
+                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+              >
                 <span style={{ flex: 1 }}>
                   {item.id} ({item.client_id || "n/a"})
                 </span>
-                <button type="button" onClick={() => handleLoadTimeline(item.id)} style={{ marginRight: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => handleLoadTimeline(item.id)}
+                  style={{ marginRight: 4 }}
+                  data-ai-action="timeline.load"
+                  aria-label={`載入 timeline ${item.id}`}
+                >
                   載入
                 </button>
-                <button type="button" onClick={() => handleDeleteTimeline(item.id)}>刪除</button>
-              </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTimeline(item.id)}
+                  data-ai-action="timeline.delete"
+                  aria-label={`刪除 timeline ${item.id}`}
+                  data-ai-danger="true"
+                >
+                  刪除
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
           <div style={{ marginTop: 8 }}>
             <div style={{ marginBottom: 4 }}>複製：</div>
             <input
@@ -284,6 +312,8 @@ export default function TimelineManager() {
               value={timelineCloneId}
               onChange={(e) => setTimelineCloneId(e.target.value)}
               style={{ width: "140px", marginRight: 4 }}
+              data-ai-field="timeline.clone.new-id"
+              aria-label="複製的新 timeline id"
             />
             <input
               type="text"
@@ -291,60 +321,90 @@ export default function TimelineManager() {
               value={timelineCloneTarget}
               onChange={(e) => setTimelineCloneTarget(e.target.value)}
               style={{ width: "160px", marginRight: 4 }}
+              data-ai-field="timeline.clone.target-client"
+              aria-label="複製目標 client"
             />
-            <button type="button" onClick={handleCloneTimeline}>
+            <button type="button" onClick={handleCloneTimeline} data-ai-action="timeline.clone" aria-label="複製 timeline">
               複製 timeline
             </button>
           </div>
         </div>
         <div style={{ flex: 1.2 }}>
-          <label style={labelStyle}>當前 timeline id</label>
+          <label style={labelStyle} htmlFor="timeline-id">
+            當前 timeline id
+          </label>
           <input
+            id="timeline-id"
+            name="timeline-id"
             type="text"
             value={timelineId}
             onChange={(e) => setTimelineId(e.target.value)}
             placeholder="新建請輸入 id 或在 JSON 設定"
             style={{ width: "100%", marginBottom: 8 }}
+            data-ai-field="timeline.id"
           />
-          <label style={labelStyle}>JSON</label>
+          <label style={labelStyle} htmlFor="timeline-json">
+            JSON
+          </label>
           <textarea
+            id="timeline-json"
+            name="timeline-json"
             style={{ width: "100%", height: 260, fontFamily: "monospace" }}
             value={timelineJson}
             onChange={(e) => setTimelineJson(e.target.value)}
+            data-ai-field="timeline.json"
+            aria-label="timeline JSON"
           />
           <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => handleSaveTimeline("create")}>
+            <button type="button" onClick={() => handleSaveTimeline("create")} data-ai-action="timeline.create">
               新增
             </button>
-            <button type="button" onClick={() => handleSaveTimeline("update")}>
+            <button type="button" onClick={() => handleSaveTimeline("update")} data-ai-action="timeline.update">
               覆寫
             </button>
-            <button type="button" onClick={() => setTimelineJson(pretty(defaultTimelinePayload(defaultClientId)))}>
+            <button
+              type="button"
+              onClick={() => setTimelineJson(pretty(defaultTimelinePayload(defaultClientId)))}
+              data-ai-action="timeline.fill-default"
+            >
               填入預設
             </button>
           </div>
 
           <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <label style={{ fontWeight: 600 }}>播放到 client</label>
+            <label style={{ fontWeight: 600 }} htmlFor="timeline-play-target">
+              播放到 client
+            </label>
             <input
+              id="timeline-play-target"
+              name="timeline-play-target"
               type="text"
               value={timelinePlayTarget}
               onChange={(e) => setTimelinePlayTarget(e.target.value)}
               placeholder="client id"
               style={{ width: 150 }}
+              data-ai-field="timeline.play-target"
             />
-            <button type="button" onClick={handlePlayToClient}>
+            <button type="button" onClick={handlePlayToClient} data-ai-action="timeline.play">
               播放
             </button>
-            {timelinePlayStatus && <span style={{ color: "#444" }}>{timelinePlayStatus}</span>}
+            {timelinePlayStatus && (
+              <span style={{ color: "#444" }} role="status" aria-live="polite" data-ai-status="timeline.play">
+                {timelinePlayStatus}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      <div style={{ ...previewContainerStyle, width: timelinePreviewWidth, maxWidth: "100%" }}>
+      <div
+        style={{ ...previewContainerStyle, width: timelinePreviewWidth, maxWidth: "100%" }}
+        data-ai-section="timeline.preview"
+        aria-label="Timeline 預覽區塊"
+      >
         <div style={{ ...previewTitleStyle, marginBottom: 10 }}>Timeline 預覽</div>
         <div style={timelinePreviewGridStyle}>
-          <div>
+          <div data-ai-section="timeline.preview.first-snapshot">
             <div style={{ ...previewTitleStyle, marginBottom: 6 }}>取第一段 snapshot</div>
             {timelinePreviewSrc ? (
               <iframe
@@ -352,20 +412,25 @@ export default function TimelineManager() {
                 src={timelinePreviewSrc}
                 style={{ ...timelinePreviewIframeStyle, height: timelineFrameHeight }}
                 sandbox="allow-scripts allow-same-origin"
+                data-ai-id="timeline.preview.iframe"
               />
             ) : (
-              <div style={{ color: "#888" }}>
+              <div style={{ color: "#888" }} data-ai-state="empty">
                 {timelinePreviewError || "無法產生預覽，請確認 steps 有 snapshot，且對應 snapshot 有 panel.url 或 image"}
               </div>
             )}
           </div>
-          <div>
+          <div data-ai-section="timeline.preview.playback">
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <div style={previewTitleStyle}>播放預覽（整段 timeline）</div>
-              <button type="button" onClick={handlePlayTimelinePreview}>
+              <button type="button" onClick={handlePlayTimelinePreview} data-ai-action="timeline.preview-play">
                 播放
               </button>
-              {timelinePlayError && <span style={{ color: "#c00" }}>{timelinePlayError}</span>}
+              {timelinePlayError && (
+                <span style={{ color: "#c00" }} role="status" aria-live="polite" data-ai-status="timeline.preview-error">
+                  {timelinePlayError}
+                </span>
+              )}
             </div>
             {timelinePlaySrc ? (
               <iframe
@@ -374,21 +439,31 @@ export default function TimelineManager() {
                 src={timelinePlaySrc}
                 style={{ ...timelinePreviewIframeStyle, height: timelineFrameHeight }}
                 sandbox="allow-scripts allow-same-origin"
+                data-ai-id="timeline.preview.play-iframe"
               />
             ) : (
-              <div style={{ color: "#888" }}>
+              <div style={{ color: "#888" }} data-ai-state="empty">
                 點擊「播放」會以 iframe_mode 在下方預覽完整 timeline（需先儲存服務端資料）
               </div>
             )}
           </div>
         </div>
 
-        <div style={resizerHitboxStyle} onMouseDown={startResize}>
+        <div style={resizerHitboxStyle} onMouseDown={startResize} aria-hidden="true">
           <div style={resizerHandleStyle} />
         </div>
       </div>
 
-      {timelineMessage && <div style={{ marginTop: 8, color: "#444" }}>{timelineMessage}</div>}
+      {timelineMessage && (
+        <div
+          style={{ marginTop: 8, color: "#444" }}
+          role="status"
+          aria-live="polite"
+          data-ai-status="timeline.message"
+        >
+          {timelineMessage}
+        </div>
+      )}
     </div>
   );
 }

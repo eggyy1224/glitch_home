@@ -159,38 +159,78 @@ export default function SnapshotManager() {
   }, [snapshotJson]);
 
   return (
-    <div style={boxStyle}>
+    <div style={boxStyle} data-ai-id="admin.snapshot.section">
       <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>Client</label>
+        <label style={labelStyle} htmlFor="snapshot-client">
+          Client
+        </label>
         <input
+          id="snapshot-client"
+          name="snapshot-client"
           type="text"
           value={snapshotClient}
           onChange={(e) => setSnapshotClient(e.target.value)}
-          aria-label="snapshot-client"
+          aria-label="snapshot client id"
+          data-ai-field="snapshot.client"
           style={{ width: "200px" }}
         />
-        <button type="button" onClick={() => refreshSnapshots(snapshotClient)} style={{ marginLeft: 8 }}>
+        <button
+          type="button"
+          onClick={() => refreshSnapshots(snapshotClient)}
+          style={{ marginLeft: 8 }}
+          data-ai-action="snapshot.reload-list"
+          aria-label="重新載入 snapshot 列表"
+        >
           重新載入列表
         </button>
       </div>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: 6 }}>已有 snapshots：</div>
-          <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-            {snapshotList.length === 0 && <div>尚無 snapshot</div>}
+          <ul
+            role="list"
+            data-ai-id="snapshot.list"
+            style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8, listStyle: "none", margin: 0 }}
+          >
+            {snapshotList.length === 0 && <li data-ai-state="empty">尚無 snapshot</li>}
             {snapshotList.map((item) => (
-              <div key={item.name} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+              <li
+                key={item.name}
+                role="listitem"
+                data-ai-item={`snapshot:${item.name}`}
+                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+              >
                 <span style={{ flex: 1 }}>{item.name}</span>
-                <button type="button" onClick={() => handleLoadSnapshot(item.name)} style={{ marginRight: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSnapshot(item.name)}
+                  style={{ marginRight: 4 }}
+                  data-ai-action="snapshot.load"
+                  aria-label={`查看 snapshot ${item.name}`}
+                >
                   查看
                 </button>
-                <button type="button" onClick={() => setSnapshotName(item.name)} style={{ marginRight: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setSnapshotName(item.name)}
+                  style={{ marginRight: 4 }}
+                  data-ai-action="snapshot.select"
+                  aria-label={`選擇 snapshot ${item.name}`}
+                >
                   選擇
                 </button>
-                <button type="button" onClick={() => handleDeleteSnapshot(item.name)}>刪除</button>
-              </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteSnapshot(item.name)}
+                  data-ai-action="snapshot.delete"
+                  aria-label={`刪除 snapshot ${item.name}`}
+                  data-ai-danger="true"
+                >
+                  刪除
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
           <div style={{ marginTop: 8 }}>
             <div style={{ marginBottom: 4 }}>複製到：</div>
             <input
@@ -199,6 +239,8 @@ export default function SnapshotManager() {
               value={snapshotCloneTarget}
               onChange={(e) => setSnapshotCloneTarget(e.target.value)}
               style={{ width: "160px", marginRight: 4 }}
+              data-ai-field="snapshot.clone.target-client"
+              aria-label="複製目標 client"
             />
             <input
               type="text"
@@ -206,28 +248,41 @@ export default function SnapshotManager() {
               value={snapshotCloneName}
               onChange={(e) => setSnapshotCloneName(e.target.value)}
               style={{ width: "160px", marginRight: 4 }}
+              data-ai-field="snapshot.clone.target-name"
+              aria-label="複製目標名稱"
             />
-            <button type="button" onClick={handleCloneSnapshot}>
+            <button type="button" onClick={handleCloneSnapshot} data-ai-action="snapshot.clone" aria-label="複製 snapshot">
               複製 snapshot
             </button>
           </div>
         </div>
         <div style={{ flex: 1.2 }}>
-          <label style={labelStyle}>Snapshot 名稱</label>
+          <label style={labelStyle} htmlFor="snapshot-name">
+            Snapshot 名稱
+          </label>
           <input
+            id="snapshot-name"
+            name="snapshot-name"
             type="text"
             value={snapshotName}
             onChange={(e) => setSnapshotName(e.target.value)}
             style={{ width: "100%", marginBottom: 8 }}
+            data-ai-field="snapshot.name"
           />
-          <label style={labelStyle}>JSON</label>
+          <label style={labelStyle} htmlFor="snapshot-json">
+            JSON
+          </label>
           <textarea
+            id="snapshot-json"
+            name="snapshot-json"
             style={{ width: "100%", height: 260, fontFamily: "monospace" }}
             value={snapshotJson}
             onChange={(e) => setSnapshotJson(e.target.value)}
+            data-ai-field="snapshot.json"
+            aria-label="snapshot JSON"
           />
           <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={handleSaveSnapshot}>
+            <button type="button" onClick={handleSaveSnapshot} data-ai-action="snapshot.save" aria-label="儲存或覆寫 snapshot">
               儲存/覆寫
             </button>
             <button
@@ -236,6 +291,8 @@ export default function SnapshotManager() {
                 setSnapshotJson(pretty(minimalConfigPayload(snapshotClient)));
                 setSnapshotName("new_snapshot");
               }}
+              data-ai-action="snapshot.fill-default"
+              aria-label="填入預設 snapshot JSON"
             >
               填入預設
             </button>
@@ -243,7 +300,11 @@ export default function SnapshotManager() {
         </div>
       </div>
 
-      <div style={{ ...previewContainerStyle, width: snapshotPreviewWidth, maxWidth: "100%" }}>
+      <div
+        style={{ ...previewContainerStyle, width: snapshotPreviewWidth, maxWidth: "100%" }}
+        data-ai-section="snapshot.preview"
+        aria-label="Snapshot 預覽區塊"
+      >
         <div style={previewTitleStyle}>預覽</div>
         {snapshotPreviewSrc ? (
           <iframe
@@ -251,16 +312,28 @@ export default function SnapshotManager() {
             src={snapshotPreviewSrc}
             style={{ ...snapshotPreviewIframeStyle, height: snapshotFrameHeight }}
             sandbox="allow-scripts allow-same-origin"
+            data-ai-id="snapshot.preview.iframe"
           />
         ) : (
-          <div style={{ color: "#888" }}>無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image</div>
+          <div style={{ color: "#888" }} data-ai-state="empty">
+            無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image
+          </div>
         )}
-        <div style={resizerHitboxStyle} onMouseDown={startResize}>
+        <div style={resizerHitboxStyle} onMouseDown={startResize} aria-hidden="true">
           <div style={resizerHandleStyle} />
         </div>
       </div>
 
-      {snapshotMessage && <div style={{ marginTop: 8, color: "#444" }}>{snapshotMessage}</div>}
+      {snapshotMessage && (
+        <div
+          style={{ marginTop: 8, color: "#444" }}
+          role="status"
+          aria-live="polite"
+          data-ai-status="snapshot.message"
+        >
+          {snapshotMessage}
+        </div>
+      )}
     </div>
   );
 }

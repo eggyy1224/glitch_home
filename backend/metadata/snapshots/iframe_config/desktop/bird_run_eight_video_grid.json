@@ -1,0 +1,103 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 4,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-1",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 1",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p2",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-2",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 2",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p3",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-3",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 3",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p4",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p5",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-5",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 5",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p6",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-6",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 6",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p7",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-7",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 7",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p8",
+      "image": null,
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-8",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.777,
+      "label": "Bird run 8",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

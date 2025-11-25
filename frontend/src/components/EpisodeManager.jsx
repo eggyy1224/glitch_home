@@ -127,30 +127,53 @@ export default function EpisodeManager() {
   }, [refreshEpisodes]);
 
   return (
-    <div style={boxStyle}>
+    <div style={boxStyle} data-ai-id="admin.episode.section">
       <div style={{ marginBottom: 8 }}>
-        <button type="button" onClick={refreshEpisodes}>
+        <button type="button" onClick={refreshEpisodes} data-ai-action="episode.reload-list" aria-label="重新載入 episode 列表">
           重新載入列表
         </button>
       </div>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: 6 }}>Episode 列表：</div>
-          <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8 }}>
-            {episodeList.length === 0 && <div>尚無 episode</div>}
+          <ul
+            role="list"
+            data-ai-id="episode.list"
+            style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8, listStyle: "none", margin: 0 }}
+          >
+            {episodeList.length === 0 && <li data-ai-state="empty">尚無 episode</li>}
             {episodeList.map((item) => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+              <li
+                key={item.id}
+                role="listitem"
+                data-ai-item={`episode:${item.id}`}
+                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+              >
                 <span style={{ flex: 1 }}>
                   {item.id}
                   {item.title ? `（${item.title}）` : ""} · {item.track_count ?? item.trackCount ?? item.tracks?.length ?? 0} tracks
                 </span>
-                <button type="button" onClick={() => handleLoadEpisode(item.id)} style={{ marginRight: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => handleLoadEpisode(item.id)}
+                  style={{ marginRight: 4 }}
+                  data-ai-action="episode.load"
+                  aria-label={`載入 episode ${item.id}`}
+                >
                   載入
                 </button>
-                <button type="button" onClick={() => handleDeleteEpisode(item.id)}>刪除</button>
-              </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEpisode(item.id)}
+                  data-ai-action="episode.delete"
+                  aria-label={`刪除 episode ${item.id}`}
+                  data-ai-danger="true"
+                >
+                  刪除
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
           <div style={{ marginTop: 8 }}>
             <div style={{ marginBottom: 4 }}>複製：</div>
             <input
@@ -159,63 +182,107 @@ export default function EpisodeManager() {
               value={episodeCloneId}
               onChange={(e) => setEpisodeCloneId(e.target.value)}
               style={{ width: "160px", marginRight: 6 }}
+              data-ai-field="episode.clone.new-id"
+              aria-label="複製的新 episode id"
             />
-            <button type="button" onClick={handleCloneEpisode}>
+            <button type="button" onClick={handleCloneEpisode} data-ai-action="episode.clone" aria-label="複製 episode">
               複製 episode
             </button>
           </div>
         </div>
         <div style={{ flex: 1.2 }}>
-          <label style={labelStyle}>當前 episode id</label>
+          <label style={labelStyle} htmlFor="episode-id">
+            當前 episode id
+          </label>
           <input
+            id="episode-id"
+            name="episode-id"
             type="text"
             value={episodeId}
             onChange={(e) => setEpisodeId(e.target.value)}
             placeholder="新建請輸入 id 或在 JSON 設定"
             style={{ width: "100%", marginBottom: 8 }}
+            data-ai-field="episode.id"
           />
-          <label style={labelStyle}>JSON</label>
+          <label style={labelStyle} htmlFor="episode-json">
+            JSON
+          </label>
           <textarea
+            id="episode-json"
+            name="episode-json"
             style={{ width: "100%", height: 240, fontFamily: "monospace" }}
             value={episodeJson}
             onChange={(e) => setEpisodeJson(e.target.value)}
+            data-ai-field="episode.json"
+            aria-label="episode JSON"
           />
           <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => handleSaveEpisode("create")}>新增</button>
-            <button type="button" onClick={() => handleSaveEpisode("update")}>覆寫</button>
-            <button type="button" onClick={() => setEpisodeJson(pretty(defaultEpisodePayload(defaultClientId)))}>
+            <button type="button" onClick={() => handleSaveEpisode("create")} data-ai-action="episode.create">
+              新增
+            </button>
+            <button type="button" onClick={() => handleSaveEpisode("update")} data-ai-action="episode.update">
+              覆寫
+            </button>
+            <button
+              type="button"
+              onClick={() => setEpisodeJson(pretty(defaultEpisodePayload(defaultClientId)))}
+              data-ai-action="episode.fill-default"
+            >
               填入預設
             </button>
           </div>
 
           <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <label style={{ fontWeight: 600 }}>覆寫 target map</label>
+            <label style={{ fontWeight: 600 }} htmlFor="episode-target-map">
+              覆寫 target map
+            </label>
             <input
+              id="episode-target-map"
+              name="episode-target-map"
               type="text"
               value={episodeTargetMapText}
               onChange={(e) => setEpisodeTargetMapText(e.target.value)}
               placeholder="timelineA:clientX,timelineB:clientY"
               style={{ width: 280 }}
+              data-ai-field="episode.target-map"
             />
           </div>
           <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <label style={{ fontWeight: 600 }}>command 前綴</label>
+            <label style={{ fontWeight: 600 }} htmlFor="episode-command-prefix">
+              command 前綴
+            </label>
             <input
+              id="episode-command-prefix"
+              name="episode-command-prefix"
               type="text"
               value={episodeCommandPrefix}
               onChange={(e) => setEpisodeCommandPrefix(e.target.value)}
               placeholder="可選，用於去重"
               style={{ width: 200 }}
+              data-ai-field="episode.command-prefix"
             />
-            <button type="button" onClick={handlePlayEpisode}>
+            <button type="button" onClick={handlePlayEpisode} data-ai-action="episode.play">
               播放 Episode
             </button>
-            {episodePlayStatus && <span style={{ color: "#444" }}>{episodePlayStatus}</span>}
+            {episodePlayStatus && (
+              <span style={{ color: "#444" }} role="status" aria-live="polite" data-ai-status="episode.play">
+                {episodePlayStatus}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {episodeMessage && <div style={{ marginTop: 8, color: "#444" }}>{episodeMessage}</div>}
+      {episodeMessage && (
+        <div
+          style={{ marginTop: 8, color: "#444" }}
+          role="status"
+          aria-live="polite"
+          data-ai-status="episode.message"
+        >
+          {episodeMessage}
+        </div>
+      )}
     </div>
   );
 }

@@ -55,10 +55,10 @@ describe("SnapshotManager", () => {
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
-    fireEvent.click(screen.getByRole("button", { name: "儲存/覆寫" }));
+    fireEvent.click(screen.getByRole("button", { name: /儲存.*snapshot/i }));
     expect(screen.getByText("請輸入 snapshot 名稱")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("查看"));
+    fireEvent.click(screen.getByRole("button", { name: /查看 snapshot/i }));
     await waitFor(() => expect(mockGetIframeSnapshot).toHaveBeenCalledWith("desktop", "snapA"));
     expect(screen.getByTitle("snapshot-preview")).toBeInTheDocument();
   });
@@ -68,7 +68,7 @@ describe("SnapshotManager", () => {
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
-    const clientInput = await screen.findByLabelText("snapshot-client");
+    const clientInput = await screen.findByLabelText(/snapshot client id/i);
     fireEvent.change(clientInput, { target: { value: "mobile" } });
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenLastCalledWith("mobile"));
@@ -79,7 +79,7 @@ describe("SnapshotManager", () => {
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
-    fireEvent.click(screen.getByRole("button", { name: "重新載入列表" }));
+    fireEvent.click(screen.getByRole("button", { name: /重新載入.*snapshot/ }));
 
     await waitFor(() => {
       expect(mockListIframeSnapshots).toHaveBeenCalledTimes(2);
