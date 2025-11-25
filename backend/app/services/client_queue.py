@@ -360,6 +360,7 @@ class ClientQueueManager:
     async def cancel_items(self, ids: Iterable[str]) -> List[Dict[str, Any]]:
         affected_clients: set[str] = set()
         canceled: List[Dict[str, Any]] = []
+        running_items: list[QueueItem] = []
         async with self._lock:
             for raw_id in ids:
                 item_id = (raw_id or "").strip()
@@ -370,12 +371,20 @@ class ClientQueueManager:
                     continue
                 if item.status not in {"pending", "running"}:
                     continue
+                if item.status == "running":
+                    running_items.append(item)
                 item.status = "canceled"
                 item.updated_at = _utcnow()
                 affected_clients.add(item.client_id)
                 canceled.append(item.as_dict())
             for client_id in affected_clients:
                 self._compact_queue_locked(client_id)
+        for item in running_items:
+            try:
+                await self._stop_running_item(item)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("強制停止 queue item %s 失敗: %s", item.id, exc)
+            await self._state_store.mark_completed(item)
         await self._recompute_and_broadcast(affected_clients)
         return canceled
 
@@ -421,6 +430,7 @@ class ClientQueueManager:
         affected_clients: set[str] = set()
         moved: List[Dict[str, Any]] = []
         async with self._lock:
+            selected_by_client: dict[str, list[QueueItem]] = {}
             for raw_id in ids:
                 item_id = (raw_id or "").strip()
                 if not item_id:
@@ -432,36 +442,46 @@ class ClientQueueManager:
                     item.priority = _normalize_priority(priority)
                 affected_clients.add(item.client_id)
                 moved.append(item.as_dict())
+                selected_by_client.setdefault(item.client_id, []).append(item)
 
-            for client_id in affected_clients:
+            for client_id, selected_items in selected_by_client.items():
+                pending_items = [
+                    self._items[item_id]
+                    for item_id in self._queue_by_client.get(client_id, [])
+                    if item_id in self._items and self._items[item_id].status == "pending"
+                ]
+                other_items = [item for item in pending_items if item not in selected_items]
+
                 if normalized_position in {"front", "head"}:
-                    self._raise_priority_locked(client_id)
+                    base = max((item.priority for item in other_items), default=0)
+                    for index, item in enumerate(selected_items):
+                        item.priority = base + (len(selected_items) - index)
+                        item.updated_at = _utcnow()
                 elif normalized_position in {"back", "tail"}:
-                    self._lower_priority_locked(client_id)
+                    base = min((item.priority for item in other_items), default=0)
+                    for index, item in enumerate(selected_items):
+                        item.priority = base - (index + 1)
+                        item.updated_at = _utcnow()
         await self._recompute_and_broadcast(affected_clients)
         return moved
 
-    def _raise_priority_locked(self, client_id: str) -> None:
-        queue_ids = self._queue_by_client.get(client_id)
-        if not queue_ids:
-            return
-        max_priority = max((self._items[item_id].priority for item_id in queue_ids if item_id in self._items), default=0)
-        bump = max_priority + 1
-        for item_id in queue_ids:
-            item = self._items.get(item_id)
-            if item and item.status == "pending":
-                item.priority = max(item.priority, bump)
+    async def _stop_running_item(self, item: QueueItem) -> None:
+        """Best-effort stop for running timeline/episode items."""
 
-    def _lower_priority_locked(self, client_id: str) -> None:
-        queue_ids = self._queue_by_client.get(client_id)
-        if not queue_ids:
-            return
-        min_priority = min((self._items[item_id].priority for item_id in queue_ids if item_id in self._items), default=0)
-        drop = min_priority - 1
-        for item_id in queue_ids:
-            item = self._items.get(item_id)
-            if item and item.status == "pending":
-                item.priority = min(item.priority, drop)
+        if item.item_type == "timeline":
+            await realtime_broadcaster.broadcast_timeline_control(
+                action="stop",
+                timeline_id=item.target_id,
+                target_client_id=item.client_id,
+                options={"releaseControl": True},
+            )
+        elif item.item_type == "episode":
+            await realtime_broadcaster.broadcast_timeline_control(
+                action="stop",
+                timeline_id=None,
+                target_client_id=item.client_id,
+                options={"releaseControl": True},
+            )
 
     async def _recompute_and_broadcast(self, clients: Iterable[str]) -> None:
         unique_clients = {cid for cid in clients if cid}
@@ -601,7 +621,7 @@ class ClientQueueManager:
             "state": state,
             "queue": queue_snapshot.get("items", []),
         }
-        await self._broadcaster.broadcast_client_state(payload, target_client_id=client_id)
+        await self._broadcaster.broadcast_client_state(payload)
 
     async def _default_executor(self, item: QueueItem) -> None:
         if item.item_type == "snapshot":

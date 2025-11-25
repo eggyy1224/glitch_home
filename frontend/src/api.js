@@ -259,6 +259,58 @@ export async function sendVideoControl(payload, options = {}) {
   return postJson(`/api/video-control`, payload, options);
 }
 
+export async function stopIframeTimeline(targetClientId, timelineId = null, options = {}) {
+  const body = {
+    target_client_id: targetClientId || null,
+    timeline_id: timelineId || null,
+    command_id: options.commandId,
+    release_control: options.releaseControl !== undefined ? options.releaseControl : true,
+  };
+  return request(`/api/iframe-timelines/stop`, { method: "POST", body });
+}
+
+export async function fetchClientStates({ signal } = {}) {
+  const data = await request(`/api/clients/state`, { signal });
+  return Array.isArray(data?.clients) ? data.clients : [];
+}
+
+export async function fetchClientQueue(clientId, { status = null, page = 1, limit = 50, signal } = {}) {
+  if (!clientId) throw new Error("clientId is required");
+  const params = new URLSearchParams({ client: clientId, page: String(page ?? 1), limit: String(limit ?? 50) });
+  if (status) params.set("status", status);
+  return request(`/api/clients/queue?${params.toString()}`, { signal });
+}
+
+export async function enqueueClientQueueItem(payload, { signal } = {}) {
+  return request(`/api/clients/queue`, { method: "POST", body: payload, signal });
+}
+
+function queueActionPath(ids, action) {
+  const first = Array.isArray(ids) && ids.length > 0 ? ids[0] : "batch";
+  return `/api/clients/queue/${encodeURIComponent(first)}/${action}`;
+}
+
+export async function cancelClientQueueItems(ids, { signal } = {}) {
+  const url = queueActionPath(ids, "cancel");
+  return request(url, { method: "POST", body: { ids }, signal });
+}
+
+export async function delayClientQueueItems(ids, { deltaSeconds = null, eta = null, signal } = {}) {
+  const url = queueActionPath(ids, "delay");
+  const body = { ids };
+  if (deltaSeconds !== null && deltaSeconds !== undefined) body.delta_seconds = deltaSeconds;
+  if (eta !== null && eta !== undefined) body.eta = eta;
+  return request(url, { method: "POST", body, signal });
+}
+
+export async function moveClientQueueItems(ids, { priority = null, position = null, signal } = {}) {
+  const url = queueActionPath(ids, "move");
+  const body = { ids };
+  if (priority !== null && priority !== undefined) body.priority = priority;
+  if (position) body.position = position;
+  return request(url, { method: "POST", body, signal });
+}
+
 export async function generateCollageVersion(files, params) {
   const url = `/api/generate-collage-version`;
   const formData = new FormData();

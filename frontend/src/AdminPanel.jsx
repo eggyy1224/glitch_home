@@ -11,6 +11,7 @@ import {
 import SnapshotManager from "./components/SnapshotManager.jsx";
 import TimelineManager from "./components/TimelineManager.jsx";
 import EpisodeManager from "./components/EpisodeManager.jsx";
+import ClientStateQueuePanel from "./components/ClientStateQueuePanel.jsx";
 
 export default function AdminPanel({ clientId }) {
   const [activeTab, setActiveTab] = useState("snapshot");
@@ -61,6 +62,18 @@ export default function AdminPanel({ clientId }) {
           >
             Episode 管理
           </button>
+          <button
+            type="button"
+            style={activeTab === "state" ? activeTabButtonStyle : tabButtonStyle}
+            onClick={() => handleTabChange("state")}
+            role="tab"
+            aria-selected={activeTab === "state"}
+            aria-controls="admin-tabpanel-state"
+            id="admin-tab-state"
+            data-ai-id="admin.tab.state"
+          >
+            狀態 / 排程
+          </button>
         </div>
 
         {visitedTabs.includes("snapshot") && (
@@ -97,6 +110,18 @@ export default function AdminPanel({ clientId }) {
             data-ai-section="admin.tabpanel.episode"
           >
             <EpisodeManager />
+          </div>
+        )}
+        {visitedTabs.includes("state") && (
+          <div
+            role="tabpanel"
+            aria-hidden={activeTab !== "state"}
+            style={activeTab === "state" ? tabPanelStyle : hiddenTabPanelStyle}
+            aria-labelledby="admin-tab-state"
+            id="admin-tabpanel-state"
+            data-ai-section="admin.tabpanel.state"
+          >
+            <ClientStateQueuePanel />
           </div>
         )}
       </div>

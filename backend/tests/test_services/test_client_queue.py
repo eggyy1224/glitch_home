@@ -89,3 +89,49 @@ async def test_move_and_delay_update_queue_order() -> None:
     assert queue["items"][0]["target_id"] == "snap-d1"
     assert queue["items"][1]["target_id"] == "snap-d2"
     assert queue["items"][1]["eta"] is not None
+
+
+@pytest.mark.asyncio
+async def test_move_front_and_back_only_affects_selected_items() -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, auto_start_workers=False)
+
+    a = await queue_manager.enqueue(client_id="epsilon", item_type="snapshot", target_id="snap-e1")
+    b = await queue_manager.enqueue(client_id="epsilon", item_type="snapshot", target_id="snap-e2")
+    c = await queue_manager.enqueue(client_id="epsilon", item_type="snapshot", target_id="snap-e3")
+
+    await queue_manager.move_items([b["id"]], position="front")
+    queue = await queue_manager.list_queue("epsilon")
+    assert queue["items"][0]["target_id"] == "snap-e2"
+    assert queue["items"][1]["target_id"] in {"snap-e1", "snap-e3"}
+
+    await queue_manager.move_items([c["id"]], position="back")
+    queue_after = await queue_manager.list_queue("epsilon")
+    assert queue_after["items"][-1]["target_id"] == "snap-e3"
+
+
+@pytest.mark.asyncio
+async def test_cancel_running_invokes_stop_and_clears_state() -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, auto_start_workers=False)
+
+    stop_calls: list[str] = []
+
+    async def fake_stop(item) -> None:
+        stop_calls.append(item.target_id)
+
+    queue_manager._stop_running_item = fake_stop  # type: ignore[attr-defined]
+
+    item_data = await queue_manager.enqueue(client_id="zeta", item_type="timeline", target_id="tl-1")
+    async with queue_manager._lock:  # type: ignore[attr-defined]
+        item_obj = queue_manager._items[item_data["id"]]  # type: ignore[attr-defined]
+        item_obj.status = "running"
+    await state_store.mark_running(item_obj)
+
+    await queue_manager.cancel_items([item_data["id"]])
+
+    assert stop_calls == ["tl-1"]
+    state = await state_store.state_for("zeta")
+    assert state is not None
+    assert state["current_item"] is None
+    assert state.get("last_completed_item", {}).get("status") == "canceled"

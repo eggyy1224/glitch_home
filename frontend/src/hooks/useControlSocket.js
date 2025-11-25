@@ -13,6 +13,7 @@ export function useControlSocket({
   onRemoteClick,
   onVideoControl,
   onTimelineControl,
+  onClientState,
 }) {
   const wsRef = useRef(null);
 
@@ -104,6 +105,8 @@ export function useControlSocket({
           onVideoControl?.(payload);
         } else if (payload?.type === "timeline_control") {
           onTimelineControl?.(payload);
+        } else if (payload?.type === "client_state") {
+          onClientState?.(payload);
         }
       };
 
@@ -142,5 +145,6 @@ export function useControlSocket({
     onRemoteClick,
     onVideoControl,
     onTimelineControl,
+    onClientState,
   ]);
 }
