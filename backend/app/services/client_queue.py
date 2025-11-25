@@ -50,8 +50,11 @@ def _normalize_eta(value: float | int | str | datetime | None) -> datetime:
         # Treat numeric as offset seconds.
         return now + timedelta(seconds=float(value))
     if isinstance(value, str):
+        candidate = value.strip()
+        if candidate.lower().endswith("z"):
+            candidate = candidate[:-1] + "+00:00"
         try:
-            parsed = datetime.fromisoformat(value)
+            parsed = datetime.fromisoformat(candidate)
             return parsed.astimezone(timezone.utc)
         except Exception as exc:  # noqa: BLE001
             raise ValueError("eta 需要 ISO8601 時間字串或秒數") from exc
@@ -586,6 +589,7 @@ class ClientQueueManager:
             event.set()
 
     async def _next_item(self, client_id: str) -> QueueItem | None:
+        now = _utcnow()
         async with self._lock:
             queue_ids = self._queue_by_client.get(client_id, [])
             pending_items = [
@@ -595,6 +599,12 @@ class ClientQueueManager:
             ]
         if not pending_items:
             return None
+        ready_items = [item for item in pending_items if item.eta <= now]
+        if ready_items:
+            return min(
+                ready_items,
+                key=lambda item: (-item.priority, item.eta, item.created_at),
+            )
         return min(
             pending_items,
             key=lambda item: (-item.priority, item.eta, item.created_at),

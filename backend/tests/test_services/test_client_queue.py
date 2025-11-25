@@ -162,3 +162,25 @@ async def test_completed_items_removed_from_store() -> None:
 
     await _wait_until(lambda: not queue_manager._items, timeout=2.0)  # type: ignore[attr-defined]
     assert len(queue_manager._items) == 0  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_ready_items_precede_future_high_priority() -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, retry_backoff_seconds=0.01)
+
+    executed: list[str] = []
+
+    async def fake_executor(item) -> None:
+        executed.append(item.target_id)
+
+    queue_manager.set_executor(fake_executor)
+
+    # enqueue a future high-priority job, then a ready lower-priority job
+    await queue_manager.enqueue(client_id="iota", item_type="snapshot", target_id="future", eta=0.5, priority=10)
+    await queue_manager.enqueue(client_id="iota", item_type="snapshot", target_id="ready", eta=0, priority=0)
+
+    await _wait_until(lambda: len(executed) >= 2, timeout=2.0)
+
+    assert executed[0] == "ready"
+    assert set(executed) == {"future", "ready"}
