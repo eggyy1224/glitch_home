@@ -1,9 +1,10 @@
 import asyncio
+from datetime import timedelta
 from typing import Callable
 
 import pytest
 
-from app.services.client_queue import ClientQueueManager, ClientStateStore
+from app.services.client_queue import ClientQueueManager, ClientStateStore, _utcnow
 
 
 async def _wait_until(predicate: Callable[[], bool], timeout: float = 1.0, interval: float = 0.01) -> None:
@@ -135,3 +136,17 @@ async def test_cancel_running_invokes_stop_and_clears_state() -> None:
     assert state is not None
     assert state["current_item"] is None
     assert state.get("last_completed_item", {}).get("status") == "canceled"
+
+
+@pytest.mark.asyncio
+async def test_wait_for_wake_honors_pre_set_event() -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, auto_start_workers=False)
+
+    queue_manager._wake_events["omega"] = asyncio.Event()  # type: ignore[attr-defined]
+    queue_manager._wake_events["omega"].set()  # type: ignore[attr-defined]
+
+    start = asyncio.get_event_loop().time()
+    await queue_manager._wait_for_wake_or_time("omega", _utcnow() + timedelta(seconds=5))  # type: ignore[attr-defined]
+    elapsed = asyncio.get_event_loop().time() - start
+    assert elapsed < 0.2

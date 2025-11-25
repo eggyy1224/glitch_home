@@ -250,6 +250,7 @@ class ClientQueueManager:
         self._items: Dict[str, QueueItem] = {}
         self._queue_by_client: Dict[str, List[str]] = {}
         self._workers: Dict[str, asyncio.Task[None]] = {}
+        self._wake_events: Dict[str, asyncio.Event] = {}
         self._state_store = state_store
         self._broadcaster = broadcaster
         self._retry_backoff_seconds = retry_backoff_seconds
@@ -303,6 +304,7 @@ class ClientQueueManager:
         await self._state_store.set_queue_size(cleaned_client, pending_count)
         await self._broadcast_state(cleaned_client)
         self._ensure_worker(cleaned_client)
+        self._signal_wake(cleaned_client)
         logger.info(
             "Enqueued item %s for client %s type=%s target=%s priority=%s eta=%s",
             item_id,
@@ -385,6 +387,8 @@ class ClientQueueManager:
             except Exception as exc:  # noqa: BLE001
                 logger.warning("強制停止 queue item %s 失敗: %s", item.id, exc)
             await self._state_store.mark_completed(item)
+        for client_id in affected_clients:
+            self._signal_wake(client_id)
         await self._recompute_and_broadcast(affected_clients)
         return canceled
 
@@ -414,6 +418,8 @@ class ClientQueueManager:
                 item.updated_at = _utcnow()
                 affected_clients.add(item.client_id)
                 delayed.append(item.as_dict())
+        for client_id in affected_clients:
+            self._signal_wake(client_id)
         await self._recompute_and_broadcast(affected_clients)
         return delayed
 
@@ -462,6 +468,8 @@ class ClientQueueManager:
                     for index, item in enumerate(selected_items):
                         item.priority = base - (index + 1)
                         item.updated_at = _utcnow()
+        for client_id in affected_clients:
+            self._signal_wake(client_id)
         await self._recompute_and_broadcast(affected_clients)
         return moved
 
@@ -516,6 +524,7 @@ class ClientQueueManager:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             return
+        self._wake_events.setdefault(client_id, asyncio.Event())
         task = loop.create_task(self._worker_loop(client_id))
         self._workers[client_id] = task
 
@@ -528,14 +537,43 @@ class ClientQueueManager:
                         self._compact_queue_locked(client_id)
                     await self._state_store.set_queue_size(client_id, 0)
                     await self._broadcast_state(client_id)
+                    self._wake_events.pop(client_id, None)
                     return
                 now = _utcnow()
                 if next_item.eta > now:
-                    await asyncio.sleep((next_item.eta - now).total_seconds())
+                    await self._wait_for_wake_or_time(client_id, next_item.eta)
                     continue
                 await self._execute_item(next_item)
         except asyncio.CancelledError:
             return
+
+    async def _wait_for_wake_or_time(self, client_id: str, eta: datetime) -> None:
+        """Sleep until ETA or until a wake signal arrives."""
+
+        while True:
+            now = _utcnow()
+            remaining = (eta - now).total_seconds()
+            if remaining <= 0:
+                return
+            event = self._wake_events.get(client_id)
+            timeout = min(remaining, 1.0)
+            if event is None:
+                await asyncio.sleep(timeout)
+                continue
+            if event.is_set():
+                event.clear()
+                return
+            try:
+                await asyncio.wait_for(event.wait(), timeout=timeout)
+                event.clear()
+                return
+            except asyncio.TimeoutError:
+                continue
+
+    def _signal_wake(self, client_id: str) -> None:
+        event = self._wake_events.get(client_id)
+        if event:
+            event.set()
 
     async def _next_item(self, client_id: str) -> QueueItem | None:
         async with self._lock:
