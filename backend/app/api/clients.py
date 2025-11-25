@@ -36,11 +36,11 @@ class MoveRequest(BatchIdsRequest):
 
 
 def _collect_ids(path_id: str, body_ids: Optional[List[str]]) -> List[str]:
+    if body_ids is not None:
+        return list(dict.fromkeys([raw for raw in body_ids if raw]))
     ids: List[str] = []
     if path_id:
         ids.append(path_id)
-    if body_ids:
-        ids.extend([raw for raw in body_ids if raw])
     return list(dict.fromkeys(ids))
 
 
