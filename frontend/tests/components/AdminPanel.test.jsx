@@ -33,22 +33,22 @@ describe("AdminPanel", () => {
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
-    fireEvent.click(screen.getByRole("button", { name: "Timeline 管理" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Timeline 管理" }));
     await waitFor(() => expect(mockListIframeTimelines).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole("button", { name: "Episode 管理" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Episode 管理" }));
     await waitFor(() => expect(mockListEpisodes).toHaveBeenCalled());
   });
 
   it("切換標籤後不會重置已輸入資料", async () => {
     render(<AdminPanel clientId="desktop" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Timeline 管理" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Timeline 管理" }));
     const timelineIdInput = await screen.findByPlaceholderText("新建請輸入 id 或在 JSON 設定");
     fireEvent.change(timelineIdInput, { target: { value: "tmp-id" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Snapshot 管理" }));
-    fireEvent.click(screen.getByRole("button", { name: "Timeline 管理" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Snapshot 管理" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Timeline 管理" }));
 
     expect(screen.getByPlaceholderText("新建請輸入 id 或在 JSON 設定")).toHaveValue("tmp-id");
   });
