@@ -4,6 +4,7 @@ import {
   deleteIframeSnapshot,
   getIframeSnapshot,
   listIframeSnapshots,
+  restoreIframeSnapshot,
   saveIframeSnapshot,
 } from "../api.js";
 import { AdminPanelContext } from "../AdminPanelContext";
@@ -135,6 +136,29 @@ export default function SnapshotManager() {
     }
   }, [refreshSnapshots, snapshotClient, snapshotCloneName, snapshotCloneTarget, snapshotName]);
 
+  const handlePlaySnapshot = useCallback(
+    async (name) => {
+      const targetClient = (snapshotClient || "").trim();
+      const targetSnapshot = name || snapshotName;
+      if (!targetClient) {
+        setSnapshotMessage("請先輸入 client 再播放");
+        return;
+      }
+      if (!targetSnapshot) {
+        setSnapshotMessage("請先選擇要播放的 snapshot");
+        return;
+      }
+      try {
+        setSnapshotMessage(`播放中 ${targetSnapshot} → ${targetClient}...`);
+        await restoreIframeSnapshot(targetClient, targetSnapshot);
+        setSnapshotMessage(`已送出播放：${targetSnapshot} 到 ${targetClient}`);
+      } catch (err) {
+        setSnapshotMessage(err.message || "播放指令失敗");
+      }
+    },
+    [snapshotClient, snapshotName],
+  );
+
   useEffect(() => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
@@ -218,6 +242,15 @@ export default function SnapshotManager() {
                   aria-label={`選擇 snapshot ${item.name}`}
                 >
                   選擇
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePlaySnapshot(item.name)}
+                  style={{ marginRight: 4 }}
+                  data-ai-action="snapshot.play"
+                  aria-label={`播放 snapshot ${item.name} 到 client ${snapshotClient || "(未指定)"}`}
+                >
+                  播放
                 </button>
                 <button
                   type="button"

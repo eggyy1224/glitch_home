@@ -389,6 +389,17 @@ export async function cloneIframeSnapshot(clientId, name, payload, { signal } = 
   return postJson(url, payload, { signal });
 }
 
+export async function restoreIframeSnapshot(clientId, snapshotName, { signal } = {}) {
+  if (!snapshotName) {
+    throw new Error("snapshotName is required");
+  }
+  const body = { snapshot_name: snapshotName };
+  if (clientId) {
+    body.client_id = clientId;
+  }
+  return request(`/api/iframe-config/restore`, { method: "POST", body, signal });
+}
+
 async function uploadImageForSearch(file, { signal } = {}) {
   if (!file) {
     throw new Error("請先選擇圖片");
