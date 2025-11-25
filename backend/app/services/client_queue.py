@@ -218,10 +218,12 @@ class ClientStateStore:
             record.current_item = None
             record.status_hint = None
 
-    async def snapshot(self) -> List[Dict[str, Any]]:
+    async def snapshot(self, *, include_offline: bool = True) -> List[Dict[str, Any]]:
         async with self._lock:
             records = list(self._states.values())
             payload = [rec.as_dict(self._offline_after_seconds) for rec in records]
+        if not include_offline:
+            payload = [item for item in payload if item.get("status") != "offline"]
         payload.sort(key=lambda item: item["client_id"])
         return payload
 

@@ -16,6 +16,7 @@ export function useControlSocket({
   onClientState,
 }) {
   const wsRef = useRef(null);
+  const heartbeatRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -31,6 +32,10 @@ export function useControlSocket({
         }
       }
       wsRef.current = null;
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
     }
 
     function scheduleReconnect() {
@@ -71,6 +76,19 @@ export function useControlSocket({
           socket.send(JSON.stringify(hello));
         } catch (err) {
           console.error("WebSocket hello 發送失敗", err);
+        }
+
+        // keep-alive for status: only when clientId is present
+        if (clientId && !heartbeatRef.current) {
+          heartbeatRef.current = setInterval(() => {
+            const live = wsRef.current;
+            if (!live || live.readyState !== WebSocket.OPEN) return;
+            try {
+              live.send(JSON.stringify({ type: "heartbeat", client_id: clientId }));
+            } catch (err) {
+              // ignore send error; reconnect logic will handle
+            }
+          }, 5000);
         }
       };
 
