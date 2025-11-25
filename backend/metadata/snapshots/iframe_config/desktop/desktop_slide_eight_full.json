@@ -1,0 +1,127 @@
+{
+  "layout": "grid",
+  "gap": 6,
+  "columns": 4,
+  "panels": [
+    {
+      "id": "illu_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251109_114534_671.png&client=desktop-illu-1&slide_interval_ms=1200",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20251109_114534_671.png",
+        "client": "desktop-illu-1",
+        "slide_interval_ms": "1200"
+      },
+      "ratio": 1.0,
+      "label": "Illustration 1",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "illu_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251109_003915_874.png&client=desktop-illu-2&slide_interval_ms=2200",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20251109_003915_874.png",
+        "client": "desktop-illu-2",
+        "slide_interval_ms": "2200"
+      },
+      "ratio": 1.0,
+      "label": "Illustration 2",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "illu_3",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251109_160326_055.png&client=desktop-illu-3&slide_interval_ms=3200",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20251109_160326_055.png",
+        "client": "desktop-illu-3",
+        "slide_interval_ms": "3200"
+      },
+      "ratio": 1.0,
+      "label": "Illustration 3",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "illu_4",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251124_120354_008.png&client=desktop-illu-4&slide_interval_ms=4200",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20251124_120354_008.png",
+        "client": "desktop-illu-4",
+        "slide_interval_ms": "4200"
+      },
+      "ratio": 1.0,
+      "label": "Illustration 4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "night_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250928_203346_360.png&client=desktop-night-1&slide_interval_ms=2600",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20250928_203346_360.png",
+        "client": "desktop-night-1",
+        "slide_interval_ms": "2600"
+      },
+      "ratio": 1.0,
+      "label": "Night Ritual 1",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "night_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250925_110840_697.png&client=desktop-night-2&slide_interval_ms=1800",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20250925_110840_697.png",
+        "client": "desktop-night-2",
+        "slide_interval_ms": "1800"
+      },
+      "ratio": 1.0,
+      "label": "Night Ritual 2",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "banquet_1",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251007_170712_921.png&client=desktop-banquet-1&slide_interval_ms=3400",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20251007_170712_921.png",
+        "client": "desktop-banquet-1",
+        "slide_interval_ms": "3400"
+      },
+      "ratio": 1.0,
+      "label": "Banquet 1",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "banquet_2",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20251008_193149_473.png&client=desktop-banquet-2&slide_interval_ms=5000",
+      "params": {
+        "slide_mode": "true",
+        "img": "offspring_20251008_193149_473.png",
+        "client": "desktop-banquet-2",
+        "slide_interval_ms": "5000"
+      },
+      "ratio": 1.0,
+      "label": "Banquet 2",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
