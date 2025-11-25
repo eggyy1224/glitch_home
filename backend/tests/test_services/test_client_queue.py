@@ -150,3 +150,15 @@ async def test_wait_for_wake_honors_pre_set_event() -> None:
     await queue_manager._wait_for_wake_or_time("omega", _utcnow() + timedelta(seconds=5))  # type: ignore[attr-defined]
     elapsed = asyncio.get_event_loop().time() - start
     assert elapsed < 0.2
+
+
+@pytest.mark.asyncio
+async def test_completed_items_removed_from_store() -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, retry_backoff_seconds=0.01)
+
+    queue_manager.set_executor(asyncio.sleep)
+    await queue_manager.enqueue(client_id="theta", item_type="snapshot", target_id="snap-t1")
+
+    await _wait_until(lambda: not queue_manager._items, timeout=2.0)  # type: ignore[attr-defined]
+    assert len(queue_manager._items) == 0  # type: ignore[attr-defined]

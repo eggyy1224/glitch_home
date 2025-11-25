@@ -15,7 +15,7 @@ class QueueCreateRequest(BaseModel):
     client_id: str = Field(..., description="目標 client id")
     type: str = Field(..., description="佇列類型 snapshot|timeline|episode")
     target_id: str = Field(..., description="要播放/執行的目標 id")
-    eta: datetime | float | int | None = Field(default=None, description="預定時間（ISO 或秒數）")
+    eta: datetime | float | int | str | None = Field(default=None, description="預定時間（ISO 或秒數）")
     priority: int | None = Field(default=None, description="整數優先權，越高越早執行")
     retries: int | None = Field(default=0, ge=0, description="失敗時重試次數")
     payload: dict[str, Any] | None = Field(default=None, description="類型特定的額外參數")

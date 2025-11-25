@@ -507,7 +507,15 @@ class ClientQueueManager:
         queue = self._queue_by_client.get(client_id)
         if queue is None:
             return
-        filtered = [item_id for item_id in queue if self._items.get(item_id) and self._items[item_id].status in {"pending", "running"}]
+        filtered: list[str] = []
+        for item_id in queue:
+            item = self._items.get(item_id)
+            if not item:
+                continue
+            if item.status in {"pending", "running"}:
+                filtered.append(item_id)
+            else:
+                self._items.pop(item_id, None)
         if filtered:
             self._queue_by_client[client_id] = filtered
         else:
