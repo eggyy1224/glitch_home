@@ -20,3 +20,15 @@ def test_queue_create_request_accepts_iso_eta() -> None:
     }
     req = QueueCreateRequest(**payload)  # should not raise
     assert req.eta is not None
+
+
+def test_queue_create_request_preserves_numeric_eta() -> None:
+    payload = {
+        "client_id": "abc",
+        "type": "snapshot",
+        "target_id": "s1",
+        "eta": 5,
+    }
+    req = QueueCreateRequest(**payload)
+    assert isinstance(req.eta, (int, float))
+    assert req.eta == 5

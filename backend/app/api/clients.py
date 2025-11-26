@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ..services.client_queue import client_queue_manager, client_state_store
 
@@ -15,10 +15,18 @@ class QueueCreateRequest(BaseModel):
     client_id: str = Field(..., description="目標 client id")
     type: str = Field(..., description="佇列類型 snapshot|timeline|episode")
     target_id: str = Field(..., description="要播放/執行的目標 id")
-    eta: datetime | float | int | str | None = Field(default=None, description="預定時間（ISO 或秒數）")
+    eta: float | int | str | datetime | None = Field(default=None, description="預定時間（ISO 或秒數）")
     priority: int | None = Field(default=None, description="整數優先權，越高越早執行")
     retries: int | None = Field(default=0, ge=0, description="失敗時重試次數")
     payload: dict[str, Any] | None = Field(default=None, description="類型特定的額外參數")
+
+    @field_validator("eta", mode="before")
+    @classmethod
+    def _preserve_numeric_eta(cls, value):
+        # 保留秒數位移，避免被當成 timestamp 轉 datetime
+        if isinstance(value, (int, float)):
+            return float(value)
+        return value
 
 
 class BatchIdsRequest(BaseModel):
