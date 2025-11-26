@@ -189,6 +189,27 @@ async def test_ready_items_precede_future_high_priority() -> None:
 
 
 @pytest.mark.asyncio
+async def test_future_items_follow_earliest_eta_over_priority() -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, retry_backoff_seconds=0.01)
+
+    executed: list[str] = []
+
+    async def fake_executor(item) -> None:
+        executed.append(item.target_id)
+
+    queue_manager.set_executor(fake_executor)
+
+    await queue_manager.enqueue(client_id="eta", item_type="snapshot", target_id="later-high", eta=0.6, priority=10)
+    await queue_manager.enqueue(client_id="eta", item_type="snapshot", target_id="sooner-low", eta=0.1, priority=0)
+
+    await _wait_until(lambda: len(executed) >= 2, timeout=2.0)
+
+    assert executed[0] == "sooner-low"
+    assert set(executed) == {"later-high", "sooner-low"}
+
+
+@pytest.mark.asyncio
 async def test_timeline_defaults_to_queue_client_when_no_override(monkeypatch) -> None:
     captured: dict[str, str] = {}
 

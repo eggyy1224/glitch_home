@@ -607,7 +607,7 @@ class ClientQueueManager:
             )
         return min(
             pending_items,
-            key=lambda item: (-item.priority, item.eta, item.created_at),
+            key=lambda item: (item.eta, -item.priority, item.created_at),
         )
 
     async def _execute_item(self, item: QueueItem) -> None:
