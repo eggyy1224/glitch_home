@@ -258,14 +258,16 @@ export default function TimelineEpisodeEditor() {
         const payload = timelineData;
         const targetId = (payload.id || "").trim();
         if (!targetId) throw new Error("timeline id 必填");
+        const normalizedPayload = { ...payload, id: targetId };
+        updateTimeline(normalizedPayload);
         let action = "update";
         try {
-          await updateIframeTimeline(targetId, payload, { resolve: false });
+          await updateIframeTimeline(targetId, normalizedPayload, { resolve: false });
         } catch (err) {
           const msg = err?.message || "";
           if (msg.includes("404")) {
             action = "create";
-            await createIframeTimeline(payload, { resolve: false });
+            await createIframeTimeline(normalizedPayload, { resolve: false });
           } else {
             throw err;
           }
@@ -276,14 +278,16 @@ export default function TimelineEpisodeEditor() {
         const payload = episodeData;
         const targetId = (payload.id || "").trim();
         if (!targetId) throw new Error("episode id 必填");
+        const normalizedPayload = { ...payload, id: targetId };
+        updateEpisode(normalizedPayload);
         let action = "update";
         try {
-          await updateEpisode(targetId, payload, { resolve: false });
+          await updateEpisode(targetId, normalizedPayload, { resolve: false });
         } catch (err) {
           const msg = err?.message || "";
           if (msg.includes("404")) {
             action = "create";
-            await createEpisode(payload, { resolve: false });
+            await createEpisode(normalizedPayload, { resolve: false });
           } else {
             throw err;
           }
@@ -299,7 +303,7 @@ export default function TimelineEpisodeEditor() {
     } finally {
       setIsSaving(false);
     }
-  }, [episodeData, mode, refreshEpisodes, refreshTimelines, timelineData]);
+  }, [episodeData, mode, refreshEpisodes, refreshTimelines, timelineData, updateEpisode, updateTimeline]);
 
   const handleJsonChange = useCallback((text) => {
     setJsonText(text);
