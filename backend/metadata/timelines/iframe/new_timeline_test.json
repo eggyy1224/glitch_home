@@ -1,0 +1,47 @@
+{
+  "id": "new_timeline_test",
+  "title": "範例 timeline",
+  "clientId": "desktop",
+  "loop": false,
+  "steps": [
+    {
+      "snapshot": "desktop/desktop_slide_pair_custom",
+      "duration": 15.0,
+      "at": null,
+      "label": "第一段",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/desktop_slide_pair_illustration",
+      "duration": 10.0,
+      "at": null,
+      "label": "第二段",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop/drive_in_stormy_quad",
+      "duration": 60.0,
+      "at": null,
+      "label": "新步驟",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    }
+  ]
+}
