@@ -6,6 +6,10 @@
 - 提供佇列/排程播放（snapshot/timeline/episode），可插隊、延後、取消。
 - 透過 WebSocket 讓指令有回饋，並暴露 REST 端點供查詢/管理。
 
+### 已知待處理 (TODO)
+- **停止指令未對齊實際 target**：強制停止 timeline/episode 時僅使用 queue 的 `client_id`，若 payload/定義覆寫 target 或 episode 多軌，實際播放端不會被停下。需在執行時保存 resolved target(s) 並在 stop 時逐一廣播。
+- **預設 client id 分歧**：前端一般模式預設 client 為 `default`，Admin 面板/預設 payload 仍預設 `desktop`，導致未帶 `?client=` 時管理指令可能打到不同 client。需統一預設或在 UI 明示同步。
+
 ## 範圍界定
 - **後端**：FastAPI 端點、佇列執行器、WS broadcast、資料持久化（記憶體優先，預留 Redis/SQLite 選項）。
 - **前端**：Admin 新增「狀態/排程」分頁，含列表、佇列操作、快速派送表單與即時更新。

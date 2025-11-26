@@ -1,7 +1,7 @@
 # 圖像系譜學系統 - API 快速上手指南（For AI Agents）
 
 > **版本**: 1.1  
-> **最後更新**: 2025-11-04  
+> **最後更新**: 2025-11-26  
 > **目標讀者**: AI Assistant / Agent
 
 ---
@@ -385,6 +385,61 @@ curl -X GET http://localhost:8000/api/clients | jq .
 ```
 
 > 以 WebSocket 連線數為準；可用來確認指定 client 是否在線、是否重複開啟頁面。
+
+### 任務 9: 監控 client 狀態與播放佇列
+
+> 新的「狀態 / 排程」能力：每個 client 都有心跳、執行中項目與播放佇列（支援 snapshot / timeline / episode）。狀態與佇列會透過 WebSocket `type: "client_state"` 推播，也可用 REST 查詢/操作。
+
+1) 查詢所有 client 狀態（含心跳、排程數量、當前/上一個項目）：
+
+```bash
+curl -s http://localhost:8000/api/clients/state | jq '.clients[]'
+```
+
+回傳範例：
+
+```json
+{
+  "client_id": "desktop",
+  "status": "busy",
+  "last_heartbeat": "2025-11-26T06:18:10.123Z",
+  "current_item": {"type": "timeline", "target_id": "demo_tl", "status": "running"},
+  "queue_size": 2,
+  "errors": []
+}
+```
+
+2) 取得/管理佇列（分 client）：
+
+```bash
+# 取佇列（預設 50 筆，支援 status=running,pending,done,failed,canceled）
+curl -s "http://localhost:8000/api/clients/queue?client=desktop&limit=20" | jq '.items[] | {id,type,target_id,status,eta,priority}'
+
+# 派送新的排程項目（eta 可用秒數或 ISO 時間；priority 整數越高越前）
+curl -X POST http://localhost:8000/api/clients/queue \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "desktop",
+    "type": "timeline",
+    "target_id": "night_tour",
+    "eta": 0,
+    "priority": 5,
+    "retries": 1,
+    "payload": {"start_step": 0, "force_iframe_mode": true}
+  }'
+
+# 取消 / 延後 / 插隊：皆支援一次處理多個 id
+curl -X POST http://localhost:8000/api/clients/queue/<ID>/cancel -H "Content-Type: application/json" -d '{"ids":["<ID>","<ID2>"]}'
+curl -X POST http://localhost:8000/api/clients/queue/<ID>/delay -H "Content-Type: application/json" -d '{"delta_seconds":30}'
+curl -X POST http://localhost:8000/api/clients/queue/<ID>/move -H "Content-Type: application/json" -d '{"position":"front"}'
+```
+
+3) 前端 Admin Panel：新增「狀態 / 排程」分頁，支援：
+- 觀看所有 client 心跳/佇列摘要（WS 即時更新 + 8s 輪詢）。
+- 右側表單快速派送 snapshot / timeline / episode，含優先權、重試與 ETA。
+- 佇列表格可取消、插隊（front/back）、延後、強制停止（timeline/episode）。
+
+> 佇列執行器為每個 client 啟動一條 worker，會依 `priority`（高先）與 `eta` 排序；完成/失敗/取消都會回報到 `client_state`。
 
 ---
 
