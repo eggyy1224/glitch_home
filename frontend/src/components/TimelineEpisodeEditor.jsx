@@ -95,6 +95,16 @@ function toggleIndex(selected, index) {
   return [...selected, index];
 }
 
+function snapshotValueForSelect(step, timeline, fallbackClient) {
+  if (!step || !step.snapshot) return "";
+  const ref = String(step.snapshot).trim();
+  if (!ref) return "";
+  if (ref.includes("/")) return ref;
+  const client =
+    step.clientId || step.client_id || timeline?.clientId || timeline?.client_id || fallbackClient || "";
+  return client ? `${client}/${ref}` : ref;
+}
+
 export default function TimelineEpisodeEditor() {
   const { defaultClientId } = useContext(AdminPanelContext);
   const [mode, setMode] = useState("timeline");
@@ -195,19 +205,24 @@ export default function TimelineEpisodeEditor() {
     }
   }, [episodeFilter]);
 
-  const refreshSnapshots = useCallback(async () => {
+  const refreshSnapshots = useCallback(async (clientOverride) => {
     try {
-      const data = await listIframeSnapshots(snapshotClient || null);
+      const targetClient = clientOverride ?? snapshotClient;
+      const data = await listIframeSnapshots(targetClient || null);
       const list = Array.isArray(data.snapshots) ? data.snapshots : [];
       const filtered = snapshotKeyword
         ? list.filter((item) => `${item.id || item.name}`.includes(snapshotKeyword) || `${item.client}`.includes(snapshotKeyword))
         : list;
-      setSnapshotOptions(filtered);
+      const normalized = filtered.map((item) => ({
+        ...item,
+        client: item.client || item.client_id || targetClient || timelineData.clientId || timelineData.client_id || "",
+      }));
+      setSnapshotOptions(normalized);
       setSnapshotMessage(`取得 ${filtered.length} 筆 snapshot`);
     } catch (err) {
       setSnapshotMessage(err.message || "載入 snapshot 清單失敗");
     }
-  }, [snapshotClient, snapshotKeyword]);
+  }, [snapshotClient, snapshotKeyword, timelineData.clientId, timelineData.client_id]);
 
   const handleLoadSelected = useCallback(
     async (id) => {
@@ -217,6 +232,11 @@ export default function TimelineEpisodeEditor() {
           const data = await fetchIframeTimeline(id, { resolve: false });
           const payload = data.timeline || data;
           updateTimeline(payload);
+          if (payload.clientId || payload.client_id) {
+            const nextClient = payload.clientId || payload.client_id;
+            setSnapshotClient(nextClient);
+            await refreshSnapshots(nextClient);
+          }
           setMessage(`已載入 timeline ${id}`);
         } else {
           const data = await fetchEpisode(id, { resolve: false });
@@ -228,7 +248,7 @@ export default function TimelineEpisodeEditor() {
         setMessage(err.message || "載入失敗");
       }
     },
-    [mode, updateEpisode, updateTimeline],
+    [mode, refreshSnapshots, updateEpisode, updateTimeline],
   );
 
   const handleSave = useCallback(async () => {
@@ -694,7 +714,7 @@ export default function TimelineEpisodeEditor() {
                       <label style={{ display: "flex", flexDirection: "column" }}>
                         Snapshot
                         <select
-                          value={step.snapshot || ""}
+                          value={snapshotValueForSelect(step, timelineData, snapshotClient)}
                           onChange={(e) => handleStepChange(index, { snapshot: e.target.value })}
                         >
                           <option value="">-- 選擇 snapshot --</option>
