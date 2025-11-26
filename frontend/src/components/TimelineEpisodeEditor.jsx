@@ -238,25 +238,37 @@ export default function TimelineEpisodeEditor() {
         const payload = timelineData;
         const targetId = (payload.id || "").trim();
         if (!targetId) throw new Error("timeline id 必填");
-        const exists = timelineList.some((t) => t.id === targetId);
-        if (exists) {
+        let action = "update";
+        try {
           await updateIframeTimeline(targetId, payload, { resolve: false });
-        } else {
-          await createIframeTimeline(payload, { resolve: false });
+        } catch (err) {
+          const msg = err?.message || "";
+          if (msg.includes("404")) {
+            action = "create";
+            await createIframeTimeline(payload, { resolve: false });
+          } else {
+            throw err;
+          }
         }
-        setMessage(`已儲存 timeline ${targetId}`);
+        setMessage(`${action === "update" ? "已更新" : "已建立"} timeline ${targetId}`);
         await refreshTimelines();
       } else {
         const payload = episodeData;
         const targetId = (payload.id || "").trim();
         if (!targetId) throw new Error("episode id 必填");
-        const exists = episodeList.some((e) => e.id === targetId);
-        if (exists) {
+        let action = "update";
+        try {
           await updateEpisode(targetId, payload, { resolve: false });
-        } else {
-          await createEpisode(payload, { resolve: false });
+        } catch (err) {
+          const msg = err?.message || "";
+          if (msg.includes("404")) {
+            action = "create";
+            await createEpisode(payload, { resolve: false });
+          } else {
+            throw err;
+          }
         }
-        setMessage(`已儲存 episode ${targetId}`);
+        setMessage(`${action === "update" ? "已更新" : "已建立"} episode ${targetId}`);
         await refreshEpisodes();
       }
       setDirty(false);
@@ -265,7 +277,7 @@ export default function TimelineEpisodeEditor() {
     } finally {
       setIsSaving(false);
     }
-  }, [episodeData, episodeList, mode, refreshEpisodes, refreshTimelines, timelineData, timelineList]);
+  }, [episodeData, mode, refreshEpisodes, refreshTimelines, timelineData]);
 
   const handleJsonChange = useCallback((text) => {
     setJsonText(text);
