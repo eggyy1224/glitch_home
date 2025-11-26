@@ -1,0 +1,137 @@
+/* Matrix terminal theme for admin_mode (超陽春 TUI 風) */
+.admin-matrix {
+  --matrix-bg: #000;
+  --matrix-panel: #000;
+  --matrix-panel-strong: #000;
+  --matrix-border: #0f4;
+  --matrix-border-strong: #0f4;
+  --matrix-accent: #0f4;
+  --matrix-accent-strong: #4f8;
+  --matrix-text: #c8ffd2;
+  --matrix-text-muted: #82dca5;
+  --matrix-danger: #ff5f5f;
+  --matrix-warning: #f4c15c;
+
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: 24px;
+  color: var(--matrix-text);
+  background: #000;
+  font-family: monospace;
+  letter-spacing: 0.02em;
+}
+
+.admin-matrix * {
+  box-sizing: border-box;
+}
+
+.admin-matrix button,
+.admin-matrix input,
+.admin-matrix select,
+.admin-matrix textarea {
+  background: #000;
+  border: 1px solid var(--matrix-border);
+  color: var(--matrix-text);
+  border-radius: 0;
+  font-family: inherit;
+  transition: border-color 0.08s ease, color 0.08s ease, background 0.08s ease;
+}
+
+.admin-matrix input,
+.admin-matrix select {
+  min-height: 32px;
+  padding: 6px 8px;
+}
+
+.admin-matrix textarea {
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.admin-matrix button {
+  padding: 8px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #000;
+  cursor: pointer;
+}
+
+.admin-matrix button:hover:not(:disabled) {
+  border-color: var(--matrix-accent-strong);
+  color: var(--matrix-accent-strong);
+}
+
+.admin-matrix button:active:not(:disabled) {
+  background: #001700;
+}
+
+.admin-matrix button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-matrix button[data-ai-danger="true"] {
+  border-color: var(--matrix-danger);
+  color: var(--matrix-danger);
+  background: #000;
+}
+
+.admin-matrix button[data-ai-danger="true"]:hover:not(:disabled) {
+  color: #ff8a8a;
+  border-color: #ff8a8a;
+}
+
+.admin-matrix input:focus,
+.admin-matrix select:focus,
+.admin-matrix textarea:focus {
+  outline: none;
+  border-color: var(--matrix-accent);
+}
+
+.admin-matrix ::placeholder {
+  color: rgba(130, 220, 165, 0.8);
+}
+
+.admin-matrix table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--matrix-text);
+  background: #000;
+}
+
+.admin-matrix th,
+.admin-matrix td {
+  border: 1px solid var(--matrix-border);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.admin-matrix th {
+  background: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--matrix-accent-strong);
+}
+
+.admin-matrix tr:nth-child(even) td {
+  background: #050;
+  color: #d8ffe0;
+}
+
+.admin-matrix tr:nth-child(odd) td {
+  background: #000;
+}
+
+.admin-matrix tr:hover td {
+  background: #0b0;
+  color: #000;
+}
+
+.admin-matrix .muted {
+  color: var(--matrix-text-muted);
+}
+
+.admin-matrix .status-text {
+  color: var(--matrix-text-muted);
+  letter-spacing: 0.02em;
+}

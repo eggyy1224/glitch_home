@@ -16,12 +16,12 @@ function formatTime(value) {
 
 function StatusBadge({ status }) {
   const palette = {
-    online: "#2f9e44",
-    busy: "#d9480f",
-    idle: "#1971c2",
-    offline: "#6b7280",
+    online: "#3aff85",
+    busy: "#f4c15c",
+    idle: "#7ad7ff",
+    offline: "#5a6b5f",
   };
-  const color = palette[status] || "#6b7280";
+  const color = palette[status] || "#5a6b5f";
   return (
     <span
       style={{
@@ -29,11 +29,12 @@ function StatusBadge({ status }) {
         padding: "2px 8px",
         borderRadius: 999,
         background: color,
-        color: "#fff",
+        color: "#041408",
         fontSize: 12,
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.03em",
+        boxShadow: "0 0 0 1px rgba(27, 75, 46, 0.4), 0 8px 16px rgba(0, 0, 0, 0.35)",
       }}
     >
       {status || "unknown"}
@@ -55,18 +56,23 @@ function ClientCard({ client, active, onSelect }) {
         width: "100%",
         textAlign: "left",
         borderRadius: 10,
-        border: active ? "2px solid #111" : "1px solid #ccc",
+        border: `1px solid ${active ? "#0f4" : "#0f4"}`,
         padding: 12,
-        background: active ? "#fff" : "#f3f4f6",
+        background: active ? "#020" : "#000",
         cursor: "pointer",
-        boxShadow: active ? "0 2px 10px rgba(0,0,0,0.08)" : "none",
+        color: "#e1ffe9",
+        boxShadow: "none",
+        transition: "border-color 0.1s ease, background 0.1s ease",
+        transform: "none",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
         <div style={{ fontWeight: 700, fontSize: 16 }}>{id || "(未命名 client)"}</div>
         <StatusBadge status={status} />
       </div>
-      <div style={{ fontSize: 12, color: "#555", marginBottom: 4 }}>Heartbeat: {formatTime(heartbeat)}</div>
+      <div style={{ fontSize: 12, color: "#82dca5", marginBottom: 4, letterSpacing: "0.02em" }}>
+        Heartbeat: {formatTime(heartbeat)}
+      </div>
       <div style={{ fontSize: 13, marginBottom: 4 }}>
         佇列：<strong>{queueSize}</strong>
       </div>
@@ -76,11 +82,11 @@ function ClientCard({ client, active, onSelect }) {
             執行中：{currentItem.type}/{currentItem.target_id || "-"} {currentItem.status === "running" ? "..." : ""}
           </span>
         ) : (
-          <span style={{ color: "#666" }}>目前無執行項目</span>
+          <span style={{ color: "#82dca5" }}>目前無執行項目</span>
         )}
       </div>
       {errors && errors.length > 0 && (
-        <div style={{ marginTop: 6, color: "#c92a2a", fontSize: 12, lineHeight: 1.4 }}>
+        <div style={{ marginTop: 6, color: "#ff6b6b", fontSize: 12, lineHeight: 1.4 }}>
           錯誤：{errors.slice(-2).join(" / ")}
         </div>
       )}
@@ -115,7 +121,7 @@ function QueueRow({ item, onCancel, onMoveFront, onMoveBack, onDelay, onForceSto
           <button
             type="button"
             onClick={() => onForceStop(item)}
-            style={{ padding: "4px 8px", background: "#fee2e2" }}
+            style={{ padding: "4px 8px", background: "rgba(255, 107, 107, 0.16)" }}
             data-ai-action="queue.force-stop"
             data-ai-danger="true"
           >
@@ -288,14 +294,14 @@ export default function ClientStateQueuePanel() {
               </button>
             </div>
           </div>
-          <div style={{ fontSize: 12, color: "#555", marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: "#82dca5", marginBottom: 8, letterSpacing: "0.02em" }}>
             {loadingState
               ? "載入中..."
               : showActiveOnly
                 ? `顯示 ${filteredClients.length}/${clients.length} 台 (線上/idle)`
                 : `共 ${clients.length} 台`}
             {message && (
-              <span style={{ marginLeft: 8, color: "#111" }} data-ai-status="state-queue.clients-message">
+              <span style={{ marginLeft: 8, color: "#3aff85" }} data-ai-status="state-queue.clients-message">
                 {message}
               </span>
             )}
@@ -305,7 +311,7 @@ export default function ClientStateQueuePanel() {
               <ClientCard key={client.client_id || Math.random()} client={client} active={client.client_id === selectedClient} onSelect={setSelectedClient} />
             ))}
             {filteredClients.length === 0 && (
-              <div style={{ color: "#777" }} data-ai-state="empty">
+              <div style={{ color: "#82dca5" }} data-ai-state="empty">
                 尚無 client heartbeat
               </div>
             )}
@@ -316,7 +322,7 @@ export default function ClientStateQueuePanel() {
       <div style={{ ...columnStyle, minWidth: 520 }} data-ai-section="state-queue.controls">
         <div style={boxStyle}>
           <h3 style={{ marginTop: 0 }}>佇列控制</h3>
-          <div style={{ marginBottom: 8, color: "#333" }} data-ai-status="state-queue.headline">
+          <div style={{ marginBottom: 8, color: "#82dca5", letterSpacing: "0.02em" }} data-ai-status="state-queue.headline">
             {currentHeadline}
           </div>
           <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -383,7 +389,7 @@ export default function ClientStateQueuePanel() {
                   <option key={item.value} value={item.value} label={item.label} />
                 ))}
               </datalist>
-              <div style={{ marginTop: 4, fontSize: 12, color: "#555" }} data-ai-status="queue.target-options-message">
+              <div style={{ marginTop: 4, fontSize: 12, color: "#82dca5", letterSpacing: "0.02em" }} data-ai-status="queue.target-options-message">
                 {targetOptionsMessage}
               </div>
             </div>
@@ -475,7 +481,7 @@ export default function ClientStateQueuePanel() {
                 ))}
                 {queueItems.length === 0 && (
                   <tr>
-                    <td colSpan="7" style={{ padding: 8, color: "#777" }} data-ai-state="empty">
+                    <td colSpan="7" style={{ padding: 8, color: "#82dca5" }} data-ai-state="empty">
                       尚無佇列項目
                     </td>
                   </tr>

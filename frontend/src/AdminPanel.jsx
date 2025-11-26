@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { AdminPanelContext } from "./AdminPanelContext.js";
+import "./AdminPanelMatrix.css";
 import {
   activeTabButtonStyle,
   containerStyle,
@@ -29,7 +30,7 @@ export default function AdminPanel({ clientId }) {
 
   return (
     <AdminPanelContext.Provider value={contextValue}>
-      <div style={containerStyle}>
+      <div style={containerStyle} className="admin-matrix">
         <div style={tabRowStyle} role="tablist" aria-label="Admin panel tabs" data-ai-id="admin.tablist">
           <button
             type="button"

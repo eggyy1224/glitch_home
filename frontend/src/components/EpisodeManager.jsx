@@ -139,7 +139,15 @@ export default function EpisodeManager() {
           <ul
             role="list"
             data-ai-id="episode.list"
-            style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8, listStyle: "none", margin: 0 }}
+            style={{
+              maxHeight: 220,
+              overflowY: "auto",
+              border: "1px solid #0f4",
+              padding: 8,
+              listStyle: "none",
+              margin: 0,
+              background: "#000",
+            }}
           >
             {episodeList.length === 0 && <li data-ai-state="empty">尚無 episode</li>}
             {episodeList.map((item) => (
@@ -147,7 +155,15 @@ export default function EpisodeManager() {
                 key={item.id}
                 role="listitem"
                 data-ai-item={`episode:${item.id}`}
-                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 6,
+                  padding: "4px 4px",
+                  borderRadius: 0,
+                  background: "#000",
+                  border: "1px solid #0f4",
+                }}
               >
                 <span style={{ flex: 1 }}>
                   {item.id}
@@ -265,7 +281,7 @@ export default function EpisodeManager() {
               播放 Episode
             </button>
             {episodePlayStatus && (
-              <span style={{ color: "#444" }} role="status" aria-live="polite" data-ai-status="episode.play">
+              <span style={{ color: "#82dca5", letterSpacing: "0.03em" }} role="status" aria-live="polite" data-ai-status="episode.play">
                 {episodePlayStatus}
               </span>
             )}
@@ -275,7 +291,7 @@ export default function EpisodeManager() {
 
       {episodeMessage && (
         <div
-          style={{ marginTop: 8, color: "#444" }}
+          style={{ marginTop: 8, color: "#82dca5", letterSpacing: "0.03em" }}
           role="status"
           aria-live="polite"
           data-ai-status="episode.message"

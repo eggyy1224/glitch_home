@@ -1,30 +1,52 @@
-export const containerStyle = { padding: 16 };
+const accent = "#0f4";
+const accentStrong = "#4f8";
+const border = "#0f4";
+const borderStrong = "#0f4";
+const text = "#c8ffd2";
+const textMuted = "#82dca5";
+const panelBg = "#000";
+const panelBgAlt = "#000";
+const panelShadow = "none";
+const fontFamily = "monospace";
 
-export const tabRowStyle = { display: "flex", gap: 8, marginBottom: 12 };
+export const containerStyle = {
+  padding: 16,
+  position: "relative",
+  zIndex: 1,
+  color: text,
+  fontFamily,
+  lineHeight: 1.5,
+};
+
+export const tabRowStyle = { display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" };
 export const tabPanelStyle = {};
 export const hiddenTabPanelStyle = { ...tabPanelStyle, display: "none" };
 export const tabButtonStyle = {
-  padding: "8px 12px",
-  borderRadius: 6,
-  border: "1px solid #ccc",
-  background: "#111",
-  color: "#f5f5f5",
+  padding: "10px 14px",
+  borderRadius: 0,
+  border: `1px solid ${border}`,
+  background: "#000",
+  color: text,
   cursor: "pointer",
   fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
 };
 export const activeTabButtonStyle = {
   ...tabButtonStyle,
-  background: "#fff",
-  color: "#111",
-  border: "1px solid #333",
+  background: accent,
+  color: "#000",
+  border: `1px solid ${accentStrong}`,
+  fontWeight: 700,
 };
 
 export const boxStyle = {
-  border: "1px solid #ccc",
-  borderRadius: 8,
+  border: `1px solid ${border}`,
+  borderRadius: 0,
   padding: 12,
   marginBottom: 16,
-  background: "#fafafa",
+  background: panelBgAlt,
+  boxShadow: panelShadow,
 };
 
 export const columnsStyle = {
@@ -39,25 +61,34 @@ export const columnStyle = {
   minWidth: 420,
 };
 
-export const labelStyle = { display: "block", fontWeight: 600, marginBottom: 6 };
+export const labelStyle = {
+  display: "block",
+  fontWeight: 600,
+  marginBottom: 6,
+  letterSpacing: "0.05em",
+  color: accentStrong,
+};
 
 export const previewContainerStyle = {
   marginTop: 12,
-  background: "#000",
-  borderRadius: 10,
+  background: panelBg,
+  borderRadius: 0,
   padding: 12,
   position: "relative",
+  border: `1px solid ${borderStrong}`,
+  boxShadow: panelShadow,
 };
 
-export const previewTitleStyle = { marginBottom: 6, fontWeight: 700, color: "#ddd" };
+export const previewTitleStyle = { marginBottom: 6, fontWeight: 800, color: textMuted, letterSpacing: "0.08em" };
 
 export const snapshotPreviewIframeStyle = {
   width: "100%",
   aspectRatio: "16 / 9",
   minHeight: 400,
-  border: "1px solid #333",
-  borderRadius: 8,
-  background: "#111",
+  border: `1px solid ${borderStrong}`,
+  borderRadius: 0,
+  background: "#000",
+  boxShadow: "none",
 };
 
 export const timelinePreviewGridStyle = {
@@ -71,9 +102,10 @@ export const timelinePreviewIframeStyle = {
   width: "100%",
   aspectRatio: "16 / 9",
   minHeight: 340,
-  border: "1px solid #333",
-  borderRadius: 8,
-  background: "#111",
+  border: `1px solid ${borderStrong}`,
+  borderRadius: 0,
+  background: "#000",
+  boxShadow: "none",
 };
 
 export const resizerHandleStyle = {
@@ -82,11 +114,11 @@ export const resizerHandleStyle = {
   bottom: 8,
   width: 14,
   height: 14,
-  borderRadius: 4,
-  background: "#888",
-  border: "1px solid #555",
+  borderRadius: 0,
+  background: "#000",
+  border: `1px solid ${border}`,
   cursor: "nwse-resize",
-  boxShadow: "0 0 0 2px #000",
+  boxShadow: "none",
 };
 
 export const resizerHitboxStyle = {

@@ -273,7 +273,15 @@ export default function TimelineManager() {
           <ul
             role="list"
             data-ai-id="timeline.list"
-            style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #ddd", padding: 8, listStyle: "none", margin: 0 }}
+            style={{
+              maxHeight: 220,
+              overflowY: "auto",
+              border: "1px solid #0f4",
+              padding: 8,
+              listStyle: "none",
+              margin: 0,
+              background: "#000",
+            }}
           >
             {timelineList.length === 0 && <li data-ai-state="empty">尚無 timeline</li>}
             {timelineList.map((item) => (
@@ -281,7 +289,15 @@ export default function TimelineManager() {
                 key={item.id}
                 role="listitem"
                 data-ai-item={`timeline:${item.id}`}
-                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 6,
+                  padding: "4px 4px",
+                  borderRadius: 0,
+                  background: "#000",
+                  border: "1px solid #0f4",
+                }}
               >
                 <span style={{ flex: 1 }}>
                   {item.id} ({item.client_id || "n/a"})
@@ -392,7 +408,7 @@ export default function TimelineManager() {
               播放
             </button>
             {timelinePlayStatus && (
-              <span style={{ color: "#444" }} role="status" aria-live="polite" data-ai-status="timeline.play">
+              <span style={{ color: "#82dca5", letterSpacing: "0.03em" }} role="status" aria-live="polite" data-ai-status="timeline.play">
                 {timelinePlayStatus}
               </span>
             )}
@@ -418,7 +434,7 @@ export default function TimelineManager() {
                 data-ai-id="timeline.preview.iframe"
               />
             ) : (
-              <div style={{ color: "#888" }} data-ai-state="empty">
+              <div style={{ color: "#82dca5" }} data-ai-state="empty">
                 {timelinePreviewError || "無法產生預覽，請確認 steps 有 snapshot，且對應 snapshot 有 panel.url 或 image"}
               </div>
             )}
@@ -430,7 +446,7 @@ export default function TimelineManager() {
                 播放
               </button>
               {timelinePlayError && (
-                <span style={{ color: "#c00" }} role="status" aria-live="polite" data-ai-status="timeline.preview-error">
+                <span style={{ color: "#ff6b6b" }} role="status" aria-live="polite" data-ai-status="timeline.preview-error">
                   {timelinePlayError}
                 </span>
               )}
@@ -445,7 +461,7 @@ export default function TimelineManager() {
                 data-ai-id="timeline.preview.play-iframe"
               />
             ) : (
-              <div style={{ color: "#888" }} data-ai-state="empty">
+              <div style={{ color: "#82dca5" }} data-ai-state="empty">
                 點擊「播放」會以 iframe_mode 在下方預覽完整 timeline（需先儲存服務端資料）
               </div>
             )}
@@ -459,7 +475,7 @@ export default function TimelineManager() {
 
       {timelineMessage && (
         <div
-          style={{ marginTop: 8, color: "#444" }}
+          style={{ marginTop: 8, color: "#82dca5", letterSpacing: "0.03em" }}
           role="status"
           aria-live="polite"
           data-ai-status="timeline.message"

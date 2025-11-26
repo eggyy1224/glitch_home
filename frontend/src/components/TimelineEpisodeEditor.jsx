@@ -591,10 +591,10 @@ export default function TimelineEpisodeEditor() {
         >
           Episode 模式
         </button>
-        <span style={{ color: dirty ? "#d00" : "#444" }} data-ai-status="timeline-episode.dirty">
+        <span style={{ color: dirty ? "#ff6b6b" : "#82dca5", letterSpacing: "0.03em" }} data-ai-status="timeline-episode.dirty">
           {dirty ? "未保存變更" : "已同步"}
         </span>
-        <span style={{ color: "#777" }} data-ai-status="timeline-episode.last-sync">
+        <span style={{ color: "#82dca5" }} data-ai-status="timeline-episode.last-sync">
           最後同步：{formatTs(lastSyncAt) || "--"}
         </span>
         <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -653,10 +653,19 @@ export default function TimelineEpisodeEditor() {
           <ul
             role="list"
             data-ai-id={mode === "timeline" ? "timeline.list" : "episode.list"}
-            style={{ border: "1px solid #ddd", borderRadius: 6, maxHeight: 200, overflowY: "auto", padding: 8, listStyle: "none", margin: 0 }}
+            style={{
+              border: "1px solid #0f4",
+              borderRadius: 0,
+              maxHeight: 200,
+              overflowY: "auto",
+              padding: 8,
+              listStyle: "none",
+              margin: 0,
+              background: "#000",
+            }}
           >
             {activeList.length === 0 && (
-              <li style={{ color: "#777" }} data-ai-state="empty">
+              <li style={{ color: "#82dca5" }} data-ai-state="empty">
                 尚無資料
               </li>
             )}
@@ -758,7 +767,7 @@ export default function TimelineEpisodeEditor() {
                   更新 snapshot 選項
                 </button>
                 {snapshotMessage && (
-                  <span style={{ color: "#777" }} data-ai-status="timeline.snapshot.message">
+                  <span style={{ color: "#82dca5" }} data-ai-status="timeline.snapshot.message">
                     {snapshotMessage}
                   </span>
                 )}
@@ -767,7 +776,13 @@ export default function TimelineEpisodeEditor() {
                 {(timelineData.steps || []).map((step, index) => (
                   <div
                     key={index}
-                    style={{ border: "1px solid #ddd", borderRadius: 6, padding: 8, background: selectedRows.includes(index) ? "#eef6ff" : "#fff" }}
+                    style={{
+                      border: "1px solid #0f4",
+                      borderRadius: 0,
+                      padding: 10,
+                      background: selectedRows.includes(index) ? "#020" : "#000",
+                      boxShadow: "none",
+                    }}
                     data-ai-item={`timeline.step:${index}`}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
@@ -898,7 +913,13 @@ export default function TimelineEpisodeEditor() {
                 {(episodeData.tracks || []).map((track, index) => (
                   <div
                     key={index}
-                    style={{ border: "1px solid #ddd", borderRadius: 6, padding: 8, background: selectedRows.includes(index) ? "#eef6ff" : "#fff" }}
+                    style={{
+                      border: "1px solid #0f4",
+                      borderRadius: 0,
+                      padding: 10,
+                      background: selectedRows.includes(index) ? "#020" : "#000",
+                      boxShadow: "none",
+                    }}
                     data-ai-item={`episode.track:${index}`}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
@@ -1048,11 +1069,11 @@ export default function TimelineEpisodeEditor() {
           <div style={{ marginTop: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>驗證結果</div>
             {validationErrors.length === 0 ? (
-              <div style={{ color: "#0a0" }} data-ai-status="timeline-episode.validation-ok">
+              <div style={{ color: "#3aff85" }} data-ai-status="timeline-episode.validation-ok">
                 未發現錯誤
               </div>
             ) : (
-              <ul style={{ paddingLeft: 16, color: "#c00" }} data-ai-status="timeline-episode.validation-errors">
+              <ul style={{ paddingLeft: 16, color: "#ff6b6b" }} data-ai-status="timeline-episode.validation-errors">
                 {validationErrors.map((err, idx) => (
                   <li key={`${err.path}-${idx}`}>
                     <strong>{err.path}：</strong>
@@ -1077,7 +1098,7 @@ export default function TimelineEpisodeEditor() {
                   data-ai-id="timeline.preview.first-iframe"
                 />
               ) : (
-                <div style={{ color: "#aaa" }} data-ai-status="timeline.preview.first-empty">
+                <div style={{ color: "#82dca5" }} data-ai-status="timeline.preview.first-empty">
                   {timelinePreviewError || "無法產生預覽"}
                 </div>
               )}
@@ -1092,7 +1113,7 @@ export default function TimelineEpisodeEditor() {
                   data-ai-id="timeline.preview.full-iframe"
                 />
               ) : (
-                <div style={{ color: "#aaa" }} data-ai-status="timeline.preview.full-empty">
+                <div style={{ color: "#82dca5" }} data-ai-status="timeline.preview.full-empty">
                   {timelinePlayError || "點擊「以 iframe 預覽」後顯示"}
                 </div>
               )}
@@ -1102,7 +1123,12 @@ export default function TimelineEpisodeEditor() {
       </div>
 
       {message && (
-        <div style={{ marginTop: 8, color: "#444" }} role="status" aria-live="polite" data-ai-status="timeline-episode.message">
+        <div
+          style={{ marginTop: 8, color: "#82dca5", letterSpacing: "0.03em" }}
+          role="status"
+          aria-live="polite"
+          data-ai-status="timeline-episode.message"
+        >
           {message}
         </div>
       )}

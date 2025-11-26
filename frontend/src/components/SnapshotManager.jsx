@@ -217,7 +217,15 @@ export default function SnapshotManager() {
           <ul
             role="list"
             data-ai-id="snapshot.list"
-            style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #ddd", padding: 8, listStyle: "none", margin: 0 }}
+            style={{
+              maxHeight: 200,
+              overflowY: "auto",
+              border: "1px solid #0f4",
+              padding: 8,
+              listStyle: "none",
+              margin: 0,
+              background: "#000",
+            }}
           >
             {snapshotList.length === 0 && <li data-ai-state="empty">尚無 snapshot</li>}
             {snapshotList.map((item) => (
@@ -225,7 +233,15 @@ export default function SnapshotManager() {
                 key={item.name}
                 role="listitem"
                 data-ai-item={`snapshot:${item.name}`}
-                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 6,
+                  padding: "4px 4px",
+                  borderRadius: 0,
+                  background: "#000",
+                  border: "1px solid #0f4",
+                }}
               >
                 <span style={{ flex: 1 }}>{item.name}</span>
                 <button
@@ -351,7 +367,7 @@ export default function SnapshotManager() {
             data-ai-id="snapshot.preview.iframe"
           />
         ) : (
-          <div style={{ color: "#888" }} data-ai-state="empty">
+          <div style={{ color: "#82dca5" }} data-ai-state="empty">
             無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image
           </div>
         )}
@@ -362,7 +378,7 @@ export default function SnapshotManager() {
 
       {snapshotMessage && (
         <div
-          style={{ marginTop: 8, color: "#444" }}
+          style={{ marginTop: 8, color: "#82dca5", letterSpacing: "0.03em" }}
           role="status"
           aria-live="polite"
           data-ai-status="snapshot.message"
