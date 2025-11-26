@@ -35,4 +35,12 @@ describe("useModeParams", () => {
     expect(result.current.clientId).toBe("viewer");
     expect(result.current.shouldLoadKinshipData).toBe(false);
   });
+
+  it("defaults admin mode client id to admin when not provided", () => {
+    setSearch("admin_mode=true");
+    const { result } = renderHook(() => useModeParams());
+
+    expect(result.current.activeMode).toBe(DisplayModes.ADMIN);
+    expect(result.current.clientId).toBe("admin");
+  });
 });

@@ -35,9 +35,7 @@ const snapshotConfig = {
 };
 
 function renderWithContext(ui) {
-  return render(
-    <AdminPanelContext.Provider value={{ defaultClientId: "desktop" }}>{ui}</AdminPanelContext.Provider>,
-  );
+  return render(<AdminPanelContext.Provider value={{ defaultClientId: "desktop" }}>{ui}</AdminPanelContext.Provider>);
 }
 
 beforeEach(() => {

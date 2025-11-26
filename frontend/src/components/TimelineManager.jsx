@@ -35,7 +35,10 @@ export default function TimelineManager() {
   const [timelineJson, setTimelineJson] = useState(() => pretty(defaultTimelinePayload(defaultClientId)));
   const [timelineMessage, setTimelineMessage] = useState("");
   const [timelineCloneId, setTimelineCloneId] = useState("");
-  const [timelineCloneTarget, setTimelineCloneTarget] = useState(defaultClientId || "desktop2");
+  const [timelineCloneTarget, setTimelineCloneTarget] = useState(() => {
+    const base = defaultClientId && defaultClientId !== "admin" ? defaultClientId : "desktop";
+    return base === "desktop" ? "desktop2" : base;
+  });
   const [timelinePreviewSrc, setTimelinePreviewSrc] = useState(null);
   const [timelinePreviewError, setTimelinePreviewError] = useState(null);
   const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);

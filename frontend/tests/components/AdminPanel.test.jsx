@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe("AdminPanel", () => {
   it("切換標籤時載入對應列表並套用預設 client", async () => {
-    render(<AdminPanel clientId="desktop" />);
+    render(<AdminPanel clientId="admin" />);
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
@@ -41,7 +41,7 @@ describe("AdminPanel", () => {
   });
 
   it("切換標籤後不會重置已輸入資料", async () => {
-    render(<AdminPanel clientId="desktop" />);
+    render(<AdminPanel clientId="admin" />);
 
     fireEvent.click(screen.getByRole("tab", { name: "Timeline 管理" }));
     const timelineIdInput = await screen.findByPlaceholderText("新建請輸入 id 或在 JSON 設定");

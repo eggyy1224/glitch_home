@@ -16,7 +16,11 @@ import ClientStateQueuePanel from "./components/ClientStateQueuePanel.jsx";
 export default function AdminPanel({ clientId }) {
   const [activeTab, setActiveTab] = useState("snapshot");
   const [visitedTabs, setVisitedTabs] = useState(["snapshot"]);
-  const contextValue = useMemo(() => ({ defaultClientId: clientId || "desktop" }), [clientId]);
+  const resolvedDefaultClient = useMemo(() => {
+    if (clientId && clientId !== "admin") return clientId;
+    return "desktop";
+  }, [clientId]);
+  const contextValue = useMemo(() => ({ defaultClientId: resolvedDefaultClient }), [resolvedDefaultClient]);
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));

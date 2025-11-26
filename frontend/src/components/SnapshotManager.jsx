@@ -18,12 +18,15 @@ export default function SnapshotManager() {
     return Math.max(Math.min(window.innerWidth - 100, 1200), 720);
   }, []);
 
-  const [snapshotClient, setSnapshotClient] = useState(defaultClientId);
+  const [snapshotClient, setSnapshotClient] = useState(defaultClientId || "desktop");
   const [snapshotList, setSnapshotList] = useState([]);
   const [snapshotName, setSnapshotName] = useState("");
   const [snapshotJson, setSnapshotJson] = useState(() => pretty(minimalConfigPayload(defaultClientId)));
   const [snapshotMessage, setSnapshotMessage] = useState("");
-  const [snapshotCloneTarget, setSnapshotCloneTarget] = useState(defaultClientId || "desktop2");
+  const [snapshotCloneTarget, setSnapshotCloneTarget] = useState(() => {
+    const base = defaultClientId && defaultClientId !== "admin" ? defaultClientId : "desktop";
+    return base === "desktop" ? "desktop2" : base;
+  });
   const [snapshotCloneName, setSnapshotCloneName] = useState("");
   const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
   const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState(defaultPreviewWidth);
