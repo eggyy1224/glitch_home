@@ -60,7 +60,7 @@ describe("SnapshotManager", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /查看 snapshot/i }));
     await waitFor(() => expect(mockGetIframeSnapshot).toHaveBeenCalledWith("desktop", "snapA"));
-    expect(screen.getByTitle("snapshot-preview")).toBeInTheDocument();
+    expect(screen.getByTitle("preview-main")).toBeInTheDocument();
   });
 
   it("變更 client 時自動重新載入列表", async () => {

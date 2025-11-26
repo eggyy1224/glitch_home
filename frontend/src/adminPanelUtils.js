@@ -76,6 +76,20 @@ export function previewSrcFromConfig(config) {
     let src = null;
     if (panel.url) {
       src = panel.url;
+      try {
+        const url = new URL(src, window.location.origin);
+        url.searchParams.set("client", "preview-main");
+        if (url.origin === window.location.origin) {
+          src = `${url.pathname}${url.search}${url.hash}`;
+        } else {
+          src = url.toString();
+        }
+      } catch (err) {
+        // fallback to appending when URL parsing fails
+        const hasQuery = src.includes("?");
+        const joiner = hasQuery ? "&" : "?";
+        src = `${src}${joiner}client=preview-main`;
+      }
     } else if (panel.image) {
       const query = new URLSearchParams({ img: panel.image, static_mode: "true" });
       if (panel.params && typeof panel.params === "object") {
@@ -84,6 +98,7 @@ export function previewSrcFromConfig(config) {
           query.set(String(k), String(v));
         });
       }
+      query.set("client", "preview-main");
       src = `/?${query.toString()}`;
     }
     if (!src) return;
@@ -111,7 +126,7 @@ export function previewSrcFromConfig(config) {
   const qs = new URLSearchParams(entries);
   qs.set("iframe_mode", "true");
   qs.set("iframe_preview", "true");
-  qs.set("client", "snapshot-preview");
+  qs.set("client", "preview-main");
   return `/?${qs.toString()}`;
 }
 

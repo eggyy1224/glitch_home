@@ -341,7 +341,7 @@ export default function SnapshotManager() {
         <div style={previewTitleStyle}>預覽</div>
         {snapshotPreviewSrc ? (
           <iframe
-            title="snapshot-preview"
+            title="preview-main"
             src={snapshotPreviewSrc}
             style={{ ...snapshotPreviewIframeStyle, height: snapshotFrameHeight }}
             sandbox="allow-scripts allow-same-origin"
