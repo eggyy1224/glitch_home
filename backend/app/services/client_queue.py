@@ -702,6 +702,8 @@ class ClientQueueManager:
         target_from_payload = item.payload.get("target_client_id") if isinstance(item.payload, dict) else None
         resolved_target = sanitize_client_id(target_from_payload)
         if not resolved_target:
+            resolved_target = sanitize_client_id(item.client_id)
+        if not resolved_target:
             resolved_target = sanitize_client_id(resolved_timeline.timeline.client_id)
         if not resolved_target and resolved_timeline.steps:
             resolved_target = sanitize_client_id(resolved_timeline.steps[0].client_id)

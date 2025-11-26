@@ -1,10 +1,12 @@
 import asyncio
 from datetime import timedelta
+from types import SimpleNamespace
 from typing import Callable
 
 import pytest
 
-from app.services.client_queue import ClientQueueManager, ClientStateStore, _utcnow
+from app.services import client_queue
+from app.services.client_queue import ClientQueueManager, ClientStateStore, QueueItem, _utcnow
 
 
 async def _wait_until(predicate: Callable[[], bool], timeout: float = 1.0, interval: float = 0.01) -> None:
@@ -184,3 +186,45 @@ async def test_ready_items_precede_future_high_priority() -> None:
 
     assert executed[0] == "ready"
     assert set(executed) == {"future", "ready"}
+
+
+@pytest.mark.asyncio
+async def test_timeline_defaults_to_queue_client_when_no_override(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def fake_load(_timeline_id):
+        return object()
+
+    def fake_resolve(_timeline_obj):
+        return SimpleNamespace(
+            timeline=SimpleNamespace(id="tl-one", client_id="timeline-default"),
+            steps=[SimpleNamespace(client_id="step-default")],
+        )
+
+    class FakeBroadcaster:
+        async def broadcast_timeline_control(self, *, action, timeline_id, target_client_id, options):  # type: ignore[override]
+            captured["action"] = action
+            captured["timeline_id"] = timeline_id
+            captured["target_client_id"] = target_client_id
+            captured["options"] = options
+
+    monkeypatch.setattr(client_queue, "load_iframe_timeline_definition", fake_load)
+    monkeypatch.setattr(client_queue, "resolve_iframe_timeline", fake_resolve)
+    monkeypatch.setattr(client_queue, "realtime_broadcaster", FakeBroadcaster())
+
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, auto_start_workers=False)
+
+    item = QueueItem(
+        id="q1",
+        client_id="wall-2",
+        item_type="timeline",
+        target_id="tl-one",
+        eta=_utcnow(),
+        priority=0,
+    )
+
+    await queue_manager._execute_timeline(item)
+
+    assert captured["target_client_id"] == "wall-2"
+    assert captured["timeline_id"] == "tl-one"
