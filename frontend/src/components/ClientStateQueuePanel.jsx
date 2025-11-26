@@ -1,7 +1,8 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, columnsStyle, columnStyle, labelStyle } from "../AdminPanelStyles.js";
 import { useClientStateQueue } from "../hooks/useClientStateQueue.js";
+import { listEpisodes, listIframeSnapshots, listIframeTimelines } from "../api.js";
 
 function formatTime(value) {
   if (!value) return "--";
@@ -124,6 +125,10 @@ export default function ClientStateQueuePanel() {
   const [retries, setRetries] = useState(0);
   const [etaSeconds, setEtaSeconds] = useState("");
   const [clientOverride, setClientOverride] = useState(defaultClientId || "");
+  const [targetOptions, setTargetOptions] = useState([]);
+  const [targetOptionsMessage, setTargetOptionsMessage] = useState("");
+  const [loadingTargets, setLoadingTargets] = useState(false);
+  const targetRequestRef = useRef(0);
 
   const {
     clients,
@@ -144,6 +149,70 @@ export default function ClientStateQueuePanel() {
   } = useClientStateQueue(defaultClientId);
 
   const activeClient = selectedClient || clientOverride || defaultClientId || "";
+
+  const loadTargetOptions = useCallback(async () => {
+    const requestId = targetRequestRef.current + 1;
+    targetRequestRef.current = requestId;
+    const resolvedType = type;
+    const resolvedClient = activeClient;
+
+    setTargetOptions([]);
+    setLoadingTargets(true);
+    try {
+      if ((resolvedType === "snapshot" || resolvedType === "timeline") && !resolvedClient) {
+        if (requestId === targetRequestRef.current) {
+          setTargetOptionsMessage("請先選擇 client");
+        }
+        return;
+      }
+
+      if (resolvedType === "snapshot") {
+        const data = await listIframeSnapshots(resolvedClient || null);
+        const list = Array.isArray(data?.snapshots) ? data.snapshots : [];
+        if (requestId === targetRequestRef.current) {
+          setTargetOptions(list.map((item) => ({ value: item.name, label: `${item.name}` })));
+          setTargetOptionsMessage(`已載入 ${list.length} 個 snapshot`);
+        }
+      } else if (resolvedType === "timeline") {
+        const data = await listIframeTimelines(resolvedClient || null);
+        const list = Array.isArray(data?.timelines) ? data.timelines : [];
+        if (requestId === targetRequestRef.current) {
+          setTargetOptions(
+            list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          );
+          setTargetOptionsMessage(`已載入 ${list.length} 個 timeline`);
+        }
+      } else {
+        const data = await listEpisodes();
+        const list = Array.isArray(data?.episodes) ? data.episodes : [];
+        if (requestId === targetRequestRef.current) {
+          setTargetOptions(
+            list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          );
+          setTargetOptionsMessage(`已載入 ${list.length} 個 episode`);
+        }
+      }
+    } catch (err) {
+      if (requestId === targetRequestRef.current) {
+        setTargetOptions([]);
+        setTargetOptionsMessage(err.message || "載入可選目標失敗");
+      }
+    } finally {
+      if (requestId === targetRequestRef.current) {
+        setLoadingTargets(false);
+      }
+    }
+  }, [activeClient, type]);
+
+  useEffect(() => {
+    void loadTargetOptions();
+  }, [loadTargetOptions]);
 
   const handleEnqueue = async () => {
     if (!targetId.trim()) {
@@ -233,14 +302,26 @@ export default function ClientStateQueuePanel() {
               <label style={labelStyle} htmlFor="queue-target">
                 Target ID
               </label>
-              <input
-                id="queue-target"
-                type="text"
-                value={targetId}
-                onChange={(e) => setTargetId(e.target.value)}
-                placeholder="snapshot/timeline/episode id"
-                style={{ width: "100%" }}
-              />
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input
+                  id="queue-target"
+                  type="text"
+                  list="queue-target-options"
+                  value={targetId}
+                  onChange={(e) => setTargetId(e.target.value)}
+                  placeholder="snapshot/timeline/episode id"
+                  style={{ width: "100%" }}
+                />
+                <button type="button" onClick={loadTargetOptions} disabled={loadingTargets} style={{ padding: "6px 10px" }}>
+                  {loadingTargets ? "載入中" : "載入選單"}
+                </button>
+              </div>
+              <datalist id="queue-target-options">
+                {targetOptions.map((item) => (
+                  <option key={item.value} value={item.value} label={item.label} />
+                ))}
+              </datalist>
+              <div style={{ marginTop: 4, fontSize: 12, color: "#555" }}>{targetOptionsMessage}</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
