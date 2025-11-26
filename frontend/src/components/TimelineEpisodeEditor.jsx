@@ -10,7 +10,7 @@ import {
   listIframeTimelines,
   playEpisode,
   playIframeTimeline,
-  updateEpisode,
+  updateEpisode as updateEpisodeApi,
   updateIframeTimeline,
 } from "../api.js";
 import { AdminPanelContext } from "../AdminPanelContext";
@@ -156,7 +156,7 @@ export default function TimelineEpisodeEditor() {
     [syncJsonFromData],
   );
 
-  const updateEpisode = useCallback(
+  const setEpisodeState = useCallback(
     (next, { markDirty = true } = {}) => {
       setEpisodeData(next);
       syncJsonFromData(next);
@@ -241,7 +241,7 @@ export default function TimelineEpisodeEditor() {
         } else {
           const data = await fetchEpisode(id, { resolve: false });
           const payload = data.episode || data;
-          updateEpisode(payload, { markDirty: false });
+          setEpisodeState(payload, { markDirty: false });
           setMessage(`已載入 episode ${id}`);
         }
         setDirty(false);
@@ -249,7 +249,7 @@ export default function TimelineEpisodeEditor() {
         setMessage(err.message || "載入失敗");
       }
     },
-    [mode, refreshSnapshots, updateEpisode, updateTimeline],
+    [mode, refreshSnapshots, setEpisodeState, updateTimeline],
   );
 
   const handleSave = useCallback(async () => {
@@ -280,10 +280,10 @@ export default function TimelineEpisodeEditor() {
         const targetId = (payload.id || "").trim();
         if (!targetId) throw new Error("episode id 必填");
         const normalizedPayload = { ...payload, id: targetId };
-        updateEpisode(normalizedPayload);
+        setEpisodeState(normalizedPayload);
         let action = "update";
         try {
-          await updateEpisode(targetId, normalizedPayload, { resolve: false });
+          await updateEpisodeApi(targetId, normalizedPayload, { resolve: false });
         } catch (err) {
           const msg = err?.message || "";
           if (msg.includes("404")) {
@@ -304,7 +304,7 @@ export default function TimelineEpisodeEditor() {
     } finally {
       setIsSaving(false);
     }
-  }, [episodeData, mode, refreshEpisodes, refreshTimelines, timelineData, updateEpisode, updateTimeline]);
+  }, [episodeData, mode, refreshEpisodes, refreshTimelines, setEpisodeState, timelineData, updateTimeline]);
 
   const handleJsonChange = useCallback((text) => {
     setJsonText(text);
@@ -387,12 +387,12 @@ export default function TimelineEpisodeEditor() {
 
   const handleTrackChange = useCallback(
     (index, patch) => {
-      updateEpisode({
+      setEpisodeState({
         ...episodeData,
         tracks: episodeData.tracks.map((track, i) => (i === index ? { ...track, ...patch } : track)),
       });
     },
-    [episodeData, updateEpisode],
+    [episodeData, setEpisodeState],
   );
 
   const addStep = useCallback(() => {
@@ -403,11 +403,11 @@ export default function TimelineEpisodeEditor() {
   }, [defaultClientId, timelineData, updateTimeline]);
 
   const addTrack = useCallback(() => {
-    updateEpisode({
+    setEpisodeState({
       ...episodeData,
       tracks: [...(episodeData.tracks || []), { timelineId: "timeline_x", targetClientId: defaultClientId, offset: 0 }],
     });
-  }, [defaultClientId, episodeData, updateEpisode]);
+  }, [defaultClientId, episodeData, setEpisodeState]);
 
   const moveRow = useCallback(
     (index, delta) => {
@@ -424,10 +424,10 @@ export default function TimelineEpisodeEditor() {
         if (target < 0 || target >= tracks.length) return;
         const [item] = tracks.splice(index, 1);
         tracks.splice(target, 0, item);
-        updateEpisode({ ...episodeData, tracks });
+        setEpisodeState({ ...episodeData, tracks });
       }
     },
-    [episodeData, mode, timelineData, updateEpisode, updateTimeline],
+    [episodeData, mode, timelineData, setEpisodeState, updateTimeline],
   );
 
   const removeRow = useCallback(
@@ -435,11 +435,11 @@ export default function TimelineEpisodeEditor() {
       if (mode === "timeline") {
         updateTimeline({ ...timelineData, steps: timelineData.steps.filter((_, i) => i !== index) });
       } else {
-        updateEpisode({ ...episodeData, tracks: episodeData.tracks.filter((_, i) => i !== index) });
+        setEpisodeState({ ...episodeData, tracks: episodeData.tracks.filter((_, i) => i !== index) });
       }
       setSelectedRows((prev) => prev.filter((i) => i !== index));
     },
-    [episodeData, mode, timelineData, updateEpisode, updateTimeline],
+    [episodeData, mode, setEpisodeState, timelineData, updateTimeline],
   );
 
   const duplicateRow = useCallback(
@@ -453,10 +453,10 @@ export default function TimelineEpisodeEditor() {
         const tracks = [...(episodeData.tracks || [])];
         const target = tracks[index];
         tracks.splice(index + 1, 0, { ...target });
-        updateEpisode({ ...episodeData, tracks });
+        setEpisodeState({ ...episodeData, tracks });
       }
     },
-    [episodeData, mode, timelineData, updateEpisode, updateTimeline],
+    [episodeData, mode, setEpisodeState, timelineData, updateTimeline],
   );
 
   const handleCopy = useCallback(() => {
@@ -476,13 +476,13 @@ export default function TimelineEpisodeEditor() {
         steps: [...(timelineData.steps || []), ...clipboard.items.map((item) => ({ ...item }))],
       });
     } else {
-      updateEpisode({
+      setEpisodeState({
         ...episodeData,
         tracks: [...(episodeData.tracks || []), ...clipboard.items.map((item) => ({ ...item }))],
       });
     }
     setMessage(`已貼上 ${clipboard.items.length} 筆`);
-  }, [clipboard, episodeData, mode, timelineData, updateEpisode, updateTimeline]);
+  }, [clipboard, episodeData, mode, setEpisodeState, timelineData, updateTimeline]);
 
   const handleBatchApply = useCallback(() => {
     if (!selectedRows.length) return;
@@ -495,14 +495,14 @@ export default function TimelineEpisodeEditor() {
       });
     }
     if (mode === "episode" && batchTargetClient) {
-      updateEpisode({
+      setEpisodeState({
         ...episodeData,
         tracks: episodeData.tracks.map((track, idx) =>
           selectedRows.includes(idx) ? { ...track, targetClientId: batchTargetClient } : track,
         ),
       });
     }
-  }, [batchDuration, batchTargetClient, episodeData, mode, selectedRows, timelineData, updateEpisode, updateTimeline]);
+  }, [batchDuration, batchTargetClient, episodeData, mode, selectedRows, setEpisodeState, timelineData, updateTimeline]);
 
   const handlePlayPreview = useCallback(async () => {
     if (mode !== "timeline") return;
@@ -644,7 +644,7 @@ export default function TimelineEpisodeEditor() {
               onChange={(e) =>
                 mode === "timeline"
                   ? updateTimeline({ ...timelineData, id: e.target.value })
-                  : updateEpisode({ ...episodeData, id: e.target.value })
+                  : setEpisodeState({ ...episodeData, id: e.target.value })
               }
               style={{ width: "100%", marginBottom: 8 }}
             />
