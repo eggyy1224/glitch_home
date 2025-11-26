@@ -129,6 +129,7 @@ export default function ClientStateQueuePanel() {
   const [targetOptionsMessage, setTargetOptionsMessage] = useState("");
   const [loadingTargets, setLoadingTargets] = useState(false);
   const targetRequestRef = useRef(0);
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   const {
     clients,
@@ -149,6 +150,11 @@ export default function ClientStateQueuePanel() {
   } = useClientStateQueue(defaultClientId);
 
   const activeClient = selectedClient || clientOverride || defaultClientId || "";
+
+  const filteredClients = useMemo(() => {
+    if (!showActiveOnly) return clients;
+    return clients.filter((client) => client.status && client.status !== "offline");
+  }, [clients, showActiveOnly]);
 
   const loadTargetOptions = useCallback(async () => {
     const requestId = targetRequestRef.current + 1;
@@ -250,19 +256,39 @@ export default function ClientStateQueuePanel() {
         <div style={boxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <h3 style={{ margin: 0 }}>Client 狀態</h3>
-            <button type="button" onClick={() => { refreshStates(); if (selectedClient) refreshQueue(selectedClient); }} style={{ padding: "6px 10px" }}>
-              重新整理
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setShowActiveOnly((v) => !v)}
+                style={{ padding: "6px 10px" }}
+              >
+                {showActiveOnly ? "顯示全部" : "只看線上/idle"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  refreshStates();
+                  if (selectedClient) refreshQueue(selectedClient);
+                }}
+                style={{ padding: "6px 10px" }}
+              >
+                重新整理
+              </button>
+            </div>
           </div>
           <div style={{ fontSize: 12, color: "#555", marginBottom: 8 }}>
-            {loadingState ? "載入中..." : `共 ${clients.length} 台`}
+            {loadingState
+              ? "載入中..."
+              : showActiveOnly
+                ? `顯示 ${filteredClients.length}/${clients.length} 台 (線上/idle)`
+                : `共 ${clients.length} 台`}
             {message && <span style={{ marginLeft: 8, color: "#111" }}>{message}</span>}
           </div>
           <div style={{ display: "grid", gap: 10 }}>
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <ClientCard key={client.client_id || Math.random()} client={client} active={client.client_id === selectedClient} onSelect={setSelectedClient} />
             ))}
-            {clients.length === 0 && <div style={{ color: "#777" }}>尚無 client heartbeat</div>}
+            {filteredClients.length === 0 && <div style={{ color: "#777" }}>尚無 client heartbeat</div>}
           </div>
         </div>
       </div>
