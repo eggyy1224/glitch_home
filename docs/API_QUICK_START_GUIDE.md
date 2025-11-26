@@ -1,7 +1,7 @@
 # 圖像系譜學系統 - API 快速上手指南（For AI Agents）
 
 > **版本**: 1.1  
-> **最後更新**: 2025-11-26  
+> **最後更新**: 2025-11-27  
 > **目標讀者**: AI Assistant / Agent
 
 ---
@@ -1037,6 +1037,15 @@ curl -X POST http://localhost:8000/api/episodes/ep_opening/play \
 ```
 
 回傳的 `tracks[]` 會列出實際發送的 target_client_id 與 options（autoPlay/loop/forceIframeMode/startStep/startAt/commandId），以便調試。
+
+### Admin Panel：Timeline/Episode Editor
+
+- 位置：前端 Admin Panel 新分頁「Timeline/Episode Editor」，支援同時編輯 timeline 與 episode。
+- 清單：左側可載入現有 timeline/episode（以 `resolve=false` 拿原始 JSON），並可用 id 或 client 篩選。
+- 表單與 JSON：表單與 JSON 互相同步，可鎖定 JSON；內建驗證會標示缺少 id/steps/tracks 等錯誤。
+- 快捷：steps/tracks 支援複選複製/貼上、批次 duration 或 targetClientId、上下移動與複製；snapshot 選單會跟著載入的 timeline 自動切換 client 並可重新抓取清單。
+- 播放預覽：按「以 iframe 預覽 timeline」會在 dirty 時自動先儲存，再顯示首段 snapshot 預覽與整段播放 iframe；可直接播到 client，Episode 也支援輸入 target map 覆寫後送出 play。
+- 範例檔：`backend/metadata/timelines/iframe/new_timeline_test.json` 可直接載入測試，也可複製後調整步驟與 snapshot。
 
 ### Step 動作欄位：subtitle / caption / tts
 
