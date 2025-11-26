@@ -78,8 +78,8 @@ describe("TimelineEpisodeEditor", () => {
 
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
-    const loadButtons = await screen.findAllByRole("button", { name: "載入" });
-    fireEvent.click(loadButtons[0]);
+    const loadButton = await screen.findByRole("button", { name: /載入 timeline demo_tl/ });
+    fireEvent.click(loadButton);
 
     await waitFor(() => expect(mockFetchIframeTimeline).toHaveBeenCalledWith("demo_tl", { resolve: false }));
     await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenLastCalledWith("wall"));
@@ -119,7 +119,7 @@ describe("TimelineEpisodeEditor", () => {
   it("Episode 播放可解析覆寫 map 並送出 play 指令", async () => {
     renderWithContext(<TimelineEpisodeEditor />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Episode 模式" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
     fireEvent.change(screen.getByLabelText("Episode ID"), { target: { value: "ep-demo" } });
     fireEvent.change(screen.getByLabelText(/目標 map 覆寫/), { target: { value: "t1:desktop2,t2:mobile" } });
     fireEvent.click(screen.getByRole("button", { name: "播放 Episode（含覆寫）" }));

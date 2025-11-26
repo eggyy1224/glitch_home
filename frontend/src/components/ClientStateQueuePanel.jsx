@@ -47,6 +47,10 @@ function ClientCard({ client, active, onSelect }) {
     <button
       type="button"
       onClick={() => onSelect(id)}
+      data-ai-item={`client:${id || "unknown"}`}
+      data-ai-action="state-queue.select-client"
+      aria-pressed={active}
+      aria-label={`client ${id || "未命名"} 狀態 ${status || "unknown"}`}
       style={{
         width: "100%",
         textAlign: "left",
@@ -87,7 +91,7 @@ function ClientCard({ client, active, onSelect }) {
 function QueueRow({ item, onCancel, onMoveFront, onMoveBack, onDelay, onForceStop }) {
   const isStopSupported = item.type === "timeline" || item.type === "episode";
   return (
-    <tr>
+    <tr data-ai-item={`queue:${item.id}`}>
       <td>{item.type}</td>
       <td>{item.target_id}</td>
       <td>{item.status}</td>
@@ -95,20 +99,26 @@ function QueueRow({ item, onCancel, onMoveFront, onMoveBack, onDelay, onForceSto
       <td>{formatTime(item.eta)}</td>
       <td>{formatTime(item.updated_at)}</td>
       <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <button type="button" onClick={() => onCancel(item)} style={{ padding: "4px 8px" }}>
+        <button type="button" onClick={() => onCancel(item)} style={{ padding: "4px 8px" }} data-ai-action="queue.cancel">
           取消
         </button>
-        <button type="button" onClick={() => onMoveFront(item)} style={{ padding: "4px 8px" }}>
+        <button type="button" onClick={() => onMoveFront(item)} style={{ padding: "4px 8px" }} data-ai-action="queue.move-front">
           插隊
         </button>
-        <button type="button" onClick={() => onMoveBack(item)} style={{ padding: "4px 8px" }}>
+        <button type="button" onClick={() => onMoveBack(item)} style={{ padding: "4px 8px" }} data-ai-action="queue.move-back">
           延後
         </button>
-        <button type="button" onClick={() => onDelay(item, 30)} style={{ padding: "4px 8px" }}>
+        <button type="button" onClick={() => onDelay(item, 30)} style={{ padding: "4px 8px" }} data-ai-action="queue.delay">
           +30s
         </button>
         {isStopSupported && (
-          <button type="button" onClick={() => onForceStop(item)} style={{ padding: "4px 8px", background: "#fee2e2" }}>
+          <button
+            type="button"
+            onClick={() => onForceStop(item)}
+            style={{ padding: "4px 8px", background: "#fee2e2" }}
+            data-ai-action="queue.force-stop"
+            data-ai-danger="true"
+          >
             停止播放
           </button>
         )}
@@ -251,8 +261,8 @@ export default function ClientStateQueuePanel() {
   }, [currentClientState]);
 
   return (
-    <div style={columnsStyle}>
-      <div style={{ ...columnStyle, minWidth: 360 }}>
+    <div style={columnsStyle} data-ai-id="admin.state-queue" data-ai-section="admin.state-queue">
+      <div style={{ ...columnStyle, minWidth: 360 }} data-ai-section="state-queue.clients">
         <div style={boxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <h3 style={{ margin: 0 }}>Client 狀態</h3>
@@ -261,6 +271,7 @@ export default function ClientStateQueuePanel() {
                 type="button"
                 onClick={() => setShowActiveOnly((v) => !v)}
                 style={{ padding: "6px 10px" }}
+                data-ai-action="state-queue.toggle-active-only"
               >
                 {showActiveOnly ? "顯示全部" : "只看線上/idle"}
               </button>
@@ -271,6 +282,7 @@ export default function ClientStateQueuePanel() {
                   if (selectedClient) refreshQueue(selectedClient);
                 }}
                 style={{ padding: "6px 10px" }}
+                data-ai-action="state-queue.refresh"
               >
                 重新整理
               </button>
@@ -282,21 +294,31 @@ export default function ClientStateQueuePanel() {
               : showActiveOnly
                 ? `顯示 ${filteredClients.length}/${clients.length} 台 (線上/idle)`
                 : `共 ${clients.length} 台`}
-            {message && <span style={{ marginLeft: 8, color: "#111" }}>{message}</span>}
+            {message && (
+              <span style={{ marginLeft: 8, color: "#111" }} data-ai-status="state-queue.clients-message">
+                {message}
+              </span>
+            )}
           </div>
-          <div style={{ display: "grid", gap: 10 }}>
+          <div style={{ display: "grid", gap: 10 }} role="list" data-ai-id="state-queue.client-list">
             {filteredClients.map((client) => (
               <ClientCard key={client.client_id || Math.random()} client={client} active={client.client_id === selectedClient} onSelect={setSelectedClient} />
             ))}
-            {filteredClients.length === 0 && <div style={{ color: "#777" }}>尚無 client heartbeat</div>}
+            {filteredClients.length === 0 && (
+              <div style={{ color: "#777" }} data-ai-state="empty">
+                尚無 client heartbeat
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div style={{ ...columnStyle, minWidth: 520 }}>
+      <div style={{ ...columnStyle, minWidth: 520 }} data-ai-section="state-queue.controls">
         <div style={boxStyle}>
           <h3 style={{ marginTop: 0 }}>佇列控制</h3>
-          <div style={{ marginBottom: 8, color: "#333" }}>{currentHeadline}</div>
+          <div style={{ marginBottom: 8, color: "#333" }} data-ai-status="state-queue.headline">
+            {currentHeadline}
+          </div>
           <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
             <div>
               <label style={labelStyle} htmlFor="queue-client">
@@ -312,13 +334,20 @@ export default function ClientStateQueuePanel() {
                 }}
                 placeholder="client id"
                 style={{ width: 180 }}
+                data-ai-field="queue.client"
               />
             </div>
             <div>
               <label style={labelStyle} htmlFor="queue-type">
                 類型
               </label>
-              <select id="queue-type" value={type} onChange={(e) => setType(e.target.value)} style={{ padding: 6 }}>
+              <select
+                id="queue-type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                style={{ padding: 6 }}
+                data-ai-field="queue.type"
+              >
                 <option value="snapshot">snapshot</option>
                 <option value="timeline">timeline</option>
                 <option value="episode">episode</option>
@@ -337,8 +366,15 @@ export default function ClientStateQueuePanel() {
                   onChange={(e) => setTargetId(e.target.value)}
                   placeholder="snapshot/timeline/episode id"
                   style={{ width: "100%" }}
+                  data-ai-field="queue.target-id"
                 />
-                <button type="button" onClick={loadTargetOptions} disabled={loadingTargets} style={{ padding: "6px 10px" }}>
+                <button
+                  type="button"
+                  onClick={loadTargetOptions}
+                  disabled={loadingTargets}
+                  style={{ padding: "6px 10px" }}
+                  data-ai-action="queue.load-options"
+                >
                   {loadingTargets ? "載入中" : "載入選單"}
                 </button>
               </div>
@@ -347,7 +383,9 @@ export default function ClientStateQueuePanel() {
                   <option key={item.value} value={item.value} label={item.label} />
                 ))}
               </datalist>
-              <div style={{ marginTop: 4, fontSize: 12, color: "#555" }}>{targetOptionsMessage}</div>
+              <div style={{ marginTop: 4, fontSize: 12, color: "#555" }} data-ai-status="queue.target-options-message">
+                {targetOptionsMessage}
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -362,6 +400,7 @@ export default function ClientStateQueuePanel() {
                 onChange={(e) => setPriority(e.target.value)}
                 style={{ width: 120 }}
                 placeholder="0"
+                data-ai-field="queue.priority"
               />
             </div>
             <div>
@@ -374,6 +413,7 @@ export default function ClientStateQueuePanel() {
                 value={retries}
                 onChange={(e) => setRetries(Number(e.target.value))}
                 style={{ width: 120 }}
+                data-ai-field="queue.retries"
               />
             </div>
             <div>
@@ -387,10 +427,11 @@ export default function ClientStateQueuePanel() {
                 onChange={(e) => setEtaSeconds(e.target.value)}
                 style={{ width: 140 }}
                 placeholder="立即"
+                data-ai-field="queue.eta"
               />
             </div>
           </div>
-          <button type="button" onClick={handleEnqueue} style={{ padding: "8px 14px", fontWeight: 700 }}>
+          <button type="button" onClick={handleEnqueue} style={{ padding: "8px 14px", fontWeight: 700 }} data-ai-action="queue.enqueue">
             派送到佇列
           </button>
         </div>
@@ -398,12 +439,17 @@ export default function ClientStateQueuePanel() {
         <div style={boxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <h3 style={{ margin: 0 }}>佇列列表 {loadingQueue && <span style={{ fontSize: 12 }}>(載入中)</span>}</h3>
-            <button type="button" onClick={() => refreshQueue(selectedClient || clientOverride)} style={{ padding: "6px 10px" }}>
+            <button
+              type="button"
+              onClick={() => refreshQueue(selectedClient || clientOverride)}
+              style={{ padding: "6px 10px" }}
+              data-ai-action="queue.reload"
+            >
               重新整理
             </button>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }} data-ai-id="queue.table">
               <thead>
                 <tr style={{ textAlign: "left" }}>
                   <th>type</th>
@@ -429,7 +475,7 @@ export default function ClientStateQueuePanel() {
                 ))}
                 {queueItems.length === 0 && (
                   <tr>
-                    <td colSpan="7" style={{ padding: 8, color: "#777" }}>
+                    <td colSpan="7" style={{ padding: 8, color: "#777" }} data-ai-state="empty">
                       尚無佇列項目
                     </td>
                   </tr>

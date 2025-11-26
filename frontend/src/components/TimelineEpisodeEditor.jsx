@@ -560,12 +560,22 @@ export default function TimelineEpisodeEditor() {
   const activeList = mode === "timeline" ? timelineList : episodeList;
 
   return (
-    <div style={boxStyle} data-ai-id="admin.timeline-episode-editor">
-      <div style={{ marginBottom: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+    <div style={boxStyle} data-ai-id="admin.timeline-episode-editor" data-ai-section="admin.timeline-episode-editor">
+      <div
+        style={{ marginBottom: 8, display: "flex", gap: 8, flexWrap: "wrap" }}
+        role="tablist"
+        aria-label="Timeline 或 Episode 模式選擇"
+        data-ai-id="timeline-episode.mode-switch"
+      >
         <button
           type="button"
           onClick={() => handleModeChange("timeline")}
           style={{ fontWeight: mode === "timeline" ? 800 : 500 }}
+          role="tab"
+          aria-selected={mode === "timeline"}
+          aria-controls="timeline-editor-panel"
+          id="timeline-editor-tab"
+          data-ai-action="timeline-episode.switch-timeline"
         >
           Timeline 模式
         </button>
@@ -573,24 +583,40 @@ export default function TimelineEpisodeEditor() {
           type="button"
           onClick={() => handleModeChange("episode")}
           style={{ fontWeight: mode === "episode" ? 800 : 500 }}
+          role="tab"
+          aria-selected={mode === "episode"}
+          aria-controls="episode-editor-panel"
+          id="episode-editor-tab"
+          data-ai-action="timeline-episode.switch-episode"
         >
           Episode 模式
         </button>
-        <span style={{ color: dirty ? "#d00" : "#444" }}>{dirty ? "未保存變更" : "已同步"}</span>
-        <span style={{ color: "#777" }}>最後同步：{formatTs(lastSyncAt) || "--"}</span>
+        <span style={{ color: dirty ? "#d00" : "#444" }} data-ai-status="timeline-episode.dirty">
+          {dirty ? "未保存變更" : "已同步"}
+        </span>
+        <span style={{ color: "#777" }} data-ai-status="timeline-episode.last-sync">
+          最後同步：{formatTs(lastSyncAt) || "--"}
+        </span>
         <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <input
             type="checkbox"
             checked={jsonLocked}
             onChange={(e) => setJsonLocked(e.target.checked)}
             aria-label="鎖定 JSON"
+            data-ai-field="timeline-episode.json-lock"
           />
           鎖定 JSON 同步
         </label>
       </div>
 
       <div style={columnsStyle}>
-        <div style={columnStyle}>
+        <div
+          style={columnStyle}
+          role="tabpanel"
+          aria-labelledby={mode === "timeline" ? "timeline-editor-tab" : "episode-editor-tab"}
+          id={mode === "timeline" ? "timeline-editor-panel" : "episode-editor-panel"}
+          data-ai-section={mode === "timeline" ? "timeline.editor" : "episode.editor"}
+        >
           <div style={{ marginBottom: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <label style={labelStyle} htmlFor="timeline-search">
               {mode === "timeline" ? "Timeline 列表" : "Episode 列表"}
@@ -603,6 +629,7 @@ export default function TimelineEpisodeEditor() {
                 onChange={(e) => setTimelineFilter(e.target.value)}
                 placeholder="client 篩選"
                 style={{ width: 140 }}
+                data-ai-field="timeline.filter-client"
               />
             ) : (
               <input
@@ -612,26 +639,49 @@ export default function TimelineEpisodeEditor() {
                 onChange={(e) => setEpisodeFilter(e.target.value)}
                 placeholder="id 篩選"
                 style={{ width: 140 }}
+                data-ai-field="episode.filter-id"
               />
             )}
-            <button type="button" onClick={mode === "timeline" ? refreshTimelines : refreshEpisodes}>
+            <button
+              type="button"
+              onClick={mode === "timeline" ? refreshTimelines : refreshEpisodes}
+              data-ai-action={mode === "timeline" ? "timeline.reload-list" : "episode.reload-list"}
+            >
               重新載入
             </button>
           </div>
-          <div style={{ border: "1px solid #ddd", borderRadius: 6, maxHeight: 200, overflowY: "auto", padding: 8 }}>
-            {activeList.length === 0 && <div style={{ color: "#777" }}>尚無資料</div>}
+          <ul
+            role="list"
+            data-ai-id={mode === "timeline" ? "timeline.list" : "episode.list"}
+            style={{ border: "1px solid #ddd", borderRadius: 6, maxHeight: 200, overflowY: "auto", padding: 8, listStyle: "none", margin: 0 }}
+          >
+            {activeList.length === 0 && (
+              <li style={{ color: "#777" }} data-ai-state="empty">
+                尚無資料
+              </li>
+            )}
             {activeList.map((item) => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+              <li
+                key={item.id}
+                role="listitem"
+                data-ai-item={`${mode}:${item.id}`}
+                style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+              >
                 <div style={{ flex: 1 }}>
                   {item.id}
                   {mode === "timeline" ? ` (${item.client_id || "n/a"})` : ""}
                 </div>
-                <button type="button" onClick={() => handleLoadSelected(item.id)}>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSelected(item.id)}
+                  data-ai-action={mode === "timeline" ? "timeline.load" : "episode.load"}
+                  aria-label={`載入 ${mode} ${item.id}`}
+                >
                   載入
                 </button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
 
           <div style={{ marginTop: 10 }}>
             <label style={labelStyle} htmlFor="active-id">
@@ -647,19 +697,25 @@ export default function TimelineEpisodeEditor() {
                   : setEpisodeState({ ...episodeData, id: e.target.value })
               }
               style={{ width: "100%", marginBottom: 8 }}
+              data-ai-field={mode === "timeline" ? "timeline.id" : "episode.id"}
             />
           </div>
 
           {mode === "timeline" ? (
-            <div>
+            <div data-ai-section="timeline.steps">
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
-                <button type="button" onClick={addStep}>
+                <button type="button" onClick={addStep} data-ai-action="timeline.step.add">
                   新增 step
                 </button>
-                <button type="button" onClick={handleCopy} disabled={!selectedRows.length}>
+                <button type="button" onClick={handleCopy} disabled={!selectedRows.length} data-ai-action="timeline.step.copy">
                   複製選取
                 </button>
-                <button type="button" onClick={handlePaste} disabled={!clipboard || clipboard.mode !== "timeline"}>
+                <button
+                  type="button"
+                  onClick={handlePaste}
+                  disabled={!clipboard || clipboard.mode !== "timeline"}
+                  data-ai-action="timeline.step.paste"
+                >
                   貼上
                 </button>
                 <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -669,8 +725,14 @@ export default function TimelineEpisodeEditor() {
                     value={batchDuration}
                     onChange={(e) => setBatchDuration(e.target.value)}
                     style={{ width: 100 }}
+                    data-ai-field="timeline.batch.duration"
                   />
-                  <button type="button" onClick={handleBatchApply} disabled={!batchDuration || !selectedRows.length}>
+                  <button
+                    type="button"
+                    onClick={handleBatchApply}
+                    disabled={!batchDuration || !selectedRows.length}
+                    data-ai-action="timeline.step.batch-duration"
+                  >
                     套用
                   </button>
                 </label>
@@ -682,6 +744,7 @@ export default function TimelineEpisodeEditor() {
                   value={snapshotClient || ""}
                   onChange={(e) => setSnapshotClient(e.target.value)}
                   style={{ width: 140 }}
+                  data-ai-field="timeline.snapshot-client"
                 />
                 <input
                   type="text"
@@ -689,17 +752,23 @@ export default function TimelineEpisodeEditor() {
                   value={snapshotKeyword}
                   onChange={(e) => setSnapshotKeyword(e.target.value)}
                   style={{ width: 140 }}
+                  data-ai-field="timeline.snapshot-keyword"
                 />
-                <button type="button" onClick={refreshSnapshots}>
+                <button type="button" onClick={refreshSnapshots} data-ai-action="timeline.snapshot.refresh">
                   更新 snapshot 選項
                 </button>
-                {snapshotMessage && <span style={{ color: "#777" }}>{snapshotMessage}</span>}
+                {snapshotMessage && (
+                  <span style={{ color: "#777" }} data-ai-status="timeline.snapshot.message">
+                    {snapshotMessage}
+                  </span>
+                )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {(timelineData.steps || []).map((step, index) => (
                   <div
                     key={index}
                     style={{ border: "1px solid #ddd", borderRadius: 6, padding: 8, background: selectedRows.includes(index) ? "#eef6ff" : "#fff" }}
+                    data-ai-item={`timeline.step:${index}`}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -708,19 +777,36 @@ export default function TimelineEpisodeEditor() {
                           checked={selectedRows.includes(index)}
                           onChange={() => setSelectedRows((prev) => toggleIndex(prev, index))}
                           aria-label={`選取 step ${index + 1}`}
+                          data-ai-field={`timeline.step[${index}].selected`}
                         />
                         Step {index + 1}
                       </label>
-                      <button type="button" onClick={() => moveRow(index, -1)} aria-label="上移">
+                      <button
+                        type="button"
+                        onClick={() => moveRow(index, -1)}
+                        aria-label="上移"
+                        data-ai-action="timeline.step.move-up"
+                      >
                         ↑
                       </button>
-                      <button type="button" onClick={() => moveRow(index, 1)} aria-label="下移">
+                      <button
+                        type="button"
+                        onClick={() => moveRow(index, 1)}
+                        aria-label="下移"
+                        data-ai-action="timeline.step.move-down"
+                      >
                         ↓
                       </button>
-                      <button type="button" onClick={() => duplicateRow(index)} aria-label="複製 step">
+                      <button type="button" onClick={() => duplicateRow(index)} aria-label="複製 step" data-ai-action="timeline.step.duplicate">
                         複製
                       </button>
-                      <button type="button" onClick={() => removeRow(index)} aria-label="刪除 step">
+                      <button
+                        type="button"
+                        onClick={() => removeRow(index)}
+                        aria-label="刪除 step"
+                        data-ai-action="timeline.step.delete"
+                        data-ai-danger="true"
+                      >
                         刪除
                       </button>
                     </div>
@@ -730,6 +816,7 @@ export default function TimelineEpisodeEditor() {
                         <select
                           value={snapshotValueForSelect(step, timelineData, snapshotClient)}
                           onChange={(e) => handleStepChange(index, { snapshot: e.target.value })}
+                          data-ai-field={`timeline.step[${index}].snapshot`}
                         >
                           <option value="">-- 選擇 snapshot --</option>
                           {snapshotOptions.map((opt) => (
@@ -745,6 +832,7 @@ export default function TimelineEpisodeEditor() {
                           type="number"
                           value={step.duration ?? ""}
                           onChange={(e) => handleStepChange(index, { duration: Number(e.target.value) })}
+                          data-ai-field={`timeline.step[${index}].duration`}
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column" }}>
@@ -753,6 +841,7 @@ export default function TimelineEpisodeEditor() {
                           type="text"
                           value={step.label || ""}
                           onChange={(e) => handleStepChange(index, { label: e.target.value })}
+                          data-ai-field={`timeline.step[${index}].label`}
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column" }}>
@@ -761,6 +850,7 @@ export default function TimelineEpisodeEditor() {
                           type="text"
                           value={step.clientId || step.client_id || ""}
                           onChange={(e) => handleStepChange(index, { clientId: e.target.value })}
+                          data-ai-field={`timeline.step[${index}].client`}
                         />
                       </label>
                     </div>
@@ -769,15 +859,20 @@ export default function TimelineEpisodeEditor() {
               </div>
             </div>
           ) : (
-            <div>
+            <div data-ai-section="episode.tracks">
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
-                <button type="button" onClick={addTrack}>
+                <button type="button" onClick={addTrack} data-ai-action="episode.track.add">
                   新增 track
                 </button>
-                <button type="button" onClick={handleCopy} disabled={!selectedRows.length}>
+                <button type="button" onClick={handleCopy} disabled={!selectedRows.length} data-ai-action="episode.track.copy">
                   複製選取
                 </button>
-                <button type="button" onClick={handlePaste} disabled={!clipboard || clipboard.mode !== "episode"}>
+                <button
+                  type="button"
+                  onClick={handlePaste}
+                  disabled={!clipboard || clipboard.mode !== "episode"}
+                  data-ai-action="episode.track.paste"
+                >
                   貼上
                 </button>
                 <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -787,8 +882,14 @@ export default function TimelineEpisodeEditor() {
                     value={batchTargetClient}
                     onChange={(e) => setBatchTargetClient(e.target.value)}
                     style={{ width: 160 }}
+                    data-ai-field="episode.batch.target-client"
                   />
-                  <button type="button" onClick={handleBatchApply} disabled={!batchTargetClient || !selectedRows.length}>
+                  <button
+                    type="button"
+                    onClick={handleBatchApply}
+                    disabled={!batchTargetClient || !selectedRows.length}
+                    data-ai-action="episode.track.batch-target"
+                  >
                     套用
                   </button>
                 </label>
@@ -798,6 +899,7 @@ export default function TimelineEpisodeEditor() {
                   <div
                     key={index}
                     style={{ border: "1px solid #ddd", borderRadius: 6, padding: 8, background: selectedRows.includes(index) ? "#eef6ff" : "#fff" }}
+                    data-ai-item={`episode.track:${index}`}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -806,19 +908,36 @@ export default function TimelineEpisodeEditor() {
                           checked={selectedRows.includes(index)}
                           onChange={() => setSelectedRows((prev) => toggleIndex(prev, index))}
                           aria-label={`選取 track ${index + 1}`}
+                          data-ai-field={`episode.track[${index}].selected`}
                         />
                         Track {index + 1}
                       </label>
-                      <button type="button" onClick={() => moveRow(index, -1)} aria-label="上移">
+                      <button
+                        type="button"
+                        onClick={() => moveRow(index, -1)}
+                        aria-label="上移"
+                        data-ai-action="episode.track.move-up"
+                      >
                         ↑
                       </button>
-                      <button type="button" onClick={() => moveRow(index, 1)} aria-label="下移">
+                      <button
+                        type="button"
+                        onClick={() => moveRow(index, 1)}
+                        aria-label="下移"
+                        data-ai-action="episode.track.move-down"
+                      >
                         ↓
                       </button>
-                      <button type="button" onClick={() => duplicateRow(index)} aria-label="複製 track">
+                      <button type="button" onClick={() => duplicateRow(index)} aria-label="複製 track" data-ai-action="episode.track.duplicate">
                         複製
                       </button>
-                      <button type="button" onClick={() => removeRow(index)} aria-label="刪除 track">
+                      <button
+                        type="button"
+                        onClick={() => removeRow(index)}
+                        aria-label="刪除 track"
+                        data-ai-action="episode.track.delete"
+                        data-ai-danger="true"
+                      >
                         刪除
                       </button>
                     </div>
@@ -829,6 +948,7 @@ export default function TimelineEpisodeEditor() {
                           type="text"
                           value={track.timelineId || track.timeline_id || ""}
                           onChange={(e) => handleTrackChange(index, { timelineId: e.target.value })}
+                          data-ai-field={`episode.track[${index}].timeline-id`}
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column" }}>
@@ -837,6 +957,7 @@ export default function TimelineEpisodeEditor() {
                           type="text"
                           value={track.targetClientId || track.target_client_id || ""}
                           onChange={(e) => handleTrackChange(index, { targetClientId: e.target.value })}
+                          data-ai-field={`episode.track[${index}].target-client`}
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column" }}>
@@ -845,6 +966,7 @@ export default function TimelineEpisodeEditor() {
                           type="number"
                           value={track.offset ?? track.delay ?? 0}
                           onChange={(e) => handleTrackChange(index, { offset: Number(e.target.value) })}
+                          data-ai-field={`episode.track[${index}].offset`}
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column" }}>
@@ -853,6 +975,7 @@ export default function TimelineEpisodeEditor() {
                           type="text"
                           value={track.label || ""}
                           onChange={(e) => handleTrackChange(index, { label: e.target.value })}
+                          data-ai-field={`episode.track[${index}].label`}
                         />
                       </label>
                     </div>
@@ -869,34 +992,35 @@ export default function TimelineEpisodeEditor() {
                   value={episodeTargetOverride}
                   onChange={(e) => setEpisodeTargetOverride(e.target.value)}
                   style={{ width: "100%" }}
+                  data-ai-field="episode.target-override"
                 />
               </div>
             </div>
           )}
 
           <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={handleSave} disabled={isSaving}>
+            <button type="button" onClick={handleSave} disabled={isSaving} data-ai-action="timeline-episode.save">
               {isSaving ? "儲存中" : "儲存"}
             </button>
             {mode === "timeline" && (
-              <button type="button" onClick={handlePlayTimelineToClient}>
+              <button type="button" onClick={handlePlayTimelineToClient} data-ai-action="timeline.play-client">
                 直接播放到 client
               </button>
             )}
             {mode === "timeline" && (
-              <button type="button" onClick={handlePlayPreview}>
+              <button type="button" onClick={handlePlayPreview} data-ai-action="timeline.preview-play">
                 以 iframe 預覽 timeline
               </button>
             )}
             {mode === "episode" && (
-              <button type="button" onClick={handlePlayEpisode}>
+              <button type="button" onClick={handlePlayEpisode} data-ai-action="episode.play">
                 播放 Episode（含覆寫）
               </button>
             )}
           </div>
         </div>
 
-        <div style={columnStyle}>
+        <div style={columnStyle} data-ai-section="timeline-episode.json-preview">
           <label style={labelStyle} htmlFor="json-area">
             JSON（雙向同步）
           </label>
@@ -905,12 +1029,18 @@ export default function TimelineEpisodeEditor() {
             style={{ width: "100%", height: 240, fontFamily: "monospace" }}
             value={jsonText}
             onChange={(e) => handleJsonChange(e.target.value)}
+            data-ai-field="timeline-episode.json"
           />
           <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => syncJsonFromData(mode === "timeline" ? timelineData : episodeData)} disabled={jsonLocked}>
+            <button
+              type="button"
+              onClick={() => syncJsonFromData(mode === "timeline" ? timelineData : episodeData)}
+              disabled={jsonLocked}
+              data-ai-action="timeline-episode.sync-from-form"
+            >
               以表單覆寫 JSON
             </button>
-            <button type="button" onClick={() => setJsonLocked((prev) => !prev)}>
+            <button type="button" onClick={() => setJsonLocked((prev) => !prev)} data-ai-action="timeline-episode.toggle-json-lock">
               {jsonLocked ? "解除鎖定" : "鎖定 JSON"}
             </button>
           </div>
@@ -918,9 +1048,11 @@ export default function TimelineEpisodeEditor() {
           <div style={{ marginTop: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>驗證結果</div>
             {validationErrors.length === 0 ? (
-              <div style={{ color: "#0a0" }}>未發現錯誤</div>
+              <div style={{ color: "#0a0" }} data-ai-status="timeline-episode.validation-ok">
+                未發現錯誤
+              </div>
             ) : (
-              <ul style={{ paddingLeft: 16, color: "#c00" }}>
+              <ul style={{ paddingLeft: 16, color: "#c00" }} data-ai-status="timeline-episode.validation-errors">
                 {validationErrors.map((err, idx) => (
                   <li key={`${err.path}-${idx}`}>
                     <strong>{err.path}：</strong>
@@ -932,17 +1064,22 @@ export default function TimelineEpisodeEditor() {
           </div>
 
           {mode === "timeline" && (
-            <div style={previewContainerStyle}>
-              <div style={previewTitleStyle}>首段 snapshot 預覽</div>
+            <div style={previewContainerStyle} data-ai-section="timeline.preview">
+              <div style={previewTitleStyle} data-ai-section="timeline.preview.first">
+                首段 snapshot 預覽
+              </div>
               {timelinePreviewSrc ? (
                 <iframe
                   title="timeline-first-preview"
                   src={timelinePreviewSrc}
                   style={{ ...timelinePreviewIframeStyle, minHeight: 260 }}
                   sandbox="allow-scripts allow-same-origin"
+                  data-ai-id="timeline.preview.first-iframe"
                 />
               ) : (
-                <div style={{ color: "#aaa" }}>{timelinePreviewError || "無法產生預覽"}</div>
+                <div style={{ color: "#aaa" }} data-ai-status="timeline.preview.first-empty">
+                  {timelinePreviewError || "無法產生預覽"}
+                </div>
               )}
               <div style={{ ...previewTitleStyle, marginTop: 10 }}>整段播放預覽</div>
               {timelinePlaySrc ? (
@@ -952,9 +1089,12 @@ export default function TimelineEpisodeEditor() {
                   src={timelinePlaySrc}
                   style={{ ...timelinePreviewIframeStyle, minHeight: 260 }}
                   sandbox="allow-scripts allow-same-origin"
+                  data-ai-id="timeline.preview.full-iframe"
                 />
               ) : (
-                <div style={{ color: "#aaa" }}>{timelinePlayError || "點擊「以 iframe 預覽」後顯示"}</div>
+                <div style={{ color: "#aaa" }} data-ai-status="timeline.preview.full-empty">
+                  {timelinePlayError || "點擊「以 iframe 預覽」後顯示"}
+                </div>
               )}
             </div>
           )}
@@ -962,7 +1102,7 @@ export default function TimelineEpisodeEditor() {
       </div>
 
       {message && (
-        <div style={{ marginTop: 8, color: "#444" }} role="status" aria-live="polite">
+        <div style={{ marginTop: 8, color: "#444" }} role="status" aria-live="polite" data-ai-status="timeline-episode.message">
           {message}
         </div>
       )}
