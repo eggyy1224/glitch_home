@@ -1,0 +1,181 @@
+import React from "react";
+
+export default function TimelineStepsEditor({
+  steps,
+  selectedRows,
+  onToggleRow,
+  onMoveRow,
+  onDuplicateRow,
+  onRemoveRow,
+  onAddStep,
+  onCopy,
+  onPaste,
+  canPaste,
+  batchDuration,
+  onBatchDurationChange,
+  onBatchApply,
+  snapshotClient,
+  snapshotKeyword,
+  onSnapshotClientChange,
+  onSnapshotKeywordChange,
+  onRefreshSnapshots,
+  snapshotMessage,
+  snapshotOptions,
+  onStepChange,
+  getSnapshotValue,
+}) {
+  return (
+    <div data-ai-section="timeline.steps">
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+        <button type="button" onClick={onAddStep} data-ai-action="timeline.step.add">
+          新增 step
+        </button>
+        <button type="button" onClick={onCopy} disabled={!selectedRows.length} data-ai-action="timeline.step.copy">
+          複製選取
+        </button>
+        <button type="button" onClick={onPaste} disabled={!canPaste} data-ai-action="timeline.step.paste">
+          貼上
+        </button>
+        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          批次 duration
+          <input
+            type="number"
+            value={batchDuration}
+            onChange={(e) => onBatchDurationChange(e.target.value)}
+            style={{ width: 100 }}
+            data-ai-field="timeline.batch.duration"
+          />
+          <button
+            type="button"
+            onClick={onBatchApply}
+            disabled={!batchDuration || !selectedRows.length}
+            data-ai-action="timeline.step.batch-duration"
+          >
+            套用
+          </button>
+        </label>
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+        <input
+          type="text"
+          placeholder="snapshot client"
+          value={snapshotClient || ""}
+          onChange={(e) => onSnapshotClientChange(e.target.value)}
+          style={{ width: 140 }}
+          data-ai-field="timeline.snapshot-client"
+        />
+        <input
+          type="text"
+          placeholder="keyword"
+          value={snapshotKeyword}
+          onChange={(e) => onSnapshotKeywordChange(e.target.value)}
+          style={{ width: 140 }}
+          data-ai-field="timeline.snapshot-keyword"
+        />
+        <button type="button" onClick={onRefreshSnapshots} data-ai-action="timeline.snapshot.refresh">
+          更新 snapshot 選項
+        </button>
+        {snapshotMessage && (
+          <span style={{ color: "#82dca5" }} data-ai-status="timeline.snapshot.message">
+            {snapshotMessage}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {(steps || []).map((step, index) => (
+          <div
+            key={index}
+            style={{
+              border: "1px solid #0f4",
+              borderRadius: 0,
+              padding: 10,
+              background: selectedRows.includes(index) ? "#020" : "#000",
+              boxShadow: "none",
+            }}
+            data-ai-item={`timeline.step:${index}`}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={selectedRows.includes(index)}
+                  onChange={() => onToggleRow(index)}
+                  aria-label={`選取 step ${index + 1}`}
+                  data-ai-field={`timeline.step[${index}].selected`}
+                />
+                Step {index + 1}
+              </label>
+              <button type="button" onClick={() => onMoveRow(index, -1)} aria-label="上移" data-ai-action="timeline.step.move-up">
+                ↑
+              </button>
+              <button type="button" onClick={() => onMoveRow(index, 1)} aria-label="下移" data-ai-action="timeline.step.move-down">
+                ↓
+              </button>
+              <button type="button" onClick={() => onDuplicateRow(index)} aria-label="複製 step" data-ai-action="timeline.step.duplicate">
+                複製
+              </button>
+              <button
+                type="button"
+                onClick={() => onRemoveRow(index)}
+                aria-label="刪除 step"
+                data-ai-action="timeline.step.delete"
+                data-ai-danger="true"
+              >
+                刪除
+              </button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                snapshot
+                <select
+                  value={getSnapshotValue(step)}
+                  onChange={(e) =>
+                    onStepChange(index, {
+                      snapshot: e.target.value,
+                      clientId: e.target.value?.includes("/") ? e.target.value.split("/")[0] : step.clientId,
+                    })
+                  }
+                  data-ai-field={`timeline.step[${index}].snapshot`}
+                >
+                  <option value="">-- 選擇 snapshot --</option>
+                  {(snapshotOptions || []).map((opt) => (
+                    <option key={`${opt.client}/${opt.id || opt.name}`} value={`${opt.client}/${opt.id || opt.name}`}>
+                      {opt.client}/{opt.id || opt.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                duration（秒）
+                <input
+                  type="number"
+                  value={step.duration ?? ""}
+                  onChange={(e) => onStepChange(index, { duration: Number(e.target.value) })}
+                  data-ai-field={`timeline.step[${index}].duration`}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                label
+                <input
+                  type="text"
+                  value={step.label || ""}
+                  onChange={(e) => onStepChange(index, { label: e.target.value })}
+                  data-ai-field={`timeline.step[${index}].label`}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                client override
+                <input
+                  type="text"
+                  value={step.clientId || step.client_id || ""}
+                  onChange={(e) => onStepChange(index, { clientId: e.target.value })}
+                  data-ai-field={`timeline.step[${index}].client`}
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
