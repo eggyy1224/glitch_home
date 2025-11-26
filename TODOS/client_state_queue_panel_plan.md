@@ -9,6 +9,7 @@
 ### 已知待處理 (TODO)
 - **停止指令未對齊實際 target**：強制停止 timeline/episode 時僅使用 queue 的 `client_id`，若 payload/定義覆寫 target 或 episode 多軌，實際播放端不會被停下。需在執行時保存 resolved target(s) 並在 stop 時逐一廣播。
 - **預設 client id 分歧**：前端一般模式預設 client 為 `default`，Admin 面板/預設 payload 仍預設 `desktop`，導致未帶 `?client=` 時管理指令可能打到不同 client。需統一預設或在 UI 明示同步。
+- **起始畫面需控制 desktop**：若需求是開場就操控 `desktop`，需保證 viewer 的 fallback 與 admin 預設一致（例如強制 `?client=desktop` 或將 viewer fallback 改回 `desktop`），避免 viewer 落到 `default` 而 admin 還在 `desktop`，造成初始畫面對不到同一 client。
 
 ## 範圍界定
 - **後端**：FastAPI 端點、佇列執行器、WS broadcast、資料持久化（記憶體優先，預留 Redis/SQLite 選項）。
