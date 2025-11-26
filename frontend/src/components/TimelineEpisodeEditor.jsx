@@ -147,20 +147,20 @@ export default function TimelineEpisodeEditor() {
   );
 
   const updateTimeline = useCallback(
-    (next) => {
+    (next, { markDirty = true } = {}) => {
       setTimelineData(next);
       syncJsonFromData(next);
-      setDirty(true);
+      setDirty(Boolean(markDirty));
       setValidationErrors(validateTimeline(next));
     },
     [syncJsonFromData],
   );
 
   const updateEpisode = useCallback(
-    (next) => {
+    (next, { markDirty = true } = {}) => {
       setEpisodeData(next);
       syncJsonFromData(next);
-      setDirty(true);
+      setDirty(Boolean(markDirty));
       setValidationErrors(validateEpisode(next));
     },
     [syncJsonFromData],
@@ -231,7 +231,7 @@ export default function TimelineEpisodeEditor() {
         if (mode === "timeline") {
           const data = await fetchIframeTimeline(id, { resolve: false });
           const payload = data.timeline || data;
-          updateTimeline(payload);
+          updateTimeline(payload, { markDirty: false });
           if (payload.clientId || payload.client_id) {
             const nextClient = payload.clientId || payload.client_id;
             setSnapshotClient(nextClient);
@@ -241,9 +241,10 @@ export default function TimelineEpisodeEditor() {
         } else {
           const data = await fetchEpisode(id, { resolve: false });
           const payload = data.episode || data;
-          updateEpisode(payload);
+          updateEpisode(payload, { markDirty: false });
           setMessage(`已載入 episode ${id}`);
         }
+        setDirty(false);
       } catch (err) {
         setMessage(err.message || "載入失敗");
       }
