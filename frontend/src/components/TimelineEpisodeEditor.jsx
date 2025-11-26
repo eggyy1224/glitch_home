@@ -292,8 +292,10 @@ export default function TimelineEpisodeEditor() {
         await refreshEpisodes();
       }
       setDirty(false);
+      return true;
     } catch (err) {
       setMessage(err.message || "儲存失敗");
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -497,16 +499,23 @@ export default function TimelineEpisodeEditor() {
     }
   }, [batchDuration, batchTargetClient, episodeData, mode, selectedRows, timelineData, updateEpisode, updateTimeline]);
 
-  const handlePlayPreview = useCallback(() => {
+  const handlePlayPreview = useCallback(async () => {
     if (mode !== "timeline") return;
     const id = timelineData.id;
     if (!id) {
-      setTimelinePlayError("請先設定 id 並儲存");
+      setTimelinePlayError("請先設定 id");
       return;
+    }
+    if (dirty) {
+      const ok = await handleSave();
+      if (!ok) {
+        setTimelinePlayError("儲存失敗，無法預覽");
+        return;
+      }
     }
     setTimelinePlayError(null);
     setTimelinePlaySrc(timelinePlaybackSrc(id));
-  }, [mode, timelineData.id]);
+  }, [dirty, handleSave, mode, timelineData.id]);
 
   const handlePlayTimelineToClient = useCallback(async () => {
     if (mode !== "timeline") return;
