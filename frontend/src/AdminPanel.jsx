@@ -12,6 +12,7 @@ import SnapshotManager from "./components/SnapshotManager.jsx";
 import TimelineManager from "./components/TimelineManager.jsx";
 import EpisodeManager from "./components/EpisodeManager.jsx";
 import ClientStateQueuePanel from "./components/ClientStateQueuePanel.jsx";
+import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor.jsx";
 
 export default function AdminPanel({ clientId }) {
   const [activeTab, setActiveTab] = useState("snapshot");
@@ -68,6 +69,18 @@ export default function AdminPanel({ clientId }) {
           </button>
           <button
             type="button"
+            style={activeTab === "editor" ? activeTabButtonStyle : tabButtonStyle}
+            onClick={() => handleTabChange("editor")}
+            role="tab"
+            aria-selected={activeTab === "editor"}
+            aria-controls="admin-tabpanel-editor"
+            id="admin-tab-editor"
+            data-ai-id="admin.tab.editor"
+          >
+            Timeline/Episode Editor
+          </button>
+          <button
+            type="button"
             style={activeTab === "state" ? activeTabButtonStyle : tabButtonStyle}
             onClick={() => handleTabChange("state")}
             role="tab"
@@ -114,6 +127,18 @@ export default function AdminPanel({ clientId }) {
             data-ai-section="admin.tabpanel.episode"
           >
             <EpisodeManager />
+          </div>
+        )}
+        {visitedTabs.includes("editor") && (
+          <div
+            role="tabpanel"
+            aria-hidden={activeTab !== "editor"}
+            style={activeTab === "editor" ? tabPanelStyle : hiddenTabPanelStyle}
+            aria-labelledby="admin-tab-editor"
+            id="admin-tabpanel-editor"
+            data-ai-section="admin.tabpanel.editor"
+          >
+            <TimelineEpisodeEditor />
           </div>
         )}
         {visitedTabs.includes("state") && (
