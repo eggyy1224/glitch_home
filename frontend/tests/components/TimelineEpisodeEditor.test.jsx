@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import TimelineEpisodeEditor from "../../src/components/TimelineEpisodeEditor.jsx";
 import { AdminPanelContext } from "../../src/AdminPanelContext.js";
 
@@ -127,5 +127,107 @@ describe("TimelineEpisodeEditor", () => {
     await waitFor(() =>
       expect(mockPlayEpisode).toHaveBeenCalledWith("ep-demo", { target_client_map: { t1: "desktop2", t2: "mobile" } }),
     );
+  });
+
+  it("鎖定 JSON 時不會同步，解除後可手動覆寫", async () => {
+    renderWithContext(<TimelineEpisodeEditor />);
+    const jsonArea = screen.getByLabelText(/JSON（雙向同步）/);
+    expect(jsonArea.value).toContain("new_timeline");
+
+    const lockCheckbox = screen.getByLabelText("鎖定 JSON");
+    await act(async () => {
+      fireEvent.click(lockCheckbox);
+    });
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Timeline ID"), { target: { value: "locked-id" } });
+    });
+    expect(jsonArea.value).toContain("new_timeline");
+
+    await act(async () => {
+      fireEvent.click(lockCheckbox);
+      fireEvent.click(screen.getByRole("button", { name: "以表單覆寫 JSON" }));
+    });
+    expect(jsonArea.value).toContain("locked-id");
+  });
+
+  it("JSON 解析錯誤時會顯示驗證錯誤", async () => {
+    vi.useFakeTimers();
+    renderWithContext(<TimelineEpisodeEditor />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/JSON（雙向同步）/), { target: { value: "not-json" } });
+    });
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(screen.getByText(/json：/i)).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("Timeline 批次/複製貼上與 Episode 批次 target 皆能套用", async () => {
+    renderWithContext(<TimelineEpisodeEditor />);
+
+    const timelineSelects = await screen.findAllByLabelText(/選取 step/);
+    await act(async () => {
+      fireEvent.click(timelineSelects[0]);
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "複製選取" })).not.toBeDisabled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "複製選取" }));
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "貼上" })).not.toBeDisabled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "貼上" }));
+    });
+    expect(screen.getAllByText(/Step /)).toHaveLength(3);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("批次 duration"), { target: { value: "9" } });
+      fireEvent.click(screen.getByRole("button", { name: "套用" }));
+    });
+    expect(screen.getAllByLabelText(/duration（秒）/)[0].value).toBe("9");
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
+    });
+    const trackSelects = await screen.findAllByLabelText(/選取 track/);
+    await act(async () => {
+      fireEvent.click(trackSelects[0]);
+      fireEvent.change(screen.getByLabelText("批次 target"), { target: { value: "client-x" } });
+      fireEvent.click(screen.getByRole("button", { name: "套用" }));
+    });
+    expect(screen.getAllByLabelText(/targetClientId/)[0].value).toBe("client-x");
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "複製選取" }));
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "貼上" })).not.toBeDisabled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "貼上" }));
+    });
+    expect(screen.getAllByLabelText(/選取 track/)).toHaveLength(3);
+  });
+
+  it("播放與預覽缺少 id 時會顯示錯誤訊息", async () => {
+    renderWithContext(<TimelineEpisodeEditor />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Timeline ID"), { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "以 iframe 預覽 timeline" }));
+    });
+    expect(screen.getByText("請先設定 id")).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
+    });
+    const episodeIdInput = await screen.findByLabelText("Episode ID");
+    await act(async () => {
+      fireEvent.change(episodeIdInput, { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "播放 Episode（含覆寫）" }));
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("請先設定 episode id");
   });
 });
