@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from PIL import Image, ImageOps
 
 from ..config import settings
+from ..utils.permissions import ensure_analysis_llm_enabled
 from ..utils.gemini_client import get_gemini_client
 
 
@@ -71,6 +72,7 @@ def analyze_screenshot(image_path: str, prompt: Optional[str] = None) -> Dict[st
     Returns:
         Dictionary containing generated summary text, raw segments, safety metadata, and timestamps.
     """
+    ensure_analysis_llm_enabled("screenshot_analysis")
 
     img = _load_image(image_path)
     client = get_gemini_client()

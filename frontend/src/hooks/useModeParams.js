@@ -5,7 +5,7 @@ import { DisplayModes, useDisplayMode } from "./useDisplayMode.js";
 const DEFAULT_SLIDE_INTERVAL = 3000;
 const MIN_SLIDE_INTERVAL = 1000;
 
-const KINSHIP_DATA_EXCLUDED = new Set([
+export const KINSHIP_DATA_EXCLUDED = new Set([
   DisplayModes.ORGANIC,
   DisplayModes.SLIDE,
   DisplayModes.IFRAME,

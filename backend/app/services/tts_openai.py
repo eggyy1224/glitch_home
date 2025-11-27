@@ -18,6 +18,7 @@ import re
 import httpx
 
 from ..config import settings
+from ..utils.permissions import ensure_analysis_llm_enabled, ensure_asset_write_enabled
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z
 
@@ -115,6 +116,8 @@ def synthesize_speech_openai(
     Returns:
         Metadata dict including filename, absolute_path, relative_path, model, voice, and format.
     """
+    ensure_asset_write_enabled("tts_output")
+    ensure_analysis_llm_enabled("tts_generation")
 
     api_key = settings.openai_api_key
     if not api_key:

@@ -15,14 +15,29 @@ import EpisodeManager from "./components/EpisodeManager.jsx";
 import ClientStateQueuePanel from "./components/ClientStateQueuePanel.jsx";
 import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor.jsx";
 
-export default function AdminPanel({ clientId }) {
+export default function AdminPanel({
+  clientId,
+  appMode = "STUDIO",
+  canWriteMetadata = true,
+  canWriteAssets = true,
+  forbidMessage = "",
+}) {
   const [activeTab, setActiveTab] = useState("snapshot");
   const [visitedTabs, setVisitedTabs] = useState(["snapshot"]);
   const resolvedDefaultClient = useMemo(() => {
     if (clientId && clientId !== "admin") return clientId;
     return "desktop";
   }, [clientId]);
-  const contextValue = useMemo(() => ({ defaultClientId: resolvedDefaultClient }), [resolvedDefaultClient]);
+  const contextValue = useMemo(
+    () => ({
+      defaultClientId: resolvedDefaultClient,
+      appMode,
+      canWriteMetadata,
+      canWriteAssets,
+      forbidMessage: forbidMessage || `目前 APP_MODE=${appMode} 禁止此操作`,
+    }),
+    [appMode, canWriteAssets, canWriteMetadata, forbidMessage, resolvedDefaultClient],
+  );
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
@@ -31,6 +46,14 @@ export default function AdminPanel({ clientId }) {
   return (
     <AdminPanelContext.Provider value={contextValue}>
       <div style={containerStyle} className="admin-matrix">
+        {!canWriteMetadata && (
+          <div
+            role="alert"
+            style={{ marginBottom: 12, padding: "10px 12px", background: "#2a2a2a", border: "1px solid #f39c12" }}
+          >
+            {forbidMessage || `目前 APP_MODE=${appMode} 禁止管理操作，已切換為唯讀模式`}
+          </div>
+        )}
         <div style={tabRowStyle} role="tablist" aria-label="Admin panel tabs" data-ai-id="admin.tablist">
           <button
             type="button"

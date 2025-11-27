@@ -8,6 +8,7 @@ from typing import Dict, Optional, Tuple
 from ..config import settings
 from ..models.collage import CollageConfig
 from ..models.iframe import isoformat
+from ..utils.permissions import ensure_metadata_write_enabled
 
 _BASE_DIR = Path(settings.metadata_dir)
 _BASE_DIR.mkdir(parents=True, exist_ok=True)
@@ -81,6 +82,7 @@ def load_collage_config(client_id: Optional[str] = None) -> Tuple[CollageConfig,
 
 
 def save_collage_config(payload: Dict[str, object]) -> Tuple[CollageConfig, str, Optional[str], Path]:
+    ensure_metadata_write_enabled("collage_config")
     target_client_id = None
     if isinstance(payload, dict):
         raw_target = payload.get("target_client_id")

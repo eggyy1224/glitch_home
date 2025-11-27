@@ -3,13 +3,14 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from ..config import settings
 from ..exceptions import ExternalServiceError, GenerationIOError
 from ..models.schemas import GenerateMixTwoRequest, GenerateMixTwoResponse
 from ..services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
+from ..utils.permissions import require_generation_enabled
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ GENERIC_ERROR_MESSAGE = "伺服器發生非預期錯誤，請稍後再試"
 def api_generate_mix_two(
     count: int | None = Query(None, ge=2, description="When body not provided, how many parents to sample"),
     body: GenerateMixTwoRequest | None = Body(default=None),
+    _: None = Depends(require_generation_enabled),
 ):
     """Backward-compatible endpoint with expanded options."""
     try:

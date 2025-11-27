@@ -73,6 +73,11 @@ const baseProps = {
   topbarContent: <div data-testid="top" />,
   screenshotContent: <div data-testid="shot" />,
   clientId: "client-a",
+  canGenerate: true,
+  canWriteMetadata: true,
+  canWriteAssets: true,
+  appMode: "STUDIO",
+  forbidMessage: "nope",
 };
 
 const resolveComponent = async (component) => {
@@ -143,9 +148,25 @@ describe("createModeRenderMap", () => {
     });
 
     await expect(resolveComponent(map[DisplayModes.COLLAGE_VERSION].component)).resolves.toBe(CollageVersionModeMock);
+    expect(map[DisplayModes.COLLAGE_VERSION].componentProps).toMatchObject({
+      canGenerate: true,
+      appMode: "STUDIO",
+      forbidMessage: "nope",
+    });
     await expect(resolveComponent(map[DisplayModes.GENERATE].component)).resolves.toBe(GenerateModeMock);
+    expect(map[DisplayModes.GENERATE].componentProps).toMatchObject({
+      canGenerate: true,
+      appMode: "STUDIO",
+      forbidMessage: "nope",
+    });
     expect(map[DisplayModes.SEARCH].componentProps).toEqual({ imagesBase: baseProps.imagesBase });
     await expect(resolveComponent(map[DisplayModes.SEARCH].component)).resolves.toBe(SearchModeMock);
     await expect(resolveComponent(map[DisplayModes.ADMIN].component)).resolves.toBe(AdminPanelMock);
+    expect(map[DisplayModes.ADMIN].componentProps).toMatchObject({
+      clientId: "client-a",
+      appMode: "STUDIO",
+      canWriteMetadata: true,
+      canWriteAssets: true,
+    });
   });
 });

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 
 from ..models.schemas import (
     ImageSearchRequest,
@@ -10,12 +10,16 @@ from ..models.schemas import (
     TextSearchRequest,
 )
 from ..services import vector_store
+from ..utils.permissions import require_index_rebuild_enabled
 
 router = APIRouter()
 
 
 @router.post("/api/index/offspring")
-def api_index_offspring(body: IndexOffspringRequest | None = Body(default=None)) -> dict:
+def api_index_offspring(
+    body: IndexOffspringRequest | None = Body(default=None),
+    _: None = Depends(require_index_rebuild_enabled),
+) -> dict:
     limit = body.limit if body else None
     force = body.force if body else False
     try:
@@ -26,7 +30,10 @@ def api_index_offspring(body: IndexOffspringRequest | None = Body(default=None))
 
 
 @router.post("/api/index/image")
-def api_index_one_image(body: IndexOneImageRequest) -> dict:
+def api_index_one_image(
+    body: IndexOneImageRequest,
+    _: None = Depends(require_index_rebuild_enabled),
+) -> dict:
     try:
         res = vector_store.index_offspring_image(body.basename, force=body.force)
     except FileNotFoundError as exc:
@@ -37,7 +44,10 @@ def api_index_one_image(body: IndexOneImageRequest) -> dict:
 
 
 @router.post("/api/index/batch")
-def api_index_batch(body: IndexBatchRequest) -> dict:
+def api_index_batch(
+    body: IndexBatchRequest,
+    _: None = Depends(require_index_rebuild_enabled),
+) -> dict:
     """Index a batch of offspring images."""
     try:
         res = vector_store.index_offspring_batch(
@@ -79,7 +89,9 @@ def api_search_image(body: ImageSearchRequest) -> dict:
 
 
 @router.post("/api/index/mark-deprecated")
-def api_mark_deprecated() -> dict:
+def api_mark_deprecated(
+    _: None = Depends(require_index_rebuild_enabled),
+) -> dict:
     """批量標記所有 deprecated 圖片為 deprecated=True。
     
     掃描 offspring_images/deprecated/ 目錄，更新 ChromaDB 中對應圖片的 metadata。

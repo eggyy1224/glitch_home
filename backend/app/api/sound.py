@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from ..models.schemas import SoundPlayRequest, SpeakWithSubtitleRequest, TTSRequest
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.subtitles import subtitle_manager
+from ..utils.permissions import require_analysis_llm_enabled, require_asset_write_enabled
 from .sound_helpers import (
     build_sound_url,
     file_response_for_sound,
@@ -41,7 +42,12 @@ async def api_sound_play(body: SoundPlayRequest, request: Request) -> dict:
 
 
 @router.post("/api/tts", status_code=201)
-async def api_tts_generate(body: TTSRequest, request: Request) -> dict:
+async def api_tts_generate(
+    body: TTSRequest,
+    request: Request,
+    _: None = Depends(require_asset_write_enabled),
+    __: None = Depends(require_analysis_llm_enabled),
+) -> dict:
     result = await synthesize_tts_audio(
         text=body.text,
         instructions=body.instructions,
@@ -67,7 +73,12 @@ async def api_tts_generate(body: TTSRequest, request: Request) -> dict:
 
 
 @router.post("/api/speak-with-subtitle", status_code=201)
-async def api_speak_with_subtitle(body: SpeakWithSubtitleRequest, request: Request) -> dict:
+async def api_speak_with_subtitle(
+    body: SpeakWithSubtitleRequest,
+    request: Request,
+    _: None = Depends(require_asset_write_enabled),
+    __: None = Depends(require_analysis_llm_enabled),
+) -> dict:
     """Generate TTS audio and set subtitle simultaneously."""
     tts_result = await synthesize_tts_audio(
         text=body.text,

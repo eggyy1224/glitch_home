@@ -4,13 +4,14 @@ import asyncio
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
 from ..config import settings
 from ..models.schemas import GenerateCollageVersionRequest, GenerateCollageVersionResponse
 from ..services.collage_version import generate_collage_version, task_manager
+from ..utils.permissions import require_generation_enabled
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ router = APIRouter()
 @router.post("/api/generate-collage-version", response_model=GenerateCollageVersionResponse, status_code=202)
 async def api_generate_collage_version(
     body: dict = Body(...),
+    _: None = Depends(require_generation_enabled),
 ) -> JSONResponse:
     """Generate collage version from multiple images by filename."""
     image_names = body.get("image_names", [])

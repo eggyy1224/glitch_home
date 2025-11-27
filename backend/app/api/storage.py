@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, Body, File, Form, HTTPException, Query, UploadFile, Response
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile, Response
 
 from ..models.schemas import CameraPreset, SaveCameraPresetRequest
 from ..services.camera_presets import delete_camera_preset, list_camera_presets, upsert_camera_preset
@@ -30,6 +30,7 @@ from ..services.iframe_config import (
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
 from ..services.screenshots import save_screenshot
+from ..utils.permissions import require_asset_write_enabled, require_metadata_write_enabled
 
 router = APIRouter()
 
@@ -44,7 +45,10 @@ def api_get_iframe_config(client: str | None = Query(default=None)) -> dict:
 
 
 @router.put("/api/iframe-config")
-async def api_put_iframe_config(body: dict = Body(...)) -> dict:
+async def api_put_iframe_config(
+    body: dict = Body(...),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
@@ -60,7 +64,10 @@ async def api_put_iframe_config(body: dict = Body(...)) -> dict:
 
 
 @router.post("/api/iframe-config/snapshot", status_code=201)
-def api_snapshot_iframe_config(body: dict = Body(...)) -> dict:
+def api_snapshot_iframe_config(
+    body: dict = Body(...),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     snapshot_name = body.get("snapshot_name")
@@ -97,7 +104,10 @@ def api_list_iframe_config_snapshots(client: str | None = Query(default=None)) -
 
 
 @router.post("/api/iframe-config/restore")
-async def api_restore_iframe_config(body: dict = Body(...)) -> dict:
+async def api_restore_iframe_config(
+    body: dict = Body(...),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     snapshot_name = body.get("snapshot_name")
@@ -139,7 +149,12 @@ def api_get_iframe_config_snapshot(client_id: str, snapshot_name: str) -> dict:
 
 
 @router.put("/api/iframe-config/snapshots/{client_id}/{snapshot_name}")
-def api_put_iframe_config_snapshot(client_id: str, snapshot_name: str, body: dict = Body(...)) -> dict:
+def api_put_iframe_config_snapshot(
+    client_id: str,
+    snapshot_name: str,
+    body: dict = Body(...),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
@@ -156,7 +171,11 @@ def api_put_iframe_config_snapshot(client_id: str, snapshot_name: str, body: dic
 
 
 @router.delete("/api/iframe-config/snapshots/{client_id}/{snapshot_name}")
-def api_delete_iframe_config_snapshot(client_id: str, snapshot_name: str) -> dict:
+def api_delete_iframe_config_snapshot(
+    client_id: str,
+    snapshot_name: str,
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     try:
         delete_iframe_config_snapshot(client_id, snapshot_name)
     except FileNotFoundError as exc:
@@ -167,7 +186,12 @@ def api_delete_iframe_config_snapshot(client_id: str, snapshot_name: str) -> dic
 
 
 @router.post("/api/iframe-config/snapshots/{client_id}/{snapshot_name}/clone", status_code=201)
-def api_clone_iframe_config_snapshot(client_id: str, snapshot_name: str, body: dict = Body(...)) -> dict:
+def api_clone_iframe_config_snapshot(
+    client_id: str,
+    snapshot_name: str,
+    body: dict = Body(...),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     target_client = body.get("target_client") or body.get("targetClient") or client_id
@@ -193,7 +217,10 @@ def api_get_collage_config(client: str | None = Query(default=None)) -> dict:
 
 
 @router.put("/api/collage-config")
-async def api_put_collage_config(body: dict = Body(...)) -> dict:
+async def api_put_collage_config(
+    body: dict = Body(...),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
@@ -215,7 +242,10 @@ def api_list_camera_presets() -> list[CameraPreset]:
 
 
 @router.post("/api/camera-presets", response_model=CameraPreset, status_code=201)
-def api_save_camera_preset(body: SaveCameraPresetRequest) -> CameraPreset:
+def api_save_camera_preset(
+    body: SaveCameraPresetRequest,
+    _: None = Depends(require_metadata_write_enabled),
+) -> CameraPreset:
     try:
         saved = upsert_camera_preset(body.model_dump())
     except ValueError as exc:
@@ -224,7 +254,10 @@ def api_save_camera_preset(body: SaveCameraPresetRequest) -> CameraPreset:
 
 
 @router.delete("/api/camera-presets/{name}", status_code=204)
-def api_delete_camera_preset(name: str) -> Response:
+def api_delete_camera_preset(
+    name: str,
+    _: None = Depends(require_metadata_write_enabled),
+) -> Response:
     cleaned = name.strip()
     if not cleaned:
         raise HTTPException(status_code=400, detail="name is required")
@@ -241,6 +274,7 @@ async def api_upload_screenshot(
     request_id: str | None = Form(default=None),
     client_id: str | None = Form(default=None),
     file: UploadFile = File(...),
+    _: None = Depends(require_asset_write_enabled),
 ) -> dict:
     try:
         saved = save_screenshot(file)

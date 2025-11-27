@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi import UploadFile
 
 from ..config import settings
+from ..utils.permissions import ensure_asset_write_enabled
 
 
 _CONTENT_TYPE_EXTENSION_MAP: dict[str, str] = {
@@ -39,6 +40,7 @@ def _resolve_extension(upload: UploadFile) -> str:
 
 def save_screenshot(upload: UploadFile) -> dict[str, str]:
     """Persist the uploaded screenshot and return basic metadata."""
+    ensure_asset_write_enabled("upload_screenshot")
 
     destination_dir = Path(settings.screenshot_dir).expanduser().resolve()
     destination_dir.mkdir(parents=True, exist_ok=True)

@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 
 from ..config import settings
 from ..utils.fs import ensure_dirs
+from ..utils.permissions import ensure_metadata_write_enabled
 
 
 def _ensure_storage() -> None:
@@ -41,6 +42,7 @@ def list_camera_presets() -> List[Dict[str, Any]]:
 
 
 def upsert_camera_preset(payload: Dict[str, Any]) -> Dict[str, Any]:
+    ensure_metadata_write_enabled("camera_presets")
     name = str(payload.get("name", "")).strip()
     if not name:
         raise ValueError("preset name is required")
@@ -70,6 +72,7 @@ def upsert_camera_preset(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def delete_camera_preset(name: str) -> bool:
+    ensure_metadata_write_enabled("camera_presets")
     presets = _load_all()
     next_items = [item for item in presets if item.get("name") != name]
     if len(next_items) == len(presets):

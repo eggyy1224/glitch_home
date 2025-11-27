@@ -16,6 +16,11 @@ from PIL import Image, ImageOps
 from ..config import settings
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import write_metadata
+from ..utils.permissions import (
+    ensure_asset_write_enabled,
+    ensure_generation_enabled,
+    ensure_metadata_write_enabled,
+)
 
 
 # Task manager for progress tracking
@@ -983,6 +988,9 @@ def generate_collage_version(
     - For the special mode `rotate-90`, a single base image is sufficient and
       `allow_self` is not relevant.
     """
+    ensure_generation_enabled("collage_version")
+    ensure_asset_write_enabled("collage_version_output")
+    ensure_metadata_write_enabled("collage_version_metadata")
     # Determine whether single image is acceptable for the requested mode
     single_image_allowed = (mode == "rotate-90") or allow_self
 

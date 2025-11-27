@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..config import settings
 from ..services.kinship_index import kinship_index
+from ..utils.permissions import require_index_rebuild_enabled
 
 router = APIRouter()
 
@@ -126,7 +127,9 @@ def api_kinship(
 
 
 @router.post("/api/kinship/rebuild")
-def api_kinship_rebuild() -> dict:
+def api_kinship_rebuild(
+    _: None = Depends(require_index_rebuild_enabled),
+) -> dict:
     try:
         result = kinship_index.build_and_save()
         return result

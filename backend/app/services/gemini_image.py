@@ -8,6 +8,11 @@ from PIL import Image
 
 from ..config import settings
 from ..exceptions import ExternalServiceError, GenerationIOError
+from ..utils.permissions import (
+    ensure_asset_write_enabled,
+    ensure_generation_enabled,
+    ensure_metadata_write_enabled,
+)
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import write_metadata
 from ..utils.gemini_client import get_gemini_client
@@ -54,6 +59,9 @@ class GeminiImageGenerator:
         output_max_side: Optional[int] = None,
         resize_mode: Optional[str] = None,
     ) -> dict:
+        ensure_generation_enabled("image_generation")
+        ensure_asset_write_enabled("image_generation_output")
+        ensure_metadata_write_enabled("image_generation_metadata")
         try:
             ensure_dirs([settings.offspring_dir, settings.metadata_dir])
         except OSError as exc:

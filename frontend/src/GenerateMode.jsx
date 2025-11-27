@@ -14,12 +14,14 @@ import {
   resolveImageUrl,
 } from "./utils/generate.js";
 
-function GenerateModeContent() {
+function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
+  const generationDisabled = !canGenerate;
+  const blockedMessage = forbidMessage || `目前 APP_MODE=${appMode || "未知"} 禁止生成`;
   const [availableImages, setAvailableImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingImages, setLoadingImages] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(generationDisabled ? blockedMessage : null);
   const [result, setResult] = useState(null);
 
   const {
@@ -69,6 +71,14 @@ function GenerateModeContent() {
     loadImages();
   }, []);
 
+  useEffect(() => {
+    if (generationDisabled) {
+      setError(blockedMessage);
+    } else if (error === blockedMessage) {
+      setError(null);
+    }
+  }, [blockedMessage, generationDisabled, error]);
+
   const handleImageToggle = (imageName) => {
     setSelectedImages((prev) => {
       if (prev.includes(imageName)) {
@@ -82,6 +92,10 @@ function GenerateModeContent() {
   const displayImages = displayMode === "search" ? searchResults : availableImages;
 
   const handleGenerate = async () => {
+    if (generationDisabled) {
+      setError(blockedMessage);
+      return;
+    }
     if (selectedImages.length < 2 && selectedImages.length > 0) {
       setError("至少需要選擇 2 張圖片，或留空使用隨機抽樣");
       return;
@@ -147,10 +161,10 @@ function GenerateModeContent() {
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={loading || (selectedImages.length > 0 && selectedImages.length < 2)}
+              disabled={generationDisabled || loading || (selectedImages.length > 0 && selectedImages.length < 2)}
               className="generate-generate"
             >
-              {loading ? "生成中..." : "生成圖像"}
+              {loading ? "生成中..." : generationDisabled ? "生成已停用" : "生成圖像"}
             </button>
 
             {loading && (
@@ -222,7 +236,7 @@ function GenerateModeContent() {
   );
 }
 
-export default function GenerateMode() {
+export default function GenerateMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }) {
   const [activeTab, setActiveTab] = useState("collage");
   const [mountedTabs, setMountedTabs] = useState({ collage: true, generate: false });
 
@@ -245,6 +259,7 @@ export default function GenerateMode() {
           type="button"
           className={`generate-tab-button ${activeTab === "generate" ? "active" : ""}`}
           onClick={() => switchTab("generate")}
+          disabled={!canGenerate}
         >
           生成模式
         </button>
@@ -253,12 +268,12 @@ export default function GenerateMode() {
       <div className="generate-tabpanels">
         {mountedTabs.collage && (
           <div className="generate-tabpanel" style={{ display: activeTab === "collage" ? "block" : "none" }}>
-            <CollageVersionMode />
+            <CollageVersionMode canGenerate={canGenerate} appMode={appMode} forbidMessage={forbidMessage} />
           </div>
         )}
         {mountedTabs.generate && (
           <div className="generate-tabpanel" style={{ display: activeTab === "generate" ? "block" : "none" }}>
-            <GenerateModeContent />
+            <GenerateModeContent canGenerate={canGenerate} appMode={appMode} forbidMessage={forbidMessage} />
           </div>
         )}
       </div>

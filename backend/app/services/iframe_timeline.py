@@ -16,6 +16,7 @@ from ..models.iframe_timeline import (
     TimelineTimedTextAction,
     TimelineVideoControlAction,
 )
+from ..utils.permissions import ensure_metadata_write_enabled
 from .iframe_config import (
     config_payload_for_response,
     load_iframe_config_snapshot_config,
@@ -102,6 +103,7 @@ def _timeline_path_for(timeline_id: str) -> Path:
 
 
 def save_iframe_timeline_definition(payload: dict, timeline_id: Optional[str] = None) -> IframeTimeline:
+    ensure_metadata_write_enabled("iframe_timeline")
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
 
@@ -121,6 +123,7 @@ def save_iframe_timeline_definition(payload: dict, timeline_id: Optional[str] = 
 
 
 def delete_iframe_timeline_definition(timeline_id: str) -> None:
+    ensure_metadata_write_enabled("iframe_timeline_delete")
     path = _timeline_path_for(timeline_id)
     if not path.exists():
         raise FileNotFoundError("timeline 不存在")
@@ -130,6 +133,7 @@ def delete_iframe_timeline_definition(timeline_id: str) -> None:
 def clone_iframe_timeline_definition(
     source_id: str, new_id: str, target_client_id: Optional[str] = None
 ) -> IframeTimeline:
+    ensure_metadata_write_enabled("iframe_timeline_clone")
     source = load_iframe_timeline_definition(source_id)
     payload = source.model_dump(mode="json")
     payload["id"] = _sanitize_timeline_id(new_id)

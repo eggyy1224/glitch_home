@@ -82,6 +82,11 @@ export function createModeRenderMap({
   topbarContent,
   screenshotContent,
   clientId,
+  canGenerate,
+  canWriteMetadata,
+  canWriteAssets,
+  appMode,
+  forbidMessage,
 }) {
   return {
     [DisplayModes.IFRAME]: buildModeEntry(modeBaseConfigs[DisplayModes.IFRAME], {
@@ -126,8 +131,20 @@ export function createModeRenderMap({
         caption,
       },
     }),
-    [DisplayModes.COLLAGE_VERSION]: buildModeEntry(modeBaseConfigs[DisplayModes.COLLAGE_VERSION]),
-    [DisplayModes.GENERATE]: buildModeEntry(modeBaseConfigs[DisplayModes.GENERATE]),
+    [DisplayModes.COLLAGE_VERSION]: buildModeEntry(modeBaseConfigs[DisplayModes.COLLAGE_VERSION], {
+      componentProps: {
+        canGenerate,
+        appMode,
+        forbidMessage,
+      },
+    }),
+    [DisplayModes.GENERATE]: buildModeEntry(modeBaseConfigs[DisplayModes.GENERATE], {
+      componentProps: {
+        canGenerate,
+        appMode,
+        forbidMessage,
+      },
+    }),
     [DisplayModes.STATIC]: buildModeEntry(modeBaseConfigs[DisplayModes.STATIC], {
       componentProps: {
         imagesBase,
@@ -157,6 +174,10 @@ export function createModeRenderMap({
     [DisplayModes.ADMIN]: buildModeEntry(modeBaseConfigs[DisplayModes.ADMIN], {
       componentProps: {
         clientId,
+        appMode,
+        canWriteMetadata,
+        canWriteAssets,
+        forbidMessage,
       },
     }),
   };

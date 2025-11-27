@@ -9,6 +9,7 @@ from urllib.parse import quote_plus
 
 from ..config import settings
 from ..models.iframe import IframeConfig, PanelConfig, ResolvedIframeConfig, ResolvedPanel, isoformat
+from ..utils.permissions import ensure_metadata_write_enabled
 
 
 _BASE_DIR = Path(settings.metadata_dir)
@@ -137,6 +138,7 @@ def load_iframe_config(client_id: Optional[str] = None) -> IframeConfig:
 
 
 def save_iframe_config(payload: Dict[str, object]) -> tuple[IframeConfig, Optional[str]]:
+    ensure_metadata_write_enabled("iframe_config")
     target_client_id = None
     if isinstance(payload, dict):
         raw_target = payload.get("target_client_id")
@@ -156,6 +158,7 @@ def save_iframe_config(payload: Dict[str, object]) -> tuple[IframeConfig, Option
 
 
 def save_iframe_config_snapshot(client_id: Optional[str], snapshot_name: Optional[str] = None) -> Dict[str, object]:
+    ensure_metadata_write_enabled("iframe_config_snapshot")
     sanitized_client_id = _sanitize_client_id(client_id)
     safe_snapshot_name = _generate_snapshot_name(sanitized_client_id, snapshot_name)
     config = load_iframe_config(sanitized_client_id)
@@ -203,6 +206,7 @@ def list_iframe_config_snapshots(client_id: Optional[str]) -> Tuple[Optional[str
 
 
 def restore_iframe_config_snapshot(client_id: Optional[str], snapshot_name: str) -> tuple[IframeConfig, Optional[str]]:
+    ensure_metadata_write_enabled("iframe_config_restore")
     config = load_iframe_config_snapshot_config(client_id, snapshot_name)
     sanitized_client_id = _sanitize_client_id(client_id)
 
@@ -265,7 +269,7 @@ def get_iframe_snapshot_metadata(client_id: Optional[str], snapshot_name: str) -
 
 def save_iframe_config_snapshot_payload(client_id: Optional[str], snapshot_name: str, payload: dict) -> dict:
     """覆寫/建立 snapshot 檔，回傳 metadata。"""
-
+    ensure_metadata_write_enabled("iframe_config_snapshot_payload")
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
     sanitized_client_id = _sanitize_client_id(client_id)
@@ -288,6 +292,7 @@ def save_iframe_config_snapshot_payload(client_id: Optional[str], snapshot_name:
 
 
 def delete_iframe_config_snapshot(client_id: Optional[str], snapshot_name: str) -> None:
+    ensure_metadata_write_enabled("iframe_config_snapshot_delete")
     sanitized_client_id = _sanitize_client_id(client_id)
     safe_snapshot_name = _sanitize_snapshot_name(snapshot_name)
     path = _snapshot_path_for(sanitized_client_id, safe_snapshot_name)
@@ -302,6 +307,7 @@ def clone_iframe_config_snapshot(
     target_client_id: Optional[str],
     target_snapshot_name: Optional[str] = None,
 ) -> dict:
+    ensure_metadata_write_enabled("iframe_config_snapshot_clone")
     payload = load_iframe_config_snapshot_payload(source_client_id, source_snapshot_name)
     target_name = target_snapshot_name or source_snapshot_name
     return save_iframe_config_snapshot_payload(target_client_id, target_name, payload)

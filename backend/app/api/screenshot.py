@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.concurrency import run_in_threadpool
 
 from ..models.schemas import AnalyzeAndSoundRequest, AnalyzeScreenshotRequest, GenerateSoundRequest
 from ..services.image_analysis import analyze_screenshot
 from ..services.screenshot_queue import screenshot_request_queue
 from ..services.sound_effects import generate_sound_effect
+from ..utils.permissions import (
+    require_analysis_llm_enabled,
+    require_asset_write_enabled,
+)
 from .screenshot_helpers import (
     build_auto_sound_prompt,
     build_request_metadata,
@@ -17,7 +21,10 @@ router = APIRouter()
 
 
 @router.post("/api/analyze-screenshot")
-async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
+async def api_analyze_screenshot(
+    body: AnalyzeScreenshotRequest,
+    _: None = Depends(require_analysis_llm_enabled),
+) -> dict:
     resolved_path, snapshot_record = await resolve_image_and_snapshot(body.image_path, body.request_id)
 
     analysis = await run_in_threadpool(analyze_screenshot, str(resolved_path), body.prompt)
@@ -37,7 +44,10 @@ async def api_analyze_screenshot(body: AnalyzeScreenshotRequest) -> dict:
 
 
 @router.post("/api/sound-effects")
-async def api_generate_sound(body: GenerateSoundRequest) -> dict:
+async def api_generate_sound(
+    body: GenerateSoundRequest,
+    _: None = Depends(require_asset_write_enabled),
+) -> dict:
     resolved_path, snapshot_record = await resolve_image_and_snapshot(body.image_path, body.request_id)
 
     sound_result = await run_in_threadpool(
@@ -69,7 +79,11 @@ async def api_generate_sound(body: GenerateSoundRequest) -> dict:
 
 
 @router.post("/api/screenshot/bundle")
-async def api_analyze_and_sound(body: AnalyzeAndSoundRequest) -> dict:
+async def api_analyze_and_sound(
+    body: AnalyzeAndSoundRequest,
+    _: None = Depends(require_analysis_llm_enabled),
+    __: None = Depends(require_asset_write_enabled),
+) -> dict:
     resolved_path, snapshot_record = await resolve_image_and_snapshot(body.image_path, body.request_id)
 
     analysis = await run_in_threadpool(analyze_screenshot, str(resolved_path), body.prompt)

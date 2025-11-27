@@ -1,4 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useAppMode } from "./appMode/AppModeContext.jsx";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
 import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
 import { useIframeConfig } from "./hooks/useIframeConfig.js";
@@ -6,7 +7,7 @@ import { useCollageConfig } from "./hooks/useCollageConfig.js";
 import { useControlSocket } from "./hooks/useControlSocket.js";
 import ModeLayout from "./components/ModeLayout.jsx";
 import { DisplayModes } from "./hooks/useDisplayMode.js";
-import { useModeParams } from "./hooks/useModeParams.js";
+import { useModeParams, KINSHIP_DATA_EXCLUDED } from "./hooks/useModeParams.js";
 import { useCameraPresets } from "./hooks/useCameraPresets.js";
 import { useKinshipData } from "./hooks/useKinshipData.js";
 import ControlPanel from "./components/ControlPanel.jsx";
@@ -64,11 +65,26 @@ export default function App() {
     slideIntervalMs,
     clientId,
     iframeTimelineId,
-    shouldLoadKinshipData,
   } = useModeParams();
 
+  const { appMode, capabilities } = useAppMode();
+  const canGenerate = capabilities?.canGenerate ?? true;
+  const canWriteMetadata = capabilities?.canWriteMetadata ?? true;
+  const canWriteAssets = capabilities?.canWriteAssets ?? true;
+  const forbidMessage = `目前 APP_MODE=${appMode} 禁止此操作`;
+
   const [activeModeOverride, setActiveModeOverride] = useState(null);
-  const activeMode = activeModeOverride ?? defaultActiveMode;
+  const rawActiveMode = activeModeOverride ?? defaultActiveMode;
+  const activeMode = (() => {
+    if (!canGenerate && (rawActiveMode === DisplayModes.GENERATE || rawActiveMode === DisplayModes.COLLAGE_VERSION)) {
+      return DisplayModes.KINSHIP;
+    }
+    if (!canWriteMetadata && rawActiveMode === DisplayModes.ADMIN) {
+      return DisplayModes.KINSHIP;
+    }
+    return rawActiveMode;
+  })();
+  const shouldLoadKinshipData = !KINSHIP_DATA_EXCLUDED.has(activeMode);
 
   const {
     cameraInfo,
@@ -312,6 +328,11 @@ export default function App() {
     topbarContent,
     screenshotContent,
     clientId,
+    canGenerate,
+    canWriteMetadata,
+    canWriteAssets,
+    appMode,
+    forbidMessage,
   });
 
   const activeModeEntry = modeRenderMap[activeMode];

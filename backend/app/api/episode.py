@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, model_validator
 
 from ..models.episode import Episode
@@ -13,6 +13,7 @@ from ..services.episode import (
     save_episode_definition,
     sanitize_episode_id,
 )
+from ..utils.permissions import require_metadata_write_enabled
 
 router = APIRouter()
 
@@ -79,7 +80,11 @@ def api_get_episode(episode_id: str, resolve: bool = Query(default=True)) -> dic
 
 
 @router.post("/api/episodes", status_code=201)
-def api_create_episode(body: dict = Body(...), resolve: bool = Query(default=True)) -> dict:
+def api_create_episode(
+    body: dict = Body(...),
+    resolve: bool = Query(default=True),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
@@ -109,6 +114,7 @@ def api_update_episode(
     episode_id: str,
     body: dict = Body(...),
     resolve: bool = Query(default=True),
+    _: None = Depends(require_metadata_write_enabled),
 ) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
@@ -139,7 +145,10 @@ def api_update_episode(
 
 
 @router.delete("/api/episodes/{episode_id}")
-def api_delete_episode(episode_id: str) -> dict:
+def api_delete_episode(
+    episode_id: str,
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     try:
         delete_episode_definition(episode_id)
     except FileNotFoundError as exc:
@@ -154,6 +163,7 @@ def api_clone_episode(
     episode_id: str,
     body: dict = Body(...),
     resolve: bool = Query(default=True),
+    _: None = Depends(require_metadata_write_enabled),
 ) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")

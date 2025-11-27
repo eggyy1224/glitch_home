@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 
 from ..models.schemas import TimelinePlayRequest, TimelineStopRequest
 from ..models.iframe_timeline import IframeTimeline
@@ -13,6 +13,7 @@ from ..services.iframe_timeline import (
     sanitize_timeline_id,
 )
 from ..services.realtime_bus import realtime_broadcaster
+from ..utils.permissions import require_metadata_write_enabled
 
 router = APIRouter()
 
@@ -95,7 +96,11 @@ async def api_play_iframe_timeline(
 
 
 @router.post("/api/iframe-timelines", status_code=201)
-def api_create_iframe_timeline(body: dict = Body(...), resolve: bool = Query(default=True)) -> dict:
+def api_create_iframe_timeline(
+    body: dict = Body(...),
+    resolve: bool = Query(default=True),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
@@ -116,6 +121,7 @@ def api_update_iframe_timeline(
     timeline_id: str,
     body: dict = Body(...),
     resolve: bool = Query(default=True),
+    _: None = Depends(require_metadata_write_enabled),
 ) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
@@ -133,7 +139,10 @@ def api_update_iframe_timeline(
 
 
 @router.delete("/api/iframe-timelines/{timeline_id}")
-def api_delete_iframe_timeline(timeline_id: str) -> dict:
+def api_delete_iframe_timeline(
+    timeline_id: str,
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
     try:
         delete_iframe_timeline_definition(timeline_id)
     except FileNotFoundError as exc:
@@ -148,6 +157,7 @@ def api_clone_iframe_timeline(
     timeline_id: str,
     body: dict = Body(...),
     resolve: bool = Query(default=True),
+    _: None = Depends(require_metadata_write_enabled),
 ) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")

@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 import httpx
 
 from ..config import settings
+from ..utils.permissions import ensure_asset_write_enabled
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z
 
@@ -91,6 +92,7 @@ def generate_sound_effect(
     Returns:
         Dictionary containing metadata about the generated audio file.
     """
+    ensure_asset_write_enabled("sound_effects")
 
     api_key = settings.elevenlabs_api_key
     if not api_key:

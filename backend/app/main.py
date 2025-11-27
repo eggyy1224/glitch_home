@@ -20,6 +20,7 @@ from .api import (
     clients_router,
 )
 from .config import settings
+from .utils.permissions import runtime_capabilities
 
 app = FastAPI(title="Image Loop Synthesizer Backend", version="0.1.0")
 
@@ -68,4 +69,10 @@ app.include_router(clients_router)
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "app_mode": settings.app_mode}
+
+
+@app.get("/api/runtime-caps")
+def api_runtime_caps() -> dict:
+    caps = runtime_capabilities()
+    return {"status": "ok", **caps}

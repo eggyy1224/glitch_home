@@ -11,12 +11,14 @@ import {
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
-export default function CollageVersionMode() {
+export default function CollageVersionMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }) {
+  const generationDisabled = !canGenerate;
+  const blockedMessage = forbidMessage || `目前 APP_MODE=${appMode || "未知"} 禁止生成`;
   const [availableImages, setAvailableImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingImages, setLoadingImages] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(generationDisabled ? blockedMessage : null);
   const [result, setResult] = useState(null);
   
   // Progress tracking
@@ -71,6 +73,13 @@ export default function CollageVersionMode() {
       }
     };
   }, []);
+  useEffect(() => {
+    if (generationDisabled) {
+      setError(blockedMessage);
+    } else if (error === blockedMessage) {
+      setError(null);
+    }
+  }, [blockedMessage, generationDisabled, error]);
   
   const handleImageToggle = (imageName) => {
     setSelectedImages((prev) => {
@@ -179,6 +188,10 @@ export default function CollageVersionMode() {
   }, []);
   
   const handleGenerate = async () => {
+    if (generationDisabled) {
+      setError(blockedMessage);
+      return;
+    }
     if (selectedImages.length < minRequired) {
       setError(`至少需要選擇 ${minRequired} 張圖片`);
       return;
@@ -375,10 +388,10 @@ export default function CollageVersionMode() {
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={loading || selectedImages.length < minRequired}
+              disabled={generationDisabled || loading || selectedImages.length < minRequired}
               className="collage-version-generate"
             >
-              {loading ? "生成中..." : "生成拼貼"}
+              {loading ? "生成中..." : generationDisabled ? "生成已停用" : "生成拼貼"}
             </button>
             
             {/* Progress Bar */}

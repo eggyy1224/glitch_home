@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from ..config import settings
 from ..models.episode import Episode
+from ..utils.permissions import ensure_metadata_write_enabled
 from .iframe_config import sanitize_client_id
 from .iframe_timeline import load_iframe_timeline_definition, sanitize_timeline_id
 from .realtime_bus import realtime_broadcaster
@@ -88,6 +89,7 @@ def _ensure_episode_dir() -> None:
 
 
 def save_episode_definition(payload: dict, episode_id: Optional[str] = None) -> Episode:
+    ensure_metadata_write_enabled("episode_definition")
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
     candidate_id = episode_id or payload.get("id")
@@ -117,6 +119,7 @@ def load_episode_definition(episode_id: str) -> Episode:
 
 
 def delete_episode_definition(episode_id: str) -> None:
+    ensure_metadata_write_enabled("episode_delete")
     path = _episode_path_for(episode_id)
     if not path.exists():
         raise FileNotFoundError("episode 不存在")
@@ -124,6 +127,7 @@ def delete_episode_definition(episode_id: str) -> None:
 
 
 def clone_episode_definition(source_id: str, new_id: str) -> Episode:
+    ensure_metadata_write_enabled("episode_clone")
     source = load_episode_definition(source_id)
     payload = source.model_dump(mode="json")
     payload["id"] = _sanitize_episode_id(new_id)

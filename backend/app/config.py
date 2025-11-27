@@ -1,6 +1,6 @@
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -32,8 +32,40 @@ def _load_dotenv_if_present() -> None:
 _load_dotenv_if_present()
 
 
+APP_MODE_CAPS: dict[str, dict[str, bool]] = {
+    "STUDIO": {
+        "enable_generation": True,
+        "enable_metadata_write": True,
+        "enable_asset_write": True,
+        "enable_index_rebuild": True,
+        "enable_analysis_llm": True,
+    },
+    "CONSOLE": {
+        "enable_generation": False,
+        "enable_metadata_write": True,
+        "enable_asset_write": True,
+        "enable_index_rebuild": False,
+        "enable_analysis_llm": True,
+    },
+    "DISPLAY": {
+        "enable_generation": False,
+        "enable_metadata_write": False,
+        "enable_asset_write": False,
+        "enable_index_rebuild": False,
+        "enable_analysis_llm": False,
+    },
+}
+
+
 @dataclass
 class Settings:
+    app_mode_raw: str = os.getenv("APP_MODE", "STUDIO")
+    app_mode: str = field(init=False)
+    enable_generation: bool = field(init=False)
+    enable_metadata_write: bool = field(init=False)
+    enable_asset_write: bool = field(init=False)
+    enable_index_rebuild: bool = field(init=False)
+    enable_analysis_llm: bool = field(init=False)
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
     elevenlabs_api_key: Optional[str] = os.getenv("ELEVENLABS_API_KEY")
     model_name: str = os.getenv("MODEL_NAME", "gemini-3-pro-image-preview")
@@ -97,6 +129,17 @@ class Settings:
                 return p_expanded
             return os.path.abspath(os.path.join(project_root, p_expanded))
 
+        mode_upper = (self.app_mode_raw or "STUDIO").strip().upper()
+        if mode_upper not in APP_MODE_CAPS:
+            raise ValueError(f"無效的 APP_MODE：{mode_upper}，允許值：{', '.join(APP_MODE_CAPS)}")
+        self.app_mode = mode_upper
+        caps = APP_MODE_CAPS[mode_upper]
+        self.enable_generation = caps["enable_generation"]
+        self.enable_metadata_write = caps["enable_metadata_write"]
+        self.enable_asset_write = caps["enable_asset_write"]
+        self.enable_index_rebuild = caps["enable_index_rebuild"]
+        self.enable_analysis_llm = caps["enable_analysis_llm"]
+
         # Parse multiple dirs if provided; fallback to single dir
         if self.genes_pool_dirs_raw:
             dirs = [p.strip() for p in self.genes_pool_dirs_raw.split(",") if p.strip()]
@@ -118,6 +161,44 @@ class Settings:
                 self.nightwalk_assets_dir = resolved
             else:
                 self.nightwalk_assets_dir = None
+
+        self._warn_writable_dirs_if_readonly()
+        self._warn_missing_keys()
+
+    def _warn_writable_dirs_if_readonly(self) -> None:
+        """提醒在唯讀模式下仍可寫入的目錄。"""
+        if self.enable_asset_write and self.enable_metadata_write:
+            return
+
+        def is_writable(path: str) -> bool:
+            try:
+                return os.path.exists(path) and os.access(path, os.W_OK)
+            except OSError:
+                return False
+
+        readonly_targets = []
+        if not self.enable_metadata_write:
+            readonly_targets.extend([self.metadata_dir, self.naration_metadata_dir, os.path.dirname(self.camera_presets_file)])
+        if not self.enable_asset_write:
+            readonly_targets.extend([self.offspring_dir, self.screenshot_dir, self.generated_sounds_dir])
+        for target in readonly_targets:
+            if target and is_writable(target):
+                logger.warning("APP_MODE=%s 為唯讀配置，但目錄仍可寫入：%s（請考慮調整為唯讀掛載）", self.app_mode, target)
+
+    def _warn_missing_keys(self) -> None:
+        """在需要金鑰的模式下提示缺漏。"""
+        if self.enable_generation and not self.gemini_api_key:
+            logger.error("APP_MODE=%s 需要 GEMINI_API_KEY 以啟用生成功能，請在 .env 設定", self.app_mode)
+        if self.enable_analysis_llm and not (self.gemini_api_key or self.openai_api_key):
+            logger.warning(
+                "APP_MODE=%s 已允許分析用 LLM，但缺少 GEMINI_API_KEY 與 OPENAI_API_KEY，相關功能將受限",
+                self.app_mode,
+            )
+        if self.enable_asset_write and not (self.elevenlabs_api_key or self.openai_api_key):
+            logger.warning(
+                "APP_MODE=%s 已允許資產寫入，但缺少 ELEVENLABS_API_KEY/OPENAI_API_KEY，音效與 TTS 可能無法使用",
+                self.app_mode,
+            )
 
 
 

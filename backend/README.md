@@ -14,6 +14,7 @@ pip install -r requirements.txt
 
 ## 環境變數
 後端會讀取系統環境（或 `.env` 若你有放在專案根目錄/`backend/`）；需設定：
+- `APP_MODE`：`STUDIO`（完整權限） / `CONSOLE`（管理唯讀、可控制、不允許圖像生成） / `DISPLAY`（純展示，無寫入/生成）。
 - `GEMINI_API_KEY` 或 `GOOGLE_API_KEY`
 - `OPENAI_API_KEY`（用於 embeddings、圖像分析、TTS）
 - `ELEVENLABS_API_KEY`（若使用音效功能）
@@ -29,13 +30,30 @@ pip install -r requirements.txt
 - `OPENAI_TTS_VOICE`（預設 `alloy`）
 - `OPENAI_TTS_FORMAT`（預設 `mp3`）
 
+APP_MODE 權限矩陣（後端啟動時會依模式自動推導旗標，非法值直接報錯）：
+
+| APP_MODE | enable_generation | enable_metadata_write | enable_asset_write | enable_index_rebuild | enable_analysis_llm |
+| -------- | ----------------: | --------------------: | -----------------: | -------------------: | ------------------: |
+| STUDIO   | ✅ | ✅ | ✅ | ✅ | ✅ |
+| CONSOLE  | ❌ | ✅ | ✅ | ❌ | ✅ |
+| DISPLAY  | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+- `/api/runtime-caps` 會回傳目前 app_mode 與旗標，前端會據此隱藏/禁用 UI，403 payload 也會附帶 `feature` 與 `app_mode`。
+- DISPLAY/CONSOLE 建議將 `METADATA_DIR`、`OFFSPRING_DIR`、`SCREENSHOT_DIR`、`GENERATED_SOUNDS_DIR` 以 OS 層唯讀掛載；若後端偵測到唯讀模式但目錄仍可寫會在啟動時警告。
+
 範例：
 ```bash
+export APP_MODE=STUDIO
 export GENES_POOL_DIRS="夜遊 - 毛刺/攝影圖像/橫式,夜遊 - 毛刺/攝影圖像/直式,夜遊 - 毛刺/AI生成靜態影像"
 export OFFSPRING_DIR="backend/offspring_images"
 export METADATA_DIR="backend/metadata"
 export GEMINI_API_KEY="你的金鑰"
 ```
+
+快速對應（建議 `.env`）：
+- 生成工作站（Mac Studio）：`APP_MODE=STUDIO` + 生成/分析相關金鑰。
+- 控制台（MacBook Pro）：`APP_MODE=CONSOLE`，只放分析/控制所需的 key，不放生成 key。
+- 展示機（Mac mini）：`APP_MODE=DISPLAY`，不放任何 key，掛載 metadata/asset 目錄為唯讀。
 
 > 相對路徑會自動以專案根目錄為基準解析。
 
@@ -64,6 +82,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## API
 - `GET /health`
+- `GET /api/runtime-caps`：回傳 `app_mode` 與各權限旗標（給前端/監控用）。
 - `POST /api/generate/mix-two`
   - 向下相容：可不帶 Body，改用 Query 參數 `count`（預設 2，需 ≥ 2），舊行為不變。
   - 擴充（建議）：以 JSON Body 指定更完整的控制：

@@ -24,7 +24,11 @@ function formatError(status, detail) {
 function extractDetail(payload) {
   if (!payload) return "";
   if (typeof payload === "string") return payload;
-  if (typeof payload === "object" && payload.detail) return payload.detail;
+  if (typeof payload === "object") {
+    if (typeof payload.detail === "string") return payload.detail;
+    if (payload.detail && typeof payload.detail.message === "string") return payload.detail.message;
+    if (typeof payload.message === "string") return payload.message;
+  }
   return "";
 }
 

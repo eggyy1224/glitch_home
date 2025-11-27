@@ -14,6 +14,16 @@ def test_health_endpoint(client: TestClient):
 
 
 @pytest.mark.api
+def test_runtime_caps_endpoint(client: TestClient):
+    response = client.get("/api/runtime-caps")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["app_mode"]
+    assert "enable_generation" in data
+    assert "enable_metadata_write" in data
+
+
+@pytest.mark.api
 def test_list_clients_endpoint(client: TestClient):
     """Test listing clients endpoint."""
     response = client.get("/api/clients")
@@ -27,4 +37,3 @@ def test_list_clients_endpoint(client: TestClient):
         assert "client_id" in client_info
         assert "connections" in client_info
         assert isinstance(client_info["connections"], int)
-
