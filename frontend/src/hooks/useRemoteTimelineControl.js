@@ -10,6 +10,7 @@ export function useRemoteTimelineControl({
   applyRemoteIframeConfig,
   releaseRemoteIframeConfig,
   setActiveModeOverride,
+  capabilities,
 }) {
   const [remoteTimelineControl, setRemoteTimelineControl] = useState(null);
   const remoteTimelineCommandRef = useRef(null);
@@ -19,7 +20,7 @@ export function useRemoteTimelineControl({
     actionError: timelineActionError,
     clearActionError,
     cancelPendingActions,
-  } = useTimelineStepActions({ clientId });
+  } = useTimelineStepActions({ clientId, capabilities });
 
   const effectiveTimelineId = remoteTimelineControl?.timelineId ?? iframeTimelineId;
   const remoteTimelineInitialStep = remoteTimelineControl?.startStep ?? null;

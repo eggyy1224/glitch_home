@@ -5,5 +5,7 @@ export const AdminPanelContext = createContext({
   appMode: "STUDIO",
   canWriteMetadata: true,
   canWriteAssets: true,
+  canAnalyze: true,
+  canRebuildIndex: true,
   forbidMessage: "",
 });

@@ -20,6 +20,8 @@ export default function AdminPanel({
   appMode = "STUDIO",
   canWriteMetadata = true,
   canWriteAssets = true,
+  canAnalyze = true,
+  canRebuildIndex = true,
   forbidMessage = "",
 }) {
   const [activeTab, setActiveTab] = useState("snapshot");
@@ -34,9 +36,11 @@ export default function AdminPanel({
       appMode,
       canWriteMetadata,
       canWriteAssets,
+      canAnalyze,
+      canRebuildIndex,
       forbidMessage: forbidMessage || `目前 APP_MODE=${appMode} 禁止此操作`,
     }),
-    [appMode, canWriteAssets, canWriteMetadata, forbidMessage, resolvedDefaultClient],
+    [appMode, canWriteAssets, canWriteMetadata, canAnalyze, canRebuildIndex, forbidMessage, resolvedDefaultClient],
   );
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);

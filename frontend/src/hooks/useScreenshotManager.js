@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { reportScreenshotFailure, uploadScreenshot } from "../api.js";
 
-export function useScreenshotManager(clientId) {
+export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMessage = "" } = {}) {
   const [isCapturing, setIsCapturing] = useState(false);
   const [screenshotMessage, setScreenshotMessage] = useState(null);
 
@@ -39,6 +39,10 @@ export function useScreenshotManager(clientId) {
 
   const runCaptureInternal = useCallback(
     async (requestId = null, isAuto = false) => {
+      if (!canWriteAssets) {
+        pushScreenshotMessage(forbidMessage || "目前模式禁止截圖上傳");
+        return null;
+      }
       const captureFn = captureFnRef.current;
       if (!captureFn) {
         throw new Error("場景尚未準備好");
@@ -51,7 +55,7 @@ export function useScreenshotManager(clientId) {
       pushScreenshotMessage(`${prefix}：${label}`);
       return result;
     },
-    [pushScreenshotMessage, clientId],
+    [pushScreenshotMessage, clientId, canWriteAssets, forbidMessage],
   );
 
   const processQueue = useCallback(() => {
@@ -114,6 +118,10 @@ export function useScreenshotManager(clientId) {
       if (targetClientId && targetClientId !== clientId) {
         return;
       }
+      if (!canWriteAssets) {
+        pushScreenshotMessage(forbidMessage || "目前模式禁止截圖上傳");
+        return;
+      }
 
       if (window.self !== window.top) {
         try {
@@ -136,7 +144,7 @@ export function useScreenshotManager(clientId) {
       pushScreenshotMessage(`收到截圖請求：${label}`);
       processQueue();
     },
-    [clientId, processQueue, pushScreenshotMessage],
+    [clientId, processQueue, pushScreenshotMessage, canWriteAssets, forbidMessage],
   );
 
   const handleCaptureReady = useCallback(

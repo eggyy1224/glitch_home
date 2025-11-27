@@ -87,6 +87,8 @@ export function createModeRenderMap({
   canWriteAssets,
   appMode,
   forbidMessage,
+  canAnalyze,
+  canRebuildIndex,
 }) {
   return {
     [DisplayModes.IFRAME]: buildModeEntry(modeBaseConfigs[DisplayModes.IFRAME], {
@@ -178,6 +180,8 @@ export function createModeRenderMap({
         canWriteMetadata,
         canWriteAssets,
         forbidMessage,
+        canAnalyze,
+        canRebuildIndex,
       },
     }),
   };

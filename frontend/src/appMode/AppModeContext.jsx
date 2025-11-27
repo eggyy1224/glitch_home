@@ -6,12 +6,33 @@ const FALLBACK_MODE = (import.meta.env.VITE_APP_MODE || "STUDIO").toUpperCase();
 function deriveFromMode(mode = FALLBACK_MODE) {
   const normalized = (mode || FALLBACK_MODE).toUpperCase();
   if (normalized === "CONSOLE") {
-    return { appMode: normalized, canGenerate: false, canWriteMetadata: true, canWriteAssets: true };
+    return {
+      appMode: normalized,
+      canGenerate: false,
+      canWriteMetadata: true,
+      canWriteAssets: true,
+      canAnalyze: true,
+      canRebuildIndex: false,
+    };
   }
   if (normalized === "DISPLAY") {
-    return { appMode: normalized, canGenerate: false, canWriteMetadata: false, canWriteAssets: false };
+    return {
+      appMode: normalized,
+      canGenerate: false,
+      canWriteMetadata: false,
+      canWriteAssets: false,
+      canAnalyze: false,
+      canRebuildIndex: false,
+    };
   }
-  return { appMode: normalized, canGenerate: true, canWriteMetadata: true, canWriteAssets: true };
+  return {
+    appMode: normalized,
+    canGenerate: true,
+    canWriteMetadata: true,
+    canWriteAssets: true,
+    canAnalyze: true,
+    canRebuildIndex: true,
+  };
 }
 
 function deriveCapabilities(runtimeCaps) {
@@ -25,6 +46,8 @@ function deriveCapabilities(runtimeCaps) {
     canGenerate: runtimeCaps.enable_generation ?? fallback.canGenerate,
     canWriteMetadata: runtimeCaps.enable_metadata_write ?? fallback.canWriteMetadata,
     canWriteAssets: runtimeCaps.enable_asset_write ?? fallback.canWriteAssets,
+    canAnalyze: runtimeCaps.enable_analysis_llm ?? fallback.canAnalyze,
+    canRebuildIndex: runtimeCaps.enable_index_rebuild ?? fallback.canRebuildIndex,
   };
 }
 
@@ -46,14 +69,16 @@ export function AppModeProvider({ children }) {
     setLoading(true);
     try {
       const data = await request("/api/runtime-caps");
-      const derived = deriveCapabilities(data);
-      setAppMode(derived.appMode);
-      setCapabilities({
-        canGenerate: Boolean(derived.canGenerate),
-        canWriteMetadata: Boolean(derived.canWriteMetadata),
-        canWriteAssets: Boolean(derived.canWriteAssets),
-      });
-      setError(null);
+    const derived = deriveCapabilities(data);
+    setAppMode(derived.appMode);
+    setCapabilities({
+      canGenerate: Boolean(derived.canGenerate),
+      canWriteMetadata: Boolean(derived.canWriteMetadata),
+      canWriteAssets: Boolean(derived.canWriteAssets),
+      canAnalyze: Boolean(derived.canAnalyze),
+      canRebuildIndex: Boolean(derived.canRebuildIndex),
+    });
+    setError(null);
     } catch (err) {
       // 保留 env 推導並紀錄錯誤供 UI 判斷
       setError(err.message || "無法取得執行模式");

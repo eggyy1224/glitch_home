@@ -21,13 +21,22 @@ function assignIfDefined(target, key, value) {
   target[key] = value;
 }
 
-export function useTimelineStepActions({ clientId, onError } = {}) {
+export function useTimelineStepActions({
+  clientId,
+  onError,
+  capabilities = {},
+} = {}) {
   const [actionError, setActionError] = useState(null);
   const controllerRef = useRef(null);
   const activeRunRef = useRef(null);
   const actionErrorRef = useRef(null);
   const remoteClickTimersRef = useRef([]);
   const videoControlTimersRef = useRef([]);
+  const {
+    canWriteAssets = true,
+    canAnalyze = true,
+    forbidMessage = "",
+  } = capabilities;
 
   const clearRemoteClickTimers = useCallback(() => {
     if (!remoteClickTimersRef.current.length) {
@@ -301,6 +310,12 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
           await queueSoundPlay(action.sound_filename, target, { signal });
           return;
         }
+        if (!canWriteAssets) {
+          throw new Error(forbidMessage || "目前模式禁止生成/寫入音訊");
+        }
+        if (!canAnalyze) {
+          throw new Error(forbidMessage || "目前模式禁止語音生成/分析");
+        }
         const base = {
           text: action.text,
         };
@@ -397,7 +412,7 @@ export function useTimelineStepActions({ clientId, onError } = {}) {
         clearActionError();
       }
     },
-    [clientId, cancelPendingActions, clearActionError, reportActionError],
+    [clientId, cancelPendingActions, clearActionError, reportActionError, canWriteAssets, canAnalyze, forbidMessage],
   );
 
   return {

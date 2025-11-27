@@ -71,6 +71,8 @@ export default function App() {
   const canGenerate = capabilities?.canGenerate ?? true;
   const canWriteMetadata = capabilities?.canWriteMetadata ?? true;
   const canWriteAssets = capabilities?.canWriteAssets ?? true;
+  const canAnalyze = capabilities?.canAnalyze ?? true;
+  const canRebuildIndex = capabilities?.canRebuildIndex ?? true;
   const forbidMessage = `目前 APP_MODE=${appMode} 禁止此操作`;
 
   const [activeModeOverride, setActiveModeOverride] = useState(null);
@@ -114,7 +116,7 @@ export default function App() {
     handleCaptureReady,
     enqueueScreenshotRequest,
     markRequestDone,
-  } = useScreenshotManager(clientId);
+  } = useScreenshotManager(clientId, { canWriteAssets, forbidMessage });
 
   const {
     activeConfig: iframeActiveConfig,
@@ -166,6 +168,7 @@ export default function App() {
     applyRemoteIframeConfig,
     releaseRemoteIframeConfig,
     setActiveModeOverride,
+    capabilities: { canWriteAssets, canAnalyze, forbidMessage },
   });
 
   const {
@@ -333,6 +336,8 @@ export default function App() {
     canWriteAssets,
     appMode,
     forbidMessage,
+    canAnalyze,
+    canRebuildIndex,
   });
 
   const activeModeEntry = modeRenderMap[activeMode];

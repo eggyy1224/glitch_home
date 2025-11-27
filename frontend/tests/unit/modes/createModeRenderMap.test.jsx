@@ -78,6 +78,8 @@ const baseProps = {
   canWriteAssets: true,
   appMode: "STUDIO",
   forbidMessage: "nope",
+  canAnalyze: true,
+  canRebuildIndex: true,
 };
 
 const resolveComponent = async (component) => {
@@ -167,6 +169,8 @@ describe("createModeRenderMap", () => {
       appMode: "STUDIO",
       canWriteMetadata: true,
       canWriteAssets: true,
+      canAnalyze: true,
+      canRebuildIndex: true,
     });
   });
 });

@@ -187,4 +187,46 @@ describe("useTimelineStepActions", () => {
 
     expect(sendRemoteClick).not.toHaveBeenCalled();
   });
+
+  it("在資產寫入被禁用時會阻擋 TTS 並回報錯誤", async () => {
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useTimelineStepActions({
+        clientId: "client-deny",
+        onError,
+        capabilities: { canWriteAssets: false, canAnalyze: true, forbidMessage: "no write" },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.executeStepActions({
+        step: { tts: { mode: "speak_with_subtitle", text: "hi" } },
+        runId: 1,
+      });
+    });
+
+    expect(speakWithSubtitle).not.toHaveBeenCalled();
+    expect(triggerTts).not.toHaveBeenCalled();
+    expect(result.current.actionError).toContain("no write");
+    expect(onError).toHaveBeenCalled();
+  });
+
+  it("sound_play 仍可執行當分析關閉時", async () => {
+    const { result } = renderHook(() =>
+      useTimelineStepActions({
+        clientId: "client-audio",
+        capabilities: { canAnalyze: false, canWriteAssets: false },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.executeStepActions({
+        step: { tts: { mode: "sound_play", sound_filename: "cue.wav" } },
+        runId: 2,
+      });
+    });
+
+    expect(queueSoundPlay).toHaveBeenCalledWith("cue.wav", "client-audio", expect.any(Object));
+    expect(result.current.actionError).toBeNull();
+  });
 });
