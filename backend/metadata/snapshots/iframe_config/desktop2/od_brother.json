@@ -1,0 +1,154 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 6,
+  "panels": [
+    {
+      "id": "videoL",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%97%91%E5%A3%9E%E7%9A%84%E5%B0%91%E7%88%BA.mp4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "嗑壞的少爺",
+      "col_span": 3,
+      "row_span": 4
+    },
+    {
+      "id": "videoR",
+      "image": null,
+      "url": "/?video_mode=true&video=%E6%99%9A%E5%AE%B4.mp4",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "晚宴",
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "panel1",
+      "image": "offspring_20251109_125707_860.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Slide Vibe",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel2",
+      "image": "offspring_20251108_151003_126.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Dynamic Mix",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel3",
+      "image": "offspring_20251108_235915_125.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Abstract Cubes",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel4",
+      "image": "offspring_20251012_183708_098.png",
+      "url": null,
+      "params": {
+        "incubator": "true",
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Silver Mask",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel5",
+      "image": "offspring_20251005_144934_368.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Table Scene",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel6",
+      "image": "offspring_20251109_162424_673.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Abstract Companion",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel7",
+      "image": "offspring_20251109_114534_671.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Bar Scene",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel8",
+      "image": "offspring_20251108_144212_552.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel9",
+      "image": "offspring_20251108_151003_126.png",
+      "url": null,
+      "params": {
+        "static_mode": "true",
+        "slide_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Repeat Mix",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "panel10",
+      "image": "offspring_20251109_125707_860.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Texture Field",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}
