@@ -5,6 +5,7 @@ const renderMock = vi.fn();
 const createRootMock = vi.fn(() => ({ render: renderMock }));
 
 const AppMock = () => <div data-testid="app" />;
+const AppModeProviderMock = ({ children }) => <div data-testid="app-mode-provider">{children}</div>;
 
 vi.mock("react-dom/client", () => ({
   createRoot: createRootMock,
@@ -13,6 +14,11 @@ vi.mock("react-dom/client", () => ({
 vi.mock("../../src/App.jsx", () => ({
   __esModule: true,
   default: AppMock,
+}));
+
+vi.mock("../../src/appMode/AppModeContext.jsx", () => ({
+  __esModule: true,
+  AppModeProvider: AppModeProviderMock,
 }));
 
 describe("main.jsx", () => {
@@ -27,6 +33,10 @@ describe("main.jsx", () => {
 
     const rootEl = document.getElementById("root");
     expect(createRootMock).toHaveBeenCalledWith(rootEl);
-    expect(renderMock).toHaveBeenCalledWith(<AppMock />);
+    expect(renderMock).toHaveBeenCalledWith(
+      <AppModeProviderMock>
+        <AppMock />
+      </AppModeProviderMock>,
+    );
   });
 });

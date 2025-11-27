@@ -20,6 +20,7 @@ const {
   ControlPanelMock,
   ScreenshotMessageMock,
   IframeTimelineControlsMock,
+  KINSHIP_DATA_EXCLUDED,
 } = vi.hoisted(() => {
   const makeDiv = (testId) =>
     vi.fn(() => (
@@ -48,11 +49,13 @@ const {
     ControlPanelMock: makeDiv("control-panel"),
     ScreenshotMessageMock: makeDiv("screenshot-message"),
     IframeTimelineControlsMock: makeDiv("iframe-controls"),
+    KINSHIP_DATA_EXCLUDED: new Set(["organic", "slide", "iframe", "static", "video", "admin"]),
   };
 });
 
 vi.mock("../../src/hooks/useModeParams.js", () => ({
   useModeParams: mockUseModeParams,
+  KINSHIP_DATA_EXCLUDED,
 }));
 
 vi.mock("../../src/hooks/useCameraPresets.js", () => ({
