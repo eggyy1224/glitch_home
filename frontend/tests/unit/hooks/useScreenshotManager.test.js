@@ -8,7 +8,8 @@ vi.mock("../../../src/api.js", () => ({
   reportScreenshotFailure: vi.fn(),
 }));
 
-const createManager = (clientId = "client-a") => renderHook(() => useScreenshotManager(clientId));
+const createManager = (clientId = "client-a", options) =>
+  renderHook(() => useScreenshotManager(clientId, options));
 
 describe("useScreenshotManager", () => {
   let originalActEnv;
@@ -81,6 +82,25 @@ describe("useScreenshotManager", () => {
     expect(result.current.isCapturing).toBe(false);
     expect(reportScreenshotFailure).toHaveBeenCalledWith("auto-1", "oops", "client-auto");
     expect(result.current.screenshotMessage).toContain("自動截圖失敗");
+  });
+
+  it("在無寫入權限時會立即回報失敗並忽略佇列", async () => {
+    const { result } = createManager("client-readonly", {
+      canWriteAssets: false,
+      forbidMessage: "禁止寫入",
+    });
+
+    await act(async () => {
+      result.current.enqueueScreenshotRequest({
+        request_id: "blocked-1",
+        metadata: { label: "blocked" },
+      });
+      await Promise.resolve();
+    });
+
+    expect(uploadScreenshot).not.toHaveBeenCalled();
+    expect(reportScreenshotFailure).toHaveBeenCalledWith("blocked-1", "禁止寫入", "client-readonly");
+    expect(result.current.screenshotMessage).toContain("禁止寫入");
   });
 
   it("不同 clientId 的請求會被忽略", async () => {

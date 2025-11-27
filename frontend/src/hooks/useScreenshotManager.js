@@ -37,11 +37,27 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
     }, ttl);
   }, [clearScreenshotTimer]);
 
+  const forbidReason = forbidMessage || "目前模式禁止截圖上傳";
+
+  const reportForbidden = useCallback(
+    async (requestId = null) => {
+      pushScreenshotMessage(forbidReason);
+      if (!requestId) return null;
+      pendingRequestIdsRef.current.delete(requestId);
+      try {
+        await reportScreenshotFailure(requestId, forbidReason, clientId);
+      } catch (err) {
+        console.error("回報截圖失敗錯誤", err);
+      }
+      return null;
+    },
+    [clientId, forbidReason, pushScreenshotMessage],
+  );
+
   const runCaptureInternal = useCallback(
     async (requestId = null, isAuto = false) => {
       if (!canWriteAssets) {
-        pushScreenshotMessage(forbidMessage || "目前模式禁止截圖上傳");
-        return null;
+        return reportForbidden(requestId);
       }
       const captureFn = captureFnRef.current;
       if (!captureFn) {
@@ -55,7 +71,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
       pushScreenshotMessage(`${prefix}：${label}`);
       return result;
     },
-    [pushScreenshotMessage, clientId, canWriteAssets, forbidMessage],
+    [pushScreenshotMessage, clientId, canWriteAssets, reportForbidden],
   );
 
   const processQueue = useCallback(() => {
@@ -119,7 +135,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
         return;
       }
       if (!canWriteAssets) {
-        pushScreenshotMessage(forbidMessage || "目前模式禁止截圖上傳");
+        void reportForbidden(payload.request_id);
         return;
       }
 
@@ -144,7 +160,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
       pushScreenshotMessage(`收到截圖請求：${label}`);
       processQueue();
     },
-    [clientId, processQueue, pushScreenshotMessage, canWriteAssets, forbidMessage],
+    [clientId, processQueue, pushScreenshotMessage, canWriteAssets, reportForbidden],
   );
 
   const handleCaptureReady = useCallback(
