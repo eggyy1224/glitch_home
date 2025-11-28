@@ -635,11 +635,12 @@ export default function SnapshotPanelsEditor({
             })()}
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6 }} onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   checked={selectedRows.includes(index)}
                   onChange={() => onToggleRow(index)}
+                  onClick={(e) => e.stopPropagation()}
                   aria-label={`選取 panel ${index + 1}`}
                   data-ai-field={`snapshot.panel[${index}].selected`}
                 />
