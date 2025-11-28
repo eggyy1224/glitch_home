@@ -1181,7 +1181,7 @@ export default function TimelineEpisodeEditor() {
           <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
               type="button"
-              onClick={() => syncJsonFromData(mode === "timeline" ? timelineData : episodeData)}
+              onClick={() => syncJsonFromData(activeData)}
               disabled={jsonLocked}
               data-ai-action="timeline-episode.sync-from-form"
             >
