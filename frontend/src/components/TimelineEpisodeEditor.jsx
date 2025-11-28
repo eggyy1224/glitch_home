@@ -181,6 +181,7 @@ export default function TimelineEpisodeEditor() {
   });
   const [episodeTargetOverride, setEpisodeTargetOverride] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [jsonReadOnly, setJsonReadOnly] = useState(false);
 
   const activeData = useMemo(
     () => (mode === "timeline" ? timelineData : mode === "episode" ? episodeData : snapshotData),
@@ -461,6 +462,10 @@ export default function TimelineEpisodeEditor() {
   const handleJsonChange = useCallback((text) => {
     setJsonText(text);
     setDirty(true);
+  }, []);
+
+  const focusRow = useCallback((index) => {
+    setSelectedRows([index]);
   }, []);
 
   useEffect(() => {
@@ -904,6 +909,42 @@ export default function TimelineEpisodeEditor() {
         </label>
       </div>
 
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 12,
+          alignItems: "center",
+          marginBottom: 12,
+          border: "1px solid #0f4",
+          padding: 10,
+          background: "#010",
+          borderRadius: 4,
+        }}
+      >
+        <div style={{ color: "#c8ffd2", fontWeight: 700 }}>狀態條</div>
+        <span style={{ color: dirty ? "#ff6b6b" : "#82dca5" }}>儲存狀態：{dirty ? "未儲存" : "已儲存"}</span>
+        <span style={{ color: validationErrors.length ? "#ffb347" : "#82dca5" }}>
+          錯誤數：{validationErrors.length}
+        </span>
+        <span style={{ color: "#82dca5" }}>快捷鍵：Cmd+S 儲存、空白鍵播放預覽、方向鍵移動選取</span>
+        {message && (
+          <span
+            style={{
+              background: "#1f1f1f",
+              border: "1px solid #ffb347",
+              padding: "4px 8px",
+              borderRadius: 4,
+              color: "#ffb347",
+            }}
+            role="status"
+            aria-live="polite"
+          >
+            {message}
+          </span>
+        )}
+      </div>
+
       <div style={columnsStyle}>
         <div
           style={columnStyle}
@@ -1048,6 +1089,9 @@ export default function TimelineEpisodeEditor() {
                 onPaste={handlePaste}
                 canPaste={canSnapshotPaste}
                 onPanelChange={handlePanelChange}
+                layoutColumns={snapshotData.columns}
+                layoutGap={snapshotData.gap}
+                onSelectPanel={focusRow}
               />
             </div>
           ) : (
@@ -1176,6 +1220,7 @@ export default function TimelineEpisodeEditor() {
             style={{ width: "100%", height: 240, fontFamily: "monospace" }}
             value={jsonText}
             onChange={(e) => handleJsonChange(e.target.value)}
+            readOnly={jsonReadOnly}
             data-ai-field="timeline-episode.json"
           />
           <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1189,6 +1234,9 @@ export default function TimelineEpisodeEditor() {
             </button>
             <button type="button" onClick={() => setJsonLocked((prev) => !prev)} data-ai-action="timeline-episode.toggle-json-lock">
               {jsonLocked ? "解除鎖定" : "鎖定 JSON"}
+            </button>
+            <button type="button" onClick={() => setJsonReadOnly((prev) => !prev)} data-ai-action="timeline-episode.toggle-json-readonly">
+              {jsonReadOnly ? "關閉只讀" : "JSON 只讀預覽"}
             </button>
           </div>
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { labelStyle } from "../../AdminPanelStyles";
 
 export default function EpisodeTracksEditor({
@@ -20,8 +20,59 @@ export default function EpisodeTracksEditor({
   onTargetOverrideChange,
   timelineOptions = [],
 }) {
+  const lanes = useMemo(() => {
+    const groups = new Map();
+    (tracks || []).forEach((track, index) => {
+      const target = track.targetClientId || track.target_client_id || "(未指定)";
+      if (!groups.has(target)) groups.set(target, []);
+      groups.get(target).push({ ...track, index });
+    });
+    return Array.from(groups.entries());
+  }, [tracks]);
+
   return (
     <div data-ai-section="episode.tracks">
+      <div style={{ border: "1px solid #0f4", padding: 10, marginBottom: 12, background: "#010", borderRadius: 4 }}>
+        <div style={{ color: "#82dca5", marginBottom: 6 }}>Client 泳道（可視化 offset/長度）</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {lanes.map(([client, clientTracks]) => (
+            <div key={client} style={{ border: "1px dashed #0f4", padding: 6, borderRadius: 4 }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>{client}</div>
+              <div style={{ display: "flex", gap: 6, position: "relative", minHeight: 46 }}>
+                {clientTracks.map((track) => {
+                  const offset = Number(track.offset ?? track.delay ?? 0);
+                  const width = 140 + Math.max(0, offset) * 4;
+                  const timelineLabel = track.timelineId || track.timeline_id || "未選擇 timeline";
+                  const isActive = selectedRows.includes(track.index);
+                  return (
+                    <button
+                      key={`lane-${client}-${track.index}`}
+                      type="button"
+                      onClick={() => onToggleRow(track.index)}
+                      style={{
+                        marginLeft: `${Math.max(0, offset) * 2}px`,
+                        minWidth: width,
+                        border: `2px solid ${isActive ? "#82dca5" : "#0f4"}`,
+                        background: isActive ? "#0a280a" : "#021",
+                        color: "#c8ffd2",
+                        borderRadius: 6,
+                        padding: 6,
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: 12 }}>{timelineLabel}</div>
+                      <div style={{ fontSize: 11, color: "#82dca5" }}>offset：{offset}s</div>
+                    </button>
+                  );
+                })}
+                {clientTracks.length === 0 && <div style={{ color: "#82dca5" }}>尚無 track</div>}
+              </div>
+            </div>
+          ))}
+          {lanes.length === 0 && <div style={{ color: "#82dca5" }}>尚未新增任何 track</div>}
+        </div>
+      </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
         <button type="button" onClick={onAddTrack} data-ai-action="episode.track.add">
           新增 track

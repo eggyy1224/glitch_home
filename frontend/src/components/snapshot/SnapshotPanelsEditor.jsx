@@ -67,11 +67,17 @@ export default function SnapshotPanelsEditor({
   onPaste,
   canPaste,
   onPanelChange,
+  layoutColumns = 1,
+  layoutGap = 0,
+  onSelectPanel,
 }) {
   const [imageAssets, setImageAssets] = useState([]);
   const [videoAssets, setVideoAssets] = useState([]);
   const [assetStatus, setAssetStatus] = useState("尚未載入資產");
   const [loadingAssets, setLoadingAssets] = useState(false);
+  const [assetTab, setAssetTab] = useState("images");
+  const [assetKeyword, setAssetKeyword] = useState("");
+  const [assetDrawerOpen, setAssetDrawerOpen] = useState(true);
 
   const parseAssetList = useCallback((rawList) => {
     const list = Array.isArray(rawList) ? rawList : [];
@@ -120,6 +126,20 @@ export default function SnapshotPanelsEditor({
   const limitedImageOptions = useMemo(() => imageAssets.slice(0, 500), [imageAssets]);
   const limitedVideoOptions = useMemo(() => videoAssets.slice(0, 500), [videoAssets]);
 
+  const filteredAssets = useMemo(() => {
+    const keyword = assetKeyword.trim().toLowerCase();
+    const source = assetTab === "videos" ? limitedVideoOptions : limitedImageOptions;
+    if (!keyword) return source;
+    return source.filter((name) => name.toLowerCase().includes(keyword));
+  }, [assetKeyword, assetTab, limitedImageOptions, limitedVideoOptions]);
+
+  const assetPreviewUrl = (name) => {
+    if (!name) return "";
+    if (assetTab === "videos") return "";
+    if (name.startsWith("http")) return name;
+    return `/generated_images/${name}`;
+  };
+
   const handleModeSelect = (index, nextMode, currentAsset, panel) => {
     if (!nextMode) {
       onPanelChange(index, { url: "", image: undefined });
@@ -156,8 +176,258 @@ export default function SnapshotPanelsEditor({
     onPanelChange(index, patch);
   };
 
+  const handleAssetApply = (asset) => {
+    if (!asset || !selectedRows.length) return;
+    const firstIndex = selectedRows[0];
+    const panel = panels?.[firstIndex];
+    const { mode } = getPanelModeAndAsset(panel);
+    if (assetTab === "videos") {
+      const nextMode = mode || "video_mode";
+      handleModeSelect(firstIndex, nextMode, asset, panel);
+    } else {
+      const nextMode = mode || "static_mode";
+      handleModeSelect(firstIndex, nextMode, asset, panel);
+      handleImageChange(firstIndex, asset, panel);
+    }
+    if (typeof onSelectPanel === "function") {
+      onSelectPanel(firstIndex);
+    }
+  };
+
+  const handlePanelDrag = (event, index) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(index));
+  };
+
+  const handlePanelDrop = (event, targetIndex) => {
+    const raw = event.dataTransfer.getData("text/plain");
+    const from = Number(raw);
+    if (Number.isNaN(from)) return;
+    if (from === targetIndex) return;
+    onMoveRow(from, targetIndex - from);
+    if (typeof onSelectPanel === "function") {
+      onSelectPanel(targetIndex);
+    }
+  };
+
+  const renderCanvas = () => {
+    const cols = Math.max(1, Number(layoutColumns) || 1);
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <div style={{ color: "#82dca5", letterSpacing: "0.04em" }}>畫布預覽（拖曳重新排序，點擊聚焦）</div>
+          <div style={{ display: "flex", gap: 6, color: "#82dca5", fontSize: 12 }}>
+            <span style={{ borderLeft: "8px solid #4f8", paddingLeft: 6 }}>image/slide</span>
+            <span style={{ borderLeft: "8px solid #ffb347", paddingLeft: 6 }}>video</span>
+          </div>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gap: layoutGap || 0,
+            border: "1px dashed #0f4",
+            padding: 8,
+            background: "#001100",
+            minHeight: 160,
+          }}
+        >
+          {(panels || []).map((panel, index) => {
+            const { mode, asset } = getPanelModeAndAsset(panel);
+            const isVideo = MODE_PRESETS[mode]?.assetKey === "video";
+            const isActive = selectedRows.includes(index);
+            return (
+              <div
+                key={panel?.id || index}
+                role="button"
+                tabIndex={0}
+                draggable
+                onDragStart={(e) => handlePanelDrag(e, index)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handlePanelDrop(e, index)}
+                onClick={() => (typeof onSelectPanel === "function" ? onSelectPanel(index) : onToggleRow(index))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (typeof onSelectPanel === "function") {
+                      onSelectPanel(index);
+                    }
+                  }
+                }}
+                style={{
+                  border: `2px solid ${isVideo ? "#ffb347" : "#4f8"}`,
+                  background: isActive ? "#0a280a" : "#010",
+                  color: "#e8ffe9",
+                  padding: 8,
+                  borderRadius: 4,
+                  gridColumnEnd: `span ${panel?.colSpan ?? panel?.col_span ?? 1}`,
+                  gridRowEnd: `span ${panel?.rowSpan ?? panel?.row_span ?? 1}`,
+                  boxShadow: isActive ? "0 0 0 2px #82dca5" : "none",
+                  cursor: "grab",
+                  minHeight: 72,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  position: "relative",
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 12, letterSpacing: "0.05em" }}>
+                  {panel?.id || `panel-${index + 1}`}
+                </div>
+                <div style={{ fontSize: 12, color: "#82dca5" }}>{mode || "自訂模式"}</div>
+                <div style={{ fontSize: 12, color: "#c8ffd2", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {asset || panel?.image || panel?.url || "(未指定)"}
+                </div>
+                <div style={{ position: "absolute", bottom: 8, right: 8, display: "flex", gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = Math.max(1, (panel?.colSpan ?? panel?.col_span ?? 1) + 1);
+                      onPanelChange(index, { colSpan: next, col_span: next });
+                    }}
+                    style={{ fontSize: 10 }}
+                  >
+                    ↔︎+
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = Math.max(1, (panel?.rowSpan ?? panel?.row_span ?? 1) + 1);
+                      onPanelChange(index, { rowSpan: next, row_span: next });
+                    }}
+                    style={{ fontSize: 10 }}
+                  >
+                    ↕︎+
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          {(!panels || panels.length === 0) && (
+            <div style={{ color: "#82dca5" }} data-ai-state="empty">
+              尚未新增 panel，點擊上方「新增 panel」或從資產抽屜拖曳
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div data-ai-section="snapshot.panels">
+      {renderCanvas()}
+      <div
+        style={{
+          border: "1px solid #0f4",
+          marginBottom: 12,
+          background: "#010",
+          padding: 10,
+          borderRadius: 4,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => setAssetDrawerOpen((prev) => !prev)}>
+            {assetDrawerOpen ? "收合資產抽屜" : "展開資產抽屜"}
+          </button>
+          <div style={{ color: "#82dca5" }}>直接拖放或點擊套用到選取 panel，免去手動輸入</div>
+        </div>
+        {assetDrawerOpen && (
+          <div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+              <button
+                type="button"
+                onClick={() => setAssetTab("images")}
+                style={{
+                  padding: "6px 10px",
+                  background: assetTab === "images" ? "#0f4" : "#000",
+                  color: assetTab === "images" ? "#000" : "#c8ffd2",
+                  border: "1px solid #0f4",
+                  borderRadius: 4,
+                }}
+              >
+                Images
+              </button>
+              <button
+                type="button"
+                onClick={() => setAssetTab("videos")}
+                style={{
+                  padding: "6px 10px",
+                  background: assetTab === "videos" ? "#0f4" : "#000",
+                  color: assetTab === "videos" ? "#000" : "#c8ffd2",
+                  border: "1px solid #0f4",
+                  borderRadius: 4,
+                }}
+              >
+                Videos
+              </button>
+              <input
+                type="text"
+                placeholder="搜尋名稱..."
+                value={assetKeyword}
+                onChange={(e) => setAssetKeyword(e.target.value)}
+                style={{ width: 200 }}
+              />
+              <span style={{ color: "#82dca5" }}>{assetStatus}</span>
+              <button type="button" onClick={loadAssets} disabled={loadingAssets}>
+                重新載入資產
+              </button>
+              <button type="button" onClick={() => handleAssetApply(filteredAssets[0])} disabled={!selectedRows.length}>
+                套用到選取 panel
+              </button>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: 8,
+                maxHeight: 220,
+                overflowY: "auto",
+                padding: 4,
+                border: "1px dashed #0f4",
+              }}
+            >
+              {(filteredAssets || []).map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => handleAssetApply(name)}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", name);
+                  }}
+                  style={{
+                    textAlign: "left",
+                    border: "1px solid #0f4",
+                    background: "#000",
+                    color: "#c8ffd2",
+                    borderRadius: 6,
+                    padding: 6,
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 72,
+                      background: `url(${assetPreviewUrl(name)}) center/cover, linear-gradient(135deg, #0f4, #053)`,
+                      borderRadius: 4,
+                      marginBottom: 6,
+                    }}
+                    aria-hidden="true"
+                  />
+                  <div style={{ fontWeight: 700, fontSize: 12 }}>{name}</div>
+                  <div style={{ fontSize: 11, color: "#82dca5" }}>{assetTab === "videos" ? "video" : "image"}</div>
+                </button>
+              ))}
+              {filteredAssets.length === 0 && (
+                <div style={{ color: "#82dca5" }} data-ai-state="empty">
+                  無符合的資產，請嘗試重新載入或調整搜尋關鍵字
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
         <button type="button" onClick={onAddPanel} data-ai-action="snapshot.panel.add">
           新增 panel
@@ -200,6 +470,7 @@ export default function SnapshotPanelsEditor({
               boxShadow: "none",
             }}
             data-ai-item={`snapshot.panel:${index}`}
+            onClick={() => (typeof onSelectPanel === "function" ? onSelectPanel(index) : null)}
           >
             {(() => {
               const { mode, asset } = getPanelModeAndAsset(panel);

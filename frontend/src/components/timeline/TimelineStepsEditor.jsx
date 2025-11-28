@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 export default function TimelineStepsEditor({
   steps,
@@ -24,8 +24,63 @@ export default function TimelineStepsEditor({
   onStepChange,
   getSnapshotValue,
 }) {
+  const totalDuration = useMemo(
+    () => (steps || []).reduce((sum, step) => sum + Number(step.duration || 0), 0),
+    [steps],
+  );
+
   return (
     <div data-ai-section="timeline.steps">
+      <div style={{ border: "1px solid #0f4", padding: 10, marginBottom: 12, background: "#010", borderRadius: 4 }}>
+        <div style={{ color: "#82dca5", marginBottom: 6, display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <span>時間軸預覽（按比例呈現 duration，點擊 bar 開啟表單細節）</span>
+          <span style={{ fontSize: 12 }}>總長度：{totalDuration || 0}s</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            border: "1px dashed #0f4",
+            padding: 6,
+            overflowX: "auto",
+            background: "#001100",
+            minHeight: 60,
+          }}
+        >
+          {(steps || []).map((step, index) => {
+            const percent = totalDuration ? (Number(step.duration || 0) / totalDuration) * 100 : 0;
+            const snapshotLabel = getSnapshotValue(step) || step.label || "未命名 snapshot";
+            const isActive = selectedRows.includes(index);
+            return (
+              <button
+                key={`timeline-bar-${index}`}
+                type="button"
+                onClick={() => onToggleRow(index)}
+                style={{
+                  flex: `0 0 ${Math.max(percent, 8)}%`,
+                  minWidth: 120,
+                  border: `2px solid ${isActive ? "#82dca5" : "#0f4"}`,
+                  background: isActive ? "#0a280a" : "#021",
+                  color: "#c8ffd2",
+                  borderRadius: 6,
+                  padding: 6,
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 12 }}>{snapshotLabel}</div>
+                <div style={{ fontSize: 11, color: "#82dca5" }}>duration：{step.duration ?? "?"}s</div>
+                <div style={{ fontSize: 11, color: "#82dca5" }}>client：{step.clientId || step.client_id || "(timeline)"}</div>
+              </button>
+            );
+          })}
+          {(!steps || steps.length === 0) && (
+            <div style={{ color: "#82dca5" }} data-ai-state="empty">
+              尚未新增 steps，點擊「新增 step」即可建立
+            </div>
+          )}
+        </div>
+      </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
         <button type="button" onClick={onAddStep} data-ai-action="timeline.step.add">
           新增 step
