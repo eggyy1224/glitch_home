@@ -9,6 +9,7 @@ const MODE_PRESETS = {
 
 const PANEL_DRAG_TYPE = "application/x-snapshot-panel-index";
 const ASSET_DRAG_TYPE = "application/x-snapshot-asset";
+const ASSET_TYPE_DRAG_TYPE = "application/x-snapshot-asset-type";
 
 const truthy = (value) => {
   if (value == null) return false;
@@ -179,16 +180,23 @@ export default function SnapshotPanelsEditor({
     onPanelChange(index, patch);
   };
 
-  const applyAssetToPanel = (index, asset) => {
+  const applyAssetToPanel = (index, asset, assetTypeHint) => {
     if (!asset || index == null || index < 0) return;
     const panel = panels?.[index];
+    const assetType = assetTypeHint || (assetTab === "videos" ? "video" : "image");
     const { mode } = getPanelModeAndAsset(panel);
-    if (assetTab === "videos") {
-      const nextMode = mode || "video_mode";
-      handleModeSelect(index, nextMode, asset, panel);
-    } else {
-      const nextMode = mode || "static_mode";
-      handleModeSelect(index, nextMode, asset, panel);
+    const currentAssetKey = MODE_PRESETS[mode]?.assetKey;
+    const forceVideo = assetType === "video";
+    const nextMode =
+      forceVideo && currentAssetKey === "video"
+        ? mode || "video_mode"
+        : !forceVideo && currentAssetKey === "img"
+        ? mode || "static_mode"
+        : forceVideo
+        ? "video_mode"
+        : "static_mode";
+    handleModeSelect(index, nextMode, asset, panel);
+    if (!forceVideo) {
       handleImageChange(index, asset, panel);
     }
     if (typeof onSelectPanel === "function") {
@@ -198,7 +206,7 @@ export default function SnapshotPanelsEditor({
 
   const handleAssetApply = (asset) => {
     if (!asset || !selectedRows.length) return;
-    applyAssetToPanel(selectedRows[0], asset);
+    applyAssetToPanel(selectedRows[0], asset, assetTab === "videos" ? "video" : "image");
   };
 
   const handlePanelDrag = (event, index) => {
@@ -209,8 +217,10 @@ export default function SnapshotPanelsEditor({
 
   const handlePanelDrop = (event, targetIndex) => {
     const assetPayload = event.dataTransfer.getData(ASSET_DRAG_TYPE);
+    const assetTypePayload = event.dataTransfer.getData(ASSET_TYPE_DRAG_TYPE);
     if (assetPayload) {
-      applyAssetToPanel(targetIndex, assetPayload);
+      const assetType = assetTypePayload || (assetTab === "videos" ? "video" : "image");
+      applyAssetToPanel(targetIndex, assetPayload, assetType);
       return;
     }
 
@@ -219,7 +229,12 @@ export default function SnapshotPanelsEditor({
     if (!raw) return;
 
     if (raw.startsWith("asset:")) {
-      applyAssetToPanel(targetIndex, raw.replace(/^asset:/, ""));
+      const assetType = assetTypePayload || (assetTab === "videos" ? "video" : "image");
+      applyAssetToPanel(
+        targetIndex,
+        raw.replace(/^asset:/, ""),
+        assetType,
+      );
       return;
     }
 
@@ -437,6 +452,7 @@ export default function SnapshotPanelsEditor({
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData(ASSET_DRAG_TYPE, name);
+                    e.dataTransfer.setData(ASSET_TYPE_DRAG_TYPE, assetTab === "videos" ? "video" : "image");
                     e.dataTransfer.setData("text/plain", `asset:${name}`);
                   }}
                   style={{
