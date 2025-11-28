@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { listOffspringImages } from "../../api.js";
+import { listOffspringImages, listVideoAssets } from "../../api.js";
 
 const MODE_PRESETS = {
   slide_mode: { assetKey: "img", label: "slide_mode (輪播)" },
@@ -68,48 +68,57 @@ export default function SnapshotPanelsEditor({
   canPaste,
   onPanelChange,
 }) {
-  const [assetOptions, setAssetOptions] = useState([]);
+  const [imageAssets, setImageAssets] = useState([]);
+  const [videoAssets, setVideoAssets] = useState([]);
   const [assetStatus, setAssetStatus] = useState("尚未載入資產");
   const [loadingAssets, setLoadingAssets] = useState(false);
+
+  const parseAssetList = useCallback((rawList) => {
+    const list = Array.isArray(rawList) ? rawList : [];
+    const seen = new Set();
+    const names = [];
+    list.forEach((item) => {
+      let candidate = "";
+      if (typeof item === "string") {
+        candidate = item;
+      } else if (item && typeof item === "object") {
+        candidate =
+          item.name ||
+          item.basename ||
+          item.filename ||
+          (typeof item.url === "string" ? item.url.split("/").pop() : "");
+      }
+      if (candidate && !seen.has(candidate)) {
+        seen.add(candidate);
+        names.push(candidate);
+      }
+    });
+    return names;
+  }, []);
 
   const loadAssets = useCallback(async () => {
     try {
       setLoadingAssets(true);
       setAssetStatus("載入資產中...");
-      const res = await listOffspringImages();
-      const list = Array.isArray(res?.images) ? res.images : Array.isArray(res) ? res : [];
-      const seen = new Set();
-      const names = [];
-      list.forEach((item) => {
-        let candidate = "";
-        if (typeof item === "string") {
-          candidate = item;
-        } else if (item && typeof item === "object") {
-          candidate =
-            item.name ||
-            item.basename ||
-            item.filename ||
-            (typeof item.url === "string" ? item.url.split("/").pop() : "");
-        }
-        if (candidate && !seen.has(candidate)) {
-          seen.add(candidate);
-          names.push(candidate);
-        }
-      });
-      setAssetOptions(names);
-      setAssetStatus(`可用圖片 ${names.length} 筆`);
+      const [imgRes, videoRes] = await Promise.all([listOffspringImages(), listVideoAssets()]);
+      const images = parseAssetList(imgRes?.images ?? imgRes);
+      const videos = parseAssetList(videoRes?.videos ?? videoRes);
+      setImageAssets(images);
+      setVideoAssets(videos);
+      setAssetStatus(`圖片 ${images.length} / 影片 ${videos.length}`);
     } catch (err) {
       setAssetStatus(err?.message || "載入資產失敗");
     } finally {
       setLoadingAssets(false);
     }
-  }, []);
+  }, [parseAssetList]);
 
   useEffect(() => {
     void loadAssets();
   }, [loadAssets]);
 
-  const limitedAssetOptions = useMemo(() => assetOptions.slice(0, 500), [assetOptions]);
+  const limitedImageOptions = useMemo(() => imageAssets.slice(0, 500), [imageAssets]);
+  const limitedVideoOptions = useMemo(() => videoAssets.slice(0, 500), [videoAssets]);
 
   const handleModeSelect = (index, nextMode, currentAsset, panel) => {
     if (!nextMode) return;
@@ -181,6 +190,8 @@ export default function SnapshotPanelsEditor({
               const preset = MODE_PRESETS[mode];
               const assetPlaceholder = preset?.assetKey === "video" ? "影片檔名.mp4" : "offspring_xxx.png";
               const assetListId = `snapshot-panel-${index}-asset-options`;
+              const assetList =
+                MODE_PRESETS[mode]?.assetKey === "video" ? limitedVideoOptions : limitedImageOptions;
               return (
                 <div
                   style={{
@@ -222,12 +233,12 @@ export default function SnapshotPanelsEditor({
                         onChange={(e) => handleAssetChange(index, mode, e.target.value, panel)}
                         placeholder={assetPlaceholder}
                         disabled={!mode}
-                        list={limitedAssetOptions.length ? assetListId : undefined}
+                        list={assetList.length ? assetListId : undefined}
                         data-ai-field={`snapshot.panel[${index}].asset`}
                       />
-                      {limitedAssetOptions.length > 0 && (
+                      {assetList.length > 0 && (
                         <datalist id={assetListId}>
-                          {limitedAssetOptions.map((name) => (
+                          {assetList.map((name) => (
                             <option key={name} value={name} />
                           ))}
                         </datalist>

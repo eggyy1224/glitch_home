@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile, Response
 
@@ -30,6 +31,7 @@ from ..services.iframe_config import (
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
 from ..services.screenshots import save_screenshot
+from ..config import settings
 from ..utils.permissions import require_asset_write_enabled, require_metadata_write_enabled
 
 router = APIRouter()
@@ -205,6 +207,20 @@ def api_clone_iframe_config_snapshot(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"snapshot": metadata}
+
+
+@router.get("/api/video-assets")
+def api_list_video_assets() -> dict:
+    base_dir = Path(settings.video_assets_dir)
+    if not base_dir.exists() or not base_dir.is_dir():
+        return {"videos": []}
+
+    public_base = settings.video_assets_public_base.rstrip("/")
+    videos: list[dict[str, str]] = []
+    for path in sorted(base_dir.glob("*.mp4")):
+        name = path.name
+        videos.append({"filename": name, "url": f"{public_base}/{name}"})
+    return {"videos": videos}
 
 
 @router.get("/api/collage-config")

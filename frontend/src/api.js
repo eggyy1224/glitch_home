@@ -339,6 +339,11 @@ export async function listOffspringImages({ signal } = {}) {
   return request(url, { signal });
 }
 
+export async function listVideoAssets({ signal } = {}) {
+  const url = `/api/video-assets`;
+  return request(url, { signal });
+}
+
 export async function generateCollageVersionFromNames(imageNames, params) {
   const url = `/api/generate-collage-version`;
   return request(url, {

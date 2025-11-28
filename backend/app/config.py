@@ -100,6 +100,8 @@ class Settings:
     chroma_db_path: str = os.getenv("CHROMA_DB_PATH", "backend/chroma_db")
     chroma_collection_images: str = os.getenv("CHROMA_COLLECTION_IMAGES", "offspring_images")
     chroma_collection_text: str = os.getenv("CHROMA_COLLECTION_TEXT", "text_queries")
+    video_assets_dir: str = os.getenv("VIDEO_ASSETS_DIR", "frontend/public/videos/圖像系譜學Video")
+    video_assets_public_base: str = os.getenv("VIDEO_ASSETS_PUBLIC_BASE", "/videos/圖像系譜學Video")
     # Optional: use Vertex AI instead of Google AI API (AI Studio)
     genai_use_vertex: bool = os.getenv("GENAI_USE_VERTEX", "false").lower() in {"1", "true", "yes"}
     vertex_project: Optional[str] = os.getenv("VERTEX_PROJECT")
@@ -155,6 +157,7 @@ class Settings:
         self.screenshot_dir = resolve(self.screenshot_dir)
         self.generated_sounds_dir = resolve(self.generated_sounds_dir)
         self.chroma_db_path = resolve(self.chroma_db_path)
+        self.video_assets_dir = resolve(self.video_assets_dir)
         if self.nightwalk_assets_dir:
             resolved = resolve(self.nightwalk_assets_dir)
             if os.path.isdir(resolved):
