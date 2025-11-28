@@ -136,7 +136,8 @@ export default function SnapshotPanelsEditor({
                   value={panel?.colSpan ?? panel?.col_span ?? ""}
                   onChange={(e) => {
                     const val = e.target.value;
-                    onPanelChange(index, { colSpan: val === "" ? undefined : Number(val) });
+                    const resolved = val === "" ? undefined : Number(val);
+                    onPanelChange(index, { colSpan: resolved, col_span: resolved });
                   }}
                   data-ai-field={`snapshot.panel[${index}].colSpan`}
                 />
@@ -149,7 +150,8 @@ export default function SnapshotPanelsEditor({
                   value={panel?.rowSpan ?? panel?.row_span ?? ""}
                   onChange={(e) => {
                     const val = e.target.value;
-                    onPanelChange(index, { rowSpan: val === "" ? undefined : Number(val) });
+                    const resolved = val === "" ? undefined : Number(val);
+                    onPanelChange(index, { rowSpan: resolved, row_span: resolved });
                   }}
                   data-ai-field={`snapshot.panel[${index}].rowSpan`}
                 />
