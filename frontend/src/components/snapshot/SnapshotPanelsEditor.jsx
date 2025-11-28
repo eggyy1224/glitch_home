@@ -7,6 +7,9 @@ const MODE_PRESETS = {
   video_mode: { assetKey: "video", label: "video_mode (影片)" },
 };
 
+const PANEL_DRAG_TYPE = "application/x-snapshot-panel-index";
+const ASSET_DRAG_TYPE = "application/x-snapshot-asset";
+
 const truthy = (value) => {
   if (value == null) return false;
   const text = String(value).toLowerCase();
@@ -200,17 +203,29 @@ export default function SnapshotPanelsEditor({
 
   const handlePanelDrag = (event, index) => {
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(index));
+    event.dataTransfer.setData(PANEL_DRAG_TYPE, String(index));
+    event.dataTransfer.setData("text/plain", `panel:${index}`);
   };
 
   const handlePanelDrop = (event, targetIndex) => {
-    const raw = event.dataTransfer.getData("text/plain");
-    if (!raw) return;
-    const from = Number(raw);
-    if (Number.isNaN(from)) {
-      applyAssetToPanel(targetIndex, raw);
+    const assetPayload = event.dataTransfer.getData(ASSET_DRAG_TYPE);
+    if (assetPayload) {
+      applyAssetToPanel(targetIndex, assetPayload);
       return;
     }
+
+    const panelPayload = event.dataTransfer.getData(PANEL_DRAG_TYPE);
+    const raw = panelPayload || event.dataTransfer.getData("text/plain");
+    if (!raw) return;
+
+    if (raw.startsWith("asset:")) {
+      applyAssetToPanel(targetIndex, raw.replace(/^asset:/, ""));
+      return;
+    }
+
+    const numericRaw = raw.startsWith("panel:") ? raw.replace(/^panel:/, "") : raw;
+    const from = Number(numericRaw);
+    if (Number.isNaN(from)) return;
     if (from === targetIndex) return;
 
     const rect = event.currentTarget?.getBoundingClientRect?.();
@@ -421,7 +436,8 @@ export default function SnapshotPanelsEditor({
                   onClick={() => handleAssetApply(name)}
                   draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.setData("text/plain", name);
+                    e.dataTransfer.setData(ASSET_DRAG_TYPE, name);
+                    e.dataTransfer.setData("text/plain", `asset:${name}`);
                   }}
                   style={{
                     textAlign: "left",
