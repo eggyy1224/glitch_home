@@ -176,22 +176,26 @@ export default function SnapshotPanelsEditor({
     onPanelChange(index, patch);
   };
 
-  const handleAssetApply = (asset) => {
-    if (!asset || !selectedRows.length) return;
-    const firstIndex = selectedRows[0];
-    const panel = panels?.[firstIndex];
+  const applyAssetToPanel = (index, asset) => {
+    if (!asset || index == null || index < 0) return;
+    const panel = panels?.[index];
     const { mode } = getPanelModeAndAsset(panel);
     if (assetTab === "videos") {
       const nextMode = mode || "video_mode";
-      handleModeSelect(firstIndex, nextMode, asset, panel);
+      handleModeSelect(index, nextMode, asset, panel);
     } else {
       const nextMode = mode || "static_mode";
-      handleModeSelect(firstIndex, nextMode, asset, panel);
-      handleImageChange(firstIndex, asset, panel);
+      handleModeSelect(index, nextMode, asset, panel);
+      handleImageChange(index, asset, panel);
     }
     if (typeof onSelectPanel === "function") {
-      onSelectPanel(firstIndex);
+      onSelectPanel(index);
     }
+  };
+
+  const handleAssetApply = (asset) => {
+    if (!asset || !selectedRows.length) return;
+    applyAssetToPanel(selectedRows[0], asset);
   };
 
   const handlePanelDrag = (event, index) => {
@@ -201,8 +205,12 @@ export default function SnapshotPanelsEditor({
 
   const handlePanelDrop = (event, targetIndex) => {
     const raw = event.dataTransfer.getData("text/plain");
+    if (!raw) return;
     const from = Number(raw);
-    if (Number.isNaN(from)) return;
+    if (Number.isNaN(from)) {
+      applyAssetToPanel(targetIndex, raw);
+      return;
+    }
     if (from === targetIndex) return;
 
     const rect = event.currentTarget?.getBoundingClientRect?.();
