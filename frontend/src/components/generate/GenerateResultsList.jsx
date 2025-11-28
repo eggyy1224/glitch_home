@@ -22,6 +22,21 @@ export default function GenerateResultsList({
         </div>
       )}
 
+      <div className="generate-selected-count">
+        <div className="generate-selected-details">
+          <span className="generate-selected-label">已選擇 {selectedImages.length} 張圖片</span>
+          <span className="generate-selected-hint">少於 2 張會改用隨機抽樣</span>
+        </div>
+        <button
+          type="button"
+          onClick={onClearSelection}
+          className="generate-clear-selection"
+          disabled={selectedImages.length === 0}
+        >
+          清除選擇
+        </button>
+      </div>
+
       {loadingImages ? (
         <div className="generate-loading">
           <div className="generate-spinner"></div>
@@ -46,14 +61,6 @@ export default function GenerateResultsList({
               );
             })}
           </div>
-          {selectedImages.length > 0 && (
-            <div className="generate-selected-count">
-              <span>已選擇 {selectedImages.length} 張圖片</span>
-              <button type="button" onClick={onClearSelection} className="generate-clear-selection">
-                清除選擇
-              </button>
-            </div>
-          )}
         </>
       )}
     </>

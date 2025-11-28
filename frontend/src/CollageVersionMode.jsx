@@ -486,6 +486,21 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
               </div>
             )}
 
+            <div className="collage-version-selected-count">
+              <div className="collage-version-selected-details">
+                <span className="collage-version-selected-label">已選擇 {selectedImages.length} 張圖片</span>
+                <span className="collage-version-selected-hint">至少需要 {minRequired} 張，清除後可重新挑選</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedImages([])}
+                className="collage-version-clear-selection"
+                disabled={selectedImages.length === 0}
+              >
+                清除選擇
+              </button>
+            </div>
+
             {loadingImages ? (
               <div className="collage-version-loading">
                 <div className="collage-version-spinner"></div>
@@ -511,18 +526,6 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
                     );
                   })}
                 </div>
-                {selectedImages.length > 0 && (
-                  <div className="collage-version-selected-count">
-                    <span>已選擇 {selectedImages.length} 張圖片</span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedImages([])}
-                      className="collage-version-clear-selection"
-                    >
-                      清除選擇
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </div>
