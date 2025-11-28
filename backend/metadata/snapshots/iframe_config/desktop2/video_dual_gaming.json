@@ -1,0 +1,27 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left",
+      "image": null,
+      "url": "/?video_mode=true&video=打電動.mp4&auto_unmute=false&video_volume=0",
+      "params": {},
+      "ratio": 1.0,
+      "label": "game left (muted)",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": null,
+      "url": "/?video_mode=true&video=gaming.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "game right",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

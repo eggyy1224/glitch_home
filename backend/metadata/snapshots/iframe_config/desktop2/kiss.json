@@ -1,0 +1,27 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "video",
+      "image": null,
+      "url": "/?video_mode=true&video=草叢親親.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "video",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "slide",
+      "image": null,
+      "url": "/?slide_mode=true&img=offspring_20250924_161431_222.png",
+      "params": {},
+      "ratio": 1.0,
+      "label": "slide image",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

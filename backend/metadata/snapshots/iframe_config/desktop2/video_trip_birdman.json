@@ -1,0 +1,37 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "left",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&auto_unmute=false&video_volume=0",
+      "params": {},
+      "ratio": 1.0,
+      "label": "birdman mute",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "mid",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "birdman mid",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "birdman right",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
