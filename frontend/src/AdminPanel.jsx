@@ -105,7 +105,7 @@ export default function AdminPanel({
             id="admin-tab-editor"
             data-ai-id="admin.tab.editor"
           >
-            Timeline/Episode Editor
+            Editor
           </button>
           <button
             type="button"

@@ -5,6 +5,8 @@ import {
   fetchEpisode,
   fetchIframeTimeline,
   getIframeSnapshot,
+  restoreIframeSnapshot,
+  saveIframeSnapshot,
   listEpisodes,
   listIframeSnapshots,
   listIframeTimelines,
@@ -20,12 +22,18 @@ import {
   columnsStyle,
   columnStyle,
   labelStyle,
+  previewContainerStyle,
+  previewTitleStyle,
+  resizerHandleStyle,
+  resizerHitboxStyle,
+  snapshotPreviewIframeStyle,
   tabButtonStyle,
 } from "../AdminPanelStyles.js";
 import {
   defaultEpisodePayload,
   defaultTimelinePayload,
   firstSnapshotRef,
+  minimalConfigPayload,
   parseTargetMap,
   previewSrcFromConfig,
   pretty,
@@ -33,6 +41,7 @@ import {
 } from "../adminPanelUtils.js";
 import EpisodeListPanel from "./timeline/EpisodeListPanel";
 import EpisodeTracksEditor from "./timeline/EpisodeTracksEditor";
+import SnapshotPanelsEditor from "./snapshot/SnapshotPanelsEditor.jsx";
 import TimelineListPanel from "./timeline/TimelineListPanel";
 import TimelinePreviewPlayer from "./timeline/TimelinePreviewPlayer";
 import TimelineStepsEditor from "./timeline/TimelineStepsEditor";
@@ -88,6 +97,32 @@ function validateEpisode(data) {
   return errors;
 }
 
+function validateSnapshot(data) {
+  const errors = [];
+  if (!data || typeof data !== "object") {
+    return [{ path: "root", message: "snapshot 需要是物件" }];
+  }
+  if (!Array.isArray(data.panels) || data.panels.length === 0) {
+    errors.push({ path: "panels", message: "需要至少一個 panel" });
+  } else {
+    data.panels.forEach((panel, index) => {
+      if (!panel || typeof panel !== "object") {
+        errors.push({ path: `panels[${index}]`, message: "panel 格式不正確" });
+        return;
+      }
+      const hasUrl = typeof panel.url === "string" && panel.url.trim();
+      const hasImage = typeof panel.image === "string" && panel.image.trim();
+      if (!hasUrl && !hasImage) {
+        errors.push({ path: `panels[${index}]`, message: "需要 url 或 image" });
+      }
+      if (panel.ratio !== undefined && Number(panel.ratio) <= 0) {
+        errors.push({ path: `panels[${index}].ratio`, message: "ratio 必須大於 0" });
+      }
+    });
+  }
+  return errors;
+}
+
 function formatTs(ts) {
   if (!ts) return "";
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -114,6 +149,7 @@ export default function TimelineEpisodeEditor() {
   const [mode, setMode] = useState("timeline");
   const [timelineData, setTimelineData] = useState(() => defaultTimelinePayload(defaultClientId));
   const [episodeData, setEpisodeData] = useState(() => defaultEpisodePayload(defaultClientId));
+  const [snapshotData, setSnapshotData] = useState(() => minimalConfigPayload(defaultClientId));
   const [jsonText, setJsonText] = useState(() => pretty(defaultTimelinePayload(defaultClientId)));
   const [jsonLocked, setJsonLocked] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState(null);
@@ -126,6 +162,7 @@ export default function TimelineEpisodeEditor() {
   const [episodeFilter, setEpisodeFilter] = useState("");
   const [snapshotClient, setSnapshotClient] = useState(defaultClientId);
   const [snapshotKeyword, setSnapshotKeyword] = useState("");
+  const [snapshotName, setSnapshotName] = useState("new_snapshot");
   const [snapshotOptions, setSnapshotOptions] = useState([]);
   const [snapshotMessage, setSnapshotMessage] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
@@ -136,10 +173,23 @@ export default function TimelineEpisodeEditor() {
   const [timelinePreviewError, setTimelinePreviewError] = useState(null);
   const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);
   const [timelinePlayError, setTimelinePlayError] = useState(null);
+  const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
+  const [snapshotPreviewError, setSnapshotPreviewError] = useState(null);
+  const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState(() => {
+    if (typeof window === "undefined") return 960;
+    return Math.max(Math.min(window.innerWidth - 100, 1200), 720);
+  });
   const [episodeTargetOverride, setEpisodeTargetOverride] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeData = useMemo(() => (mode === "timeline" ? timelineData : episodeData), [episodeData, mode, timelineData]);
+  const activeData = useMemo(
+    () => (mode === "timeline" ? timelineData : mode === "episode" ? episodeData : snapshotData),
+    [episodeData, mode, snapshotData, timelineData],
+  );
+  const snapshotFrameHeight = useMemo(
+    () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
+    [snapshotPreviewWidth],
+  );
 
   const syncJsonFromData = useCallback(
     (data) => {
@@ -173,6 +223,16 @@ export default function TimelineEpisodeEditor() {
     [syncJsonFromData],
   );
 
+  const updateSnapshot = useCallback(
+    (next, { markDirty = true } = {}) => {
+      setSnapshotData(next);
+      syncJsonFromData(next);
+      setDirty(Boolean(markDirty));
+      setValidationErrors(validateSnapshot(next));
+    },
+    [syncJsonFromData],
+  );
+
   const handleModeChange = useCallback(
     (nextMode) => {
       setMode(nextMode);
@@ -182,12 +242,15 @@ export default function TimelineEpisodeEditor() {
       if (nextMode === "timeline") {
         setValidationErrors(validateTimeline(timelineData));
         syncJsonFromData(timelineData);
-      } else {
+      } else if (nextMode === "episode") {
         setValidationErrors(validateEpisode(episodeData));
         syncJsonFromData(episodeData);
+      } else {
+        setValidationErrors(validateSnapshot(snapshotData));
+        syncJsonFromData(snapshotData);
       }
     },
-    [episodeData, syncJsonFromData, timelineData],
+    [episodeData, snapshotData, syncJsonFromData, timelineData],
   );
 
   const refreshTimelines = useCallback(async () => {
@@ -259,6 +322,58 @@ export default function TimelineEpisodeEditor() {
     [mode, refreshSnapshots, setEpisodeState, updateTimeline],
   );
 
+  const handleLoadSnapshot = useCallback(
+    async (name, clientOverride) => {
+      const targetClient = clientOverride ?? snapshotClient;
+      if (!targetClient) {
+        setMessage("請先設定 client 再載入 snapshot");
+        return;
+      }
+      if (!name) return;
+      try {
+        const data = await getIframeSnapshot(targetClient, name);
+        const raw = data.raw || data.snapshot || data;
+        const resolvedClient = targetClient || data.client_id || data.client;
+        setSnapshotClient(resolvedClient || targetClient);
+        setSnapshotName(name);
+        updateSnapshot(raw, { markDirty: false });
+        const src = previewSrcFromConfig(raw);
+        setSnapshotPreviewSrc(src);
+        setSnapshotPreviewError(src ? null : "預覽來源不足");
+        await refreshSnapshots(resolvedClient || targetClient);
+        setMessage(`已載入 snapshot ${resolvedClient || targetClient}/${name}`);
+        setDirty(false);
+      } catch (err) {
+        setMessage(err.message || "載入 snapshot 失敗");
+      }
+    },
+    [refreshSnapshots, snapshotClient, updateSnapshot],
+  );
+
+  const clampSnapshotPreviewWidth = useCallback((width) => {
+    const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
+    return Math.min(Math.max(width, 560), Math.min(max, 1800));
+  }, []);
+
+  const startSnapshotResize = useCallback(
+    (event) => {
+      event.preventDefault();
+      const startX = event.clientX;
+      const startWidth = snapshotPreviewWidth;
+      const onMove = (e) => {
+        const delta = e.clientX - startX;
+        setSnapshotPreviewWidth(clampSnapshotPreviewWidth(startWidth + delta));
+      };
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [clampSnapshotPreviewWidth, snapshotPreviewWidth],
+  );
+
   const handleSave = useCallback(async () => {
     try {
       setIsSaving(true);
@@ -282,7 +397,7 @@ export default function TimelineEpisodeEditor() {
         }
         setMessage(`${action === "update" ? "已更新" : "已建立"} timeline ${targetId}`);
         await refreshTimelines();
-      } else {
+      } else if (mode === "episode") {
         const payload = episodeData;
         const targetId = (payload.id || "").trim();
         if (!targetId) throw new Error("episode id 必填");
@@ -302,6 +417,22 @@ export default function TimelineEpisodeEditor() {
         }
         setMessage(`${action === "update" ? "已更新" : "已建立"} episode ${targetId}`);
         await refreshEpisodes();
+      } else {
+        const payload = snapshotData;
+        const client = (snapshotClient || defaultClientId || "").trim();
+        const name = (snapshotName || "").trim();
+        if (!client) throw new Error("client 必填");
+        if (!name) throw new Error("snapshot 名稱必填");
+        const errors = validateSnapshot(payload);
+        if (errors.length) {
+          const first = errors[0];
+          throw new Error(`驗證錯誤：${first.path} ${first.message}`);
+        }
+        updateSnapshot(payload);
+        await saveIframeSnapshot(client, name, payload);
+        setSnapshotName(name);
+        setMessage(`已儲存 snapshot ${client}/${name}`);
+        await refreshSnapshots(client);
       }
       setDirty(false);
       return true;
@@ -311,7 +442,21 @@ export default function TimelineEpisodeEditor() {
     } finally {
       setIsSaving(false);
     }
-  }, [episodeData, mode, refreshEpisodes, refreshTimelines, setEpisodeState, timelineData, updateTimeline]);
+  }, [
+    defaultClientId,
+    episodeData,
+    mode,
+    refreshEpisodes,
+    refreshSnapshots,
+    refreshTimelines,
+    setEpisodeState,
+    snapshotClient,
+    snapshotData,
+    snapshotName,
+    timelineData,
+    updateSnapshot,
+    updateTimeline,
+  ]);
 
   const handleJsonChange = useCallback((text) => {
     setJsonText(text);
@@ -326,9 +471,12 @@ export default function TimelineEpisodeEditor() {
         if (mode === "timeline") {
           setTimelineData(parsed);
           setValidationErrors(validateTimeline(parsed));
-        } else {
+        } else if (mode === "episode") {
           setEpisodeData(parsed);
           setValidationErrors(validateEpisode(parsed));
+        } else {
+          setSnapshotData(parsed);
+          setValidationErrors(validateSnapshot(parsed));
         }
         setLastSyncAt(new Date());
       } catch (err) {
@@ -339,11 +487,25 @@ export default function TimelineEpisodeEditor() {
   }, [jsonLocked, jsonText, mode]);
 
   useEffect(() => {
-    setTimelineData(defaultTimelinePayload(defaultClientId));
-    setEpisodeData(defaultEpisodePayload(defaultClientId));
-    setJsonText(pretty(defaultTimelinePayload(defaultClientId)));
-    setValidationErrors(validateTimeline(defaultTimelinePayload(defaultClientId)));
-  }, [defaultClientId]);
+    const nextTimeline = defaultTimelinePayload(defaultClientId);
+    const nextEpisode = defaultEpisodePayload(defaultClientId);
+    const nextSnapshot = minimalConfigPayload(defaultClientId);
+    setTimelineData(nextTimeline);
+    setEpisodeData(nextEpisode);
+    setSnapshotData(nextSnapshot);
+    setSnapshotClient(defaultClientId);
+    setSnapshotName("new_snapshot");
+    if (mode === "timeline") {
+      setJsonText(pretty(nextTimeline));
+      setValidationErrors(validateTimeline(nextTimeline));
+    } else if (mode === "episode") {
+      setJsonText(pretty(nextEpisode));
+      setValidationErrors(validateEpisode(nextEpisode));
+    } else {
+      setJsonText(pretty(nextSnapshot));
+      setValidationErrors(validateSnapshot(nextSnapshot));
+    }
+  }, [defaultClientId, mode]);
 
   useEffect(() => {
     refreshTimelines();
@@ -409,6 +571,18 @@ export default function TimelineEpisodeEditor() {
     };
   }, [mode, timelineData]);
 
+  useEffect(() => {
+    if (mode !== "snapshot") return;
+    try {
+      const src = previewSrcFromConfig(snapshotData);
+      setSnapshotPreviewSrc(src);
+      setSnapshotPreviewError(src ? null : "預覽來源不足");
+    } catch (err) {
+      setSnapshotPreviewSrc(null);
+      setSnapshotPreviewError(err.message || "預覽取得失敗");
+    }
+  }, [mode, snapshotData]);
+
   const handleStepChange = useCallback(
     (index, patch) => {
       updateTimeline({
@@ -449,6 +623,23 @@ export default function TimelineEpisodeEditor() {
     });
   }, [defaultClientId, episodeData, setEpisodeState, timelineList]);
 
+  const addPanel = useCallback(() => {
+    const nextPanels = [...(snapshotData.panels || [])];
+    const idBase = `panel_${nextPanels.length + 1}`;
+    nextPanels.push({ id: idBase, url: "/", ratio: 1 });
+    updateSnapshot({ ...snapshotData, panels: nextPanels });
+  }, [snapshotData, updateSnapshot]);
+
+  const handlePanelChange = useCallback(
+    (index, patch) => {
+      updateSnapshot({
+        ...snapshotData,
+        panels: (snapshotData.panels || []).map((panel, i) => (i === index ? { ...panel, ...patch } : panel)),
+      });
+    },
+    [snapshotData, updateSnapshot],
+  );
+
   const moveRow = useCallback(
     (index, delta) => {
       if (mode === "timeline") {
@@ -458,28 +649,37 @@ export default function TimelineEpisodeEditor() {
         const [item] = steps.splice(index, 1);
         steps.splice(target, 0, item);
         updateTimeline({ ...timelineData, steps });
-      } else {
+      } else if (mode === "episode") {
         const tracks = [...(episodeData.tracks || [])];
         const target = index + delta;
         if (target < 0 || target >= tracks.length) return;
         const [item] = tracks.splice(index, 1);
         tracks.splice(target, 0, item);
         setEpisodeState({ ...episodeData, tracks });
+      } else {
+        const panels = [...(snapshotData.panels || [])];
+        const target = index + delta;
+        if (target < 0 || target >= panels.length) return;
+        const [item] = panels.splice(index, 1);
+        panels.splice(target, 0, item);
+        updateSnapshot({ ...snapshotData, panels });
       }
     },
-    [episodeData, mode, timelineData, setEpisodeState, updateTimeline],
+    [episodeData, mode, snapshotData, timelineData, setEpisodeState, updateSnapshot, updateTimeline],
   );
 
   const removeRow = useCallback(
     (index) => {
       if (mode === "timeline") {
         updateTimeline({ ...timelineData, steps: timelineData.steps.filter((_, i) => i !== index) });
-      } else {
+      } else if (mode === "episode") {
         setEpisodeState({ ...episodeData, tracks: episodeData.tracks.filter((_, i) => i !== index) });
+      } else {
+        updateSnapshot({ ...snapshotData, panels: (snapshotData.panels || []).filter((_, i) => i !== index) });
       }
       setSelectedRows((prev) => prev.filter((i) => i !== index));
     },
-    [episodeData, mode, setEpisodeState, timelineData, updateTimeline],
+    [episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline],
   );
 
   const duplicateRow = useCallback(
@@ -489,24 +689,35 @@ export default function TimelineEpisodeEditor() {
         const target = steps[index];
         steps.splice(index + 1, 0, { ...target });
         updateTimeline({ ...timelineData, steps });
-      } else {
+      } else if (mode === "episode") {
         const tracks = [...(episodeData.tracks || [])];
         const target = tracks[index];
         tracks.splice(index + 1, 0, { ...target });
         setEpisodeState({ ...episodeData, tracks });
+      } else {
+        const panels = [...(snapshotData.panels || [])];
+        const target = panels[index];
+        panels.splice(index + 1, 0, { ...target });
+        updateSnapshot({ ...snapshotData, panels });
       }
     },
-    [episodeData, mode, setEpisodeState, timelineData, updateTimeline],
+    [episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline],
   );
 
   const handleCopy = useCallback(() => {
     if (!selectedRows.length) return;
     const items = selectedRows
-      .map((idx) => (mode === "timeline" ? timelineData.steps[idx] : episodeData.tracks[idx]))
+      .map((idx) =>
+        mode === "timeline"
+          ? timelineData.steps[idx]
+          : mode === "episode"
+            ? episodeData.tracks[idx]
+            : snapshotData.panels[idx],
+      )
       .filter(Boolean);
     setClipboard({ mode, items });
     setMessage(`已複製 ${items.length} 筆`);
-  }, [episodeData.tracks, mode, selectedRows, timelineData.steps]);
+  }, [episodeData.tracks, mode, selectedRows, snapshotData.panels, timelineData.steps]);
 
   const handlePaste = useCallback(() => {
     if (!clipboard || clipboard.mode !== mode || !clipboard.items?.length) return;
@@ -515,14 +726,19 @@ export default function TimelineEpisodeEditor() {
         ...timelineData,
         steps: [...(timelineData.steps || []), ...clipboard.items.map((item) => ({ ...item }))],
       });
-    } else {
+    } else if (mode === "episode") {
       setEpisodeState({
         ...episodeData,
         tracks: [...(episodeData.tracks || []), ...clipboard.items.map((item) => ({ ...item }))],
       });
+    } else {
+      updateSnapshot({
+        ...snapshotData,
+        panels: [...(snapshotData.panels || []), ...clipboard.items.map((item) => ({ ...item }))],
+      });
     }
     setMessage(`已貼上 ${clipboard.items.length} 筆`);
-  }, [clipboard, episodeData, mode, setEpisodeState, timelineData, updateTimeline]);
+  }, [clipboard, episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline]);
 
   const handleBatchApply = useCallback(() => {
     if (!selectedRows.length) return;
@@ -597,24 +813,61 @@ export default function TimelineEpisodeEditor() {
     }
   }, [episodeData.id, episodeTargetOverride, mode]);
 
+  const handlePlaySnapshot = useCallback(async () => {
+    if (mode !== "snapshot") return;
+    const client = (snapshotClient || "").trim();
+    const name = (snapshotName || "").trim();
+    if (!client || !name) {
+      setMessage("請先設定 client 與 snapshot 名稱");
+      return;
+    }
+    if (dirty) {
+      const ok = await handleSave();
+      if (!ok) {
+        setMessage("儲存失敗，無法播放");
+        return;
+      }
+    }
+    try {
+      setMessage(`播放中 ${name} → ${client}...`);
+      await restoreIframeSnapshot(client, name);
+      setMessage(`已送出 snapshot 到 ${client}`);
+    } catch (err) {
+      setMessage(err.message || "播放失敗");
+    }
+  }, [dirty, handleSave, mode, snapshotClient, snapshotName]);
+
   const canTimelinePaste = Boolean(clipboard && clipboard.mode === "timeline");
   const canEpisodePaste = Boolean(clipboard && clipboard.mode === "episode");
+  const canSnapshotPaste = Boolean(clipboard && clipboard.mode === "snapshot");
 
   return (
     <div style={boxStyle} data-ai-id="admin.timeline-episode-editor" data-ai-section="admin.timeline-episode-editor">
       <div
         style={{ marginBottom: 8, display: "flex", gap: 8, flexWrap: "wrap" }}
         role="tablist"
-        aria-label="Timeline 或 Episode 模式選擇"
+        aria-label="Snapshot / Timeline / Episode 模式選擇"
         data-ai-id="timeline-episode.mode-switch"
       >
+        <button
+          type="button"
+          onClick={() => handleModeChange("snapshot")}
+          style={mode === "snapshot" ? activeTabButtonStyle : tabButtonStyle}
+          role="tab"
+          aria-selected={mode === "snapshot"}
+          aria-controls="admin-editor-panel"
+          id="snapshot-editor-tab"
+          data-ai-action="timeline-episode.switch-snapshot"
+        >
+          Snapshot 模式
+        </button>
         <button
           type="button"
           onClick={() => handleModeChange("timeline")}
           style={mode === "timeline" ? activeTabButtonStyle : tabButtonStyle}
           role="tab"
           aria-selected={mode === "timeline"}
-          aria-controls="timeline-editor-panel"
+          aria-controls="admin-editor-panel"
           id="timeline-editor-tab"
           data-ai-action="timeline-episode.switch-timeline"
         >
@@ -626,7 +879,7 @@ export default function TimelineEpisodeEditor() {
           style={mode === "episode" ? activeTabButtonStyle : tabButtonStyle}
           role="tab"
           aria-selected={mode === "episode"}
-          aria-controls="episode-editor-panel"
+          aria-controls="admin-editor-panel"
           id="episode-editor-tab"
           data-ai-action="timeline-episode.switch-episode"
         >
@@ -654,93 +907,237 @@ export default function TimelineEpisodeEditor() {
         <div
           style={columnStyle}
           role="tabpanel"
-          aria-labelledby={mode === "timeline" ? "timeline-editor-tab" : "episode-editor-tab"}
-          id={mode === "timeline" ? "timeline-editor-panel" : "episode-editor-panel"}
-          data-ai-section={mode === "timeline" ? "timeline.editor" : "episode.editor"}
+          aria-labelledby={
+            mode === "timeline" ? "timeline-editor-tab" : mode === "episode" ? "episode-editor-tab" : "snapshot-editor-tab"
+          }
+          id="admin-editor-panel"
+          data-ai-section={
+            mode === "timeline" ? "timeline.editor" : mode === "episode" ? "episode.editor" : "snapshot.editor"
+          }
         >
-          {mode === "timeline" ? (
-            <TimelineListPanel
-              filter={timelineFilter}
-              onFilterChange={setTimelineFilter}
-              onReload={refreshTimelines}
-              timelines={timelineList}
-              onSelect={handleLoadSelected}
-            />
+          {mode === "snapshot" ? (
+            <div data-ai-section="snapshot.editor.left">
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+                <label style={labelStyle} htmlFor="snapshot-client">
+                  Client
+                </label>
+                <input
+                  id="snapshot-client"
+                  type="text"
+                  value={snapshotClient || ""}
+                  onChange={(e) => setSnapshotClient(e.target.value)}
+                  style={{ width: 140 }}
+                  data-ai-field="snapshot.editor.client"
+                />
+                <label style={labelStyle} htmlFor="snapshot-name">
+                  名稱
+                </label>
+                <input
+                  id="snapshot-name"
+                  type="text"
+                  value={snapshotName}
+                  onChange={(e) => setSnapshotName(e.target.value)}
+                  style={{ width: 160 }}
+                  data-ai-field="snapshot.editor.name"
+                />
+                <input
+                  type="text"
+                  placeholder="關鍵字"
+                  value={snapshotKeyword}
+                  onChange={(e) => setSnapshotKeyword(e.target.value)}
+                  style={{ width: 140 }}
+                  data-ai-field="snapshot.editor.keyword"
+                />
+                <button type="button" onClick={() => refreshSnapshots(snapshotClient)} data-ai-action="snapshot.editor.reload">
+                  重新載入
+                </button>
+                <button type="button" onClick={() => handleLoadSnapshot(snapshotName)} data-ai-action="snapshot.editor.load">
+                  載入
+                </button>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ marginBottom: 4 }}>Snapshot 列表（{snapshotMessage || "尚未載入"}）</div>
+                <ul
+                  role="list"
+                  data-ai-id="snapshot.editor.list"
+                  style={{
+                    maxHeight: 180,
+                    overflowY: "auto",
+                    border: "1px solid #0f4",
+                    padding: 8,
+                    listStyle: "none",
+                    margin: 0,
+                    background: "#000",
+                  }}
+                >
+                  {snapshotOptions.length === 0 && (
+                    <li style={{ color: "#82dca5" }} data-ai-state="empty">
+                      尚無資料
+                    </li>
+                  )}
+                  {snapshotOptions.map((item) => (
+                    <li
+                      key={`${item.client}/${item.name || item.id}`}
+                      style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}
+                      data-ai-item={`snapshot:${item.name || item.id}`}
+                    >
+                      <span style={{ flex: 1 }}>
+                        {item.client}/{item.name || item.id} {item.created_at ? `（${formatTs(item.created_at)}）` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSnapshotName(item.name || item.id);
+                          setSnapshotClient(item.client);
+                          handleLoadSnapshot(item.name || item.id, item.client);
+                        }}
+                        data-ai-action="snapshot.editor.load-item"
+                      >
+                        載入
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, marginBottom: 10 }}>
+                <label style={{ display: "flex", flexDirection: "column" }}>
+                  layout
+                  <select
+                    value={snapshotData.layout || "grid"}
+                    onChange={(e) => updateSnapshot({ ...snapshotData, layout: e.target.value })}
+                    data-ai-field="snapshot.editor.layout"
+                  >
+                    <option value="grid">grid</option>
+                    <option value="horizontal">horizontal</option>
+                    <option value="vertical">vertical</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column" }}>
+                  gap
+                  <input
+                    type="number"
+                    min="0"
+                    value={snapshotData.gap ?? 0}
+                    onChange={(e) => updateSnapshot({ ...snapshotData, gap: Number(e.target.value) })}
+                    data-ai-field="snapshot.editor.gap"
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column" }}>
+                  columns
+                  <input
+                    type="number"
+                    min="1"
+                    value={snapshotData.columns ?? 1}
+                    onChange={(e) => updateSnapshot({ ...snapshotData, columns: Number(e.target.value) })}
+                    data-ai-field="snapshot.editor.columns"
+                  />
+                </label>
+              </div>
+
+              <SnapshotPanelsEditor
+                panels={snapshotData.panels}
+                selectedRows={selectedRows}
+                onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
+                onMoveRow={moveRow}
+                onDuplicateRow={duplicateRow}
+                onRemoveRow={removeRow}
+                onAddPanel={addPanel}
+                onCopy={handleCopy}
+                onPaste={handlePaste}
+                canPaste={canSnapshotPaste}
+                onPanelChange={handlePanelChange}
+              />
+            </div>
           ) : (
-            <EpisodeListPanel
-              filter={episodeFilter}
-              onFilterChange={setEpisodeFilter}
-              onReload={refreshEpisodes}
-              episodes={episodeList}
-              onSelect={handleLoadSelected}
-            />
+            <>
+              {mode === "timeline" ? (
+                <TimelineListPanel
+                  filter={timelineFilter}
+                  onFilterChange={setTimelineFilter}
+                  onReload={refreshTimelines}
+                  timelines={timelineList}
+                  onSelect={handleLoadSelected}
+                />
+              ) : (
+                <EpisodeListPanel
+                  filter={episodeFilter}
+                  onFilterChange={setEpisodeFilter}
+                  onReload={refreshEpisodes}
+                  episodes={episodeList}
+                  onSelect={handleLoadSelected}
+                />
+              )}
+
+              {mode === "timeline" ? (
+                <TimelineStepsEditor
+                  steps={timelineData.steps}
+                  selectedRows={selectedRows}
+                  onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
+                  onMoveRow={moveRow}
+                  onDuplicateRow={duplicateRow}
+                  onRemoveRow={removeRow}
+                  onAddStep={addStep}
+                  onCopy={handleCopy}
+                  onPaste={handlePaste}
+                  canPaste={canTimelinePaste}
+                  batchDuration={batchDuration}
+                  onBatchDurationChange={setBatchDuration}
+                  onBatchApply={handleBatchApply}
+                  snapshotClient={snapshotClient}
+                  snapshotKeyword={snapshotKeyword}
+                  onSnapshotClientChange={setSnapshotClient}
+                  onSnapshotKeywordChange={setSnapshotKeyword}
+                  onRefreshSnapshots={refreshSnapshots}
+                  snapshotMessage={snapshotMessage}
+                  snapshotOptions={snapshotOptions}
+                  onStepChange={handleStepChange}
+                  getSnapshotValue={(step) => snapshotValueForSelect(step, timelineData, snapshotClient)}
+                />
+              ) : (
+                <EpisodeTracksEditor
+                  tracks={episodeData.tracks}
+                  selectedRows={selectedRows}
+                  onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
+                  onMoveRow={moveRow}
+                  onDuplicateRow={duplicateRow}
+                  onRemoveRow={removeRow}
+                  onAddTrack={addTrack}
+                  onCopy={handleCopy}
+                  onPaste={handlePaste}
+                  canPaste={canEpisodePaste}
+                  batchTargetClient={batchTargetClient}
+                  onBatchTargetChange={setBatchTargetClient}
+                  onBatchApply={handleBatchApply}
+                  onTrackChange={handleTrackChange}
+                  episodeTargetOverride={episodeTargetOverride}
+                  onTargetOverrideChange={setEpisodeTargetOverride}
+                  timelineOptions={timelineList}
+                />
+              )}
+            </>
           )}
 
-          {mode === "timeline" ? (
-            <TimelineStepsEditor
-              steps={timelineData.steps}
-              selectedRows={selectedRows}
-              onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
-              onMoveRow={moveRow}
-              onDuplicateRow={duplicateRow}
-              onRemoveRow={removeRow}
-              onAddStep={addStep}
-              onCopy={handleCopy}
-              onPaste={handlePaste}
-              canPaste={canTimelinePaste}
-              batchDuration={batchDuration}
-              onBatchDurationChange={setBatchDuration}
-              onBatchApply={handleBatchApply}
-              snapshotClient={snapshotClient}
-              snapshotKeyword={snapshotKeyword}
-              onSnapshotClientChange={setSnapshotClient}
-              onSnapshotKeywordChange={setSnapshotKeyword}
-              onRefreshSnapshots={refreshSnapshots}
-              snapshotMessage={snapshotMessage}
-              snapshotOptions={snapshotOptions}
-              onStepChange={handleStepChange}
-              getSnapshotValue={(step) => snapshotValueForSelect(step, timelineData, snapshotClient)}
-            />
-          ) : (
-            <EpisodeTracksEditor
-              tracks={episodeData.tracks}
-              selectedRows={selectedRows}
-              onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
-              onMoveRow={moveRow}
-              onDuplicateRow={duplicateRow}
-              onRemoveRow={removeRow}
-              onAddTrack={addTrack}
-              onCopy={handleCopy}
-              onPaste={handlePaste}
-              canPaste={canEpisodePaste}
-              batchTargetClient={batchTargetClient}
-              onBatchTargetChange={setBatchTargetClient}
-              onBatchApply={handleBatchApply}
-              onTrackChange={handleTrackChange}
-              episodeTargetOverride={episodeTargetOverride}
-              onTargetOverrideChange={setEpisodeTargetOverride}
-              timelineOptions={timelineList}
-            />
+
+          {mode !== "snapshot" && (
+            <div style={{ marginTop: 10 }}>
+              <label style={labelStyle} htmlFor="active-id">
+                {mode === "timeline" ? "Timeline ID" : "Episode ID"}
+              </label>
+              <input
+                id="active-id"
+                type="text"
+                value={activeData.id || ""}
+                onChange={(e) =>
+                  mode === "timeline"
+                    ? updateTimeline({ ...timelineData, id: e.target.value })
+                    : setEpisodeState({ ...episodeData, id: e.target.value })
+                }
+                style={{ width: "100%", marginBottom: 8 }}
+                data-ai-field={mode === "timeline" ? "timeline.id" : "episode.id"}
+              />
+            </div>
           )}
-
-
-          <div style={{ marginTop: 10 }}>
-            <label style={labelStyle} htmlFor="active-id">
-              {mode === "timeline" ? "Timeline ID" : "Episode ID"}
-            </label>
-            <input
-              id="active-id"
-              type="text"
-              value={activeData.id || ""}
-              onChange={(e) =>
-                mode === "timeline"
-                  ? updateTimeline({ ...timelineData, id: e.target.value })
-                  : setEpisodeState({ ...episodeData, id: e.target.value })
-              }
-              style={{ width: "100%", marginBottom: 8 }}
-              data-ai-field={mode === "timeline" ? "timeline.id" : "episode.id"}
-            />
-          </div>
 
           <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" onClick={handleSave} disabled={isSaving} data-ai-action="timeline-episode.save">
@@ -759,6 +1156,11 @@ export default function TimelineEpisodeEditor() {
             {mode === "episode" && (
               <button type="button" onClick={handlePlayEpisode} data-ai-action="episode.play">
                 播放 Episode（含覆寫）
+              </button>
+            )}
+            {mode === "snapshot" && (
+              <button type="button" onClick={handlePlaySnapshot} data-ai-action="snapshot.play">
+                播放 snapshot
               </button>
             )}
           </div>
@@ -806,6 +1208,32 @@ export default function TimelineEpisodeEditor() {
               </ul>
             )}
           </div>
+
+          {mode === "snapshot" && (
+            <div
+              style={{ ...previewContainerStyle, width: snapshotPreviewWidth, maxWidth: "100%", marginTop: 12 }}
+              data-ai-section="snapshot.editor.preview"
+              aria-label="Snapshot 預覽區塊"
+            >
+              <div style={previewTitleStyle}>預覽</div>
+              {snapshotPreviewSrc ? (
+                <iframe
+                  title="snapshot-preview"
+                  src={snapshotPreviewSrc}
+                  style={{ ...snapshotPreviewIframeStyle, height: snapshotFrameHeight }}
+                  sandbox="allow-scripts allow-same-origin"
+                  data-ai-id="snapshot.editor.preview.iframe"
+                />
+              ) : (
+                <div style={{ color: "#82dca5" }} data-ai-state="empty">
+                  {snapshotPreviewError || "無法產生預覽，請確認至少有一個 panel.url 或 image"}
+                </div>
+              )}
+              <div style={resizerHitboxStyle} onMouseDown={startSnapshotResize} aria-hidden="true">
+                <div style={resizerHandleStyle} />
+              </div>
+            </div>
+          )}
 
           {mode === "timeline" && (
             <TimelinePreviewPlayer
