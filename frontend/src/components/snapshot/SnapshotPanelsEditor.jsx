@@ -192,6 +192,7 @@ export default function SnapshotPanelsEditor({
               const assetListId = `snapshot-panel-${index}-asset-options`;
               const assetList =
                 MODE_PRESETS[mode]?.assetKey === "video" ? limitedVideoOptions : limitedImageOptions;
+              const safeAssetList = Array.isArray(assetList) ? assetList : [];
               return (
                 <div
                   style={{
@@ -233,12 +234,12 @@ export default function SnapshotPanelsEditor({
                         onChange={(e) => handleAssetChange(index, mode, e.target.value, panel)}
                         placeholder={assetPlaceholder}
                         disabled={!mode}
-                        list={assetList.length ? assetListId : undefined}
+                        list={safeAssetList.length ? assetListId : undefined}
                         data-ai-field={`snapshot.panel[${index}].asset`}
                       />
-                      {assetList.length > 0 && (
+                      {safeAssetList.length > 0 && (
                         <datalist id={assetListId}>
-                          {assetList.map((name) => (
+                          {safeAssetList.map((name) => (
                             <option key={name} value={name} />
                           ))}
                         </datalist>
