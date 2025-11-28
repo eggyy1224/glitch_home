@@ -1,0 +1,43 @@
+{
+  "generation_type": null,
+  "parents": [
+    "api_collage_a.png",
+    "offspring_20250923_171042_144.png",
+    "offspring_20250923_172918_483.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/api_collage_a.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_171042_144.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_172918_483.png"
+  ],
+  "input_details": [
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/api_collage_a.png",
+      "name": "api_collage_a.png",
+      "file_size": "97B",
+      "dimensions": "32x32"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_171042_144.png",
+      "name": "offspring_20250923_171042_144.png",
+      "file_size": "1.92MB",
+      "dimensions": "683x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_172918_483.png",
+      "name": "offspring_20250923_172918_483.png",
+      "file_size": "2.10MB",
+      "dimensions": "747x1024"
+    }
+  ],
+  "model_name": "gemini-3-pro-image-preview",
+  "prompt": "Surreal nighttime forest investigation: a tiny red flare glows in the distance, three investigators in pale uniforms stand under red-tinted trees, while a man in a dark suit rests his hand on a scarred pale trunk. Ground is foggy with faint road markings/chalk lines merging into the forest floor. Cinematic, cohesive single frame, moody red lighting, no collage grid, all elements blended together.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",
+  "strength": 0.5,
+  "created_at": "2025-11-28T11:17:22Z",
+  "output_image": "offspring_20251128_191721_800.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 880,
+    "height": 1216
+  }
+}
