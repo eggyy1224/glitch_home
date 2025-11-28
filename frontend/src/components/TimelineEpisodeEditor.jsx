@@ -505,7 +505,8 @@ export default function TimelineEpisodeEditor() {
       setJsonText(pretty(nextSnapshot));
       setValidationErrors(validateSnapshot(nextSnapshot));
     }
-  }, [defaultClientId, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在 defaultClientId 變更時重置，避免切換模式時清空編輯中的資料
+  }, [defaultClientId]);
 
   useEffect(() => {
     refreshTimelines();
