@@ -204,9 +204,27 @@ export default function SnapshotPanelsEditor({
     const from = Number(raw);
     if (Number.isNaN(from)) return;
     if (from === targetIndex) return;
-    onMoveRow(from, targetIndex - from);
+
+    const rect = event.currentTarget?.getBoundingClientRect?.();
+    const dropAfter =
+      rect != null
+        ? event.clientY - rect.top > rect.height / 2 || event.clientX - rect.left > rect.width / 2
+        : targetIndex > from; // fallback: when moving downward, default to drop-after
+
+    let insertIndex = null;
+    if (targetIndex > from) {
+      const isAdjacent = targetIndex === from + 1;
+      insertIndex = isAdjacent ? targetIndex : dropAfter ? targetIndex : targetIndex - 1; // adjacent downward always moves
+    } else if (targetIndex < from) {
+      insertIndex = dropAfter ? targetIndex + 1 : targetIndex;
+    }
+    if (insertIndex == null) return;
+
+    const maxIndex = Math.max(0, (panels?.length || 1) - 1);
+    const clampedIndex = Math.max(0, Math.min(insertIndex, maxIndex));
+    onMoveRow(from, clampedIndex - from);
     if (typeof onSelectPanel === "function") {
-      onSelectPanel(targetIndex);
+      onSelectPanel(clampedIndex);
     }
   };
 
