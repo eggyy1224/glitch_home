@@ -8,6 +8,8 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import settings
+
 
 @pytest.mark.api
 def test_get_iframe_config_default(client: TestClient):
@@ -249,6 +251,34 @@ def test_put_collage_config_validation(client: TestClient):
     # Invalid payload - FastAPI returns 422 for validation errors
     response = client.put("/api/collage-config", json="invalid")
     assert response.status_code in [400, 422]
+
+
+@pytest.mark.api
+def test_list_video_assets_empty_when_missing(client: TestClient, monkeypatch: pytest.MonkeyPatch, temp_dir: Path):
+    """When video assets directory is missing, API returns empty list instead of error."""
+    monkeypatch.setattr(settings, "video_assets_dir", str(temp_dir / "missing-videos"))
+    response = client.get("/api/video-assets")
+    assert response.status_code == 200
+    assert response.json() == {"videos": []}
+
+
+@pytest.mark.api
+def test_list_video_assets_returns_sorted_urls(client: TestClient, monkeypatch: pytest.MonkeyPatch, temp_dir: Path):
+    """API should surface mp4 assets with configured public base URL."""
+    video_dir = temp_dir / "videos"
+    video_dir.mkdir(parents=True, exist_ok=True)
+    for name in ["b.mp4", "a.mp4"]:
+        (video_dir / name).write_text("demo", encoding="utf-8")
+    (video_dir / "ignore.txt").write_text("nope", encoding="utf-8")
+    monkeypatch.setattr(settings, "video_assets_dir", str(video_dir))
+    monkeypatch.setattr(settings, "video_assets_public_base", "https://cdn.example.com/videos")
+
+    response = client.get("/api/video-assets")
+    assert response.status_code == 200
+    assert response.json()["videos"] == [
+        {"filename": "a.mp4", "url": "https://cdn.example.com/videos/a.mp4"},
+        {"filename": "b.mp4", "url": "https://cdn.example.com/videos/b.mp4"},
+    ]
 
 
 @pytest.mark.api

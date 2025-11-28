@@ -367,6 +367,22 @@ curl -X POST "http://localhost:8000/api/video-control?target_client_id=desktop2-
 
 前端會透過 WebSocket 收到 `type: "video_control"`，藉由 `VideoMode` 暴露的控制介面直接執行 `play/pause/volume/seek`，不再透過 `remote_click` 模擬按鈕。為避免瀏覽器阻擋音訊，仍建議在進入步驟前透過 `unlock_audio_targets` 解鎖。
 
+### 任務 7.4: 取得 video_mode 可用影片清單
+
+管理者介面中的 Snapshot 編輯器會自動載入影片清單供 `video_mode` 選擇。後端也提供 API 可直接查詢 mp4 資產：
+
+```bash
+# 目錄來源可透過環境變數覆蓋，預設指向 frontend/public/videos/圖像系譜學Video
+export VIDEO_ASSETS_DIR="/data/videos"
+export VIDEO_ASSETS_PUBLIC_BASE="/videos"  # 回應中的 URL 前綴
+
+curl -X GET http://localhost:8000/api/video-assets | jq .
+# => { "videos": [ { "filename": "demo.mp4", "url": "/videos/demo.mp4" } ] }
+```
+
+- 只列出 `.mp4`，依檔名排序。
+- `VIDEO_ASSETS_PUBLIC_BASE` 會直接拼入回傳的 `url`，請確保前端能存取對應靜態路徑。
+
 ### 任務 8: 查詢目前在線客戶端
 
 ```bash

@@ -17,6 +17,8 @@ const {
   mockPlayIframeTimeline,
   mockPlayEpisode,
   mockGetIframeSnapshot,
+  mockSaveIframeSnapshot,
+  mockRestoreIframeSnapshot,
 } = vi.hoisted(() => ({
   mockListIframeTimelines: vi.fn(),
   mockListEpisodes: vi.fn(),
@@ -30,6 +32,8 @@ const {
   mockPlayIframeTimeline: vi.fn(),
   mockPlayEpisode: vi.fn(),
   mockGetIframeSnapshot: vi.fn(),
+  mockSaveIframeSnapshot: vi.fn(),
+  mockRestoreIframeSnapshot: vi.fn(),
 }));
 
 vi.mock("../../src/api.js", () => ({
@@ -46,6 +50,8 @@ vi.mock("../../src/api.js", () => ({
   playIframeTimeline: (...args) => mockPlayIframeTimeline(...args),
   playEpisode: (...args) => mockPlayEpisode(...args),
   getIframeSnapshot: (...args) => mockGetIframeSnapshot(...args),
+  saveIframeSnapshot: (...args) => mockSaveIframeSnapshot(...args),
+  restoreIframeSnapshot: (...args) => mockRestoreIframeSnapshot(...args),
 }));
 
 function renderWithContext(ui) {
@@ -70,6 +76,8 @@ beforeEach(() => {
   mockGetIframeSnapshot.mockResolvedValue({
     raw: { layout: "grid", gap: 0, columns: 1, panels: [{ url: "/preview" }] },
   });
+  mockSaveIframeSnapshot.mockResolvedValue({});
+  mockRestoreIframeSnapshot.mockResolvedValue({});
 });
 
 describe("TimelineEpisodeEditor", () => {
@@ -229,5 +237,32 @@ describe("TimelineEpisodeEditor", () => {
       fireEvent.click(screen.getByRole("button", { name: "播放 Episode（含覆寫）" }));
     });
     expect(screen.getByRole("status")).toHaveTextContent("請先設定 episode id");
+  });
+
+  it("Snapshot 模式可儲存並播放 snapshot", async () => {
+    renderWithContext(<TimelineEpisodeEditor />);
+
+    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("tab", { name: "Snapshot 模式" }));
+    const nameInput = await screen.findByLabelText("名稱");
+    fireEvent.change(nameInput, { target: { value: "snap-demo" } });
+    fireEvent.change(screen.getByPlaceholderText("例如 /?slide_mode=true"), {
+      target: { value: "/?static_mode=true&img=foo.png" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "儲存" }));
+    await waitFor(() =>
+      expect(mockSaveIframeSnapshot).toHaveBeenCalledWith(
+        "desktop",
+        "snap-demo",
+        expect.objectContaining({
+          panels: expect.any(Array),
+        }),
+      ),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "播放 snapshot" }));
+    await waitFor(() => expect(mockRestoreIframeSnapshot).toHaveBeenCalledWith("desktop", "snap-demo"));
   });
 });
