@@ -14,8 +14,9 @@ from ..utils.permissions import (
     ensure_metadata_write_enabled,
 )
 from ..utils.fs import ensure_dirs
-from ..utils.metadata import write_metadata
+from ..utils.metadata import write_metadata, validate_metadata_schema
 from ..utils.gemini_client import get_gemini_client
+from ..models.metadata import GeneratedImageMetadata
 from .genes_pool import FilesystemParentSelector, ParentSelector
 from .image_outputs import (
     DefaultImagePreprocessor,
@@ -95,6 +96,11 @@ class GeminiImageGenerator:
                 width=width,
                 height=height,
                 output_path=output_path,
+            )
+            metadata = validate_metadata_schema(
+                metadata,
+                model=GeneratedImageMetadata,
+                context="image_generation",
             )
             metadata_path = write_metadata(
                 metadata, base_name=os.path.splitext(os.path.basename(output_path))[0]

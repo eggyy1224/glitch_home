@@ -20,7 +20,8 @@ import httpx
 from ..config import settings
 from ..utils.permissions import ensure_analysis_llm_enabled, ensure_asset_write_enabled
 from ..utils.fs import ensure_dirs
-from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z
+from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z, validate_metadata_schema
+from ..models.metadata import TTSMetadata
 
 
 DEFAULT_TTS_MODEL = "gpt-4o-mini-tts"
@@ -227,6 +228,11 @@ def synthesize_speech_openai(
         f"naration/{output_path.name}"
         if naration_base.resolve() == Path(settings.metadata_dir).resolve()
         else output_path.name
+    )
+    metadata = validate_metadata_schema(
+        metadata,
+        model=TTSMetadata,
+        context="tts",
     )
     metadata_path = write_metadata(
         metadata,

@@ -11,7 +11,8 @@ import httpx
 from ..config import settings
 from ..utils.permissions import ensure_asset_write_enabled
 from ..utils.fs import ensure_dirs
-from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z
+from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z, validate_metadata_schema
+from ..models.metadata import SoundEffectMetadata
 
 
 DEFAULT_OUTPUT_FORMAT = "mp3_44100_128"
@@ -168,6 +169,11 @@ def generate_sound_effect(
         "size_bytes": stat.st_size,
         "checksum_sha256": compute_sha256(output_path),
     }
+    metadata = validate_metadata_schema(
+        metadata,
+        model=SoundEffectMetadata,
+        context="sound_effect",
+    )
     metadata_path = write_metadata(metadata, base_name=output_path.name)
 
     return {

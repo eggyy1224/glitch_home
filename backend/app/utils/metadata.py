@@ -1,13 +1,17 @@
 import hashlib
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Type, Union
+
+from pydantic import BaseModel, ValidationError
 
 from ..config import settings
 
 PathLike = Union[str, os.PathLike[str]]
+logger = logging.getLogger(__name__)
 
 
 def write_metadata(data: Dict[str, Any], base_name: str, base_dir: Optional[PathLike] = None) -> str:
@@ -38,3 +42,28 @@ def compute_sha256(path: PathLike, chunk_size: int = 65536) -> str:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def validate_metadata_schema(
+    data: Dict[str, Any],
+    *,
+    model: Optional[Type[BaseModel]] = None,
+    context: Optional[str] = None,
+    exclude_none: bool = False,
+) -> Dict[str, Any]:
+    """Validate/sanitize metadata payload with a Pydantic model.
+
+    遵循「不中斷行為」原則：驗證失敗時只記 warning 並回傳原始資料。
+    """
+    if model is None:
+        return data
+
+    try:
+        instance = model.model_validate(data)
+        return instance.model_dump(mode="json", exclude_none=exclude_none)
+    except ValidationError as exc:
+        logger.warning("Metadata validation failed (%s): %s", context or model.__name__, exc)
+        return data
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Metadata validation error (%s): %s", context or model.__name__, exc, exc_info=True)
+        return data

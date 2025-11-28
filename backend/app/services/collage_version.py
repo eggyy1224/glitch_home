@@ -15,12 +15,13 @@ from PIL import Image, ImageOps
 
 from ..config import settings
 from ..utils.fs import ensure_dirs
-from ..utils.metadata import write_metadata
+from ..utils.metadata import write_metadata, validate_metadata_schema
 from ..utils.permissions import (
     ensure_asset_write_enabled,
     ensure_generation_enabled,
     ensure_metadata_write_enabled,
 )
+from ..models.metadata import CollageMetadata
 
 
 # Task manager for progress tracking
@@ -1169,6 +1170,11 @@ def generate_collage_version(
                         })
         metadata["tile_mapping"] = tile_mapping
     
+    metadata = validate_metadata_schema(
+        metadata,
+        model=CollageMetadata,
+        context="collage_version",
+    )
     metadata_path = write_metadata(metadata, base_name=os.path.splitext(filename)[0])
     
     report_progress(100, "completed", "生成完成")
