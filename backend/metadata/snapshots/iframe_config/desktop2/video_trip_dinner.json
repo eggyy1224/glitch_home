@@ -1,0 +1,37 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "left",
+      "image": null,
+      "url": "/?video_mode=true&video=晚宴.mp4&auto_unmute=false&video_volume=0",
+      "params": {},
+      "ratio": 1.0,
+      "label": "dinner mute",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "mid",
+      "image": null,
+      "url": "/?video_mode=true&video=晚宴.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "dinner mid",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": null,
+      "url": "/?video_mode=true&video=晚宴.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": "dinner right",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
