@@ -166,8 +166,21 @@ export default function SnapshotPanelsEditor({
           貼上
         </button>
         <span style={{ color: "#82dca5" }}>至少填 url 或 image</span>
-        <span style={{ color: "#82dca5" }}>資產：{assetStatus}</span>
-        <button type="button" onClick={loadAssets} disabled={loadingAssets} data-ai-action="snapshot.panel.assets.reload">
+        <span
+          style={{ color: "#82dca5" }}
+          role="status"
+          aria-live="polite"
+          id="snapshot.assets.status"
+          data-ai-id="snapshot.assets.status"
+        >
+          資產：{assetStatus}
+        </span>
+        <button
+          type="button"
+          onClick={loadAssets}
+          disabled={loadingAssets}
+          data-ai-action="snapshot.panel.assets.reload"
+        >
           重新載入資產
         </button>
       </div>
@@ -226,25 +239,26 @@ export default function SnapshotPanelsEditor({
                       ))}
                     </select>
                   </label>
-                    <label style={{ display: "flex", flexDirection: "column" }}>
-                      資產（依模式）
-                      <input
-                        type="text"
-                        value={asset || ""}
-                        onChange={(e) => handleAssetChange(index, mode, e.target.value, panel)}
-                        placeholder={assetPlaceholder}
-                        disabled={!mode}
-                        list={safeAssetList.length ? assetListId : undefined}
-                        data-ai-field={`snapshot.panel[${index}].asset`}
-                      />
-                      {safeAssetList.length > 0 && (
-                        <datalist id={assetListId}>
-                          {safeAssetList.map((name) => (
-                            <option key={name} value={name} />
-                          ))}
-                        </datalist>
-                      )}
-                    </label>
+                  <label style={{ display: "flex", flexDirection: "column" }}>
+                    資產（依模式）
+                    <input
+                      type="text"
+                      value={asset || ""}
+                      onChange={(e) => handleAssetChange(index, mode, e.target.value, panel)}
+                      placeholder={assetPlaceholder}
+                      disabled={!mode}
+                      list={safeAssetList.length ? assetListId : undefined}
+                      aria-describedby="snapshot.assets.status"
+                      data-ai-field={`snapshot.panel[${index}].asset`}
+                    />
+                    {safeAssetList.length > 0 && (
+                      <datalist id={assetListId}>
+                        {safeAssetList.map((name) => (
+                          <option key={name} value={name} />
+                        ))}
+                      </datalist>
+                    )}
+                  </label>
                   <label style={{ display: "flex", flexDirection: "column" }}>
                     url
                     <input
