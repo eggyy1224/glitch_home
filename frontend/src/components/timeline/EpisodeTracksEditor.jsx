@@ -18,6 +18,7 @@ export default function EpisodeTracksEditor({
   onTrackChange,
   episodeTargetOverride,
   onTargetOverrideChange,
+  timelineOptions = [],
 }) {
   return (
     <div data-ai-section="episode.tracks">
@@ -93,25 +94,54 @@ export default function EpisodeTracksEditor({
                 刪除
               </button>
             </div>
+            {(() => {
+              const targetClient = track.targetClientId || track.target_client_id || "";
+              const filteredTimelines = (timelineOptions || []).filter((item) => {
+                if (!item || !item.id) return false;
+                const client = item.clientId || item.client_id || item.client || "";
+                return !targetClient || client === targetClient;
+              });
+              const datalistId = `timeline-options-${index}`;
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 6 }}>
+                  <div style={{ fontSize: 12, color: "#82dca5" }}>
+                    timeline 選單：{targetClient ? `client ${targetClient}` : "全部 client"}
+                    {filteredTimelines.length === 0 ? "（無可用 timeline）" : `（${filteredTimelines.length} 筆）`}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <label style={{ display: "flex", flexDirection: "column" }}>
+                      timelineId
+                      <input
+                        type="text"
+                        list={datalistId}
+                        value={track.timelineId || track.timeline_id || ""}
+                        onChange={(e) => onTrackChange(index, { timelineId: e.target.value })}
+                        data-ai-field={`episode.track[${index}].timeline-id`}
+                      />
+                      <datalist id={datalistId}>
+                        {(filteredTimelines || []).map((item) => (
+                          <option
+                            key={`${item.client_id || item.clientId || item.client || "client"}:${item.id}`}
+                            value={item.id}
+                          >{`${item.id} · ${item.client_id || item.clientId || item.client || "n/a"}`}</option>
+                        ))}
+                      </datalist>
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column" }}>
+                      targetClientId
+                      <input
+                        type="text"
+                        value={track.targetClientId || track.target_client_id || ""}
+                        onChange={(e) => onTrackChange(index, { targetClientId: e.target.value })}
+                        data-ai-field={`episode.track[${index}].target-client`}
+                      />
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <label style={{ display: "flex", flexDirection: "column" }}>
-                timelineId
-                <input
-                  type="text"
-                  value={track.timelineId || track.timeline_id || ""}
-                  onChange={(e) => onTrackChange(index, { timelineId: e.target.value })}
-                  data-ai-field={`episode.track[${index}].timeline-id`}
-                />
-              </label>
-              <label style={{ display: "flex", flexDirection: "column" }}>
-                targetClientId
-                <input
-                  type="text"
-                  value={track.targetClientId || track.target_client_id || ""}
-                  onChange={(e) => onTrackChange(index, { targetClientId: e.target.value })}
-                  data-ai-field={`episode.track[${index}].target-client`}
-                />
-              </label>
               <label style={{ display: "flex", flexDirection: "column" }}>
                 offset/delay
                 <input

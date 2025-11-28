@@ -14,7 +14,14 @@ import {
   updateIframeTimeline,
 } from "../api.js";
 import { AdminPanelContext } from "../AdminPanelContext";
-import { boxStyle, columnsStyle, columnStyle, labelStyle } from "../AdminPanelStyles.js";
+import {
+  activeTabButtonStyle,
+  boxStyle,
+  columnsStyle,
+  columnStyle,
+  labelStyle,
+  tabButtonStyle,
+} from "../AdminPanelStyles.js";
 import {
   defaultEpisodePayload,
   defaultTimelinePayload,
@@ -155,10 +162,13 @@ export default function TimelineEpisodeEditor() {
 
   const setEpisodeState = useCallback(
     (next, { markDirty = true } = {}) => {
-      setEpisodeData(next);
-      syncJsonFromData(next);
-      setDirty(Boolean(markDirty));
-      setValidationErrors(validateEpisode(next));
+      setEpisodeData((prev) => {
+        const resolved = typeof next === "function" ? next(prev) : next;
+        syncJsonFromData(resolved);
+        setDirty(Boolean(markDirty));
+        setValidationErrors(validateEpisode(resolved));
+        return resolved;
+      });
     },
     [syncJsonFromData],
   );
@@ -342,6 +352,33 @@ export default function TimelineEpisodeEditor() {
   }, [refreshEpisodes, refreshSnapshots, refreshTimelines]);
 
   useEffect(() => {
+    if (mode !== "episode") return;
+    if (!timelineList.length) return;
+    if (dirty) return;
+    setEpisodeState(
+      (prev) => {
+        if (!prev || !Array.isArray(prev.tracks) || prev.tracks.length === 0) return prev;
+        const timelineIds = new Set(timelineList.map((t) => t.id));
+        let changed = false;
+        const nextTracks = prev.tracks.map((track) => {
+          if (!track) return track;
+          const currentId = track.timelineId || track.timeline_id || "";
+          if (currentId && timelineIds.has(currentId)) return track;
+          const targetClient = track.targetClientId || track.target_client_id || "";
+          const candidate =
+            timelineList.find((item) => (item.client_id || item.clientId || item.client) === targetClient) ||
+            timelineList[0];
+          if (!candidate) return track;
+          changed = true;
+          return { ...track, timelineId: candidate.id };
+        });
+        return changed ? { ...prev, tracks: nextTracks } : prev;
+      },
+      { markDirty: false },
+    );
+  }, [dirty, mode, setEpisodeState, timelineList]);
+
+  useEffect(() => {
     if (mode !== "timeline") return undefined;
     let cancelled = false;
     const controller = new AbortController();
@@ -400,11 +437,17 @@ export default function TimelineEpisodeEditor() {
   }, [defaultClientId, timelineData, updateTimeline]);
 
   const addTrack = useCallback(() => {
+    const fallbackTimeline =
+      timelineList.find((item) => (item.client_id || item.clientId || item.client) === defaultClientId) ||
+      timelineList[0];
     setEpisodeState({
       ...episodeData,
-      tracks: [...(episodeData.tracks || []), { timelineId: "timeline_x", targetClientId: defaultClientId, offset: 0 }],
+      tracks: [
+        ...(episodeData.tracks || []),
+        { timelineId: fallbackTimeline?.id || "", targetClientId: defaultClientId, offset: 0 },
+      ],
     });
-  }, [defaultClientId, episodeData, setEpisodeState]);
+  }, [defaultClientId, episodeData, setEpisodeState, timelineList]);
 
   const moveRow = useCallback(
     (index, delta) => {
@@ -568,7 +611,7 @@ export default function TimelineEpisodeEditor() {
         <button
           type="button"
           onClick={() => handleModeChange("timeline")}
-          style={{ fontWeight: mode === "timeline" ? 800 : 500 }}
+          style={mode === "timeline" ? activeTabButtonStyle : tabButtonStyle}
           role="tab"
           aria-selected={mode === "timeline"}
           aria-controls="timeline-editor-panel"
@@ -580,7 +623,7 @@ export default function TimelineEpisodeEditor() {
         <button
           type="button"
           onClick={() => handleModeChange("episode")}
-          style={{ fontWeight: mode === "episode" ? 800 : 500 }}
+          style={mode === "episode" ? activeTabButtonStyle : tabButtonStyle}
           role="tab"
           aria-selected={mode === "episode"}
           aria-controls="episode-editor-panel"
@@ -676,6 +719,7 @@ export default function TimelineEpisodeEditor() {
               onTrackChange={handleTrackChange}
               episodeTargetOverride={episodeTargetOverride}
               onTargetOverrideChange={setEpisodeTargetOverride}
+              timelineOptions={timelineList}
             />
           )}
 
