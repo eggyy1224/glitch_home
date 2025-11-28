@@ -247,11 +247,21 @@ export default function GenerateMode({ canGenerate = true, appMode = "STUDIO", f
 
   return (
     <div className="generate-tabs-shell">
-      <div className="generate-tabbar">
+      <div
+        className="generate-tabbar"
+        role="tablist"
+        aria-label="生成/拼貼模式切換"
+        data-ai-id="generate.tablist"
+      >
         <button
           type="button"
           className={`generate-tab-button ${activeTab === "collage" ? "active" : ""}`}
           onClick={() => switchTab("collage")}
+          role="tab"
+          aria-selected={activeTab === "collage"}
+          aria-controls="generate-tabpanel-collage"
+          id="generate-tab-collage"
+          data-ai-id="generate.tab.collage"
         >
           拼貼模式
         </button>
@@ -260,6 +270,12 @@ export default function GenerateMode({ canGenerate = true, appMode = "STUDIO", f
           className={`generate-tab-button ${activeTab === "generate" ? "active" : ""}`}
           onClick={() => switchTab("generate")}
           disabled={!canGenerate}
+          role="tab"
+          aria-selected={activeTab === "generate"}
+          aria-controls="generate-tabpanel-generate"
+          id="generate-tab-generate"
+          aria-disabled={!canGenerate}
+          data-ai-id="generate.tab.generate"
         >
           生成模式
         </button>
@@ -267,12 +283,28 @@ export default function GenerateMode({ canGenerate = true, appMode = "STUDIO", f
 
       <div className="generate-tabpanels">
         {mountedTabs.collage && (
-          <div className="generate-tabpanel" style={{ display: activeTab === "collage" ? "block" : "none" }}>
+          <div
+            className="generate-tabpanel"
+            style={{ display: activeTab === "collage" ? "block" : "none" }}
+            role="tabpanel"
+            aria-hidden={activeTab !== "collage"}
+            aria-labelledby="generate-tab-collage"
+            id="generate-tabpanel-collage"
+            data-ai-id="generate.tabpanel.collage"
+          >
             <CollageVersionMode canGenerate={canGenerate} appMode={appMode} forbidMessage={forbidMessage} />
           </div>
         )}
         {mountedTabs.generate && (
-          <div className="generate-tabpanel" style={{ display: activeTab === "generate" ? "block" : "none" }}>
+          <div
+            className="generate-tabpanel"
+            style={{ display: activeTab === "generate" ? "block" : "none" }}
+            role="tabpanel"
+            aria-hidden={activeTab !== "generate"}
+            aria-labelledby="generate-tab-generate"
+            id="generate-tabpanel-generate"
+            data-ai-id="generate.tabpanel.generate"
+          >
             <GenerateModeContent canGenerate={canGenerate} appMode={appMode} forbidMessage={forbidMessage} />
           </div>
         )}

@@ -35,7 +35,7 @@ beforeEach(() => {
 describe("GenerateMode", () => {
   const renderGeneratePanel = async () => {
     render(<GenerateMode />);
-    fireEvent.click(screen.getByRole("button", { name: "生成模式" }));
+    fireEvent.click(screen.getByRole("tab", { name: "生成模式" }));
     const panel = await screen.findByText("圖像生成");
     const container = panel.closest(".generate-mode");
     return { container };
