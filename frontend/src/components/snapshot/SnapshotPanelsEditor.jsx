@@ -121,7 +121,10 @@ export default function SnapshotPanelsEditor({
   const limitedVideoOptions = useMemo(() => videoAssets.slice(0, 500), [videoAssets]);
 
   const handleModeSelect = (index, nextMode, currentAsset, panel) => {
-    if (!nextMode) return;
+    if (!nextMode) {
+      onPanelChange(index, { url: "", image: undefined });
+      return;
+    }
     const nextUrl = buildUrlFromPreset(nextMode, currentAsset);
     const patch = { url: nextUrl };
     if (MODE_PRESETS[nextMode]?.assetKey === "img") {
