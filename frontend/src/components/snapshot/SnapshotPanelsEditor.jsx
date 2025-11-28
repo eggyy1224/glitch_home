@@ -204,9 +204,10 @@ export default function SnapshotPanelsEditor({
     const from = Number(raw);
     if (Number.isNaN(from)) return;
     if (from === targetIndex) return;
-    onMoveRow(from, targetIndex - from);
+    const targetAfterRemoval = targetIndex > from ? targetIndex - 1 : targetIndex; // removal shifts downward targets left
+    onMoveRow(from, targetAfterRemoval - from);
     if (typeof onSelectPanel === "function") {
-      onSelectPanel(targetIndex);
+      onSelectPanel(targetAfterRemoval);
     }
   };
 
