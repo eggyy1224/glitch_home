@@ -62,7 +62,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockListIframeTimelines.mockResolvedValue({ timelines: [{ id: "demo_tl", client_id: "desktop" }] });
   mockListEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", track_count: 1 }] });
-  mockListIframeSnapshots.mockResolvedValue({ snapshots: [{ id: "snapA", client: "desktop" }] });
+  mockListIframeSnapshots.mockResolvedValue({
+    snapshots: [
+      { id: "snapA", client: "desktop" },
+      { id: "snapB", client: "desktop" },
+    ],
+  });
   mockFetchIframeTimeline.mockResolvedValue({
     timeline: { id: "demo_tl", clientId: "wall", steps: [{ snapshot: "wall/snap1", duration: 5 }] },
   });
@@ -249,6 +254,41 @@ describe("TimelineEpisodeEditor", () => {
       fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
     });
     await waitFor(() => expect(screen.queryByText(/請先設定 client 與 snapshot 名稱/)).toBeNull());
+  });
+
+  it("時間軸預覽 bar 支援拖曳重新排序", async () => {
+    renderWithContext(<TimelineEpisodeEditor />);
+    const previewBars = await screen.findAllByTestId(/timeline-preview-/);
+    expect(previewBars).toHaveLength(2);
+
+    const snapshotSelects = screen.getAllByLabelText("snapshot");
+    fireEvent.change(snapshotSelects[0], { target: { value: "desktop/snapA" } });
+    fireEvent.change(snapshotSelects[1], { target: { value: "desktop/snapB" } });
+    const before = snapshotSelects.map((s) => s.value);
+
+    const dataTransfer = {
+      data: {},
+      setData(type, value) {
+        this.data[type] = value;
+      },
+      getData(type) {
+        return this.data[type] || "";
+      },
+    };
+
+    await act(async () => {
+      fireEvent.dragStart(previewBars[0], { dataTransfer });
+      fireEvent.drop(previewBars[1], { dataTransfer });
+    });
+
+    const selects = await screen.findAllByLabelText(/選取 step/);
+    expect(selects).toHaveLength(2);
+    // 確認順序已交換
+    await waitFor(() => {
+      const updated = screen.getAllByLabelText("snapshot");
+      expect(updated[0].value).toBe(before[1]);
+      expect(updated[1].value).toBe(before[0]);
+    });
   });
 
   it("播放與預覽缺少 id 時會顯示錯誤訊息", async () => {

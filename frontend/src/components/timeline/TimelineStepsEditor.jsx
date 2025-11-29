@@ -29,6 +29,35 @@ export default function TimelineStepsEditor({
     [steps],
   );
 
+  const handleStepDrag = (event, index) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("application/x-timeline-step", String(index));
+    event.dataTransfer.setData("text/plain", `step:${index}`);
+  };
+
+  const handleStepDrop = (event, targetIndex) => {
+    event.preventDefault();
+    const raw =
+      event.dataTransfer.getData("application/x-timeline-step") || event.dataTransfer.getData("text/plain") || "";
+    if (!raw) return;
+    const numericRaw = raw.startsWith("step:") ? raw.replace(/^step:/, "") : raw;
+    const from = Number(numericRaw);
+    if (Number.isNaN(from)) return;
+    if (from === targetIndex) return;
+
+    const rect = event.currentTarget?.getBoundingClientRect?.();
+    const dropAfter =
+      rect != null && Number.isFinite(event.clientY) && Number.isFinite(event.clientX)
+        ? event.clientY - rect.top > rect.height / 2 || event.clientX - rect.left > rect.width / 2
+        : targetIndex > from;
+
+    let insertIndex = dropAfter ? targetIndex + 1 : targetIndex;
+    if (insertIndex > from) insertIndex -= 1;
+    if (insertIndex === from) return;
+
+    onMoveRow(from, insertIndex - from);
+  };
+
   return (
     <div data-ai-section="timeline.steps">
       <div style={{ border: "1px solid #0f4", padding: 10, marginBottom: 12, background: "#010", borderRadius: 4 }}>
@@ -53,9 +82,14 @@ export default function TimelineStepsEditor({
             const isActive = selectedRows.includes(index);
             return (
               <button
+                data-testid={`timeline-preview-${index}`}
                 key={`timeline-bar-${index}`}
                 type="button"
                 onClick={() => onToggleRow(index)}
+                draggable
+                onDragStart={(e) => handleStepDrag(e, index)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleStepDrop(e, index)}
                 style={{
                   flex: `0 0 ${Math.max(percent, 8)}%`,
                   minWidth: 120,
