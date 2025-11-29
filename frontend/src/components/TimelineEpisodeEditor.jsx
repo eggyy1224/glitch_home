@@ -962,8 +962,6 @@ export default function TimelineEpisodeEditor() {
               borderRadius: 4,
               color: "#ffb347",
             }}
-            role="status"
-            aria-live="polite"
           >
             {message}
           </span>
