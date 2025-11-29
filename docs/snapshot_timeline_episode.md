@@ -12,6 +12,7 @@
   - 刪除：`DELETE /api/iframe-config/snapshots/{client}/{name}`  
   - 複製：`POST /api/iframe-config/snapshots/{client}/{name}/clone`
 - 用途：作為 Timeline step 的畫面來源。前端播放器在收到 timeline 控制指令時會套用對應的 Snapshot 配置。
+- Admin Snapshot Editor 小抄：拖曳資產（含數字檔名）到畫布即可套用；影片拖曳會切到 `video_mode`，圖片會保留既有的 image 模式（含 `slide_mode`），初次選圖片預設會用 `static_mode` 生成預覽 URL。
 
 ## 2. Timeline（多 Snapshot 的時間序列）
 - 內容：`id`、`title`、`clientId`（步驟預設的 client）、`loop`、`steps[]`。  

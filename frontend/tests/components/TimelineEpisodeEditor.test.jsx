@@ -219,6 +219,38 @@ describe("TimelineEpisodeEditor", () => {
     expect(screen.getAllByLabelText(/選取 track/)).toHaveLength(3);
   });
 
+  it("狀態訊息會依模式切換並只顯示該模式內容", async () => {
+    renderWithContext(<TimelineEpisodeEditor />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
+    });
+    const episodeIdInput = await screen.findByLabelText("Episode ID");
+    fireEvent.change(episodeIdInput, { target: { value: "" } });
+    await waitFor(() => expect(episodeIdInput.value).toBe(""));
+    const episodePlayButton = await screen.findByRole("button", { name: "播放 Episode（含覆寫）" });
+    await act(async () => {
+      fireEvent.click(episodePlayButton);
+    });
+    await screen.findAllByText(/請先設定 episode id/);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Snapshot 模式" }));
+    });
+    const snapshotNameInput = await screen.findByLabelText("名稱");
+    fireEvent.change(snapshotNameInput, { target: { value: "" } });
+    const snapshotPlayButton = await screen.findByRole("button", { name: "播放 snapshot" });
+    await act(async () => {
+      fireEvent.click(snapshotPlayButton);
+    });
+    await screen.findAllByText(/請先設定 client 與 snapshot 名稱/);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
+    });
+    await waitFor(() => expect(screen.queryByText(/請先設定 client 與 snapshot 名稱/)).toBeNull());
+  });
+
   it("播放與預覽缺少 id 時會顯示錯誤訊息", async () => {
     renderWithContext(<TimelineEpisodeEditor />);
 

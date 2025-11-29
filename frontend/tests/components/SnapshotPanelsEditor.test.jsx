@@ -25,7 +25,7 @@ function ControlledEditor({ onPanelChange }) {
       panels={panels}
       selectedRows={[]}
       onToggleRow={vi.fn()}
-      onMoveRow={vi.fn()}
+      onMoveRow={(from, delta) => handleChange(from + delta, {})}
       onDuplicateRow={vi.fn()}
       onRemoveRow={vi.fn()}
       onAddPanel={vi.fn()}
@@ -44,6 +44,16 @@ beforeEach(() => {
 });
 
 describe("SnapshotPanelsEditor", () => {
+  const createDataTransfer = () => {
+    const data = {};
+    return {
+      setData: (type, value) => {
+        data[type] = value;
+      },
+      getData: (type) => data[type] || "",
+    };
+  };
+
   it("載入資產並依模式組出對應的 url 與 image", async () => {
     const onPanelChange = vi.fn();
     render(<ControlledEditor onPanelChange={onPanelChange} />);
@@ -63,5 +73,68 @@ describe("SnapshotPanelsEditor", () => {
 
     fireEvent.change(screen.getByLabelText("image"), { target: { value: "img-b.png" } });
     expect(onPanelChange).toHaveBeenLastCalledWith(0, { image: "img-b.png", url: "/?static_mode=true&img=img-b.png" });
+  });
+
+  it("拖放數字檔名資產時不會被當成面板索引，會生成 static_mode 網址", async () => {
+    const onPanelChange = vi.fn();
+    render(<ControlledEditor onPanelChange={onPanelChange} />);
+    await waitFor(() => expect(mockListOffspringImages).toHaveBeenCalled());
+
+    const panelButton = screen.getByRole("button", { name: /p1/i });
+    const dataTransfer = createDataTransfer();
+    dataTransfer.setData("application/x-snapshot-asset", "0001.png");
+    dataTransfer.setData("application/x-snapshot-asset-type", "image");
+    fireEvent.drop(panelButton, { dataTransfer });
+
+    await waitFor(() =>
+      expect(onPanelChange).toHaveBeenCalledWith(0, expect.objectContaining({ url: "/?static_mode=true&img=0001.png" })),
+    );
+  });
+
+  it("影像模式 slide_mode 會在套用圖片後保留模式並更新網址", async () => {
+    const onPanelChange = vi.fn();
+    const presetPanel = { id: "p1", url: "/?slide_mode=true&img=foo.png" };
+    const Wrapper = () => (
+      <SnapshotPanelsEditor
+        panels={[presetPanel]}
+        selectedRows={[0]}
+        onToggleRow={vi.fn()}
+        onMoveRow={vi.fn()}
+        onDuplicateRow={vi.fn()}
+        onRemoveRow={vi.fn()}
+        onAddPanel={vi.fn()}
+        onCopy={vi.fn()}
+        onPaste={vi.fn()}
+        canPaste
+        onPanelChange={onPanelChange}
+      />
+    );
+    render(<Wrapper />);
+    await waitFor(() => expect(mockListOffspringImages).toHaveBeenCalled());
+
+    const assetInput = screen.getByLabelText("資產（依模式）");
+    fireEvent.change(assetInput, { target: { value: "bar.png" } });
+
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({ url: "/?slide_mode=true&img=bar.png", image: "bar.png" }),
+    );
+  });
+
+  it("拖放影片資產會強制使用 video_mode 並更新 url", async () => {
+    const onPanelChange = vi.fn();
+    render(<ControlledEditor onPanelChange={onPanelChange} />);
+    await waitFor(() => expect(mockListVideoAssets).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Videos" }));
+    const panelButton = screen.getByRole("button", { name: /p1/i });
+    const dataTransfer = createDataTransfer();
+    dataTransfer.setData("application/x-snapshot-asset", "clip123.mp4");
+    dataTransfer.setData("application/x-snapshot-asset-type", "video");
+    fireEvent.drop(panelButton, { dataTransfer });
+
+    await waitFor(() =>
+      expect(onPanelChange).toHaveBeenCalledWith(0, expect.objectContaining({ url: "/?video_mode=true&video=clip123.mp4" })),
+    );
   });
 });
