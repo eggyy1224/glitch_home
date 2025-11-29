@@ -5,19 +5,69 @@
   "loop": false,
   "steps": [
     {
+      "snapshot": "desktop2/video_dual_birdman",
+      "duration": 10.0,
+      "at": null,
+      "label": "新步驟",
+      "clientId": "desktop2",
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
+      "snapshot": "desktop2/video_trip_birdman",
+      "duration": 10.0,
+      "at": null,
+      "label": "新步驟",
+      "clientId": "desktop2",
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
+    },
+    {
       "snapshot": "opening_stage1",
-      "duration": 8,
-      "label": "單柱暖場"
+      "duration": 8.0,
+      "at": null,
+      "label": "單柱暖場",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
     },
     {
       "snapshot": "opening_stage2",
-      "duration": 8,
-      "label": "並列展開"
+      "duration": 8.0,
+      "at": null,
+      "label": "並列展開",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
     },
     {
       "snapshot": "opening_stage3",
-      "duration": 10,
-      "label": "全景鋪陳"
+      "duration": 10.0,
+      "at": null,
+      "label": "全景鋪陳",
+      "clientId": null,
+      "subtitle": null,
+      "caption": null,
+      "tts": null,
+      "remote_clicks": [],
+      "video_controls": [],
+      "unlock_audio_targets": []
     }
   ]
 }
