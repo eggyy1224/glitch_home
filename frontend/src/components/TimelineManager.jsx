@@ -448,7 +448,7 @@ export default function TimelineManager() {
             aria-labelledby="timeline-step-play"
             data-ai-role="timeline.step.play"
           >
-            <label id="timeline-step-play" style={{ fontWeight: 700 }}>
+            <label id="timeline-step-play" htmlFor="timeline-play-target" style={{ fontWeight: 700 }}>
               步驟 4：播放到 client
             </label>
             <input
