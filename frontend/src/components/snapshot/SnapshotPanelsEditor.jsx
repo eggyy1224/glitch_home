@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles.js";
 import { listOffspringImages, listVideoAssets } from "../../api.js";
 
 const MODE_PRESETS = {
@@ -82,6 +83,7 @@ export default function SnapshotPanelsEditor({
   const [assetTab, setAssetTab] = useState("images");
   const [assetKeyword, setAssetKeyword] = useState("");
   const [assetDrawerOpen, setAssetDrawerOpen] = useState(true);
+  const [assetDrawerHeight, setAssetDrawerHeight] = useState(260);
 
   const parseAssetList = useCallback((rawList) => {
     const list = Array.isArray(rawList) ? rawList : [];
@@ -126,6 +128,31 @@ export default function SnapshotPanelsEditor({
   useEffect(() => {
     void loadAssets();
   }, [loadAssets]);
+
+  const clampAssetDrawerHeight = useCallback((height) => {
+    const min = 160;
+    const max = typeof window !== "undefined" ? Math.max(320, window.innerHeight - 200) : 900;
+    return Math.min(Math.max(height, min), max);
+  }, []);
+
+  const startAssetDrawerResize = useCallback(
+    (event) => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = assetDrawerHeight;
+      const onMove = (e) => {
+        const delta = e.clientY - startY;
+        setAssetDrawerHeight(clampAssetDrawerHeight(startHeight + delta));
+      };
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [assetDrawerHeight, clampAssetDrawerHeight],
+  );
 
   const limitedImageOptions = useMemo(() => imageAssets.slice(0, 500), [imageAssets]);
   const limitedVideoOptions = useMemo(() => videoAssets.slice(0, 500), [videoAssets]);
@@ -396,7 +423,7 @@ export default function SnapshotPanelsEditor({
           <div style={{ color: "#82dca5" }}>直接拖放或點擊套用到選取 panel，免去手動輸入</div>
         </div>
         {assetDrawerOpen && (
-          <div>
+          <div style={{ position: "relative" }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
               <button
                 type="button"
@@ -444,7 +471,8 @@ export default function SnapshotPanelsEditor({
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                 gap: 8,
-                maxHeight: 220,
+                height: assetDrawerHeight,
+                minHeight: 160,
                 overflowY: "auto",
                 padding: 4,
                 border: "1px dashed #0f4",
@@ -488,6 +516,14 @@ export default function SnapshotPanelsEditor({
                   無符合的資產，請嘗試重新載入或調整搜尋關鍵字
                 </div>
               )}
+            </div>
+            <div
+              style={{ ...resizerHitboxStyle, right: 6, bottom: 6 }}
+              onMouseDown={startAssetDrawerResize}
+              aria-hidden="true"
+              title="拖曳調整資產抽屜高度"
+            >
+              <div style={resizerHandleStyle} />
             </div>
           </div>
         )}
