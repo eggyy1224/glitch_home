@@ -156,6 +156,7 @@ export default function TimelineEpisodeEditor() {
   const [dirty, setDirty] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [message, setMessage] = useState("");
+  const [messageByMode, setMessageByMode] = useState({ timeline: "", episode: "", snapshot: "" });
   const [timelineList, setTimelineList] = useState([]);
   const [episodeList, setEpisodeList] = useState([]);
   const [timelineFilter, setTimelineFilter] = useState("");
@@ -191,6 +192,25 @@ export default function TimelineEpisodeEditor() {
     () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
     [snapshotPreviewWidth],
   );
+
+  const setMessageForMode = useCallback(
+    (value, targetMode = mode) => {
+      setMessageByMode((prev) => {
+        const current = prev[targetMode];
+        if (current === value) return prev;
+        return { ...prev, [targetMode]: value };
+      });
+      if (targetMode === mode) {
+        setMessage((prev) => (prev === value ? prev : value));
+      }
+    },
+    [mode],
+  );
+
+  useEffect(() => {
+    const next = messageByMode[mode] || "";
+    setMessage((prev) => (prev === next ? prev : next));
+  }, [messageByMode, mode]);
 
   const syncJsonFromData = useCallback(
     (data) => {
@@ -237,6 +257,8 @@ export default function TimelineEpisodeEditor() {
   const handleModeChange = useCallback(
     (nextMode) => {
       setMode(nextMode);
+      const savedMessage = messageByMode[nextMode] || "";
+      setMessage((prev) => (prev === savedMessage ? prev : savedMessage));
       setSelectedRows([]);
       setTimelinePlaySrc(null);
       setTimelinePlayError(null);
@@ -251,18 +273,18 @@ export default function TimelineEpisodeEditor() {
         syncJsonFromData(snapshotData);
       }
     },
-    [episodeData, snapshotData, syncJsonFromData, timelineData],
+    [episodeData, messageByMode, snapshotData, syncJsonFromData, timelineData],
   );
 
   const refreshTimelines = useCallback(async () => {
     try {
       const data = await listIframeTimelines(timelineFilter || null);
       setTimelineList(Array.isArray(data.timelines) ? data.timelines : []);
-      setMessage(`已載入 ${data.timelines?.length ?? 0} 筆 timeline`);
+      setMessageForMode(`已載入 ${data.timelines?.length ?? 0} 筆 timeline`, "timeline");
     } catch (err) {
-      setMessage(err.message || "載入 timeline 失敗");
+      setMessageForMode(err.message || "載入 timeline 失敗", "timeline");
     }
-  }, [timelineFilter]);
+  }, [setMessageForMode, timelineFilter]);
 
   const refreshEpisodes = useCallback(async () => {
     try {
@@ -270,11 +292,11 @@ export default function TimelineEpisodeEditor() {
       const list = Array.isArray(data.episodes) ? data.episodes : [];
       const filtered = episodeFilter ? list.filter((e) => `${e.id}`.includes(episodeFilter)) : list;
       setEpisodeList(filtered);
-      setMessage(`已載入 ${filtered.length} 筆 episode`);
+      setMessageForMode(`已載入 ${filtered.length} 筆 episode`, "episode");
     } catch (err) {
-      setMessage(err.message || "載入 episode 失敗");
+      setMessageForMode(err.message || "載入 episode 失敗", "episode");
     }
-  }, [episodeFilter]);
+  }, [episodeFilter, setMessageForMode]);
 
   const refreshSnapshots = useCallback(async (clientOverride) => {
     try {
@@ -290,10 +312,12 @@ export default function TimelineEpisodeEditor() {
       }));
       setSnapshotOptions(normalized);
       setSnapshotMessage(`取得 ${filtered.length} 筆 snapshot`);
+      setMessageForMode(`取得 ${filtered.length} 筆 snapshot`, "snapshot");
     } catch (err) {
       setSnapshotMessage(err.message || "載入 snapshot 清單失敗");
+      setMessageForMode(err.message || "載入 snapshot 清單失敗", "snapshot");
     }
-  }, [snapshotClient, snapshotKeyword, timelineData.clientId, timelineData.client_id]);
+  }, [setMessageForMode, snapshotClient, snapshotKeyword, timelineData.clientId, timelineData.client_id]);
 
   const handleLoadSelected = useCallback(
     async (id) => {
@@ -303,31 +327,31 @@ export default function TimelineEpisodeEditor() {
           const data = await fetchIframeTimeline(id, { resolve: false });
           const payload = data.timeline || data;
           updateTimeline(payload, { markDirty: false });
-          if (payload.clientId || payload.client_id) {
-            const nextClient = payload.clientId || payload.client_id;
-            setSnapshotClient(nextClient);
-            await refreshSnapshots(nextClient);
-          }
-          setMessage(`已載入 timeline ${id}`);
-        } else {
-          const data = await fetchEpisode(id, { resolve: false });
-          const payload = data.episode || data;
-          setEpisodeState(payload, { markDirty: false });
-          setMessage(`已載入 episode ${id}`);
+        if (payload.clientId || payload.client_id) {
+          const nextClient = payload.clientId || payload.client_id;
+          setSnapshotClient(nextClient);
+          await refreshSnapshots(nextClient);
         }
-        setDirty(false);
-      } catch (err) {
-        setMessage(err.message || "載入失敗");
+        setMessageForMode(`已載入 timeline ${id}`, "timeline");
+      } else {
+        const data = await fetchEpisode(id, { resolve: false });
+        const payload = data.episode || data;
+        setEpisodeState(payload, { markDirty: false });
+        setMessageForMode(`已載入 episode ${id}`, "episode");
       }
-    },
-    [mode, refreshSnapshots, setEpisodeState, updateTimeline],
-  );
+      setDirty(false);
+    } catch (err) {
+      setMessageForMode(err.message || "載入失敗", mode);
+    }
+  },
+  [mode, refreshSnapshots, setEpisodeState, setMessageForMode, updateTimeline],
+);
 
   const handleLoadSnapshot = useCallback(
     async (name, clientOverride) => {
       const targetClient = clientOverride ?? snapshotClient;
       if (!targetClient) {
-        setMessage("請先設定 client 再載入 snapshot");
+        setMessageForMode("請先設定 client 再載入 snapshot", "snapshot");
         return;
       }
       if (!name) return;
@@ -342,13 +366,13 @@ export default function TimelineEpisodeEditor() {
         setSnapshotPreviewSrc(src);
         setSnapshotPreviewError(src ? null : "預覽來源不足");
         await refreshSnapshots(resolvedClient || targetClient);
-        setMessage(`已載入 snapshot ${resolvedClient || targetClient}/${name}`);
+        setMessageForMode(`已載入 snapshot ${resolvedClient || targetClient}/${name}`, "snapshot");
         setDirty(false);
       } catch (err) {
-        setMessage(err.message || "載入 snapshot 失敗");
+        setMessageForMode(err.message || "載入 snapshot 失敗", "snapshot");
       }
     },
-    [refreshSnapshots, snapshotClient, updateSnapshot],
+    [refreshSnapshots, setMessageForMode, snapshotClient, updateSnapshot],
   );
 
   const clampSnapshotPreviewWidth = useCallback((width) => {
@@ -396,7 +420,7 @@ export default function TimelineEpisodeEditor() {
             throw err;
           }
         }
-        setMessage(`${action === "update" ? "已更新" : "已建立"} timeline ${targetId}`);
+        setMessageForMode(`${action === "update" ? "已更新" : "已建立"} timeline ${targetId}`, "timeline");
         await refreshTimelines();
       } else if (mode === "episode") {
         const payload = episodeData;
@@ -416,7 +440,7 @@ export default function TimelineEpisodeEditor() {
             throw err;
           }
         }
-        setMessage(`${action === "update" ? "已更新" : "已建立"} episode ${targetId}`);
+        setMessageForMode(`${action === "update" ? "已更新" : "已建立"} episode ${targetId}`, "episode");
         await refreshEpisodes();
       } else {
         const payload = snapshotData;
@@ -432,13 +456,13 @@ export default function TimelineEpisodeEditor() {
         updateSnapshot(payload);
         await saveIframeSnapshot(client, name, payload);
         setSnapshotName(name);
-        setMessage(`已儲存 snapshot ${client}/${name}`);
+        setMessageForMode(`已儲存 snapshot ${client}/${name}`, "snapshot");
         await refreshSnapshots(client);
       }
       setDirty(false);
       return true;
     } catch (err) {
-      setMessage(err.message || "儲存失敗");
+      setMessageForMode(err.message || "儲存失敗", mode);
       return false;
     } finally {
       setIsSaving(false);
@@ -451,6 +475,7 @@ export default function TimelineEpisodeEditor() {
     refreshSnapshots,
     refreshTimelines,
     setEpisodeState,
+    setMessageForMode,
     snapshotClient,
     snapshotData,
     snapshotName,
@@ -722,8 +747,8 @@ export default function TimelineEpisodeEditor() {
       )
       .filter(Boolean);
     setClipboard({ mode, items });
-    setMessage(`已複製 ${items.length} 筆`);
-  }, [episodeData.tracks, mode, selectedRows, snapshotData.panels, timelineData.steps]);
+    setMessageForMode(`已複製 ${items.length} 筆`);
+  }, [episodeData.tracks, mode, selectedRows, setMessageForMode, snapshotData.panels, timelineData.steps]);
 
   const handlePaste = useCallback(() => {
     if (!clipboard || clipboard.mode !== mode || !clipboard.items?.length) return;
@@ -743,8 +768,8 @@ export default function TimelineEpisodeEditor() {
         panels: [...(snapshotData.panels || []), ...clipboard.items.map((item) => ({ ...item }))],
       });
     }
-    setMessage(`已貼上 ${clipboard.items.length} 筆`);
-  }, [clipboard, episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline]);
+    setMessageForMode(`已貼上 ${clipboard.items.length} 筆`);
+  }, [clipboard, episodeData, mode, setEpisodeState, setMessageForMode, snapshotData, timelineData, updateSnapshot, updateTimeline]);
 
   const handleBatchApply = useCallback(() => {
     if (!selectedRows.length) return;
@@ -788,22 +813,22 @@ export default function TimelineEpisodeEditor() {
     if (mode !== "timeline") return;
     const id = timelineData.id;
     if (!id) {
-      setMessage("請先設定 timeline id");
+      setMessageForMode("請先設定 timeline id", "timeline");
       return;
     }
     try {
       await playIframeTimeline(id, {}, { targetClientId: timelineData.clientId || timelineData.client_id });
-      setMessage("已送出 timeline 播放");
+      setMessageForMode("已送出 timeline 播放", "timeline");
     } catch (err) {
-      setMessage(err.message || "播放失敗");
+      setMessageForMode(err.message || "播放失敗", "timeline");
     }
-  }, [mode, timelineData.clientId, timelineData.client_id, timelineData.id]);
+  }, [mode, setMessageForMode, timelineData.clientId, timelineData.client_id, timelineData.id]);
 
   const handlePlayEpisode = useCallback(async () => {
     if (mode !== "episode") return;
     const id = episodeData.id;
     if (!id) {
-      setMessage("請先設定 episode id");
+      setMessageForMode("請先設定 episode id", "episode");
       return;
     }
     const payload = {};
@@ -813,35 +838,35 @@ export default function TimelineEpisodeEditor() {
     }
     try {
       await playEpisode(id, payload);
-      setMessage("已送出 episode 播放");
+      setMessageForMode("已送出 episode 播放", "episode");
     } catch (err) {
-      setMessage(err.message || "播放失敗");
+      setMessageForMode(err.message || "播放失敗", "episode");
     }
-  }, [episodeData.id, episodeTargetOverride, mode]);
+  }, [episodeData.id, episodeTargetOverride, mode, setMessageForMode]);
 
   const handlePlaySnapshot = useCallback(async () => {
     if (mode !== "snapshot") return;
     const client = (snapshotClient || "").trim();
     const name = (snapshotName || "").trim();
     if (!client || !name) {
-      setMessage("請先設定 client 與 snapshot 名稱");
+      setMessageForMode("請先設定 client 與 snapshot 名稱", "snapshot");
       return;
     }
     if (dirty) {
       const ok = await handleSave();
       if (!ok) {
-        setMessage("儲存失敗，無法播放");
+        setMessageForMode("儲存失敗，無法播放", "snapshot");
         return;
       }
     }
     try {
-      setMessage(`播放中 ${name} → ${client}...`);
+      setMessageForMode(`播放中 ${name} → ${client}...`, "snapshot");
       await restoreIframeSnapshot(client, name);
-      setMessage(`已送出 snapshot 到 ${client}`);
+      setMessageForMode(`已送出 snapshot 到 ${client}`, "snapshot");
     } catch (err) {
-      setMessage(err.message || "播放失敗");
+      setMessageForMode(err.message || "播放失敗", "snapshot");
     }
-  }, [dirty, handleSave, mode, snapshotClient, snapshotName]);
+  }, [dirty, handleSave, mode, setMessageForMode, snapshotClient, snapshotName]);
 
   const canTimelinePaste = Boolean(clipboard && clipboard.mode === "timeline");
   const canEpisodePaste = Boolean(clipboard && clipboard.mode === "episode");
