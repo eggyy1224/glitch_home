@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles.js";
-import { listOffspringImages, listVideoAssets } from "../../api.js";
+import { createTextSearchRequest, listOffspringImages, listVideoAssets } from "../../api.js";
 
 const MODE_PRESETS = {
   slide_mode: { assetKey: "img", label: "slide_mode (輪播)" },
@@ -84,6 +84,11 @@ export default function SnapshotPanelsEditor({
   const [assetKeyword, setAssetKeyword] = useState("");
   const [assetDrawerOpen, setAssetDrawerOpen] = useState(true);
   const [assetDrawerHeight, setAssetDrawerHeight] = useState(260);
+  const [assetSearchMode, setAssetSearchMode] = useState("name"); // name | semantic
+  const [semanticResults, setSemanticResults] = useState([]);
+  const [searchingSemantic, setSearchingSemantic] = useState(false);
+  const [assetSearchError, setAssetSearchError] = useState(null);
+  const semanticSearchControllerRef = useRef(null);
 
   const parseAssetList = useCallback((rawList) => {
     const list = Array.isArray(rawList) ? rawList : [];
@@ -129,6 +134,22 @@ export default function SnapshotPanelsEditor({
     void loadAssets();
   }, [loadAssets]);
 
+  useEffect(() => {
+    return () => {
+      if (semanticSearchControllerRef.current) {
+        semanticSearchControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (assetTab === "videos" && assetSearchMode === "semantic") {
+      setAssetSearchMode("name");
+      setSemanticResults([]);
+      setAssetSearchError(null);
+    }
+  }, [assetTab, assetSearchMode]);
+
   const clampAssetDrawerHeight = useCallback((height) => {
     const min = 160;
     const max = typeof window !== "undefined" ? Math.max(320, window.innerHeight - 200) : 900;
@@ -154,15 +175,85 @@ export default function SnapshotPanelsEditor({
     [assetDrawerHeight, clampAssetDrawerHeight],
   );
 
+  const runSemanticSearch = useCallback(async () => {
+    const query = assetKeyword.trim();
+    if (!query) {
+      setAssetSearchError("請先輸入搜尋詞");
+      return;
+    }
+    if (assetTab === "videos") {
+      setAssetSearchError("影片暫不支援語意搜尋，請改用名稱關鍵字");
+      return;
+    }
+    if (semanticSearchControllerRef.current) {
+      semanticSearchControllerRef.current.abort();
+    }
+    setSearchingSemantic(true);
+    setAssetSearchError(null);
+    try {
+      const { controller, promise } = createTextSearchRequest(query, 80);
+      semanticSearchControllerRef.current = controller;
+      const data = await promise;
+      semanticSearchControllerRef.current = null;
+      const results = Array.isArray(data?.results) ? data.results : [];
+      const names = results
+        .map((item) => {
+          const id = typeof item === "string" ? item : item?.id || item?.name || item?.filename || item?.img;
+          if (!id) return "";
+          return String(id)
+            .replace(/^backend\/offspring_images\//, "")
+            .replace(/:(en|zh)$/i, "");
+        })
+        .filter(Boolean);
+      setSemanticResults(names);
+      setAssetSearchMode("semantic");
+      if (!names.length) {
+        setAssetSearchError(`未找到與「${query}」相關的圖像`);
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+      setAssetSearchError(err?.message || "搜尋失敗");
+    } finally {
+      setSearchingSemantic(false);
+    }
+  }, [assetKeyword, assetTab]);
+
+  const clearSemanticSearch = useCallback(() => {
+    if (semanticSearchControllerRef.current) {
+      semanticSearchControllerRef.current.abort();
+      semanticSearchControllerRef.current = null;
+    }
+    setSemanticResults([]);
+    setAssetSearchMode("name");
+    setAssetSearchError(null);
+  }, []);
+
   const limitedImageOptions = useMemo(() => imageAssets.slice(0, 500), [imageAssets]);
   const limitedVideoOptions = useMemo(() => videoAssets.slice(0, 500), [videoAssets]);
 
   const filteredAssets = useMemo(() => {
     const keyword = assetKeyword.trim().toLowerCase();
+    const allSource = assetTab === "videos" ? videoAssets : imageAssets;
+
+    if (assetSearchMode === "semantic" && assetTab === "images") {
+      const known = semanticResults.filter((name) => allSource.includes(name));
+      const unknown = semanticResults.filter((name) => !allSource.includes(name));
+      return [...known, ...unknown];
+    }
+
     const source = assetTab === "videos" ? limitedVideoOptions : limitedImageOptions;
     if (!keyword) return source;
     return source.filter((name) => name.toLowerCase().includes(keyword));
-  }, [assetKeyword, assetTab, limitedImageOptions, limitedVideoOptions]);
+  }, [
+    assetKeyword,
+    assetSearchMode,
+    assetTab,
+    imageAssets,
+    limitedImageOptions,
+    limitedVideoOptions,
+    semanticResults,
+    videoAssets,
+  ]);
 
   const assetPreviewUrl = (name) => {
     if (!name) return "";
@@ -456,9 +547,31 @@ export default function SnapshotPanelsEditor({
                 placeholder="搜尋名稱..."
                 value={assetKeyword}
                 onChange={(e) => setAssetKeyword(e.target.value)}
-                style={{ width: 200 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    runSemanticSearch();
+                  }
+                }}
+                style={{ width: 220 }}
               />
-              <span style={{ color: "#82dca5" }}>{assetStatus}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <button type="button" onClick={runSemanticSearch} disabled={assetTab === "videos" || searchingSemantic}>
+                  {searchingSemantic ? "搜尋中..." : assetTab === "videos" ? "語意搜尋停用" : "語意搜尋"}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSemanticSearch}
+                  disabled={semanticResults.length === 0 && assetSearchMode !== "semantic"}
+                >
+                  清除搜尋
+                </button>
+                <span style={{ color: "#82dca5" }}>
+                  {assetSearchMode === "semantic" && assetTab === "images"
+                    ? `語意結果 ${semanticResults.length} 筆`
+                    : assetStatus}
+                </span>
+                {assetSearchError && <span style={{ color: "#ffb347" }}>{assetSearchError}</span>}
+              </div>
               <button type="button" onClick={loadAssets} disabled={loadingAssets}>
                 重新載入資產
               </button>
