@@ -4,22 +4,22 @@
   "columns": 2,
   "panels": [
     {
-      "id": "panel_2",
-      "image": null,
-      "url": "/?video_mode=true&video=fireworks.mp4",
-      "params": {},
-      "ratio": 1.0,
-      "label": null,
-      "col_span": null,
-      "row_span": null
-    },
-    {
       "id": "p1",
       "image": "offspring_20250923_170818_939.png",
       "url": "/?video_mode=true&video=Drive_in_stormy.mp4",
       "params": {},
       "ratio": 1.0,
       "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "panel_2",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4",
+      "params": {},
+      "ratio": 1.0,
+      "label": null,
       "col_span": null,
       "row_span": null
     }
