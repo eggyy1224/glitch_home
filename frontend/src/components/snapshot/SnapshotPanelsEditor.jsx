@@ -228,9 +228,6 @@ export default function SnapshotPanelsEditor({
     setAssetSearchError(null);
   }, []);
 
-  const limitedImageOptions = useMemo(() => imageAssets.slice(0, 500), [imageAssets]);
-  const limitedVideoOptions = useMemo(() => videoAssets.slice(0, 500), [videoAssets]);
-
   const filteredAssets = useMemo(() => {
     const keyword = assetKeyword.trim().toLowerCase();
     const allSource = assetTab === "videos" ? videoAssets : imageAssets;
@@ -241,7 +238,7 @@ export default function SnapshotPanelsEditor({
       return [...known, ...unknown];
     }
 
-    const source = assetTab === "videos" ? limitedVideoOptions : limitedImageOptions;
+    const source = assetTab === "videos" ? videoAssets : imageAssets;
     if (!keyword) return source;
     return source.filter((name) => name.toLowerCase().includes(keyword));
   }, [
@@ -249,8 +246,6 @@ export default function SnapshotPanelsEditor({
     assetSearchMode,
     assetTab,
     imageAssets,
-    limitedImageOptions,
-    limitedVideoOptions,
     semanticResults,
     videoAssets,
   ]);
@@ -690,8 +685,7 @@ export default function SnapshotPanelsEditor({
               const preset = MODE_PRESETS[mode];
               const assetPlaceholder = preset?.assetKey === "video" ? "影片檔名.mp4" : "offspring_xxx.png";
               const assetListId = `snapshot-panel-${index}-asset-options`;
-              const assetList =
-                MODE_PRESETS[mode]?.assetKey === "video" ? limitedVideoOptions : limitedImageOptions;
+              const assetList = MODE_PRESETS[mode]?.assetKey === "video" ? videoAssets : imageAssets;
               const safeAssetList = Array.isArray(assetList) ? assetList : [];
               return (
                 <div
