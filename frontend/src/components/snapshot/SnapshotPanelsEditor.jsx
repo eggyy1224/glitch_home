@@ -158,24 +158,30 @@ export default function SnapshotPanelsEditor({
   };
 
   const handleAssetChange = (index, mode, assetValue, panel) => {
-    if (mode && MODE_PRESETS[mode]) {
+    const hasModePreset = mode && MODE_PRESETS[mode];
+    const isImageMode = hasModePreset && MODE_PRESETS[mode].assetKey === "img";
+    if (hasModePreset) {
       const nextUrl = buildUrlFromPreset(mode, assetValue);
       const patch = { url: nextUrl };
-      if (MODE_PRESETS[mode].assetKey === "img") {
+      if (isImageMode) {
         patch.image = assetValue || undefined;
       }
       onPanelChange(index, patch);
-    } else {
-      onPanelChange(index, { url: assetValue || panel?.url || "" });
+      return;
     }
+
+    // 無 mode 時，預設用 static_mode 來生成網址，避免初次選擇 image 模式時不更新 url
+    const fallbackUrl = assetValue ? buildUrlFromPreset("static_mode", assetValue) : panel?.url || "";
+    onPanelChange(index, { url: fallbackUrl, image: assetValue || undefined });
   };
 
   const handleImageChange = (index, value, panel) => {
     const { mode } = getPanelModeAndAsset(panel);
     const isImageMode = MODE_PRESETS[mode]?.assetKey === "img";
+    const resolvedMode = isImageMode ? mode : value ? "static_mode" : null;
     const patch = { image: value };
-    if (isImageMode) {
-      patch.url = buildUrlFromPreset(mode, value);
+    if (resolvedMode) {
+      patch.url = buildUrlFromPreset(resolvedMode, value);
     }
     onPanelChange(index, patch);
   };
