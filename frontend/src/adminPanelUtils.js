@@ -26,14 +26,15 @@ export function minimalConfigPayload(targetClient) {
 }
 
 export function defaultTimelinePayload(targetClient) {
+  const client = targetClient || "desktop";
   return {
     id: "new_timeline",
     title: "範例 timeline",
-    clientId: targetClient,
+    clientId: client,
     loop: false,
     steps: [
-      { snapshot: `${targetClient}/snapshot_a`, duration: 5, label: "第一段" },
-      { snapshot: `${targetClient}/snapshot_b`, duration: 5, label: "第二段" },
+      { snapshot: `${client}/desktop_snapshot`, duration: 6, label: "示例段落 A" },
+      { snapshot: `${client}/closing_focus`, duration: 6, label: "示例段落 B" },
     ],
   };
 }

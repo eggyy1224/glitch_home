@@ -186,8 +186,25 @@ export default function SnapshotManager() {
   }, [snapshotJson]);
 
   return (
-    <div style={boxStyle} data-ai-id="admin.snapshot.section">
-      <div style={{ marginBottom: 8 }}>
+    <div style={boxStyle} data-ai-id="admin.snapshot.section" data-ai-role="snapshot.panel">
+      <section
+        aria-label="Snapshot 控制流程"
+        data-ai-role="snapshot.instructions"
+        style={{ marginBottom: 10, padding: "8px 10px", border: "1px solid #0f4", background: "#020" }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 4 }}>操作順序（給 AI/自動化）</div>
+        <ol style={{ margin: 0, paddingLeft: 18, color: "#82dca5", lineHeight: 1.5 }}>
+          <li data-ai-role="snapshot.step-note.client">步驟 1：填入目標 client 並重新載入列表。</li>
+          <li data-ai-role="snapshot.step-note.pick">步驟 2：在列表點「載入配置」或「設為當前名稱」挑選 snapshot。</li>
+          <li data-ai-role="snapshot.step-note.play">步驟 3：需要播放就按「播放到 client」，需要複製/儲存就用右側表單。</li>
+          <li data-ai-role="snapshot.step-note.preview">步驟 4：確認下方預覽 iframe 是否更新，並觀察狀態訊息。</li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="snapshot-step-client" data-ai-role="snapshot.step.client" style={{ marginBottom: 8 }}>
+        <div id="snapshot-step-client" style={{ fontWeight: 700, marginBottom: 4 }}>
+          步驟 1：目標 Client
+        </div>
         <label style={labelStyle} htmlFor="snapshot-client">
           Client
         </label>
@@ -206,17 +223,29 @@ export default function SnapshotManager() {
           onClick={() => refreshSnapshots(snapshotClient)}
           style={{ marginLeft: 8 }}
           data-ai-action="snapshot.reload-list"
+          data-ai-role="snapshot.action.reload"
           aria-label="重新載入 snapshot 列表"
         >
           重新載入列表
         </button>
-      </div>
+        <div style={{ marginTop: 4, fontSize: 12, color: "#82dca5" }} data-ai-status="snapshot.client-hint">
+          會將列表/預覽/播放都鎖定到此 client。
+        </div>
+      </section>
+
       <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: 6 }}>已有 snapshots：</div>
+        <section style={{ flex: 1 }} aria-labelledby="snapshot-step-pick" data-ai-role="snapshot.step.pick">
+          <div id="snapshot-step-pick" style={{ marginBottom: 4, fontWeight: 700 }}>
+            步驟 2：選擇/播放 snapshot
+          </div>
+          <div style={{ marginBottom: 6, color: "#82dca5", fontSize: 12 }}>
+            「載入配置」會把 JSON 帶到右側表單並更新預覽；「設為當前名稱」只填入名稱；播放會使用上方的 client。
+          </div>
           <ul
             role="list"
+            aria-label="snapshot 選擇列表"
             data-ai-id="snapshot.list"
+            data-ai-role="snapshot.list"
             style={{
               maxHeight: 200,
               overflowY: "auto",
@@ -228,63 +257,77 @@ export default function SnapshotManager() {
             }}
           >
             {snapshotList.length === 0 && <li data-ai-state="empty">尚無 snapshot</li>}
-            {snapshotList.map((item) => (
-              <li
-                key={item.name}
-                role="listitem"
-                data-ai-item={`snapshot:${item.name}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: 6,
-                  padding: "4px 4px",
-                  borderRadius: 0,
-                  background: "#000",
-                  border: "1px solid #0f4",
-                }}
-              >
-                <span style={{ flex: 1 }}>{item.name}</span>
+            {snapshotList.map((item) => {
+              const isSelected = snapshotName === item.name;
+              return (
+                <li
+                  key={item.name}
+                  role="listitem"
+                  data-ai-item={`snapshot:${item.name}`}
+                  data-ai-role="snapshot.row"
+                  data-ai-state={isSelected ? "selected" : "idle"}
+                  aria-selected={isSelected}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 6,
+                    padding: "6px 6px",
+                    borderRadius: 4,
+                    background: isSelected ? "#011a0f" : "#000",
+                    border: `1px solid ${isSelected ? "#3aff85" : "#0f4"}`,
+                    boxShadow: isSelected ? "0 0 0 1px rgba(58, 255, 133, 0.4)" : "none",
+                  }}
+                >
+                  <span style={{ flex: 1, fontWeight: isSelected ? 700 : 600 }}>{item.name}</span>
                 <button
                   type="button"
                   onClick={() => handleLoadSnapshot(item.name)}
                   style={{ marginRight: 4 }}
                   data-ai-action="snapshot.load"
-                  aria-label={`查看 snapshot ${item.name}`}
+                  data-testid="snapshot-load"
+                  aria-label={`查看 snapshot ${item.name}（載入到表單並預覽）`}
                 >
-                  查看
+                  查看/載入
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setSnapshotName(item.name)}
-                  style={{ marginRight: 4 }}
-                  data-ai-action="snapshot.select"
-                  aria-label={`選擇 snapshot ${item.name}`}
-                >
-                  選擇
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePlaySnapshot(item.name)}
-                  style={{ marginRight: 4 }}
-                  data-ai-action="snapshot.play"
-                  aria-label={`播放 snapshot ${item.name} 到 client ${snapshotClient || "(未指定)"}`}
-                >
-                  播放
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteSnapshot(item.name)}
-                  data-ai-action="snapshot.delete"
-                  aria-label={`刪除 snapshot ${item.name}`}
-                  data-ai-danger="true"
-                >
-                  刪除
-                </button>
-              </li>
-            ))}
+                  <button
+                    type="button"
+                    onClick={() => setSnapshotName(item.name)}
+                    style={{ marginRight: 4 }}
+                    data-ai-action="snapshot.select"
+                    data-testid="snapshot-select"
+                    aria-label={`設為當前 snapshot 名稱：${item.name}`}
+                  >
+                    設為當前名稱
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePlaySnapshot(item.name)}
+                    style={{ marginRight: 4 }}
+                    data-ai-action="snapshot.play"
+                    data-testid="snapshot-play"
+                    aria-label={`播放 snapshot ${item.name} 到 client ${snapshotClient || "(未指定)"}`}
+                  >
+                    播放到 client
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSnapshot(item.name)}
+                    data-ai-action="snapshot.delete"
+                    data-testid="snapshot-delete"
+                    aria-label={`刪除 snapshot ${item.name}`}
+                    data-ai-danger="true"
+                  >
+                    刪除
+                  </button>
+                </li>
+              );
+            })}
           </ul>
-          <div style={{ marginTop: 8 }}>
-            <div style={{ marginBottom: 4 }}>複製到：</div>
+          <div style={{ marginTop: 6, fontSize: 12, color: "#82dca5" }} data-ai-status="snapshot.current-selection">
+            目前表單名稱：{snapshotName || "（尚未選擇）"}
+          </div>
+          <div style={{ marginTop: 8 }} data-ai-role="snapshot.clone">
+            <div style={{ marginBottom: 4 }}>複製到（會留存於 server）：</div>
             <input
               type="text"
               placeholder="target client"
@@ -307,8 +350,12 @@ export default function SnapshotManager() {
               複製 snapshot
             </button>
           </div>
-        </div>
-        <div style={{ flex: 1.2 }}>
+        </section>
+
+        <section style={{ flex: 1.2 }} aria-labelledby="snapshot-step-edit" data-ai-role="snapshot.step.edit">
+          <div id="snapshot-step-edit" style={{ marginBottom: 4, fontWeight: 700 }}>
+            步驟 3：編輯 / 儲存
+          </div>
           <label style={labelStyle} htmlFor="snapshot-name">
             Snapshot 名稱
           </label>
@@ -334,7 +381,7 @@ export default function SnapshotManager() {
             aria-label="snapshot JSON"
           />
           <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={handleSaveSnapshot} data-ai-action="snapshot.save" aria-label="儲存或覆寫 snapshot">
+            <button type="button" onClick={handleSaveSnapshot} data-ai-action="snapshot.save" data-testid="snapshot-save" aria-label="儲存或覆寫 snapshot">
               儲存/覆寫
             </button>
             <button
@@ -344,17 +391,19 @@ export default function SnapshotManager() {
                 setSnapshotName("new_snapshot");
               }}
               data-ai-action="snapshot.fill-default"
+              data-testid="snapshot-fill-default"
               aria-label="填入預設 snapshot JSON"
             >
               填入預設
             </button>
           </div>
-        </div>
+        </section>
       </div>
 
-      <div
+      <section
         style={{ ...previewContainerStyle, width: snapshotPreviewWidth, maxWidth: "100%" }}
         data-ai-section="snapshot.preview"
+        data-ai-role="snapshot.preview"
         aria-label="Snapshot 預覽區塊"
       >
         <div style={previewTitleStyle}>預覽</div>
@@ -365,16 +414,17 @@ export default function SnapshotManager() {
             style={{ ...snapshotPreviewIframeStyle, height: snapshotFrameHeight }}
             sandbox="allow-scripts allow-same-origin"
             data-ai-id="snapshot.preview.iframe"
+            data-testid="snapshot-preview-iframe"
           />
         ) : (
-          <div style={{ color: "#82dca5" }} data-ai-state="empty">
+          <div style={{ color: "#82dca5" }} data-ai-state="empty" data-ai-role="snapshot.preview-empty">
             無法產生預覽，請確認 JSON 內至少有一個 panel.url 或 image
           </div>
         )}
-        <div style={resizerHitboxStyle} onMouseDown={startResize} aria-hidden="true">
+        <div style={resizerHitboxStyle} onMouseDown={startResize} aria-hidden="true" data-ai-role="snapshot.preview-resizer">
           <div style={resizerHandleStyle} />
         </div>
-      </div>
+      </section>
 
       {snapshotMessage && (
         <div
@@ -382,6 +432,7 @@ export default function SnapshotManager() {
           role="status"
           aria-live="polite"
           data-ai-status="snapshot.message"
+          data-ai-role="snapshot.status"
         >
           {snapshotMessage}
         </div>
