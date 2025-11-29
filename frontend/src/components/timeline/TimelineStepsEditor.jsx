@@ -59,7 +59,7 @@ export default function TimelineStepsEditor({
   };
 
   return (
-    <div data-ai-section="timeline.steps">
+    <div data-ai-section="timeline.steps" data-ai-role="timeline.steps-editor">
       <div style={{ border: "1px solid #0f4", padding: 10, marginBottom: 12, background: "#010", borderRadius: 4 }}>
         <div style={{ color: "#82dca5", marginBottom: 6, display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
           <span>時間軸預覽（按比例呈現 duration，點擊 bar 開啟表單細節）</span>
@@ -75,6 +75,7 @@ export default function TimelineStepsEditor({
             background: "#001100",
             minHeight: 60,
           }}
+          data-ai-role="timeline.steps-preview"
         >
           {(steps || []).map((step, index) => {
             const percent = totalDuration ? (Number(step.duration || 0) / totalDuration) * 100 : 0;
@@ -171,23 +172,27 @@ export default function TimelineStepsEditor({
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {(steps || []).map((step, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #0f4",
-              borderRadius: 0,
-              padding: 10,
-              background: selectedRows.includes(index) ? "#020" : "#000",
-              boxShadow: "none",
-            }}
-            data-ai-item={`timeline.step:${index}`}
-          >
+        {(steps || []).map((step, index) => {
+          const isSelected = selectedRows.includes(index);
+          return (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #0f4",
+                borderRadius: 0,
+                padding: 10,
+                background: isSelected ? "#020" : "#000",
+                boxShadow: "none",
+              }}
+              data-ai-item={`timeline.step:${index}`}
+              data-ai-role="timeline.step-card"
+              data-ai-state={isSelected ? "selected" : "idle"}
+            >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <input
                   type="checkbox"
-                  checked={selectedRows.includes(index)}
+                  checked={isSelected}
                   onChange={() => onToggleRow(index)}
                   aria-label={`選取 step ${index + 1}`}
                   data-ai-field={`timeline.step[${index}].selected`}
@@ -262,8 +267,9 @@ export default function TimelineStepsEditor({
                 />
               </label>
             </div>
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

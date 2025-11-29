@@ -871,9 +871,30 @@ export default function TimelineEpisodeEditor() {
   const canTimelinePaste = Boolean(clipboard && clipboard.mode === "timeline");
   const canEpisodePaste = Boolean(clipboard && clipboard.mode === "episode");
   const canSnapshotPaste = Boolean(clipboard && clipboard.mode === "snapshot");
+  const validationState = validationErrors.length ? "error" : "ok";
+  const dataState = isSaving ? "saving" : dirty ? "dirty" : "clean";
 
   return (
-    <div style={boxStyle} data-ai-id="admin.timeline-episode-editor" data-ai-section="admin.timeline-episode-editor">
+    <div
+      style={boxStyle}
+      data-ai-id="admin.timeline-episode-editor"
+      data-ai-section="admin.timeline-episode-editor"
+      data-ai-role="editor.panel"
+      data-ai-state={dataState}
+    >
+      <section
+        aria-label="Editor 操作順序"
+        data-ai-role="editor.instructions"
+        style={{ marginBottom: 10, padding: "8px 10px", border: "1px solid #0f4", background: "#020" }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 4 }}>Editor 流程（AI/自動化參考）</div>
+        <ol style={{ margin: 0, paddingLeft: 18, color: "#82dca5", lineHeight: 1.5 }}>
+          <li data-ai-role="editor.step-note.mode">步驟 1：選擇模式（Snapshot / Timeline / Episode）並載入目標記錄。</li>
+          <li data-ai-role="editor.step-note.edit">步驟 2：在左側列表挑選條目，編輯表單欄位或 steps/tracks。</li>
+          <li data-ai-role="editor.step-note.sync">步驟 3：如需同步 JSON，確認鎖定與否，必要時使用「以表單覆寫 JSON」。</li>
+          <li data-ai-role="editor.step-note.save">步驟 4：按「儲存」，再視需求播放到 client / 以 iframe 預覽。</li>
+        </ol>
+      </section>
       <div
         style={{ marginBottom: 8, display: "flex", gap: 8, flexWrap: "wrap" }}
         role="tablist"
@@ -889,6 +910,8 @@ export default function TimelineEpisodeEditor() {
           aria-controls="admin-editor-panel"
           id="snapshot-editor-tab"
           data-ai-action="timeline-episode.switch-snapshot"
+          data-ai-role="editor-tab"
+          data-ai-tab-id="snapshot"
         >
           Snapshot 模式
         </button>
@@ -901,6 +924,8 @@ export default function TimelineEpisodeEditor() {
           aria-controls="admin-editor-panel"
           id="timeline-editor-tab"
           data-ai-action="timeline-episode.switch-timeline"
+          data-ai-role="editor-tab"
+          data-ai-tab-id="timeline"
         >
           Timeline 模式
         </button>
@@ -913,6 +938,8 @@ export default function TimelineEpisodeEditor() {
           aria-controls="admin-editor-panel"
           id="episode-editor-tab"
           data-ai-action="timeline-episode.switch-episode"
+          data-ai-role="editor-tab"
+          data-ai-tab-id="episode"
         >
           Episode 模式
         </button>
@@ -946,13 +973,19 @@ export default function TimelineEpisodeEditor() {
           background: "#010",
           borderRadius: 4,
         }}
+        data-ai-role="editor.status"
+        data-ai-state={dataState}
       >
         <div style={{ color: "#c8ffd2", fontWeight: 700 }}>狀態條</div>
-        <span style={{ color: dirty ? "#ff6b6b" : "#82dca5" }}>儲存狀態：{dirty ? "未儲存" : "已儲存"}</span>
-        <span style={{ color: validationErrors.length ? "#ffb347" : "#82dca5" }}>
+        <span style={{ color: dirty ? "#ff6b6b" : "#82dca5" }} data-ai-status="editor.saving">
+          儲存狀態：{dirty ? "未儲存" : "已儲存"}
+        </span>
+        <span style={{ color: validationErrors.length ? "#ffb347" : "#82dca5" }} data-ai-status="editor.validation-count">
           錯誤數：{validationErrors.length}
         </span>
-        <span style={{ color: "#82dca5" }}>快捷鍵：Cmd+S 儲存、空白鍵播放預覽、方向鍵移動選取</span>
+        <span style={{ color: "#82dca5" }} data-ai-status="editor.shortcuts">
+          快捷鍵：Cmd+S 儲存、空白鍵播放預覽、方向鍵移動選取
+        </span>
         {message && (
           <span
             style={{
@@ -962,6 +995,7 @@ export default function TimelineEpisodeEditor() {
               borderRadius: 4,
               color: "#ffb347",
             }}
+            data-ai-role="editor.message"
           >
             {message}
           </span>
@@ -979,6 +1013,9 @@ export default function TimelineEpisodeEditor() {
           data-ai-section={
             mode === "timeline" ? "timeline.editor" : mode === "episode" ? "episode.editor" : "snapshot.editor"
           }
+          data-ai-role="editor.tab-panel"
+          data-ai-tab-id={mode}
+          data-ai-state={dataState}
         >
           {mode === "snapshot" ? (
             <div data-ai-section="snapshot.editor.left">
@@ -1187,54 +1224,63 @@ export default function TimelineEpisodeEditor() {
           )}
 
 
-          {mode !== "snapshot" && (
-            <div style={{ marginTop: 10 }}>
-              <label style={labelStyle} htmlFor="active-id">
-                {mode === "timeline" ? "Timeline ID" : "Episode ID"}
-              </label>
-              <input
-                id="active-id"
-                type="text"
-                value={activeData.id || ""}
-                onChange={(e) =>
-                  mode === "timeline"
-                    ? updateTimeline({ ...timelineData, id: e.target.value })
-                    : setEpisodeState({ ...episodeData, id: e.target.value })
-                }
-                style={{ width: "100%", marginBottom: 8 }}
-                data-ai-field={mode === "timeline" ? "timeline.id" : "episode.id"}
-              />
-            </div>
-          )}
+          <section style={{ marginTop: 10 }} data-ai-role="editor.primary-fields" aria-label="Editor 基本欄位">
+            {mode !== "snapshot" && (
+              <div style={{ marginBottom: 10 }}>
+                <label style={labelStyle} htmlFor="active-id">
+                  {mode === "timeline" ? "Timeline ID" : "Episode ID"}
+                </label>
+                <input
+                  id="active-id"
+                  type="text"
+                  value={activeData.id || ""}
+                  onChange={(e) =>
+                    mode === "timeline"
+                      ? updateTimeline({ ...timelineData, id: e.target.value })
+                      : setEpisodeState({ ...episodeData, id: e.target.value })
+                  }
+                  style={{ width: "100%", marginBottom: 8 }}
+                  data-ai-field={mode === "timeline" ? "timeline.id" : "episode.id"}
+                />
+              </div>
+            )}
 
-          <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={handleSave} disabled={isSaving} data-ai-action="timeline-episode.save">
-              {isSaving ? "儲存中" : "儲存"}
-            </button>
-            {mode === "timeline" && (
-              <button type="button" onClick={handlePlayTimelineToClient} data-ai-action="timeline.play-client">
-                直接播放到 client
+            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }} data-ai-role="editor.actions">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                data-ai-action="timeline-episode.save"
+                data-ai-role="save-button"
+                data-ai-state={isSaving ? "saving" : dirty ? "dirty" : "idle"}
+              >
+                {isSaving ? "儲存中" : "儲存"}
               </button>
-            )}
-            {mode === "timeline" && (
-              <button type="button" onClick={handlePlayPreview} data-ai-action="timeline.preview-play">
-                以 iframe 預覽 timeline
-              </button>
-            )}
-            {mode === "episode" && (
-              <button type="button" onClick={handlePlayEpisode} data-ai-action="episode.play">
-                播放 Episode（含覆寫）
-              </button>
-            )}
-            {mode === "snapshot" && (
-              <button type="button" onClick={handlePlaySnapshot} data-ai-action="snapshot.play">
-                播放 snapshot
-              </button>
-            )}
-          </div>
+              {mode === "timeline" && (
+                <button type="button" onClick={handlePlayTimelineToClient} data-ai-action="timeline.play-client" data-ai-role="play-button">
+                  直接播放到 client
+                </button>
+              )}
+              {mode === "timeline" && (
+                <button type="button" onClick={handlePlayPreview} data-ai-action="timeline.preview-play" data-ai-role="preview-button">
+                  以 iframe 預覽 timeline
+                </button>
+              )}
+              {mode === "episode" && (
+                <button type="button" onClick={handlePlayEpisode} data-ai-action="episode.play" data-ai-role="play-button">
+                  播放 Episode（含覆寫）
+                </button>
+              )}
+              {mode === "snapshot" && (
+                <button type="button" onClick={handlePlaySnapshot} data-ai-action="snapshot.play" data-ai-role="play-button">
+                  播放 snapshot
+                </button>
+              )}
+            </div>
+          </section>
         </div>
 
-        <div style={columnStyle} data-ai-section="timeline-episode.json-preview">
+        <div style={columnStyle} data-ai-section="timeline-episode.json-preview" data-ai-role="editor.json">
           <label style={labelStyle} htmlFor="json-area">
             JSON（雙向同步）
           </label>
@@ -1263,7 +1309,7 @@ export default function TimelineEpisodeEditor() {
             </button>
           </div>
 
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 10 }} data-ai-role="editor.validation" data-ai-state={validationState}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>驗證結果</div>
             {validationErrors.length === 0 ? (
               <div style={{ color: "#3aff85" }} data-ai-status="timeline-episode.validation-ok">

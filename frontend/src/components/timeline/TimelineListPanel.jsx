@@ -9,7 +9,7 @@ export default function TimelineListPanel({
   onSelect,
 }) {
   return (
-    <div>
+    <div data-ai-role="editor.timeline-list">
       <div style={{ marginBottom: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <label style={labelStyle} htmlFor="timeline-search">
           Timeline 列表
@@ -23,7 +23,7 @@ export default function TimelineListPanel({
           style={{ width: 140 }}
           data-ai-field="timeline.filter-client"
         />
-        <button type="button" onClick={onReload} data-ai-action="timeline.reload-list">
+        <button type="button" onClick={onReload} data-ai-action="timeline.reload-list" data-ai-role="timeline.reload">
           重新載入
         </button>
       </div>

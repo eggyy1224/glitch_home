@@ -23,3 +23,23 @@
 - 本輪計畫改動：為狀態/排程面板加入操作步驟提示與 `data-ai-role` 區塊，標記目前選取 client 與表單目標的 status；在 target 選單、佇列表格、派送/刷新/強制停止等操作加上描述性 microcopy 與可查詢 selector，避免 AI 誤序操作。
 - 實作結果：狀態/排程頁新增「操作順序」列表、clients/表單/佇列表格分區加上 `data-ai-role`，現行 client 摘要與 queue scope 具 `role=status`；target 選單加了 `aria-describedby`、`data-testid`，派送/載入選單按鈕也加 selector；queue table 現在標示正在查看的 client。改動檔案：`frontend/src/components/ClientStateQueuePanel.jsx`。
 - 再驗證：切到「狀態 / 排程」後，a11y tree 出現新 instructions，摘要顯示「目前操作 client：desktop」，Target 載入訊息與 queue 範圍都有 `data-ai-status`，佇列空狀態仍可辨識。
+
+## Editor Mode
+
+### Iteration #E1
+- 操作流程：進入 Admin → 點選「EDITOR」→ 停留在 Timeline 模式查看列表與 steps。
+- 觀察到的問題：編輯流程沒有明確說明；面板沒有全域 `data-ai-state`，難以判斷 dirty/saving；模式切換 tab 無一致的 `data-ai-role`。
+- 改動計畫：在 Editor 頂部加入流程提示；為主容器/狀態條加入 `data-ai-role` 與 `data-ai-state`；為 Snapshot/Timeline/Episode tab 標記 `data-ai-role="editor-tab"` 與 tab id。
+- 實作與驗證：`TimelineEpisodeEditor.jsx` 新增「Editor 流程」區塊、主容器 `data-ai-role="editor.panel"` + `data-ai-state`、狀態條 role/status，三個模式 tab 都有 `data-ai-tab-id`；在 UI 驗證可直接看到 instructions 與同步狀態。
+
+### Iteration #E2
+- 操作流程：在 Timeline 模式確認列表/steps/JSON 區域，檢查儲存與播放控制。
+- 觀察到的問題：儲存/播放按鈕缺少明確角色；JSON 區域與驗證結果沒有 data-state；Timeline 列表容器缺少標記。
+- 改動計畫：為主要動作區與儲存/播放按鈕加 `data-ai-role` 與狀態；JSON 區域/驗證區加入 `data-ai-role` 與 state；Timeline 列表容器加 `data-ai-role`；保持現有行為。
+- 實作與驗證：`TimelineEpisodeEditor.jsx` 的基本欄位包成 `editor.primary-fields`，儲存/播放按鈕帶 `save-button`/`play-button`/`preview-button` 與 state；JSON/驗證區加 `editor.json`、`editor.validation`；`TimelineListPanel.jsx` 加 `data-ai-role="editor.timeline-list"` 與 reload 標記。重新查看 Editor，狀態條顯示 data-state，按鈕標記可用於 selector。
+
+### Iteration #E3
+- 操作流程：在 Timeline 模式查看 steps 預覽、單步表單與預覽 iframe。
+- 觀察到的問題：steps 區塊與預覽 iframe 缺少可區分的角色/狀態；單步卡片沒有 data-state，AI 難以判斷選取。
+- 改動計畫：為 steps 編輯區、預覽 iframe、step 卡片加 `data-ai-role`/`data-ai-state`。
+- 實作與驗證：`TimelineStepsEditor.jsx` 增加 `timeline.steps-editor`、`timeline.steps-preview` 與 step card `data-ai-state`; `TimelinePreviewPlayer.jsx` 為首段/整段預覽加 `data-ai-role`。在 Editor 確認 step list 與 iframe 可用 data-* 查詢。
