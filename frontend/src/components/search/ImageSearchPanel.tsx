@@ -1,4 +1,14 @@
-import React from "react";
+import type { ChangeEvent, KeyboardEvent, RefObject } from "react";
+
+type ImageSearchPanelProps = {
+  preview?: string | null;
+  selectedFile: File | null;
+  onFileChange: (file: File) => void;
+  onSearch: () => void;
+  onClear: () => void;
+  searching: boolean;
+  fileInputRef: RefObject<HTMLInputElement>;
+};
 
 export default function ImageSearchPanel({
   preview,
@@ -8,8 +18,8 @@ export default function ImageSearchPanel({
   onClear,
   searching,
   fileInputRef,
-}) {
-  const handleFileInput = (event) => {
+}: ImageSearchPanelProps) {
+  const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       onFileChange(file);
@@ -20,7 +30,7 @@ export default function ImageSearchPanel({
     fileInputRef.current?.click();
   };
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleTriggerUpload();

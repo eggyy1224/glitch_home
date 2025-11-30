@@ -1,4 +1,12 @@
-import React from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
+
+type TextSearchPanelProps = {
+  textQuery: string;
+  onChange: (value: string) => void;
+  onSearch: () => void;
+  onClear: () => void;
+  searching: boolean;
+};
 
 export default function TextSearchPanel({
   textQuery,
@@ -6,12 +14,16 @@ export default function TextSearchPanel({
   onSearch,
   onClear,
   searching,
-}) {
-  const handleKeyDown = (event) => {
+}: TextSearchPanelProps) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       onSearch();
     }
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onChange(event.target.value);
   };
 
   return (
@@ -20,7 +32,7 @@ export default function TextSearchPanel({
         <input
           type="text"
           value={textQuery}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="輸入搜尋詞... 例如：白馬、夜晚、人物"
           className="search-mode__text-input"

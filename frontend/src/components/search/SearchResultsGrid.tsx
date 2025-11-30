@@ -1,6 +1,18 @@
-import React from "react";
+import type { MouseEventHandler } from "react";
 
-export default function SearchResultsGrid({ results, imagesBase, onResultClick }) {
+type SearchResult = {
+  id: string;
+  distance?: number | null;
+  [key: string]: unknown;
+};
+
+type SearchResultsGridProps = {
+  results: SearchResult[];
+  imagesBase: string;
+  onResultClick: (id: string) => void;
+};
+
+export default function SearchResultsGrid({ results, imagesBase, onResultClick }: SearchResultsGridProps) {
   if (!results?.length) {
     return null;
   }
@@ -13,14 +25,18 @@ export default function SearchResultsGrid({ results, imagesBase, onResultClick }
           const cleanId = result.id.replace(/:(en|zh)$/, "");
           const imageUrl = `${imagesBase}${cleanId}`;
           const distance = result.distance ?? 0;
-          const similarity = Math.max(0, ((1 - distance / 2) * 100)).toFixed(0);
+          const similarity = Math.max(0, (1 - distance / 2) * 100).toFixed(0);
+
+          const handleClick: MouseEventHandler<HTMLButtonElement> = () => {
+            onResultClick(cleanId);
+          };
 
           return (
             <button
               type="button"
               key={`${cleanId}-${index}`}
               className="search-mode__result-card"
-              onClick={() => onResultClick(cleanId)}
+              onClick={handleClick}
             >
               <div className="search-mode__result-image-container">
                 <img
