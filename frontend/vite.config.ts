@@ -1,0 +1,30 @@
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  server: {
+    port: 5173,
+    host: "0.0.0.0",
+    allowedHosts: [".ngrok-free.app"],
+    proxy: {
+      // 讓開發時同源請求 /api/* 轉發到後端 FastAPI（預設 8000）
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      // 讓圖片靜態路徑也走代理
+      "/generated_images": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/nightwalk_assets": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/ws": {
+        target: "ws://localhost:8000",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
+});

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test, expect } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
