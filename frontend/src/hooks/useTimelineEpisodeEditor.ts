@@ -27,7 +27,8 @@ import {
   pretty,
   timelinePlaybackSrc,
 } from "../adminPanelUtils";
-import type { IframeConfig, IframePanelConfig } from "../types/control";
+import type { IframePanelConfig } from "../types/control";
+import type { SnapshotConfig, SnapshotPanel } from "../types/admin";
 import type { EpisodeEntry, EpisodeTrack, IframeTimeline, SnapshotEntry, TimelineStep } from "../types/timeline";
 import type { EditorMode, EditorValidationError } from "../utils/adminEditorUtils";
 import { validateEpisode, validateSnapshot, validateTimeline } from "../utils/adminEditorUtils";
@@ -44,7 +45,7 @@ export default function useTimelineEpisodeEditor() {
   const [mode, setMode] = useState<EditorMode>("timeline");
   const [timelineData, setTimelineData] = useState<IframeTimeline>(() => defaultTimelinePayload(defaultClientId));
   const [episodeData, setEpisodeData] = useState<EpisodeEntry>(() => defaultEpisodePayload(defaultClientId));
-  const [snapshotData, setSnapshotData] = useState<IframeConfig>(() => minimalConfigPayload(defaultClientId));
+  const [snapshotData, setSnapshotData] = useState<SnapshotConfig>(() => minimalConfigPayload(defaultClientId));
   const [jsonText, setJsonText] = useState(() => pretty(defaultTimelinePayload(defaultClientId)));
   const [jsonLocked, setJsonLocked] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
@@ -144,7 +145,7 @@ export default function useTimelineEpisodeEditor() {
   );
 
   const updateSnapshot = useCallback(
-    (next: IframeConfig, { markDirty = true } = {}) => {
+    (next: SnapshotConfig, { markDirty = true } = {}) => {
       setSnapshotData(next);
       syncJsonFromData(next);
       setDirty(Boolean(markDirty));
@@ -273,8 +274,8 @@ export default function useTimelineEpisodeEditor() {
         const resolvedClient = targetClient || (data as { client_id?: string }).client_id || (data as { client?: string }).client;
         setSnapshotClient(resolvedClient || targetClient);
         setSnapshotName(name);
-        updateSnapshot(raw as IframeConfig, { markDirty: false });
-        const src = previewSrcFromConfig(raw as Partial<IframeConfig>);
+        updateSnapshot(raw as SnapshotConfig, { markDirty: false });
+        const src = previewSrcFromConfig(raw as Partial<SnapshotConfig>);
         setSnapshotPreviewSrc(src);
         setSnapshotPreviewError(src ? null : "預覽來源不足");
         await refreshSnapshots(resolvedClient || targetClient);
@@ -419,8 +420,8 @@ export default function useTimelineEpisodeEditor() {
           setEpisodeData(parsed as EpisodeEntry);
           setValidationErrors(validateEpisode(parsed as Partial<EpisodeEntry>));
         } else {
-          setSnapshotData(parsed as IframeConfig);
-          setValidationErrors(validateSnapshot(parsed as Partial<IframeConfig>));
+          setSnapshotData(parsed as SnapshotConfig);
+          setValidationErrors(validateSnapshot(parsed as Partial<SnapshotConfig>));
         }
         setLastSyncAt(new Date());
       } catch (err) {
@@ -502,7 +503,7 @@ export default function useTimelineEpisodeEditor() {
         const snapshot = await getIframeSnapshot(first.client, first.name, { signal: controller.signal });
         if (cancelled) return;
         const raw = (snapshot as { raw?: unknown; snapshot?: unknown }).raw || (snapshot as { snapshot?: unknown }).snapshot || snapshot;
-        const src = previewSrcFromConfig(raw as Partial<IframeConfig>);
+        const src = previewSrcFromConfig(raw as Partial<SnapshotConfig>);
         setTimelinePreviewError(src ? null : "預覽來源不足");
         setTimelinePreviewSrc(src);
       } catch (err) {
@@ -579,15 +580,15 @@ export default function useTimelineEpisodeEditor() {
     const nextPanels = [...(snapshotData.panels || [])];
     const idBase = `panel_${nextPanels.length + 1}`;
     nextPanels.push({ id: idBase, url: "/", ratio: 1, params: {}, label: "" });
-    updateSnapshot({ ...snapshotData, panels: nextPanels } as IframeConfig);
+    updateSnapshot({ ...snapshotData, panels: nextPanels } as SnapshotConfig);
   }, [snapshotData, updateSnapshot]);
 
   const handlePanelChange = useCallback(
-    (index: number, patch: Record<string, unknown>) => {
+    (index: number, patch: Partial<SnapshotPanel>) => {
       updateSnapshot({
         ...snapshotData,
         panels: (snapshotData.panels || []).map((panel, i) => (i === index ? { ...panel, ...patch } : panel)),
-      } as IframeConfig);
+      } as SnapshotConfig);
     },
     [snapshotData, updateSnapshot],
   );
@@ -614,7 +615,7 @@ export default function useTimelineEpisodeEditor() {
         if (target < 0 || target >= panels.length) return;
         const [item] = panels.splice(index, 1);
         panels.splice(target, 0, item);
-        updateSnapshot({ ...snapshotData, panels } as IframeConfig);
+        updateSnapshot({ ...snapshotData, panels } as SnapshotConfig);
       }
     },
     [episodeData, mode, snapshotData, timelineData, setEpisodeState, updateSnapshot, updateTimeline],
@@ -627,7 +628,7 @@ export default function useTimelineEpisodeEditor() {
       } else if (mode === "episode") {
         setEpisodeState({ ...episodeData, tracks: (episodeData.tracks || []).filter((_, i) => i !== index) } as EpisodeEntry);
       } else {
-        updateSnapshot({ ...snapshotData, panels: (snapshotData.panels || []).filter((_, i) => i !== index) } as IframeConfig);
+        updateSnapshot({ ...snapshotData, panels: (snapshotData.panels || []).filter((_, i) => i !== index) } as SnapshotConfig);
       }
       setSelectedRows((prev) => prev.filter((i) => i !== index));
     },
@@ -650,7 +651,7 @@ export default function useTimelineEpisodeEditor() {
         const panels = [...(snapshotData.panels || [])];
         const target = panels[index];
         panels.splice(index + 1, 0, { ...target });
-        updateSnapshot({ ...snapshotData, panels } as IframeConfig);
+        updateSnapshot({ ...snapshotData, panels } as SnapshotConfig);
       }
     },
     [episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline],
@@ -688,7 +689,7 @@ export default function useTimelineEpisodeEditor() {
       updateSnapshot({
         ...snapshotData,
         panels: [...(snapshotData.panels || []), ...(clonedItems as unknown as IframePanelConfig[])],
-      } as IframeConfig);
+      } as SnapshotConfig);
     }
     setMessageForMode(`已貼上 ${clipboard.items.length} 筆`);
   }, [clipboard, episodeData, mode, setEpisodeState, setMessageForMode, snapshotData, timelineData, updateSnapshot, updateTimeline]);

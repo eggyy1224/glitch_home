@@ -1,4 +1,5 @@
 import type { ClientQueueItem, ClientState } from "./client";
+import type { IframeConfig, IframePanelConfig } from "./control";
 import type { EpisodeEntry, EpisodeTrack, IframeTimeline, SnapshotEntry, TimelineStep } from "./timeline";
 
 export type { SnapshotEntry, TimelineStep, IframeTimeline, EpisodeTrack, EpisodeEntry } from "./timeline";
@@ -10,4 +11,13 @@ export interface ApiListResponse<T> {
   timelines?: IframeTimeline[];
   episodes?: EpisodeEntry[];
   [key: string]: unknown;
+}
+
+export interface SnapshotPanel extends IframePanelConfig {
+  col_span?: number | undefined;
+  row_span?: number | undefined;
+}
+
+export interface SnapshotConfig extends IframeConfig {
+  panels: SnapshotPanel[];
 }

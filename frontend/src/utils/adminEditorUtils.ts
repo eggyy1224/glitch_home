@@ -1,4 +1,5 @@
 import type { IframeConfig, IframePanelConfig } from "../types/control";
+import type { SnapshotConfig, SnapshotPanel } from "../types/admin";
 import type { EpisodeEntry, EpisodeTrack, IframeTimeline, TimelineStep } from "../types/timeline";
 
 export type EditorMode = "timeline" | "episode" | "snapshot";
@@ -59,7 +60,7 @@ export function validateEpisode(data: Partial<EpisodeEntry> | null | undefined):
   return errors;
 }
 
-export function validateSnapshot(data: Partial<IframeConfig> | null | undefined): EditorValidationError[] {
+export function validateSnapshot(data: Partial<SnapshotConfig> | null | undefined): EditorValidationError[] {
   const errors: EditorValidationError[] = [];
   if (!data || typeof data !== "object") {
     return [{ path: "root", message: "snapshot 需要是物件" }];
@@ -67,7 +68,7 @@ export function validateSnapshot(data: Partial<IframeConfig> | null | undefined)
   if (!Array.isArray(data.panels) || data.panels.length === 0) {
     errors.push({ path: "panels", message: "需要至少一個 panel" });
   } else {
-    (data.panels as Array<Partial<IframePanelConfig>>).forEach((panel, index) => {
+    (data.panels as Array<Partial<SnapshotPanel>>).forEach((panel, index) => {
       if (!panel || typeof panel !== "object") {
         errors.push({ path: `panels[${index}]`, message: "panel 格式不正確" });
         return;

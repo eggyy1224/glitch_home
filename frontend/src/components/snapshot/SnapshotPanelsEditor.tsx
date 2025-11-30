@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles";
 import { createTextSearchRequest, listOffspringImages, listVideoAssets } from "../../api";
 import type { IframePanelConfig } from "../../types/control";
+import type { SnapshotPanel } from "../../types/admin";
 
 const MODE_PRESETS = {
   slide_mode: { assetKey: "img", label: "slide_mode (輪播)" },
@@ -12,16 +13,7 @@ const MODE_PRESETS = {
 type PanelMode = keyof typeof MODE_PRESETS;
 type AssetTab = "images" | "videos";
 type AssetSearchMode = "name" | "semantic";
-type PanelConfig = IframePanelConfig & {
-  ratio?: number | undefined;
-  colSpan?: number | undefined;
-  rowSpan?: number | undefined;
-  col_span?: number | undefined;
-  row_span?: number | undefined;
-  params?: Record<string, unknown> | undefined;
-  url?: string | undefined;
-  image?: string | undefined;
-};
+type PanelConfig = SnapshotPanel;
 
 interface SnapshotPanelsEditorProps {
   panels: PanelConfig[];

@@ -1,5 +1,5 @@
 import { buildQueryFromIframeConfig } from "./utils/iframeConfig";
-import type { EpisodeEntry, IframeTimeline } from "./types/admin";
+import type { EpisodeEntry, IframeTimeline, SnapshotConfig } from "./types/admin";
 import type { IframeConfig } from "./types/control";
 import type { SnapshotRef } from "./types/timeline";
 
@@ -11,7 +11,7 @@ export function pretty(value: unknown): string {
   }
 }
 
-export function minimalConfigPayload(targetClient?: string | null): IframeConfig {
+export function minimalConfigPayload(targetClient?: string | null): SnapshotConfig {
   return {
     layout: "grid",
     gap: 0,
