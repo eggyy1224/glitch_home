@@ -1,5 +1,21 @@
 import { useEffect, useRef } from "react";
 
+interface ControlSocketOptions {
+  clientId: string;
+  onScreenshotRequest?: (payload: Record<string, unknown>) => void;
+  onScreenshotLifecycle?: (payload: Record<string, unknown>) => void;
+  onSoundPlay?: (payload: Record<string, unknown>) => void;
+  onSubtitleUpdate?: (payload: Record<string, unknown>) => void;
+  onCaptionUpdate?: (payload: Record<string, unknown>) => void;
+  onIframeConfig?: (payload: Record<string, unknown>) => void;
+  onCollageConfig?: (payload: Record<string, unknown>) => void;
+  onUnlockAudio?: (payload: Record<string, unknown>) => void;
+  onRemoteClick?: (payload: Record<string, unknown>) => void;
+  onVideoControl?: (payload: Record<string, unknown>) => void;
+  onTimelineControl?: (payload: Record<string, unknown>) => void;
+  onClientState?: (payload: Record<string, unknown>) => void;
+}
+
 export function useControlSocket({
   clientId,
   onScreenshotRequest,
@@ -14,13 +30,13 @@ export function useControlSocket({
   onVideoControl,
   onTimelineControl,
   onClientState,
-}) {
-  const wsRef = useRef(null);
-  const heartbeatRef = useRef(null);
+}: ControlSocketOptions) {
+  const wsRef = useRef<WebSocket | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     let active = true;
-    let retryTimer = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
     function cleanupSocket() {
       const existing = wsRef.current;
@@ -48,14 +64,14 @@ export function useControlSocket({
 
     function connect() {
       if (!active) return;
-      let base = import.meta.env.VITE_API_BASE;
+      let base = import.meta.env.VITE_API_BASE as string | undefined;
       if (!base) {
         base = window.location.origin;
       }
       base = base.replace(/\/$/, "");
       const wsUrl = `${base.replace(/^http/, "ws")}/ws/screenshots`;
 
-      let socket;
+      let socket: WebSocket;
       try {
         socket = new WebSocket(wsUrl);
       } catch (err) {
@@ -92,38 +108,38 @@ export function useControlSocket({
         }
       };
 
-      socket.onmessage = (event) => {
+      socket.onmessage = (event: MessageEvent<string>) => {
         if (!active) return;
-        let payload;
+        let payload: Record<string, unknown> | null = null;
         try {
           payload = JSON.parse(event.data);
         } catch (err) {
           return;
         }
 
-        if (payload?.type === "screenshot_request") {
+        if ((payload as any)?.type === "screenshot_request") {
           onScreenshotRequest?.(payload);
-        } else if (payload?.type === "screenshot_completed" || payload?.type === "screenshot_failed") {
+        } else if ((payload as any)?.type === "screenshot_completed" || (payload as any)?.type === "screenshot_failed") {
           onScreenshotLifecycle?.(payload);
-        } else if (payload?.type === "sound_play") {
+        } else if ((payload as any)?.type === "sound_play") {
           onSoundPlay?.(payload);
-        } else if (payload?.type === "subtitle_update") {
+        } else if ((payload as any)?.type === "subtitle_update") {
           onSubtitleUpdate?.(payload);
-        } else if (payload?.type === "caption_update") {
+        } else if ((payload as any)?.type === "caption_update") {
           onCaptionUpdate?.(payload);
-        } else if (payload?.type === "iframe_config" && payload?.config) {
+        } else if ((payload as any)?.type === "iframe_config" && (payload as any)?.config) {
           onIframeConfig?.(payload);
-        } else if (payload?.type === "collage_config" && payload?.config) {
+        } else if ((payload as any)?.type === "collage_config" && (payload as any)?.config) {
           onCollageConfig?.(payload);
-        } else if (payload?.type === "unlock_audio") {
+        } else if ((payload as any)?.type === "unlock_audio") {
           onUnlockAudio?.(payload);
-        } else if (payload?.type === "remote_click") {
+        } else if ((payload as any)?.type === "remote_click") {
           onRemoteClick?.(payload);
-        } else if (payload?.type === "video_control") {
+        } else if ((payload as any)?.type === "video_control") {
           onVideoControl?.(payload);
-        } else if (payload?.type === "timeline_control") {
+        } else if ((payload as any)?.type === "timeline_control") {
           onTimelineControl?.(payload);
-        } else if (payload?.type === "client_state") {
+        } else if ((payload as any)?.type === "client_state") {
           onClientState?.(payload);
         }
       };

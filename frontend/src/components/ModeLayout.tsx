@@ -1,6 +1,20 @@
 import React from "react";
-import SoundPlayer from "../SoundPlayer.jsx";
-import SubtitleOverlay from "../SubtitleOverlay.jsx";
+import SoundPlayer from "../SoundPlayer";
+import SubtitleOverlay from "../SubtitleOverlay";
+
+interface ModeLayoutProps {
+  component?: React.ComponentType<any>;
+  componentProps?: Record<string, unknown>;
+  withCaptureReady?: boolean;
+  onCaptureReady?: (...args: any[]) => void;
+  beforeContent?: React.ReactNode;
+  afterContent?: React.ReactNode;
+  soundPlayerEnabled?: boolean;
+  soundPlayRequest?: unknown;
+  onSoundHandled?: () => void;
+  showInfo?: boolean;
+  subtitle?: string | null;
+}
 
 export default function ModeLayout({
   component: Component,
@@ -14,9 +28,9 @@ export default function ModeLayout({
   onSoundHandled,
   showInfo,
   subtitle,
-}) {
+}: ModeLayoutProps) {
   const shouldInjectCapture =
-    Boolean(Component) && Boolean(onCaptureReady) && withCaptureReady && !componentProps.onCaptureReady;
+    Boolean(Component) && Boolean(onCaptureReady) && withCaptureReady && !("onCaptureReady" in componentProps);
   const renderedProps = shouldInjectCapture
     ? {
         ...componentProps,

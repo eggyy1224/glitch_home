@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useRemoteTimelineControl } from "../../../src/hooks/useRemoteTimelineControl.js";
+import { useRemoteTimelineControl } from "../../../src/hooks/useRemoteTimelineControl";
 import { DisplayModes } from "../../../src/hooks/useDisplayMode";
 
-vi.mock("../../../src/hooks/useIframeTimelinePlayer.js", () => ({
+vi.mock("../../../src/hooks/useIframeTimelinePlayer", () => ({
   __esModule: true,
   useIframeTimelinePlayer: () => ({
     timeline: null,
@@ -22,7 +22,7 @@ vi.mock("../../../src/hooks/useIframeTimelinePlayer.js", () => ({
   }),
 }));
 
-vi.mock("../../../src/hooks/useTimelineStepActions.js", () => ({
+vi.mock("../../../src/hooks/useTimelineStepActions", () => ({
   __esModule: true,
   useTimelineStepActions: () => ({
     executeStepActions: vi.fn(),

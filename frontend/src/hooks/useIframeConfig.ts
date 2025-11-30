@@ -3,28 +3,43 @@ import {
   buildQueryFromIframeConfig,
   parseIframeConfigFromParams,
   sanitizeIframeConfig,
-} from "../utils/iframeConfig.js";
+} from "../utils/iframeConfig";
+import type { IframeConfig } from "../types/control";
+
+interface UseIframeConfigOptions {
+  initialParams: URLSearchParams;
+  iframeMode: boolean;
+  clientId: string;
+  defaultConfig: IframeConfig;
+  skipServerFetch?: boolean;
+}
 
 const PERSIST_IFRAME_QUERY =
   String(import.meta.env.VITE_IFRAME_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
 
-export function useIframeConfig({ initialParams, iframeMode, clientId, defaultConfig, skipServerFetch = false }) {
+export function useIframeConfig({
+  initialParams,
+  iframeMode,
+  clientId,
+  defaultConfig,
+  skipServerFetch = false,
+}: UseIframeConfigOptions) {
   const initialConfigFromParams = useMemo(
     () => sanitizeIframeConfig(parseIframeConfigFromParams(initialParams), defaultConfig),
     [initialParams, defaultConfig],
   );
 
-  const [localConfig, setLocalConfig] = useState(initialConfigFromParams);
-  const [serverConfig, setServerConfig] = useState(null);
-  const [error, setError] = useState(null);
+  const [localConfig, setLocalConfig] = useState<IframeConfig | null>(initialConfigFromParams);
+  const [serverConfig, setServerConfig] = useState<IframeConfig | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const updateQueryWithIframeConfig = useCallback((config) => {
+  const updateQueryWithIframeConfig = useCallback((config?: IframeConfig | null) => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const params = url.searchParams;
 
     if (!PERSIST_IFRAME_QUERY) {
-      const keysToDelete = [];
+      const keysToDelete: string[] = [];
       params.forEach((_, key) => {
         if (key.startsWith("iframe_") && key !== "iframe_mode") {
           keysToDelete.push(key);
@@ -37,7 +52,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
 
     if (!config) return;
     const reserved = new Set(["iframe_mode", "iframe_layout", "iframe_gap", "iframe_columns"]);
-    const keysToDelete = [];
+    const keysToDelete: string[] = [];
     params.forEach((_, key) => {
       if (key.startsWith("iframe_") && !reserved.has(key)) {
         keysToDelete.push(key);
@@ -58,7 +73,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
   }, []);
 
   const handleLocalApply = useCallback(
-    (nextConfig) => {
+    (nextConfig: Partial<IframeConfig> | null) => {
       const sanitized = sanitizeIframeConfig(nextConfig, defaultConfig);
       setLocalConfig(sanitized);
       updateQueryWithIframeConfig(sanitized);
@@ -67,7 +82,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
   );
 
   const applyRemoteConfig = useCallback(
-    (config) => {
+    (config: Partial<IframeConfig> | null) => {
       const sanitized = sanitizeIframeConfig(config, defaultConfig);
       setServerConfig(sanitized);
       setError(null);
@@ -77,7 +92,7 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
   );
 
   const applyServerSnapshot = useCallback(
-    (config) => {
+    (config: Partial<IframeConfig> | null) => {
       const sanitized = sanitizeIframeConfig(config, defaultConfig);
       setLocalConfig(sanitized);
       setServerConfig(sanitized);
@@ -120,13 +135,14 @@ export function useIframeConfig({ initialParams, iframeMode, clientId, defaultCo
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        const json = await response.json();
+        const json = (await response.json()) as Partial<IframeConfig>;
         if (cancelled) return;
         applyServerSnapshot(json);
       } catch (err) {
         if (cancelled) return;
         console.error("取得 iframe 配置失敗", err);
-        setError(err.message || String(err));
+        const errorMessage = err && typeof err === "object" && "message" in err ? (err as Error).message : String(err);
+        setError(errorMessage);
         setServerConfig(null);
       }
     };

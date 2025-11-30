@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
-import { useIframeTimelinePlayer } from "../../../src/hooks/useIframeTimelinePlayer.js";
-import { fetchIframeTimeline } from "../../../src/api.js";
+import { useIframeTimelinePlayer } from "../../../src/hooks/useIframeTimelinePlayer";
+import { fetchIframeTimeline } from "../../../src/api";
 
-vi.mock("../../../src/api.js", () => ({
+vi.mock("../../../src/api", () => ({
   fetchIframeTimeline: vi.fn(),
 }));
 

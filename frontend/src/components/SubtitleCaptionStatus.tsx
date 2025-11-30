@@ -1,6 +1,11 @@
 import React from "react";
 
-export default function SubtitleCaptionStatus({ subtitle, caption }) {
+interface SubtitleCaptionStatusProps {
+  subtitle?: string | null;
+  caption?: string | null;
+}
+
+export default function SubtitleCaptionStatus({ subtitle, caption }: SubtitleCaptionStatusProps) {
   if (!subtitle && !caption) {
     return null;
   }

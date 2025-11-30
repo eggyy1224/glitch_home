@@ -1,4 +1,22 @@
 import { useCallback, useMemo } from "react";
+import type React from "react";
+import type {
+  CaptionPayload,
+  ScreenshotLifecyclePayload,
+  SubtitlePayload,
+  VideoController,
+} from "../types/control";
+
+interface ControlSocketHandlerOptions {
+  clientId: string;
+  applySubtitle: (value: string | null) => void;
+  applyCaption: (value: string | null) => void;
+  applyRemoteIframeConfig: (config: Record<string, unknown>) => void;
+  applyRemoteCollageConfig: (config: Record<string, unknown>) => void;
+  markRequestDone: (requestId: string) => void;
+  unlockAudioElementRef: React.RefObject<HTMLAudioElement | null>;
+  videoControllerRef: React.RefObject<VideoController | null>;
+}
 
 export function useControlSocketHandlers({
   clientId,
@@ -9,9 +27,9 @@ export function useControlSocketHandlers({
   markRequestDone,
   unlockAudioElementRef,
   videoControllerRef,
-}) {
+}: ControlSocketHandlerOptions) {
   const handleScreenshotLifecycle = useCallback(
-    (payload) => {
+    (payload: ScreenshotLifecyclePayload) => {
       if (payload?.request_id) {
         markRequestDone(payload.request_id);
       }
@@ -20,7 +38,7 @@ export function useControlSocketHandlers({
   );
 
   const handleSubtitleMessage = useCallback(
-    (payload) => {
+    (payload: SubtitlePayload) => {
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
         return;
@@ -31,7 +49,7 @@ export function useControlSocketHandlers({
   );
 
   const handleCaptionMessage = useCallback(
-    (payload) => {
+    (payload: CaptionPayload) => {
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
         return;
@@ -42,7 +60,7 @@ export function useControlSocketHandlers({
   );
 
   const handleIframeConfigMessage = useCallback(
-    (payload) => {
+    (payload: Record<string, any>) => {
       if (!payload?.config) return;
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
@@ -54,7 +72,7 @@ export function useControlSocketHandlers({
   );
 
   const handleCollageConfigMessage = useCallback(
-    (payload) => {
+    (payload: Record<string, any>) => {
       if (!payload?.config) return;
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
@@ -66,7 +84,7 @@ export function useControlSocketHandlers({
   );
 
   const handleUnlockAudioMessage = useCallback(
-    (payload) => {
+    (payload: Record<string, any>) => {
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
         return;
@@ -120,7 +138,7 @@ export function useControlSocketHandlers({
   );
 
   const handleRemoteClickMessage = useCallback(
-    (payload) => {
+    (payload: Record<string, any>) => {
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
         return;
@@ -139,8 +157,8 @@ export function useControlSocketHandlers({
           : null);
       const selectorsProvided = Boolean(selector || childSelector);
 
-      let targetNode = null;
-      let rootNode = null;
+      let targetNode: Element | null = null;
+      let rootNode: Element | null = null;
       if (selector) {
         rootNode = document.querySelector(selector);
       }
@@ -174,15 +192,15 @@ export function useControlSocketHandlers({
       } catch (err) {
         // ignore dispatch failure
       }
-      if (typeof targetNode.click === "function") {
-        targetNode.click();
+      if (typeof (targetNode as HTMLElement).click === "function") {
+        (targetNode as HTMLElement).click();
       }
     },
     [clientId],
   );
 
   const handleVideoControlMessage = useCallback(
-    (payload) => {
+    (payload: Record<string, any>) => {
       const targetId = payload?.target_client_id;
       if (targetId && targetId !== clientId) {
         return;

@@ -1,6 +1,8 @@
-import { buildQueryFromIframeConfig } from "./utils/iframeConfig.js";
+import { buildQueryFromIframeConfig } from "./utils/iframeConfig";
+import type { EpisodeEntry, IframeTimeline } from "./types/admin";
+import type { IframeConfig } from "./types/control";
 
-export function pretty(value) {
+export function pretty(value: unknown): string {
   try {
     return JSON.stringify(value, null, 2);
   } catch (err) {
@@ -8,7 +10,7 @@ export function pretty(value) {
   }
 }
 
-export function minimalConfigPayload(targetClient) {
+export function minimalConfigPayload(targetClient?: string | null): IframeConfig {
   return {
     layout: "grid",
     gap: 0,
@@ -20,12 +22,13 @@ export function minimalConfigPayload(targetClient) {
         params: {},
         ratio: 1,
         label: `${targetClient || "client"} panel`,
+        src: "/",
       },
     ],
   };
 }
 
-export function defaultTimelinePayload(targetClient) {
+export function defaultTimelinePayload(targetClient?: string | null): IframeTimeline {
   const client = targetClient || "desktop";
   return {
     id: "new_timeline",
@@ -39,7 +42,7 @@ export function defaultTimelinePayload(targetClient) {
   };
 }
 
-export function defaultEpisodePayload(targetClient) {
+export function defaultEpisodePayload(targetClient?: string | null): EpisodeEntry {
   const clientB = targetClient === "desktop" ? "desktop2" : `${targetClient}_b`;
   return {
     id: "new_episode",
@@ -52,9 +55,9 @@ export function defaultEpisodePayload(targetClient) {
   };
 }
 
-export function parseTargetMap(text) {
+export function parseTargetMap(text?: string | null): Record<string, string> {
   if (!text || typeof text !== "string") return {};
-  const map = {};
+  const map: Record<string, string> = {};
   text
     .split(",")
     .map((part) => part.trim())
@@ -68,15 +71,15 @@ export function parseTargetMap(text) {
   return map;
 }
 
-export function previewSrcFromConfig(config) {
+export function previewSrcFromConfig(config: Partial<IframeConfig> | null | undefined): string | null {
   if (!config || !Array.isArray(config.panels)) return null;
 
-  const panels = [];
+  const panels: IframeConfig["panels"] = [];
   config.panels.forEach((panel, index) => {
     if (!panel || typeof panel !== "object") return;
-    let src = null;
-    if (panel.url) {
-      src = panel.url;
+    let src: string | null = null;
+    if ((panel as any).url) {
+      src = (panel as any).url as string;
       try {
         const url = new URL(src, window.location.origin);
         url.searchParams.set("client", "preview-main");
@@ -86,15 +89,14 @@ export function previewSrcFromConfig(config) {
           src = url.toString();
         }
       } catch (err) {
-        // fallback to appending when URL parsing fails
         const hasQuery = src.includes("?");
         const joiner = hasQuery ? "&" : "?";
         src = `${src}${joiner}client=preview-main`;
       }
-    } else if (panel.image) {
-      const query = new URLSearchParams({ img: panel.image, static_mode: "true" });
-      if (panel.params && typeof panel.params === "object") {
-        Object.entries(panel.params).forEach(([k, v]) => {
+    } else if ((panel as any).image) {
+      const query = new URLSearchParams({ img: (panel as any).image, static_mode: "true" });
+      if ((panel as any).params && typeof (panel as any).params === "object") {
+        Object.entries((panel as any).params).forEach(([k, v]) => {
           if (v === null || v === undefined) return;
           query.set(String(k), String(v));
         });
@@ -103,20 +105,20 @@ export function previewSrcFromConfig(config) {
       src = `/?${query.toString()}`;
     }
     if (!src) return;
-    const colSpan = panel.colSpan ?? panel.col_span;
-    const rowSpan = panel.rowSpan ?? panel.row_span;
+    const colSpan = (panel as any).colSpan ?? (panel as any).col_span;
+    const rowSpan = (panel as any).rowSpan ?? (panel as any).row_span;
     panels.push({
-      id: panel.id || `p${index + 1}`,
+      id: (panel as any).id || `p${index + 1}`,
       src,
-      ratio: panel.ratio || 1,
-      label: panel.label,
+      ratio: (panel as any).ratio || 1,
+      label: (panel as any).label,
       ...(colSpan ? { colSpan } : {}),
       ...(rowSpan ? { rowSpan } : {}),
     });
   });
 
   if (!panels.length) return null;
-  const cfg = {
+  const cfg: IframeConfig = {
     layout: config.layout || "grid",
     gap: config.gap ?? 0,
     columns: config.columns ?? 1,
@@ -131,7 +133,7 @@ export function previewSrcFromConfig(config) {
   return `/?${qs.toString()}`;
 }
 
-export function timelinePlaybackSrc(timelineId) {
+export function timelinePlaybackSrc(timelineId?: string | null): string | null {
   if (!timelineId) return null;
   const qs = new URLSearchParams();
   qs.set("iframe_mode", "true");
@@ -142,16 +144,16 @@ export function timelinePlaybackSrc(timelineId) {
   return `/?${qs.toString()}`;
 }
 
-export function firstSnapshotRef(timeline) {
+export function firstSnapshotRef(timeline?: Partial<IframeTimeline> | null): { client: string | null; name: string } | null {
   if (!timeline || !Array.isArray(timeline.steps)) return null;
-  const firstStep = timeline.steps.find((step) => step && step.snapshot);
+  const firstStep = timeline.steps.find((step) => step && (step as any).snapshot);
   if (!firstStep) return null;
 
-  const snapshotRef = String(firstStep.snapshot || "").trim();
+  const snapshotRef = String((firstStep as any).snapshot || "").trim();
   if (!snapshotRef) return null;
 
-  const timelineClient = timeline.clientId || timeline.client_id || null;
-  const stepClient = firstStep.clientId || firstStep.client_id || null;
+  const timelineClient = (timeline as any).clientId || (timeline as any).client_id || null;
+  const stepClient = (firstStep as any).clientId || (firstStep as any).client_id || null;
   const defaultClient = stepClient || timelineClient || null;
 
   if (snapshotRef.includes("/")) {

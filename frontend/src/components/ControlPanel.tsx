@@ -1,6 +1,30 @@
 import React from "react";
-import CameraPresetControls from "./CameraPresetControls.jsx";
-import SubtitleCaptionStatus from "./SubtitleCaptionStatus.jsx";
+import CameraPresetControls from "./CameraPresetControls";
+import SubtitleCaptionStatus from "./SubtitleCaptionStatus";
+import type { CameraInfo, CameraPreset } from "../types/control";
+
+interface ControlPanelProps {
+  visible: boolean;
+  modeLabel: string;
+  originalImage?: string | null;
+  clientId?: string | null;
+  relatedCount: number;
+  parentsCount: number;
+  childrenCount: number;
+  siblingsCount: number;
+  ancestorsCount: number;
+  fps: number | null;
+  cameraInfo: CameraInfo | null;
+  presetMessage?: string | null;
+  subtitle?: string | null;
+  caption?: string | null;
+  presets: CameraPreset[];
+  selectedPresetName: string;
+  onSelectPreset: (name: string) => void;
+  onSavePreset: () => void;
+  onApplyPreset: () => void;
+  onDeletePreset: () => void;
+}
 
 export default function ControlPanel({
   visible,
@@ -23,7 +47,7 @@ export default function ControlPanel({
   onSavePreset,
   onApplyPreset,
   onDeletePreset,
-}) {
+}: ControlPanelProps) {
   if (!visible) {
     return null;
   }

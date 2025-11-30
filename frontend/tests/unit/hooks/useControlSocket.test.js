@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { useControlSocket } from '../../../src/hooks/useControlSocket.js'
+import { useControlSocket } from '../../../src/hooks/useControlSocket'
 
 // Mock WebSocket
 global.WebSocket = vi.fn()

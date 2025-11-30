@@ -8,7 +8,7 @@ import {
   moveClientQueueItems,
   stopIframeTimeline,
 } from "../api.js";
-import { useControlSocket } from "./useControlSocket.js";
+import { useControlSocket } from "./useControlSocket";
 
 const POLL_INTERVAL_MS = 8000;
 

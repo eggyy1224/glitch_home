@@ -1,12 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchIframeTimeline } from "../api.js";
+import { fetchIframeTimeline } from "../api";
+import type { IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
 
-const clampIndex = (index, max) => {
+const clampIndex = (index: number, max: number) => {
   if (max <= 0) return 0;
   if (index < 0) return 0;
   if (index > max) return max;
   return index;
 };
+
+interface UseIframeTimelinePlayerOptions {
+  timelineId: string | null;
+  isActive: boolean;
+  applyRemoteConfig?: (config: unknown) => void;
+  releaseRemoteConfig?: () => void;
+  onStepStart?: (payload: { step: TimelineStepWithConfig; stepIndex: number; runId: number }) => void;
+  initialStep?: number | null;
+  autoPlayOnLoad?: boolean;
+  loopOverride?: boolean | null;
+  sessionKey?: string | null;
+}
 
 export function useIframeTimelinePlayer({
   timelineId,
@@ -18,14 +31,14 @@ export function useIframeTimelinePlayer({
   autoPlayOnLoad = true,
   loopOverride = null,
   sessionKey = null,
-}) {
-  const [timeline, setTimeline] = useState(null);
+}: UseIframeTimelinePlayerOptions) {
+  const [timeline, setTimeline] = useState<IframeTimelineResolved | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
-  const timerRef = useRef(null);
+  const timerRef = useRef<number | null>(null);
   const runIdRef = useRef(0);
 
   const stopTimer = useCallback(() => {
@@ -73,13 +86,13 @@ export function useIframeTimelinePlayer({
     fetchIframeTimeline(timelineId, { signal: controller.signal })
       .then((data) => {
         if (cancelled) return;
-        const payload = data?.timeline || null;
-        let resolvedTimeline = payload;
+        const payload = (data as any)?.timeline || data;
+        let resolvedTimeline = payload as IframeTimelineResolved | null;
         if (payload && loopOverride !== null && loopOverride !== undefined) {
-          resolvedTimeline = { ...payload, loop: loopOverride };
+          resolvedTimeline = { ...(payload as IframeTimelineResolved), loop: loopOverride };
         }
         setTimeline(resolvedTimeline);
-        const steps = Array.isArray(resolvedTimeline?.steps) ? resolvedTimeline.steps : [];
+        const steps = Array.isArray(resolvedTimeline?.steps) ? (resolvedTimeline?.steps as TimelineStepWithConfig[]) : [];
         const hasSteps = steps.length > 0;
         const nextIndex =
           initialStep !== null && initialStep !== undefined
@@ -89,9 +102,9 @@ export function useIframeTimelinePlayer({
         runIdRef.current = 0;
         setIsPlaying(hasSteps && autoPlayOnLoad);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         if (cancelled) return;
-        setError(err.message || "載入 timeline 失敗");
+        setError(err?.message || "載入 timeline 失敗");
         setTimeline(null);
         setIsPlaying(false);
       })
@@ -120,7 +133,7 @@ export function useIframeTimelinePlayer({
   }, [isActive, releaseRemoteConfig, stopTimer, timelineId]);
 
   const applyStepConfig = useCallback(
-    (step) => {
+    (step: TimelineStepWithConfig | null) => {
       if (!step?.config) return;
       applyRemoteConfig?.(step.config);
     },
@@ -131,7 +144,7 @@ export function useIframeTimelinePlayer({
     if (!timeline || !isActive || !isPlaying) {
       return undefined;
     }
-    const steps = Array.isArray(timeline.steps) ? timeline.steps : [];
+    const steps = Array.isArray(timeline.steps) ? (timeline.steps as TimelineStepWithConfig[]) : [];
     if (!steps.length) {
       setIsPlaying(false);
       return undefined;
@@ -173,12 +186,12 @@ export function useIframeTimelinePlayer({
   }, [isPlaying, stopTimer]);
 
   const jumpToStep = useCallback(
-    (nextIndex, { autoplay = false } = {}) => {
+    (nextIndex: number, { autoplay = false }: { autoplay?: boolean } = {}) => {
       if (!timeline || !Array.isArray(timeline.steps) || !timeline.steps.length) return;
       const bounded = clampIndex(nextIndex, timeline.steps.length - 1);
       setCurrentStepIndex(bounded);
       if (!isPlaying) {
-        const step = timeline.steps[bounded];
+        const step = timeline.steps[bounded] as TimelineStepWithConfig;
         applyStepConfig(step);
       }
       if (autoplay) {
@@ -220,7 +233,7 @@ export function useIframeTimelinePlayer({
 
   const currentStep = useMemo(() => {
     if (!timeline || !Array.isArray(timeline.steps)) return null;
-    return timeline.steps[clampIndex(currentStepIndex, timeline.steps.length - 1)] || null;
+    return (timeline.steps[clampIndex(currentStepIndex, timeline.steps.length - 1)] as TimelineStepWithConfig) || null;
   }, [timeline, currentStepIndex]);
 
   const status = useMemo(() => {
@@ -246,5 +259,5 @@ export function useIframeTimelinePlayer({
     previous,
     jumpToStep,
     reload,
-  };
+  } as const;
 }

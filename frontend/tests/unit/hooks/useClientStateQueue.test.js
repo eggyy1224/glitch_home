@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
-import { useClientStateQueue } from "../../../src/hooks/useClientStateQueue.js";
+import { useClientStateQueue } from "../../../src/hooks/useClientStateQueue";
 import {
   fetchClientStates,
   fetchClientQueue,
@@ -9,9 +9,9 @@ import {
   delayClientQueueItems,
   moveClientQueueItems,
   stopIframeTimeline,
-} from "../../../src/api.js";
+} from "../../../src/api";
 
-vi.mock("../../../src/api.js", () => ({
+vi.mock("../../../src/api", () => ({
   fetchClientStates: vi.fn(),
   fetchClientQueue: vi.fn(),
   enqueueClientQueueItem: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock("../../../src/api.js", () => ({
 }));
 
 let socketConfig;
-vi.mock("../../../src/hooks/useControlSocket.js", () => ({
+vi.mock("../../../src/hooks/useControlSocket", () => ({
   useControlSocket: vi.fn((options) => {
     socketConfig = options;
   }),

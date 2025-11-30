@@ -1,23 +1,24 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useAppMode } from "./appMode/AppModeContext.jsx";
-import { useSubtitleCaption } from "./hooks/useSubtitleCaption.js";
-import { useScreenshotManager } from "./hooks/useScreenshotManager.js";
-import { useIframeConfig } from "./hooks/useIframeConfig.js";
-import { useCollageConfig } from "./hooks/useCollageConfig.js";
-import { useControlSocket } from "./hooks/useControlSocket.js";
-import ModeLayout from "./components/ModeLayout.jsx";
-import { DisplayModes } from "./hooks/useDisplayMode";
-import { useModeParams, KINSHIP_DATA_EXCLUDED } from "./hooks/useModeParams.js";
-import { useCameraPresets } from "./hooks/useCameraPresets.js";
-import { useKinshipData } from "./hooks/useKinshipData.js";
-import ControlPanel from "./components/ControlPanel.jsx";
-import ScreenshotMessage from "./components/ScreenshotMessage.jsx";
-import IframeTimelineControls from "./components/IframeTimelineControls.jsx";
-import { useSoundQueue } from "./hooks/useSoundQueue.js";
-import { useRemoteTimelineControl } from "./hooks/useRemoteTimelineControl.js";
-import { useControlSocketHandlers } from "./hooks/useControlSocketHandlers.js";
-import { createModeRenderMap } from "./modes/createModeRenderMap";
-import { useSilentAudioUnlock } from "./hooks/useSilentAudioUnlock.js";
+import { useAppMode } from "./appMode/AppModeContext";
+import { useSubtitleCaption } from "./hooks/useSubtitleCaption";
+import { useScreenshotManager } from "./hooks/useScreenshotManager";
+import { useIframeConfig } from "./hooks/useIframeConfig";
+import { useCollageConfig } from "./hooks/useCollageConfig";
+import { useControlSocket } from "./hooks/useControlSocket";
+import ModeLayout from "./components/ModeLayout";
+import { DisplayModes, type DisplayModeType } from "./hooks/useDisplayMode";
+import { useModeParams, KINSHIP_DATA_EXCLUDED } from "./hooks/useModeParams";
+import { useCameraPresets } from "./hooks/useCameraPresets";
+import { useKinshipData } from "./hooks/useKinshipData";
+import ControlPanel from "./components/ControlPanel";
+import ScreenshotMessage from "./components/ScreenshotMessage";
+import IframeTimelineControls from "./components/IframeTimelineControls";
+import { useSoundQueue } from "./hooks/useSoundQueue";
+import { useRemoteTimelineControl } from "./hooks/useRemoteTimelineControl";
+import { useControlSocketHandlers } from "./hooks/useControlSocketHandlers";
+import { createModeRenderMap, type ModeRenderEntry } from "./modes/createModeRenderMap";
+import { useSilentAudioUnlock } from "./hooks/useSilentAudioUnlock";
+import type { VideoController } from "./types/control";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const IFRAME_DEFAULT_CONFIG = {
@@ -48,12 +49,11 @@ const IFRAME_DEFAULT_CONFIG = {
   ],
 };
 
-
 export default function App() {
   const [showInfo, setShowInfo] = useState(false);
-  const [fps, setFps] = useState(null);
-  const videoControllerRef = useRef(null);
-  const unlockAudioElementRef = useSilentAudioUnlock();
+  const [fps, setFps] = useState<number | null>(null);
+  const videoControllerRef = useRef<VideoController | null>(null);
+  const unlockAudioElementRef = useSilentAudioUnlock() as React.MutableRefObject<HTMLAudioElement | null>;
 
   const {
     initialParams,
@@ -75,7 +75,7 @@ export default function App() {
   const canRebuildIndex = capabilities?.canRebuildIndex ?? true;
   const forbidMessage = `目前 APP_MODE=${appMode} 禁止此操作`;
 
-  const [activeModeOverride, setActiveModeOverride] = useState(null);
+  const [activeModeOverride, setActiveModeOverride] = useState<DisplayModeType | null>(null);
   const rawActiveMode = activeModeOverride ?? defaultActiveMode;
   const activeMode = (() => {
     if (!canGenerate && (rawActiveMode === DisplayModes.GENERATE || rawActiveMode === DisplayModes.COLLAGE_VERSION)) {
@@ -191,13 +191,13 @@ export default function App() {
     videoControllerRef,
   });
 
-  const handleFpsUpdate = useCallback((value) => {
+  const handleFpsUpdate = useCallback((value: number | null) => {
     setFps(value);
   }, []);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && (e.key === "r" || e.key === "R")) {
         e.preventDefault();
         setShowInfo((v) => !v);
@@ -340,7 +340,7 @@ export default function App() {
     canRebuildIndex,
   });
 
-  const activeModeEntry = modeRenderMap[activeMode];
+  const activeModeEntry: ModeRenderEntry | undefined = modeRenderMap[activeMode];
 
   if (!activeModeEntry) {
     return null;

@@ -1,6 +1,14 @@
 import { lazy, type ComponentType, type ReactNode } from "react";
 import { DisplayModes } from "../hooks/useDisplayMode";
 
+export type ModeRenderEntry = {
+  component: ComponentType<any>;
+  componentProps?: Record<string, unknown>;
+  withCaptureReady?: boolean;
+  beforeContent?: ReactNode;
+  afterContent?: ReactNode;
+};
+
 type ModeBaseConfig = {
   component: ComponentType<any>;
   withCaptureReady?: boolean;
@@ -10,7 +18,7 @@ type ModeEntryOverrides = {
   componentProps?: Record<string, unknown>;
   beforeContent?: ReactNode;
   afterContent?: ReactNode;
-} & Record<string, unknown>;
+};
 
 const IframeMode = lazy(() => import("../IframeMode"));
 const SlideMode = lazy(() => import("../SlideMode"));
@@ -40,13 +48,12 @@ const modeBaseConfigs: Record<string, ModeBaseConfig> = {
   [DisplayModes.ADMIN]: { component: AdminPanel },
 };
 
-function buildModeEntry(baseConfig: ModeBaseConfig, overrides: ModeEntryOverrides = {}) {
+function buildModeEntry(baseConfig: ModeBaseConfig, overrides: ModeEntryOverrides = {}): ModeRenderEntry {
   const { component, withCaptureReady } = baseConfig;
-  const { componentProps, beforeContent, afterContent, ...restOverrides } = overrides;
+  const { componentProps, beforeContent, afterContent } = overrides;
 
-  const entry: Record<string, unknown> = {
+  const entry: ModeRenderEntry = {
     component,
-    ...restOverrides,
   };
 
   if (withCaptureReady) {
@@ -67,6 +74,8 @@ function buildModeEntry(baseConfig: ModeBaseConfig, overrides: ModeEntryOverride
 
   return entry;
 }
+
+export type ModeRenderMap = Record<string, ModeRenderEntry>;
 
 export function createModeRenderMap({
   iframeActiveConfig,
@@ -100,7 +109,7 @@ export function createModeRenderMap({
   forbidMessage,
   canAnalyze,
   canRebuildIndex,
-}) {
+}): ModeRenderMap {
   return {
     [DisplayModes.IFRAME]: buildModeEntry(modeBaseConfigs[DisplayModes.IFRAME], {
       componentProps: {

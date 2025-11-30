@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { clampInt } from "../utils/iframeConfig.js";
-import { DisplayModes, useDisplayMode } from "./useDisplayMode";
+import { clampInt } from "../utils/iframeConfig";
+import { DisplayModes, useDisplayMode, type DisplayModeType } from "./useDisplayMode";
 
 const DEFAULT_SLIDE_INTERVAL = 3000;
 const MIN_SLIDE_INTERVAL = 1000;
 
-export const KINSHIP_DATA_EXCLUDED = new Set([
+export const KINSHIP_DATA_EXCLUDED: Set<DisplayModeType> = new Set([
   DisplayModes.ORGANIC,
   DisplayModes.SLIDE,
   DisplayModes.IFRAME,
@@ -16,7 +16,21 @@ export const KINSHIP_DATA_EXCLUDED = new Set([
 
 export const readSearchParams = () => new URLSearchParams(window.location.search);
 
-export function useModeParams() {
+export interface ModeParamsResult {
+  activeMode: DisplayModeType;
+  modeConfig: Record<string, unknown> | null;
+  incubatorMode: boolean;
+  phylogenyMode: boolean;
+  initialParams: URLSearchParams;
+  initialImg: string | null;
+  soundPlayerEnabled: boolean;
+  slideIntervalMs: number;
+  clientId: string;
+  iframeTimelineId: string | null;
+  shouldLoadKinshipData: boolean;
+}
+
+export function useModeParams(): ModeParamsResult {
   const initialParams = useMemo(() => readSearchParams(), []);
   const { type, config } = useDisplayMode(initialParams);
   const incubatorMode = Boolean(config?.incubator);

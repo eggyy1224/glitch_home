@@ -1,6 +1,10 @@
 import React from "react";
 
-export default function ScreenshotMessage({ message }) {
+interface ScreenshotMessageProps {
+  message?: string | null;
+}
+
+export default function ScreenshotMessage({ message }: ScreenshotMessageProps) {
   if (!message) {
     return null;
   }

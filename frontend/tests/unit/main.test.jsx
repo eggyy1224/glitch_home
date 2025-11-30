@@ -11,17 +11,17 @@ vi.mock("react-dom/client", () => ({
   createRoot: createRootMock,
 }));
 
-vi.mock("../../src/App.jsx", () => ({
+vi.mock("../../src/App", () => ({
   __esModule: true,
   default: AppMock,
 }));
 
-vi.mock("../../src/appMode/AppModeContext.jsx", () => ({
+vi.mock("../../src/appMode/AppModeContext", () => ({
   __esModule: true,
   AppModeProvider: AppModeProviderMock,
 }));
 
-describe("main.jsx", () => {
+describe("main.tsx", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
@@ -29,7 +29,7 @@ describe("main.jsx", () => {
   });
 
   it("會將 App 掛載到 root 節點", async () => {
-    await import("../../src/main.jsx");
+    await import("../../src/main");
 
     const rootEl = document.getElementById("root");
     expect(createRootMock).toHaveBeenCalledWith(rootEl);

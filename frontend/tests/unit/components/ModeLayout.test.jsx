@@ -1,16 +1,16 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
-import ModeLayout from "../../../src/components/ModeLayout.jsx";
+import ModeLayout from "../../../src/components/ModeLayout";
 
 const DummyComponent = vi.fn(() => <div data-testid="dummy" />);
 
-vi.mock("../../../src/SoundPlayer.jsx", () => ({
+vi.mock("../../../src/SoundPlayer", () => ({
   __esModule: true,
   default: (props) => <div data-testid="sound-player" data-visible={props.visible ? "1" : "0"} />,
 }));
 
-vi.mock("../../../src/SubtitleOverlay.jsx", () => ({
+vi.mock("../../../src/SubtitleOverlay", () => ({
   __esModule: true,
   default: (props) => <div data-testid="subtitle" data-text={props.subtitle || ""} />,
 }));

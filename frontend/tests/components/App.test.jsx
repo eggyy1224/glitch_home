@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
 import { render, screen } from "@testing-library/react";
-import App from "../../src/App.jsx";
+import App from "../../src/App";
 import { DisplayModes } from "../../src/hooks/useDisplayMode";
 
 const {
@@ -53,67 +53,67 @@ const {
   };
 });
 
-vi.mock("../../src/hooks/useModeParams.js", () => ({
+vi.mock("../../src/hooks/useModeParams", () => ({
   useModeParams: mockUseModeParams,
   KINSHIP_DATA_EXCLUDED,
 }));
 
-vi.mock("../../src/hooks/useCameraPresets.js", () => ({
+vi.mock("../../src/hooks/useCameraPresets", () => ({
   useCameraPresets: mockUseCameraPresets,
 }));
 
-vi.mock("../../src/hooks/useKinshipData.js", () => ({
+vi.mock("../../src/hooks/useKinshipData", () => ({
   useKinshipData: mockUseKinshipData,
 }));
 
-vi.mock("../../src/hooks/useSubtitleCaption.js", () => ({
+vi.mock("../../src/hooks/useSubtitleCaption", () => ({
   useSubtitleCaption: mockUseSubtitleCaption,
 }));
 
-vi.mock("../../src/hooks/useScreenshotManager.js", () => ({
+vi.mock("../../src/hooks/useScreenshotManager", () => ({
   useScreenshotManager: mockUseScreenshotManager,
 }));
 
-vi.mock("../../src/hooks/useIframeConfig.js", () => ({
+vi.mock("../../src/hooks/useIframeConfig", () => ({
   useIframeConfig: mockUseIframeConfig,
 }));
 
-vi.mock("../../src/hooks/useCollageConfig.js", () => ({
+vi.mock("../../src/hooks/useCollageConfig", () => ({
   useCollageConfig: mockUseCollageConfig,
 }));
 
-vi.mock("../../src/hooks/useSoundQueue.js", () => ({
+vi.mock("../../src/hooks/useSoundQueue", () => ({
   useSoundQueue: mockUseSoundQueue,
 }));
 
-vi.mock("../../src/hooks/useRemoteTimelineControl.js", () => ({
+vi.mock("../../src/hooks/useRemoteTimelineControl", () => ({
   useRemoteTimelineControl: mockUseRemoteTimelineControl,
 }));
 
-vi.mock("../../src/hooks/useControlSocketHandlers.js", () => ({
+vi.mock("../../src/hooks/useControlSocketHandlers", () => ({
   useControlSocketHandlers: mockUseControlSocketHandlers,
 }));
 
-vi.mock("../../src/hooks/useControlSocket.js", () => ({
+vi.mock("../../src/hooks/useControlSocket", () => ({
   useControlSocket: mockUseControlSocket,
 }));
 
-vi.mock("../../src/components/ModeLayout.jsx", () => ({
+vi.mock("../../src/components/ModeLayout", () => ({
   __esModule: true,
   default: ModeLayoutMock,
 }));
 
-vi.mock("../../src/components/ControlPanel.jsx", () => ({
+vi.mock("../../src/components/ControlPanel", () => ({
   __esModule: true,
   default: ControlPanelMock,
 }));
 
-vi.mock("../../src/components/ScreenshotMessage.jsx", () => ({
+vi.mock("../../src/components/ScreenshotMessage", () => ({
   __esModule: true,
   default: ScreenshotMessageMock,
 }));
 
-vi.mock("../../src/components/IframeTimelineControls.jsx", () => ({
+vi.mock("../../src/components/IframeTimelineControls", () => ({
   __esModule: true,
   default: IframeTimelineControlsMock,
 }));

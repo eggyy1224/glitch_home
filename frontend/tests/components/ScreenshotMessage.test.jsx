@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import ScreenshotMessage from "../../src/components/ScreenshotMessage.jsx";
+import ScreenshotMessage from "../../src/components/ScreenshotMessage";
 
 describe("ScreenshotMessage", () => {
   it("shows message when present", () => {
