@@ -64,7 +64,8 @@ describe("useKinshipNavigation", () => {
     });
 
     expect(setTimeout).toHaveBeenCalled();
-    const [callback, delay] = (setTimeout as jest.Mock).mock.calls[0];
+    const firstCall = setTimeout.mock.calls[0] || [];
+    const [callback, delay] = firstCall;
     expect(typeof callback).toBe("function");
     expect(delay).toBe(5000);
     scheduledCallback();
