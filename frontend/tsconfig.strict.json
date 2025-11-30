@@ -33,6 +33,11 @@
     "src/utils/html2canvasLoader.ts",
     "src/utils/request.ts",
     "src/utils/adminEditorUtils.ts",
-    "src/components/TimelineEpisodeEditor.tsx"
+    "src/components/TimelineEpisodeEditor.tsx",
+    "src/components/SnapshotManager.tsx",
+    "src/components/TimelineManager.tsx",
+    "src/components/EpisodeManager.tsx",
+    "src/components/ClientStateQueuePanel.tsx",
+    "src/AdminPanel.tsx"
   ]
 }

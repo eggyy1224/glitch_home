@@ -21,6 +21,8 @@ import {
 } from "../AdminPanelStyles";
 import { defaultTimelinePayload, firstSnapshotRef, previewSrcFromConfig, pretty, timelinePlaybackSrc } from "../adminPanelUtils";
 import { getIframeSnapshot } from "../api";
+import type { IframeTimeline } from "../types/timeline";
+import type { SnapshotConfig } from "../types/admin";
 
 export default function TimelineManager() {
   const { defaultClientId } = useContext(AdminPanelContext);
@@ -29,7 +31,7 @@ export default function TimelineManager() {
     return Math.max(Math.min(window.innerWidth - 100, 1200), 720);
   }, []);
 
-  const [timelineList, setTimelineList] = useState([]);
+  const [timelineList, setTimelineList] = useState<IframeTimeline[]>([]);
   const [timelineClientFilter, setTimelineClientFilter] = useState("");
   const [timelineId, setTimelineId] = useState("");
   const [timelineJson, setTimelineJson] = useState(() => pretty(defaultTimelinePayload(defaultClientId)));
@@ -39,13 +41,13 @@ export default function TimelineManager() {
     const base = defaultClientId && defaultClientId !== "admin" ? defaultClientId : "desktop";
     return base === "desktop" ? "desktop2" : base;
   });
-  const [timelinePreviewSrc, setTimelinePreviewSrc] = useState(null);
-  const [timelinePreviewError, setTimelinePreviewError] = useState(null);
-  const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);
-  const [timelinePlayError, setTimelinePlayError] = useState(null);
+  const [timelinePreviewSrc, setTimelinePreviewSrc] = useState<string | null>(null);
+  const [timelinePreviewError, setTimelinePreviewError] = useState<string | null>(null);
+  const [timelinePlaySrc, setTimelinePlaySrc] = useState<string | null>(null);
+  const [timelinePlayError, setTimelinePlayError] = useState<string | null>(null);
   const [timelinePlayTarget, setTimelinePlayTarget] = useState(defaultClientId);
   const [timelinePlayStatus, setTimelinePlayStatus] = useState("");
-  const [timelinePreviewWidth, setTimelinePreviewWidth] = useState(defaultPreviewWidth);
+  const [timelinePreviewWidth, setTimelinePreviewWidth] = useState<number>(defaultPreviewWidth);
 
   const timelineFrameHeight = useMemo(() => {
     const colWidth = (timelinePreviewWidth - 12) / 2;
@@ -53,17 +55,17 @@ export default function TimelineManager() {
     return Math.max(320, Math.round((width * 9) / 16));
   }, [timelinePreviewWidth]);
 
-  const clampPreviewWidth = useCallback((width) => {
+  const clampPreviewWidth = useCallback((width: number) => {
     const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
     return Math.min(Math.max(width, 560), Math.min(max, 1800));
   }, []);
 
   const startResize = useCallback(
-    (event) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       const startX = event.clientX;
       const startWidth = timelinePreviewWidth;
-      const onMove = (e) => {
+      const onMove = (e: MouseEvent) => {
         const delta = e.clientX - startX;
         setTimelinePreviewWidth(clampPreviewWidth(startWidth + delta));
       };
@@ -80,14 +82,14 @@ export default function TimelineManager() {
   const refreshTimelines = useCallback(async () => {
     try {
       const data = await listIframeTimelines(timelineClientFilter || null);
-      setTimelineList(Array.isArray(data.timelines) ? data.timelines : []);
+      setTimelineList(Array.isArray(data.timelines) ? (data.timelines as IframeTimeline[]) : []);
       setTimelineMessage(`已載入 ${data.timelines?.length ?? 0} 筆 timeline`);
     } catch (err) {
-      setTimelineMessage(err.message || "載入 timeline 失敗");
+      setTimelineMessage((err as Error)?.message || "載入 timeline 失敗");
     }
   }, [timelineClientFilter]);
 
-  const handleLoadTimeline = useCallback(async (id) => {
+  const handleLoadTimeline = useCallback(async (id: string) => {
     try {
       const data = await fetchIframeTimeline(id, { resolve: false });
       const timelinePayload = (data as { timeline?: unknown }).timeline ?? data;
@@ -132,7 +134,7 @@ export default function TimelineManager() {
         setTimelinePlayError(null);
         await refreshTimelines();
       } catch (err) {
-        setTimelineMessage(err.message || "儲存失敗");
+        setTimelineMessage((err as Error)?.message || "儲存失敗");
       }
     },
     [refreshTimelines, timelineId, timelineJson],
@@ -151,7 +153,7 @@ export default function TimelineManager() {
         setTimelinePlayError(null);
         setTimelinePlayStatus("");
       } catch (err) {
-        setTimelineMessage(err.message || "刪除失敗");
+        setTimelineMessage((err as Error)?.message || "刪除失敗");
       }
     },
     [refreshTimelines, timelineId],

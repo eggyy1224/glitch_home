@@ -3,8 +3,9 @@ import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, columnsStyle, columnStyle, labelStyle } from "../AdminPanelStyles";
 import { useClientStateQueue } from "../hooks/useClientStateQueue";
 import { listEpisodes, listIframeSnapshots, listIframeTimelines } from "../api";
+import type { ClientQueueItem, ClientState, EpisodeEntry, IframeTimeline, SnapshotEntry } from "../types/admin";
 
-function formatTime(value) {
+function formatTime(value: unknown) {
   if (!value) return "--";
   try {
     const date = new Date(value);
@@ -14,7 +15,7 @@ function formatTime(value) {
   }
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status }: { status?: string | null }) {
   const palette = {
     online: "#3aff85",
     busy: "#f4c15c",
@@ -42,7 +43,15 @@ function StatusBadge({ status }) {
   );
 }
 
-function ClientCard({ client, active, onSelect }) {
+function ClientCard({
+  client,
+  active,
+  onSelect,
+}: {
+  client: ClientState;
+  active: boolean;
+  onSelect: (id?: string | null) => void;
+}) {
   const { client_id: id, status, last_heartbeat: heartbeat, queue_size: queueSize, current_item: currentItem, errors } = client;
   return (
     <button
@@ -94,7 +103,21 @@ function ClientCard({ client, active, onSelect }) {
   );
 }
 
-function QueueRow({ item, onCancel, onMoveFront, onMoveBack, onDelay, onForceStop }) {
+function QueueRow({
+  item,
+  onCancel,
+  onMoveFront,
+  onMoveBack,
+  onDelay,
+  onForceStop,
+}: {
+  item: ClientQueueItem;
+  onCancel: (item: ClientQueueItem) => void;
+  onMoveFront: (item: ClientQueueItem) => void;
+  onMoveBack: (item: ClientQueueItem) => void;
+  onDelay: (item: ClientQueueItem, seconds: number) => void;
+  onForceStop: (item: ClientQueueItem) => void;
+}) {
   const isStopSupported = item.type === "timeline" || item.type === "episode";
   return (
     <tr data-ai-item={`queue:${item.id}`}>
@@ -141,7 +164,7 @@ export default function ClientStateQueuePanel() {
   const [retries, setRetries] = useState(0);
   const [etaSeconds, setEtaSeconds] = useState("");
   const [clientOverride, setClientOverride] = useState(defaultClientId || "");
-  const [targetOptions, setTargetOptions] = useState([]);
+  const [targetOptions, setTargetOptions] = useState<Array<{ value?: string; label: string }>>([]);
   const [targetOptionsMessage, setTargetOptionsMessage] = useState("");
   const [loadingTargets, setLoadingTargets] = useState(false);
   const targetRequestRef = useRef(0);
@@ -190,14 +213,14 @@ export default function ClientStateQueuePanel() {
 
       if (resolvedType === "snapshot") {
         const data = await listIframeSnapshots(resolvedClient || null);
-        const list = Array.isArray(data?.snapshots) ? data.snapshots : [];
+        const list = Array.isArray(data?.snapshots) ? (data.snapshots as SnapshotEntry[]) : [];
         if (requestId === targetRequestRef.current) {
-          setTargetOptions(list.map((item) => ({ value: item.name, label: `${item.name}` })));
+          setTargetOptions(list.map((item) => ({ value: item.name || "", label: `${item.client || resolvedClient || ""}/${item.name}` })));
           setTargetOptionsMessage(`已載入 ${list.length} 個 snapshot`);
         }
       } else if (resolvedType === "timeline") {
         const data = await listIframeTimelines(resolvedClient || null);
-        const list = Array.isArray(data?.timelines) ? data.timelines : [];
+        const list = Array.isArray(data?.timelines) ? (data.timelines as IframeTimeline[]) : [];
         if (requestId === targetRequestRef.current) {
           setTargetOptions(
             list.map((item) => ({
@@ -209,7 +232,7 @@ export default function ClientStateQueuePanel() {
         }
       } else {
         const data = await listEpisodes();
-        const list = Array.isArray(data?.episodes) ? data.episodes : [];
+        const list = Array.isArray(data?.episodes) ? (data.episodes as EpisodeEntry[]) : [];
         if (requestId === targetRequestRef.current) {
           setTargetOptions(
             list.map((item) => ({
@@ -223,7 +246,7 @@ export default function ClientStateQueuePanel() {
     } catch (err) {
       if (requestId === targetRequestRef.current) {
         setTargetOptions([]);
-        setTargetOptionsMessage(err.message || "載入可選目標失敗");
+        setTargetOptionsMessage((err as Error)?.message || "載入可選目標失敗");
       }
     } finally {
       if (requestId === targetRequestRef.current) {
@@ -253,7 +276,7 @@ export default function ClientStateQueuePanel() {
       });
       setTargetId("");
     } catch (err) {
-      alert(err.message || "新增佇列失敗");
+      alert((err as Error)?.message || "新增佇列失敗");
     }
   };
 

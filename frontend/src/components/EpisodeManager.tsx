@@ -11,10 +11,11 @@ import {
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, labelStyle } from "../AdminPanelStyles";
 import { defaultEpisodePayload, parseTargetMap, pretty } from "../adminPanelUtils";
+import type { EpisodeEntry } from "../types/timeline";
 
 export default function EpisodeManager() {
   const { defaultClientId } = useContext(AdminPanelContext);
-  const [episodeList, setEpisodeList] = useState([]);
+  const [episodeList, setEpisodeList] = useState<EpisodeEntry[]>([]);
   const [episodeId, setEpisodeId] = useState("");
   const [episodeJson, setEpisodeJson] = useState(() => pretty(defaultEpisodePayload(defaultClientId)));
   const [episodeMessage, setEpisodeMessage] = useState("");
@@ -26,26 +27,26 @@ export default function EpisodeManager() {
   const refreshEpisodes = useCallback(async () => {
     try {
       const data = await listEpisodes();
-      setEpisodeList(Array.isArray(data.episodes) ? data.episodes : []);
+      setEpisodeList(Array.isArray(data.episodes) ? (data.episodes as EpisodeEntry[]) : []);
       setEpisodeMessage(`已載入 ${data.episodes?.length ?? 0} 筆 episode`);
     } catch (err) {
-      setEpisodeMessage(err.message || "載入 episode 失敗");
+      setEpisodeMessage((err as Error)?.message || "載入 episode 失敗");
     }
   }, []);
 
-  const handleLoadEpisode = useCallback(async (id) => {
+  const handleLoadEpisode = useCallback(async (id: string) => {
     try {
       const data = await fetchEpisode(id, { resolve: false });
       setEpisodeId(id);
       setEpisodeJson(pretty(data.episode || data));
       setEpisodeMessage(`已載入 episode ${id}`);
     } catch (err) {
-      setEpisodeMessage(err.message || "載入 episode 失敗");
+      setEpisodeMessage((err as Error)?.message || "載入 episode 失敗");
     }
   }, []);
 
   const handleSaveEpisode = useCallback(
-    async (mode) => {
+    async (mode: "update" | "create") => {
       try {
         const parsed = JSON.parse(episodeJson);
         const inputId = (episodeId || "").trim();
@@ -63,14 +64,14 @@ export default function EpisodeManager() {
         setEpisodeMessage(`${mode === "update" ? "已更新" : "已建立"} episode ${targetId}`);
         await refreshEpisodes();
       } catch (err) {
-        setEpisodeMessage(err.message || "儲存失敗");
+        setEpisodeMessage((err as Error)?.message || "儲存失敗");
       }
     },
     [episodeId, episodeJson, refreshEpisodes],
   );
 
   const handleDeleteEpisode = useCallback(
-    async (id) => {
+    async (id: string) => {
       try {
         await deleteEpisode(id);
         setEpisodeMessage(`已刪除 episode ${id}`);
@@ -79,7 +80,7 @@ export default function EpisodeManager() {
           setEpisodeId("");
         }
       } catch (err) {
-        setEpisodeMessage(err.message || "刪除失敗");
+        setEpisodeMessage((err as Error)?.message || "刪除失敗");
       }
     },
     [episodeId, refreshEpisodes],
@@ -95,7 +96,7 @@ export default function EpisodeManager() {
       setEpisodeMessage(`已複製 episode 為 ${episodeCloneId}`);
       await refreshEpisodes();
     } catch (err) {
-      setEpisodeMessage(err.message || "複製失敗");
+      setEpisodeMessage((err as Error)?.message || "複製失敗");
     }
   }, [episodeCloneId, episodeId, refreshEpisodes]);
 
@@ -118,7 +119,7 @@ export default function EpisodeManager() {
       const data = await playEpisode(episodeId, payload);
       setEpisodePlayStatus(`已送出（${data?.tracks?.length ?? 0} 條 track）`);
     } catch (err) {
-      setEpisodePlayStatus(err.message || "播放指令失敗");
+      setEpisodePlayStatus((err as Error)?.message || "播放指令失敗");
     }
   }, [episodeCommandPrefix, episodeId, episodeTargetMapText]);
 

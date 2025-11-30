@@ -10,6 +10,8 @@ import {
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, labelStyle, previewContainerStyle, previewTitleStyle, resizerHandleStyle, resizerHitboxStyle, snapshotPreviewIframeStyle } from "../AdminPanelStyles";
 import { minimalConfigPayload, previewSrcFromConfig, pretty } from "../adminPanelUtils";
+import type { SnapshotConfig } from "../types/admin";
+import type { SnapshotEntry } from "../types/timeline";
 
 export default function SnapshotManager() {
   const { defaultClientId } = useContext(AdminPanelContext);
@@ -19,7 +21,7 @@ export default function SnapshotManager() {
   }, []);
 
   const [snapshotClient, setSnapshotClient] = useState(defaultClientId || "desktop");
-  const [snapshotList, setSnapshotList] = useState([]);
+  const [snapshotList, setSnapshotList] = useState<SnapshotEntry[]>([]);
   const [snapshotName, setSnapshotName] = useState("");
   const [snapshotJson, setSnapshotJson] = useState(() => pretty(minimalConfigPayload(defaultClientId)));
   const [snapshotMessage, setSnapshotMessage] = useState("");
@@ -28,8 +30,8 @@ export default function SnapshotManager() {
     return base === "desktop" ? "desktop2" : base;
   });
   const [snapshotCloneName, setSnapshotCloneName] = useState("");
-  const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
-  const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState(defaultPreviewWidth);
+  const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState<string | null>(null);
+  const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState<number>(defaultPreviewWidth);
 
   const snapshotFrameHeight = useMemo(
     () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
@@ -38,17 +40,17 @@ export default function SnapshotManager() {
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRequestIdRef = useRef(0);
 
-  const clampPreviewWidth = useCallback((width) => {
+  const clampPreviewWidth = useCallback((width: number) => {
     const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
     return Math.min(Math.max(width, 560), Math.min(max, 1800));
   }, []);
 
   const startResize = useCallback(
-    (event) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       const startX = event.clientX;
       const startWidth = snapshotPreviewWidth;
-      const onMove = (e) => {
+      const onMove = (e: MouseEvent) => {
         const delta = e.clientX - startX;
         setSnapshotPreviewWidth(clampPreviewWidth(startWidth + delta));
       };
@@ -70,25 +72,25 @@ export default function SnapshotManager() {
     try {
       const data = await listIframeSnapshots(client || null);
       if (refreshRequestIdRef.current !== requestId) return;
-      setSnapshotList(Array.isArray(data.snapshots) ? data.snapshots : []);
+      setSnapshotList(Array.isArray(data.snapshots) ? (data.snapshots as SnapshotEntry[]) : []);
       setSnapshotMessage(`已載入 ${data.snapshots?.length ?? 0} 筆 snapshot (${label})`);
     } catch (err) {
       if (refreshRequestIdRef.current !== requestId) return;
-      setSnapshotMessage(err.message || "載入 snapshot 失敗");
+      setSnapshotMessage((err as Error)?.message || "載入 snapshot 失敗");
     }
   }, [snapshotClient]);
 
   const handleLoadSnapshot = useCallback(
-    async (name) => {
+    async (name: string) => {
       try {
         const data = await getIframeSnapshot(snapshotClient, name);
-        const raw = data.raw || data.snapshot || data;
+        const raw = (data as { raw?: unknown; snapshot?: unknown }).raw || (data as { snapshot?: unknown }).snapshot || data;
         setSnapshotName(name);
         setSnapshotJson(pretty(raw));
-        setSnapshotPreviewSrc(previewSrcFromConfig(raw));
+        setSnapshotPreviewSrc(previewSrcFromConfig(raw as Partial<SnapshotConfig>));
         setSnapshotMessage(`已載入 snapshot ${name}`);
       } catch (err) {
-        setSnapshotMessage(err.message || "載入 snapshot 失敗");
+        setSnapshotMessage((err as Error)?.message || "載入 snapshot 失敗");
       }
     },
     [snapshotClient],
@@ -102,16 +104,16 @@ export default function SnapshotManager() {
     try {
       const parsed = JSON.parse(snapshotJson);
       const data = await saveIframeSnapshot(snapshotClient, snapshotName.trim(), parsed);
-      setSnapshotMessage(`已儲存 snapshot ${data.snapshot?.name || snapshotName}`);
-      setSnapshotPreviewSrc(previewSrcFromConfig(parsed));
+      setSnapshotMessage(`已儲存 snapshot ${(data as { snapshot?: { name?: string } }).snapshot?.name || snapshotName}`);
+      setSnapshotPreviewSrc(previewSrcFromConfig(parsed as Partial<SnapshotConfig>));
       await refreshSnapshots();
     } catch (err) {
-      setSnapshotMessage(err.message || "儲存失敗");
+      setSnapshotMessage((err as Error)?.message || "儲存失敗");
     }
   }, [refreshSnapshots, snapshotClient, snapshotJson, snapshotName]);
 
   const handleDeleteSnapshot = useCallback(
-    async (name) => {
+    async (name: string) => {
       try {
         await deleteIframeSnapshot(snapshotClient, name);
         setSnapshotMessage(`已刪除 snapshot ${name}`);
@@ -120,7 +122,7 @@ export default function SnapshotManager() {
           setSnapshotName("");
         }
       } catch (err) {
-        setSnapshotMessage(err.message || "刪除失敗");
+        setSnapshotMessage((err as Error)?.message || "刪除失敗");
       }
     },
     [refreshSnapshots, snapshotClient, snapshotName],
@@ -140,7 +142,7 @@ export default function SnapshotManager() {
   }, [refreshSnapshots, snapshotClient, snapshotCloneName, snapshotCloneTarget, snapshotName]);
 
   const handlePlaySnapshot = useCallback(
-    async (name) => {
+    async (name: string) => {
       const targetClient = (snapshotClient || "").trim();
       const targetSnapshot = name || snapshotName;
       if (!targetClient) {
@@ -156,7 +158,7 @@ export default function SnapshotManager() {
         await restoreIframeSnapshot(targetClient, targetSnapshot);
         setSnapshotMessage(`已送出播放：${targetSnapshot} 到 ${targetClient}`);
       } catch (err) {
-        setSnapshotMessage(err.message || "播放指令失敗");
+        setSnapshotMessage((err as Error)?.message || "播放指令失敗");
       }
     },
     [snapshotClient, snapshotName],
