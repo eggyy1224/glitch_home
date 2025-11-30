@@ -11,12 +11,21 @@ import {
   triggerTts,
   unlockAudio,
 } from "../api";
+import type {
+  CaptionAction,
+  RemoteClickAction,
+  SubtitleAction,
+  TimelineStep,
+  TtsAction,
+  VideoControlAction,
+} from "../types/timeline";
+import type { AppModeCapabilities } from "../types/mode";
 
-function numberOrUndefined(value: any) {
+function numberOrUndefined(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-function assignIfDefined(target: any, key: string, value: any) {
+function assignIfDefined(target: Record<string, unknown>, key: string, value: unknown) {
   if (value === undefined || value === null) return;
   target[key] = value;
 }
@@ -24,12 +33,7 @@ function assignIfDefined(target: any, key: string, value: any) {
 interface TimelineStepActionsOptions {
   clientId?: string;
   onError?: (message: string) => void;
-  capabilities?: {
-    canWriteAssets?: boolean;
-    canAnalyze?: boolean;
-    forbidMessage?: string;
-    [key: string]: any;
-  };
+  capabilities?: Partial<Pick<AppModeCapabilities, "canWriteAssets" | "canAnalyze">> & { forbidMessage?: string };
 }
 
 export function useTimelineStepActions({
@@ -39,10 +43,10 @@ export function useTimelineStepActions({
 }: TimelineStepActionsOptions = {}) {
   const [actionError, setActionError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
-  const activeRunRef = useRef<any>(null);
+  const activeRunRef = useRef<number | string | null>(null);
   const actionErrorRef = useRef<string | null>(null);
-  const remoteClickTimersRef = useRef<any[]>([]);
-  const videoControlTimersRef = useRef<any[]>([]);
+  const remoteClickTimersRef = useRef<number[]>([]);
+  const videoControlTimersRef = useRef<number[]>([]);
   const {
     canWriteAssets = true,
     canAnalyze = true,
@@ -87,7 +91,7 @@ export function useTimelineStepActions({
   );
 
   const reportActionError = useCallback(
-    (message) => {
+    (message: string) => {
       actionErrorRef.current = message;
       setActionError(message);
       onError?.(message);
@@ -107,7 +111,17 @@ export function useTimelineStepActions({
   }, [onError]);
 
   const executeStepActions = useCallback(
-    async ({ step, timelineId, stepIndex, runId }) => {
+    async ({
+      step,
+      timelineId,
+      stepIndex,
+      runId,
+    }: {
+      step: TimelineStep;
+      timelineId?: string | null;
+      stepIndex?: number;
+      runId: number | string;
+    }) => {
       if (!step || runId == null) return;
       cancelPendingActions();
       const controller = new AbortController();
@@ -117,15 +131,22 @@ export function useTimelineStepActions({
 
       const isStale = () => signal.aborted || activeRunRef.current !== runId;
 
-      const actionsRan = [];
-      const errors = [];
+      const actionsRan: string[] = [];
+      const errors: string[] = [];
       let hasErrors = false;
 
-      const handleError = (label, err) => {
-        if (err?.name === "AbortError" || isStale()) {
+      const handleError = (label: string, err: unknown) => {
+        const isAbort = err instanceof Error && err.name === "AbortError";
+        if (isAbort || isStale()) {
           return;
         }
-        const message = `[${label}] ${err?.message || String(err)}`;
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : err && typeof err === "object" && "message" in err
+              ? String((err as { message?: unknown }).message)
+              : null;
+        const message = `[${label}] ${errorMessage || String(err)}`;
         errors.push(message);
         hasErrors = true;
         console.error("Timeline step action failed:", label, err);
@@ -142,16 +163,16 @@ export function useTimelineStepActions({
         reportActionError(summary);
       };
 
-      const resolveTarget = (actionTarget) => actionTarget || step.client_id || clientId || null;
+      const resolveTarget = (actionTarget?: string | null) => actionTarget || step.client_id || (clientId ?? null);
 
-      const remoteClicks = Array.isArray(step.remote_clicks)
+      const remoteClicks: RemoteClickAction[] = Array.isArray(step.remote_clicks)
         ? step.remote_clicks
         : Array.isArray(step.remoteClicks)
           ? step.remoteClicks
           : [];
       const hasRemoteClicks = remoteClicks.length > 0;
 
-      const videoControls = Array.isArray(step.video_controls)
+      const videoControls: VideoControlAction[] = Array.isArray(step.video_controls)
         ? step.video_controls
         : Array.isArray(step.videoControls)
           ? step.videoControls
@@ -164,13 +185,13 @@ export function useTimelineStepActions({
           ? step.unlockAudioTargets
           : [];
 
-      const scheduleRemoteClick = (action, index) => {
+      const scheduleRemoteClick = (action: RemoteClickAction | null | undefined, index: number) => {
         if (!action) return;
         const actionLabel =
           (typeof action.label === "string" && action.label.trim()) || `remote_${index + 1}`;
-        const getSelector = (value) => (typeof value === "string" ? value.trim() : "");
+        const getSelector = (value: unknown) => (typeof value === "string" ? value.trim() : "");
         const buildPayload = () => {
-          const payload: any = {};
+          const payload: Record<string, unknown> = {};
           const selector = getSelector(action.selector);
           if (selector) {
             payload.selector = selector;
@@ -224,12 +245,12 @@ export function useTimelineStepActions({
         remoteClickTimersRef.current.push(timerId);
       };
 
-      const scheduleVideoControl = (action, index) => {
+      const scheduleVideoControl = (action: VideoControlAction | null | undefined, index: number) => {
         if (!action || !action.action) return;
         const labelBase = typeof action.action === "string" ? action.action : "video";
         const actionLabel = `${labelBase}_${index + 1}`;
         const buildPayload = () => {
-          const payload: any = { action: action.action };
+          const payload: Record<string, unknown> = { action: action.action };
           const volumeValue = numberOrUndefined(action.volume);
           if (volumeValue !== undefined) {
             payload.volume = Math.min(1, Math.max(0, volumeValue));
@@ -286,7 +307,7 @@ export function useTimelineStepActions({
         }
       };
 
-      const runTimedText = async (action, kind) => {
+      const runTimedText = async (action: SubtitleAction | CaptionAction | null | undefined, kind: "subtitle" | "caption") => {
         if (!action || isStale()) return;
         const target = resolveTarget(action.target_client_id);
         if (action.clear) {
@@ -297,7 +318,7 @@ export function useTimelineStepActions({
           }
           return;
         }
-        const payload: any = { text: action.text };
+        const payload: Record<string, unknown> = { text: action.text };
         assignIfDefined(payload, "language", action.language);
         const duration = numberOrUndefined(action.duration_seconds);
         if (duration !== undefined) {
@@ -311,7 +332,7 @@ export function useTimelineStepActions({
         }
       };
 
-      const runSpeech = async (action) => {
+      const runSpeech = async (action: TtsAction | null | undefined) => {
         if (!action || isStale()) return;
         const target = resolveTarget(action.target_client_id);
         if (action.mode === "sound_play") {
@@ -327,7 +348,7 @@ export function useTimelineStepActions({
         if (!canAnalyze) {
           throw new Error(forbidMessage || "目前模式禁止語音生成/分析");
         }
-        const base: any = {
+        const base: Record<string, unknown> = {
           text: action.text,
         };
         assignIfDefined(base, "instructions", action.instructions);
@@ -347,7 +368,7 @@ export function useTimelineStepActions({
         }
 
         if (action.mode === "speak_with_subtitle") {
-          const payload: any = { ...base };
+          const payload: Record<string, unknown> = { ...base };
           assignIfDefined(payload, "subtitle_text", action.subtitle_text || action.text);
           assignIfDefined(payload, "subtitle_language", action.subtitle_language);
           const subtitleDuration = numberOrUndefined(action.subtitle_duration_seconds);

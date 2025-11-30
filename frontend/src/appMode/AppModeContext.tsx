@@ -1,20 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { request } from "../utils/request";
 import type { AppModeCapabilities, AppModeContextValue } from "../types/control";
-
-interface RuntimeCapabilities {
-  app_mode?: string;
-  enable_generation?: boolean;
-  enable_metadata_write?: boolean;
-  enable_asset_write?: boolean;
-  enable_analysis_llm?: boolean;
-  enable_index_rebuild?: boolean;
-  [key: string]: unknown;
-}
+import type { AppMode } from "../types/mode";
+import type { RuntimeCapsPayload } from "../types/permission";
 
 const FALLBACK_MODE = (import.meta.env.VITE_APP_MODE || "STUDIO").toUpperCase();
 
-function deriveFromMode(mode = FALLBACK_MODE): { appMode: string; capabilities: AppModeCapabilities } {
+function deriveFromMode(mode = FALLBACK_MODE): { appMode: AppMode | string; capabilities: AppModeCapabilities } {
   const normalized = (mode || FALLBACK_MODE).toUpperCase();
   if (normalized === "CONSOLE") {
     return {
@@ -52,7 +44,7 @@ function deriveFromMode(mode = FALLBACK_MODE): { appMode: string; capabilities: 
   };
 }
 
-function deriveCapabilities(runtimeCaps: RuntimeCapabilities | null): { appMode: string; capabilities: AppModeCapabilities } {
+function deriveCapabilities(runtimeCaps: RuntimeCapsPayload | null): { appMode: AppMode | string; capabilities: AppModeCapabilities } {
   if (!runtimeCaps) {
     return deriveFromMode(FALLBACK_MODE);
   }
@@ -82,7 +74,7 @@ const AppModeContext = createContext<AppModeContextValue>({
 });
 
 export function AppModeProvider({ children }: { children: React.ReactNode }) {
-  const [appMode, setAppMode] = useState<string>(fallbackDerived.appMode);
+  const [appMode, setAppMode] = useState<AppMode | string>(fallbackDerived.appMode);
   const [capabilities, setCapabilities] = useState<AppModeCapabilities>(fallbackDerived.capabilities);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +82,7 @@ export function AppModeProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const data = (await request("/api/runtime-caps")) as RuntimeCapabilities | null;
+      const data = (await request("/api/runtime-caps")) as RuntimeCapsPayload | null;
       const derived = deriveCapabilities(data);
       setAppMode(derived.appMode);
       setCapabilities({

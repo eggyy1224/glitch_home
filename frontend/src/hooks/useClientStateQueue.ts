@@ -8,11 +8,22 @@ import {
   moveClientQueueItems,
   stopIframeTimeline,
 } from "../api";
+import type { ClientQueueItem, ClientState } from "../types/client";
 import { useControlSocket } from "./useControlSocket";
 
 const POLL_INTERVAL_MS = 8000;
 
-function normalizeClients(clients: any): any[] {
+type EnqueuePayload = Partial<ClientQueueItem> & { type: string; target_id?: string | null; client_id?: string | null };
+
+function toErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err && typeof (err as { message?: unknown }).message === "string") {
+    return (err as { message: string }).message;
+  }
+  return fallback;
+}
+
+function normalizeClients(clients: unknown): ClientState[] {
   if (!Array.isArray(clients)) return [];
   return clients
     .map((item) => ({
@@ -24,14 +35,14 @@ function normalizeClients(clients: any): any[] {
       queue_size: item?.queue_size ?? 0,
       errors: Array.isArray(item?.errors) ? item.errors : [],
     }))
-    .sort((a, b) => a.client_id.localeCompare(b.client_id));
+    .sort((a, b) => String(a.client_id || "").localeCompare(String(b.client_id || "")));
 }
 
 export function useClientStateQueue(defaultClientId?: string) {
-  const [clients, setClients] = useState<any[]>([]);
+  const [clients, setClients] = useState<ClientState[]>([]);
   const [selectedClient, setSelectedClient] = useState(defaultClientId || "");
   const selectedClientRef = useRef(defaultClientId || "");
-  const [queueItems, setQueueItems] = useState<any[]>([]);
+  const [queueItems, setQueueItems] = useState<ClientQueueItem[]>([]);
   const [loadingState, setLoadingState] = useState(false);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [message, setMessage] = useState("");
@@ -42,7 +53,7 @@ export function useClientStateQueue(defaultClientId?: string) {
       const data = await fetchClientStates();
       setClients(normalizeClients(data));
     } catch (err) {
-      setMessage(err.message || "載入 client 狀態失敗");
+      setMessage(toErrorMessage(err, "載入 client 狀態失敗"));
     } finally {
       setLoadingState(false);
     }
@@ -57,7 +68,7 @@ export function useClientStateQueue(defaultClientId?: string) {
         const data = await fetchClientQueue(client);
         setQueueItems(Array.isArray(data?.items) ? data.items : []);
       } catch (err) {
-        setMessage(err.message || "載入佇列失敗");
+        setMessage(toErrorMessage(err, "載入佇列失敗"));
       } finally {
         if (!silent) setLoadingQueue(false);
       }
@@ -65,17 +76,19 @@ export function useClientStateQueue(defaultClientId?: string) {
     [selectedClient],
   );
 
-  const handleClientStateEvent = useCallback((payload: any) => {
-    const clientId = payload?.client_id || payload?.state?.client_id;
+  const handleClientStateEvent = useCallback((payload: unknown) => {
+    if (!payload || typeof payload !== "object") return;
+    const eventPayload = payload as { client_id?: string; state?: ClientState; queue?: ClientQueueItem[] };
+    const clientId = eventPayload.client_id || eventPayload.state?.client_id;
     if (!clientId) return;
-    const nextState = payload?.state || payload;
+    const nextState = eventPayload.state || (payload as ClientState);
     setClients((prev) => {
       const filtered = prev.filter((item) => item.client_id !== clientId);
       const merged = normalizeClients([nextState, ...filtered]);
       return merged;
     });
-    if (selectedClientRef.current && selectedClientRef.current === clientId && Array.isArray(payload?.queue)) {
-      setQueueItems(payload.queue);
+    if (selectedClientRef.current && selectedClientRef.current === clientId && Array.isArray(eventPayload.queue)) {
+      setQueueItems(eventPayload.queue);
     }
   }, []);
 
@@ -106,7 +119,7 @@ export function useClientStateQueue(defaultClientId?: string) {
   }, [refreshQueue, refreshStates, selectedClient]);
 
   const enqueueItem = useCallback(
-    async (payload: any) => {
+    async (payload: EnqueuePayload) => {
       const clientId = payload.client_id || selectedClient;
       if (!clientId) throw new Error("client_id 必填");
       const body: Record<string, any> = {
@@ -158,7 +171,7 @@ export function useClientStateQueue(defaultClientId?: string) {
   );
 
   const forceStopItem = useCallback(
-    async (item) => {
+    async (item: ClientQueueItem | null | undefined) => {
       if (!item) return;
       if (item.type === "timeline") {
         await stopIframeTimeline(item.client_id, item.target_id);

@@ -1,11 +1,12 @@
 import React from "react";
 import "../styles/IframeTimelineControls.css";
 import type { IframeTimeline, TimelineStep } from "../types/admin";
+import type { IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
 
 interface IframeTimelineControlsProps {
   timelineId: string | null;
-  timeline?: IframeTimeline | null;
-  currentStep?: TimelineStep | null;
+  timeline?: IframeTimeline | IframeTimelineResolved | null;
+  currentStep?: TimelineStep | TimelineStepWithConfig | null;
   currentStepIndex: number;
   status: string;
   isPlaying: boolean;

@@ -1,21 +1,7 @@
-import type { IframeTimeline, TimelineStep } from "./admin";
+import type { AppMode, AppModeCapabilities, AppModeContextValue } from "./mode";
+import type { IframeTimeline, TimelineControlPayload, TimelineStep } from "./timeline";
 
-export interface AppModeCapabilities {
-  canGenerate: boolean;
-  canWriteMetadata: boolean;
-  canWriteAssets: boolean;
-  canAnalyze: boolean;
-  canRebuildIndex: boolean;
-}
-
-export interface AppModeContextValue {
-  appMode: string;
-  capabilities: AppModeCapabilities;
-  loading: boolean;
-  error: string | null;
-  refresh: () => void | Promise<void>;
-  forbidMessage: string;
-}
+export type { AppMode, AppModeCapabilities, AppModeContextValue } from "./mode";
 
 export interface CameraVector {
   x: number;
@@ -77,6 +63,7 @@ export interface IframeConfig {
   gap: number;
   columns: number;
   panels: IframePanelConfig[];
+  [key: string]: unknown;
 }
 
 export interface TimelineStepWithConfig extends TimelineStep {
@@ -95,12 +82,4 @@ export interface VideoController {
   setMuted?: (muted?: boolean) => void;
 }
 
-export interface TimelineControlPayload {
-  action?: string;
-  timeline_id?: string;
-  options?: Record<string, unknown>;
-  target_client_id?: string;
-  command_id?: string;
-  commandId?: string;
-  [key: string]: unknown;
-}
+export type { TimelineControlPayload };

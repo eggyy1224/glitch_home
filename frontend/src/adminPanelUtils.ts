@@ -1,6 +1,7 @@
 import { buildQueryFromIframeConfig } from "./utils/iframeConfig";
 import type { EpisodeEntry, IframeTimeline } from "./types/admin";
 import type { IframeConfig } from "./types/control";
+import type { SnapshotRef } from "./types/timeline";
 
 export function pretty(value: unknown): string {
   try {
@@ -77,9 +78,10 @@ export function previewSrcFromConfig(config: Partial<IframeConfig> | null | unde
   const panels: IframeConfig["panels"] = [];
   config.panels.forEach((panel, index) => {
     if (!panel || typeof panel !== "object") return;
+    const panelObj: Record<string, unknown> = panel as unknown as Record<string, unknown>;
     let src: string | null = null;
-    if ((panel as any).url) {
-      src = (panel as any).url as string;
+    if (typeof panelObj.url === "string" && panelObj.url) {
+      src = panelObj.url;
       try {
         const url = new URL(src, window.location.origin);
         url.searchParams.set("client", "preview-main");
@@ -93,10 +95,10 @@ export function previewSrcFromConfig(config: Partial<IframeConfig> | null | unde
         const joiner = hasQuery ? "&" : "?";
         src = `${src}${joiner}client=preview-main`;
       }
-    } else if ((panel as any).image) {
-      const query = new URLSearchParams({ img: (panel as any).image, static_mode: "true" });
-      if ((panel as any).params && typeof (panel as any).params === "object") {
-        Object.entries((panel as any).params).forEach(([k, v]) => {
+    } else if (typeof panelObj.image === "string" && panelObj.image) {
+      const query = new URLSearchParams({ img: panelObj.image, static_mode: "true" });
+      if (panelObj.params && typeof panelObj.params === "object") {
+        Object.entries(panelObj.params as Record<string, unknown>).forEach(([k, v]) => {
           if (v === null || v === undefined) return;
           query.set(String(k), String(v));
         });
@@ -105,13 +107,23 @@ export function previewSrcFromConfig(config: Partial<IframeConfig> | null | unde
       src = `/?${query.toString()}`;
     }
     if (!src) return;
-    const colSpan = (panel as any).colSpan ?? (panel as any).col_span;
-    const rowSpan = (panel as any).rowSpan ?? (panel as any).row_span;
+    const colSpan =
+      typeof panelObj.colSpan === "number"
+        ? panelObj.colSpan
+        : typeof panelObj.col_span === "number"
+          ? panelObj.col_span
+          : undefined;
+    const rowSpan =
+      typeof panelObj.rowSpan === "number"
+        ? panelObj.rowSpan
+        : typeof panelObj.row_span === "number"
+          ? panelObj.row_span
+          : undefined;
     panels.push({
-      id: (panel as any).id || `p${index + 1}`,
+      id: (typeof panelObj.id === "string" && panelObj.id) || `p${index + 1}`,
       src,
-      ratio: (panel as any).ratio || 1,
-      label: (panel as any).label,
+      ratio: typeof panelObj.ratio === "number" ? panelObj.ratio : 1,
+      label: typeof panelObj.label === "string" ? panelObj.label : undefined,
       ...(colSpan ? { colSpan } : {}),
       ...(rowSpan ? { rowSpan } : {}),
     });
@@ -144,16 +156,16 @@ export function timelinePlaybackSrc(timelineId?: string | null): string | null {
   return `/?${qs.toString()}`;
 }
 
-export function firstSnapshotRef(timeline?: Partial<IframeTimeline> | null): { client: string | null; name: string } | null {
+export function firstSnapshotRef(timeline?: Partial<IframeTimeline> | null): SnapshotRef | null {
   if (!timeline || !Array.isArray(timeline.steps)) return null;
-  const firstStep = timeline.steps.find((step) => step && (step as any).snapshot);
+  const firstStep = timeline.steps.find((step) => step && typeof step.snapshot === "string");
   if (!firstStep) return null;
 
-  const snapshotRef = String((firstStep as any).snapshot || "").trim();
+  const snapshotRef = String(firstStep.snapshot || "").trim();
   if (!snapshotRef) return null;
 
-  const timelineClient = (timeline as any).clientId || (timeline as any).client_id || null;
-  const stepClient = (firstStep as any).clientId || (firstStep as any).client_id || null;
+  const timelineClient = timeline.clientId || (timeline as { client_id?: string }).client_id || null;
+  const stepClient = firstStep.clientId || (firstStep as { client_id?: string }).client_id || null;
   const defaultClient = stepClient || timelineClient || null;
 
   if (snapshotRef.includes("/")) {

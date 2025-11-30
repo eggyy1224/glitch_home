@@ -3,9 +3,9 @@ import type React from "react";
 import { DisplayModes, type DisplayModeType } from "./useDisplayMode";
 import { useIframeTimelinePlayer } from "./useIframeTimelinePlayer";
 import { useTimelineStepActions } from "./useTimelineStepActions";
-import type { AppModeCapabilities, TimelineControlPayload } from "../types/control";
-import type { IframeTimelineResolved } from "../types/control";
-import type { TimelineStep } from "../types/admin";
+import type { AppModeCapabilities } from "../types/mode";
+import type { IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
+import type { TimelineControlPayload, TimelineStep } from "../types/timeline";
 
 interface UseRemoteTimelineControlOptions {
   activeMode: DisplayModeType;
@@ -60,7 +60,7 @@ export function useRemoteTimelineControl({
   }, [setActiveModeOverride]);
 
   const handleTimelineStepStart = useCallback(
-    ({ step, stepIndex, runId }: { step: TimelineStep; stepIndex: number; runId: number }) => {
+    ({ step, stepIndex, runId }: { step: TimelineStepWithConfig; stepIndex: number; runId: number }) => {
       if (!effectiveTimelineId) return;
       executeStepActions({ step, stepIndex, timelineId: effectiveTimelineId, runId });
     },
@@ -134,8 +134,12 @@ export function useRemoteTimelineControl({
         return;
       }
       const action = typeof payload?.action === "string" ? payload.action.toLowerCase() : "";
-      const options = payload?.options && typeof payload.options === "object" ? payload.options : {};
-      const commandId = (options as any).commandId || payload?.command_id || payload?.commandId || null;
+      const options = payload?.options && typeof payload.options === "object" ? payload.options : undefined;
+      const commandId =
+        (options && typeof options.commandId === "string" && options.commandId) ||
+        payload?.command_id ||
+        payload?.commandId ||
+        null;
       if (commandId) {
         const previousEntry = remoteTimelineCommandRef.current;
         if (previousEntry && previousEntry.id === commandId && previousEntry.action === action) {
@@ -143,24 +147,24 @@ export function useRemoteTimelineControl({
         }
       }
       if (action === "play") {
-        const timelineId = (payload as any)?.timeline_id as string | undefined;
+        const timelineId = payload?.timeline_id;
         if (!timelineId) {
           return;
         }
         remoteTimelineCommandRef.current = commandId ? { id: commandId, action } : null;
         const startFrom =
-          typeof (options as any).startStep === "number" && Number.isFinite((options as any).startStep)
-            ? Math.max(0, Math.floor((options as any).startStep))
+          typeof options?.startStep === "number" && Number.isFinite(options.startStep)
+            ? Math.max(0, Math.floor(options.startStep))
             : null;
-        const loopOverride = typeof (options as any).loop === "boolean" ? Boolean((options as any).loop) : null;
+        const loopOverride = typeof options?.loop === "boolean" ? Boolean(options.loop) : null;
         setRemoteTimelineControl({
           timelineId,
           startStep: startFrom,
-          autoPlay: (options as any).autoPlay !== false,
+          autoPlay: options?.autoPlay !== false,
           loopOverride,
           sessionKey: commandId || `${timelineId}:${Date.now()}`,
         });
-        if ((options as any).forceIframeMode !== false && setActiveModeOverride) {
+        if (options?.forceIframeMode !== false && setActiveModeOverride) {
           setActiveModeOverride(DisplayModes.IFRAME);
         }
         return;
@@ -180,7 +184,7 @@ export function useRemoteTimelineControl({
           }
         }
         remoteTimelineCommandRef.current = commandId ? { id: commandId, action } : null;
-        const shouldRelease = (options as any).releaseControl !== false;
+        const shouldRelease = options?.releaseControl !== false;
         performTimelineStop(shouldRelease);
       }
     },
@@ -189,8 +193,8 @@ export function useRemoteTimelineControl({
 
   return {
     effectiveTimelineId,
-    timeline: timeline as IframeTimelineResolved | null,
-    currentStep: currentStep as TimelineStep | null,
+    timeline,
+    currentStep,
     currentStepIndex,
     timelineStatus,
     timelineIsPlaying,

@@ -131,7 +131,7 @@ export async function uploadScreenshot(
   return request(url, { method: "POST", body: form });
 }
 
-export async function reportScreenshotFailure(requestId, errorMessage = "", clientId = null) {
+export async function reportScreenshotFailure(requestId: string, errorMessage = "", clientId: string | null = null) {
   const url = `/api/screenshots/${encodeURIComponent(requestId)}/fail`;
   const payload: Record<string, unknown> = { error: errorMessage };
   if (clientId) {
@@ -623,7 +623,7 @@ async function uploadImageForSearch(file: File | Blob, { signal }: RequestOption
   };
 }
 
-export function createImageUploadRequest(file) {
+export function createImageUploadRequest(file: File | Blob) {
   const controller = new AbortController();
   const promise = uploadImageForSearch(file, { signal: controller.signal });
   return { controller, promise };
