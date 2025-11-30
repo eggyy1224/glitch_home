@@ -1,29 +1,48 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createImageSearchRequest, createTextSearchRequest } from "../api.js";
-import { buildImageUrl, IMAGES_BASE } from "../utils/generate.js";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { createImageSearchRequest, createTextSearchRequest } from "../api";
+import { buildImageUrl, IMAGES_BASE } from "../utils/generate";
+import type { OffspringImage, SearchApiResult } from "../types/generate";
 
-const buildSearchResult = (result, base) => {
+const buildSearchResult = (result: SearchApiResult, base: string) => {
   const cleanId = result.id.replace(/:(en|zh)$/i, "");
   return {
     filename: cleanId,
     url: buildImageUrl(base, cleanId),
-  };
+  } satisfies OffspringImage;
 };
 
-export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, availableImages = [] } = {}) {
+export type UseGenerateSearchOptions = {
+  imagesBase?: string;
+  onError?: (message: string | null) => void;
+  availableImages?: OffspringImage[];
+};
+
+export type UseGenerateSearchReturn = {
+  textQuery: string;
+  setTextQuery: (value: string) => void;
+  searchResults: OffspringImage[];
+  searching: boolean;
+  displayMode: "all" | "search";
+  setDisplayMode: (mode: "all" | "search") => void;
+  handleTextSearch: () => Promise<void>;
+  handleSearchClear: () => void;
+  handleKeyPress: (e: KeyboardEvent<HTMLInputElement>) => void;
+};
+
+export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, availableImages = [] }: UseGenerateSearchOptions = {}) {
   const [textQuery, setTextQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState<OffspringImage[]>([]);
   const [searching, setSearching] = useState(false);
-  const [displayMode, setDisplayMode] = useState("all");
-  const textSearchControllerRef = useRef(null);
+  const [displayMode, setDisplayMode] = useState<"all" | "search">("all");
+  const textSearchControllerRef = useRef<AbortController | null>(null);
 
   const notifyError = useCallback(
-    (message) => {
+    (message: string | null) => {
       if (onError) {
         onError(message);
       }
     },
-    [onError]
+    [onError],
   );
 
   const abortTextSearch = useCallback(() => {
@@ -34,7 +53,7 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
   }, []);
 
   const handleSearchResults = useCallback(
-    (resultList, emptyMessage) => {
+    (resultList: SearchApiResult[] | undefined | null, emptyMessage: string) => {
       if (!resultList?.length) {
         setSearchResults([]);
         notifyError(emptyMessage);
@@ -47,7 +66,7 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
       setDisplayMode("search");
       notifyError(null);
     },
-    [imagesBase, notifyError]
+    [imagesBase, notifyError],
   );
 
   useEffect(() => {
@@ -56,17 +75,19 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
     };
   }, [abortTextSearch]);
 
+  const searchableImages = useMemo(() => availableImages ?? [], [availableImages]);
+
   const resolveImagePath = useCallback(
-    (query) => {
+    (query: string) => {
       const trimmed = query.trim();
       if (!trimmed) return null;
       const lower = trimmed.toLowerCase();
-      const exact = availableImages.find((img) => img.filename.toLowerCase() === lower);
+      const exact = searchableImages.find((img) => img.filename.toLowerCase() === lower);
       if (exact) return exact.filename;
-      const partial = availableImages.find((img) => img.filename.toLowerCase().includes(lower));
+      const partial = searchableImages.find((img) => img.filename.toLowerCase().includes(lower));
       return partial?.filename ?? null;
     },
-    [availableImages]
+    [searchableImages],
   );
 
   const handleTextSearch = useCallback(async () => {
@@ -94,11 +115,11 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
 
       const resultList = searchResultsData.results || [];
       handleSearchResults(resultList, `未找到與「${query}」相關的圖像`);
-    } catch (err) {
-      if (err.name === "AbortError") {
+    } catch (err: unknown) {
+      if ((err as Error)?.name === "AbortError") {
         return;
       }
-      notifyError(err.message || "搜尋出錯");
+      notifyError((err as Error)?.message || "搜尋出錯");
     } finally {
       setSearching(false);
     }
@@ -113,11 +134,14 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
     setSearching(false);
   }, [abortTextSearch, notifyError]);
 
-  const handleKeyPress = useCallback((e) => {
-    if (e.key === "Enter") {
-      handleTextSearch();
-    }
-  }, [handleTextSearch]);
+  const handleKeyPress = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleTextSearch();
+      }
+    },
+    [handleTextSearch],
+  );
 
   return {
     textQuery,
@@ -129,5 +153,5 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
     handleTextSearch,
     handleSearchClear,
     handleKeyPress,
-  };
+  } satisfies UseGenerateSearchReturn;
 }

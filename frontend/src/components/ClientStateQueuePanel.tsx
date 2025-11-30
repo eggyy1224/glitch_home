@@ -248,7 +248,7 @@ export default function ClientStateQueuePanel() {
         type,
         target_id: targetId.trim(),
         priority: priority === "" ? null : Number(priority),
-        retries: retries === "" ? 0 : Number(retries),
+        retries: `${retries}` === "" ? 0 : Number(retries),
         eta: eta,
       });
       setTargetId("");
@@ -534,7 +534,7 @@ export default function ClientStateQueuePanel() {
                 ))}
                 {queueItems.length === 0 && (
                   <tr>
-                    <td colSpan="7" style={{ padding: 8, color: "#82dca5" }} data-ai-state="empty">
+                    <td colSpan={7} style={{ padding: 8, color: "#82dca5" }} data-ai-state="empty">
                       尚無佇列項目
                     </td>
                   </tr>

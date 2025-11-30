@@ -1,4 +1,13 @@
-import React from "react";
+import React, { KeyboardEvent } from "react";
+
+export type GenerateSearchInputProps = {
+  textQuery: string;
+  onTextQueryChange: (value: string) => void;
+  onTextSearch: () => void;
+  onClear: () => void;
+  searching: boolean;
+  onKeyPress: (event: KeyboardEvent<HTMLInputElement>) => void;
+};
 
 export default function GenerateSearchInput({
   textQuery,
@@ -7,7 +16,7 @@ export default function GenerateSearchInput({
   onClear,
   searching,
   onKeyPress,
-}) {
+}: GenerateSearchInputProps) {
   return (
     <div className="generate-search">
       <div className="generate-search-text">
@@ -29,12 +38,7 @@ export default function GenerateSearchInput({
             {searching ? "搜尋中..." : "搜尋"}
           </button>
           {textQuery && (
-            <button
-              type="button"
-              onClick={onClear}
-              disabled={searching}
-              className="generate-search-clear"
-            >
+            <button type="button" onClick={onClear} disabled={searching} className="generate-search-clear">
               清除
             </button>
           )}

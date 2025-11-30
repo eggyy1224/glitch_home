@@ -89,7 +89,7 @@ export default function TimelineManager() {
 
   const handleLoadTimeline = useCallback(async (id) => {
     try {
-      const data = await fetchIframeTimeline(id, { resolve: false });
+      const data: any = await fetchIframeTimeline(id, { resolve: false });
       setTimelineId(id);
       setTimelineJson(pretty(data.timeline || data));
       const resolvedTarget = data?.timeline?.clientId || data?.timeline?.client_id || timelinePlayTarget;

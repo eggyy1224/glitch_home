@@ -1,28 +1,43 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./GenerateMode.css";
-import GenerateParamsForm from "./components/generate/GenerateParamsForm.jsx";
-import GenerateResultsList from "./components/generate/GenerateResultsList.jsx";
-import GenerateSearchInput from "./components/generate/GenerateSearchInput.jsx";
-import useGenerateParams from "./hooks/useGenerateParams.js";
-import useGenerateSearch from "./hooks/useGenerateSearch.js";
-import { generateMixTwo, listOffspringImages } from "./api.js";
-import CollageVersionMode from "./CollageVersionMode.jsx";
+import GenerateParamsForm from "./components/generate/GenerateParamsForm";
+import GenerateResultsList from "./components/generate/GenerateResultsList";
+import GenerateSearchInput from "./components/generate/GenerateSearchInput";
+import useGenerateParams from "./hooks/useGenerateParams";
+import useGenerateSearch from "./hooks/useGenerateSearch";
+import { generateMixTwo, listOffspringImages } from "./api";
+import CollageVersionMode from "./CollageVersionMode";
 import {
   buildImageUrl,
   extractImageIdentifier,
   IMAGES_BASE,
   resolveImageUrl,
-} from "./utils/generate.js";
+} from "./utils/generate";
+import type { GenerateMixTwoResponse, OffspringImage } from "./types/generate";
 
-function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
+type GenerateModeContentProps = {
+  canGenerate: boolean;
+  appMode?: string;
+  forbidMessage?: string;
+};
+
+type GenerateResult = GenerateMixTwoResponse & { imageUrl: string };
+
+const formatError = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "發生未知錯誤";
+};
+
+function GenerateModeContent({ canGenerate, appMode, forbidMessage }: GenerateModeContentProps) {
   const generationDisabled = !canGenerate;
   const blockedMessage = forbidMessage || `目前 APP_MODE=${appMode || "未知"} 禁止生成`;
-  const [availableImages, setAvailableImages] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
+  const [availableImages, setAvailableImages] = useState<OffspringImage[]>([]);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingImages, setLoadingImages] = useState(true);
-  const [error, setError] = useState(generationDisabled ? blockedMessage : null);
-  const [result, setResult] = useState(null);
+  const [error, setError] = useState<string | null>(generationDisabled ? blockedMessage : null);
+  const [result, setResult] = useState<GenerateResult | null>(null);
 
   const {
     prompt,
@@ -63,7 +78,7 @@ function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
         const data = await listOffspringImages();
         setAvailableImages(data.images || []);
       } catch (err) {
-        setError(`載入圖片列表失敗: ${err.message}`);
+        setError(`載入圖片列表失敗: ${formatError(err)}`);
       } finally {
         setLoadingImages(false);
       }
@@ -79,7 +94,7 @@ function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
     }
   }, [blockedMessage, generationDisabled, error]);
 
-  const handleImageToggle = (imageName) => {
+  const handleImageToggle = (imageName: string) => {
     setSelectedImages((prev) => {
       if (prev.includes(imageName)) {
         return prev.filter((name) => name !== imageName);
@@ -89,7 +104,10 @@ function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
     setError(null);
   };
 
-  const displayImages = displayMode === "search" ? searchResults : availableImages;
+  const displayImages = useMemo(
+    () => (displayMode === "search" ? searchResults : availableImages),
+    [availableImages, displayMode, searchResults],
+  );
 
   const handleGenerate = async () => {
     if (generationDisabled) {
@@ -123,7 +141,7 @@ function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
       });
       setLoading(false);
     } catch (err) {
-      setError(err.message || "生成失敗");
+      setError(formatError(err) || "生成失敗");
       setLoading(false);
     }
   };
@@ -236,11 +254,11 @@ function GenerateModeContent({ canGenerate, appMode, forbidMessage }) {
   );
 }
 
-export default function GenerateMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }) {
-  const [activeTab, setActiveTab] = useState("collage");
-  const [mountedTabs, setMountedTabs] = useState({ collage: true, generate: false });
+export default function GenerateMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }: GenerateModeContentProps) {
+  const [activeTab, setActiveTab] = useState<"collage" | "generate">("collage");
+  const [mountedTabs, setMountedTabs] = useState<{ collage: boolean; generate: boolean }>({ collage: true, generate: false });
 
-  const switchTab = (tab) => {
+  const switchTab = (tab: "collage" | "generate") => {
     setActiveTab(tab);
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };

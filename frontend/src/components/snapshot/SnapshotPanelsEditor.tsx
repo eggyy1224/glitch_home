@@ -263,7 +263,7 @@ export default function SnapshotPanelsEditor({
       return;
     }
     const nextUrl = buildUrlFromPreset(nextMode, currentAsset);
-    const patch = { url: nextUrl };
+    const patch: Record<string, unknown> = { url: nextUrl };
     if (MODE_PRESETS[nextMode]?.assetKey === "img") {
       patch.image = currentAsset || panel?.image || undefined;
     }
@@ -275,7 +275,7 @@ export default function SnapshotPanelsEditor({
     const isImageMode = hasModePreset && MODE_PRESETS[mode].assetKey === "img";
     if (hasModePreset) {
       const nextUrl = buildUrlFromPreset(mode, assetValue);
-      const patch = { url: nextUrl };
+      const patch: Record<string, unknown> = { url: nextUrl };
       if (isImageMode) {
         patch.image = assetValue || undefined;
       }
@@ -292,7 +292,7 @@ export default function SnapshotPanelsEditor({
     const { mode } = getPanelModeAndAsset(panel);
     const isImageMode = MODE_PRESETS[mode]?.assetKey === "img";
     const resolvedMode = isImageMode ? mode : value ? "static_mode" : null;
-    const patch = { image: value };
+    const patch: Record<string, unknown> = { image: value };
     if (resolvedMode) {
       patch.url = buildUrlFromPreset(resolvedMode, value);
     }

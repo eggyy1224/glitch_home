@@ -106,7 +106,7 @@ export default function EpisodeManager() {
     }
     try {
       setEpisodePlayStatus("發送中...");
-      const payload = {};
+      const payload: Record<string, unknown> = {};
       const map = parseTargetMap(episodeTargetMapText);
       if (map && Object.keys(map).length > 0) {
         payload.target_client_map = map;

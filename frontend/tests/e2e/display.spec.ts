@@ -39,7 +39,7 @@ for (const { clientId, sampleCount } of CLIENT_CASES) {
       const checks = Math.min(sampleCount, panels.length);
       for (let i = 0; i < checks; i += 1) {
         const expectedSrc = new URL(panels[i].src, BASE_URL).toString();
-        const actualSrc = await frames.nth(i).evaluate((node) => node.src);
+        const actualSrc = await frames.nth(i).evaluate((node) => (node as HTMLImageElement).src);
         expect(actualSrc).toBe(expectedSrc);
 
         const frame = page.frameLocator("iframe").nth(i);
@@ -65,7 +65,7 @@ test.describe("預設 client 顯示驗證", () => {
     const checks = Math.min(2, panels.length, frameCount);
     const baseOrigin = new URL(BASE_URL).origin;
     for (let i = 0; i < checks; i += 1) {
-      const actualSrc = await frames.nth(i).evaluate((node) => node.src);
+      const actualSrc = await frames.nth(i).evaluate((node) => (node as HTMLImageElement).src);
       const actualUrl = new URL(actualSrc);
       expect(actualUrl.origin).toBe(baseOrigin);
       expect(actualUrl.pathname).toBe("/");

@@ -32,17 +32,17 @@ const {
   };
 });
 
-vi.mock("../../../src/IframeMode.jsx", () => ({ __esModule: true, default: IframeModeMock }));
-vi.mock("../../../src/SlideMode.jsx", () => ({ __esModule: true, default: SlideModeMock }));
-vi.mock("../../../src/OrganicRoomScene.jsx", () => ({ __esModule: true, default: OrganicRoomSceneMock }));
-vi.mock("../../../src/SearchMode.jsx", () => ({ __esModule: true, default: SearchModeMock }));
-vi.mock("../../../src/CollageMode.jsx", () => ({ __esModule: true, default: CollageModeMock }));
-vi.mock("../../../src/CaptionMode.jsx", () => ({ __esModule: true, default: CaptionModeMock }));
-vi.mock("../../../src/CollageVersionMode.jsx", () => ({ __esModule: true, default: CollageVersionModeMock }));
-vi.mock("../../../src/GenerateMode.jsx", () => ({ __esModule: true, default: GenerateModeMock }));
-vi.mock("../../../src/StaticMode.jsx", () => ({ __esModule: true, default: StaticModeMock }));
-vi.mock("../../../src/VideoMode.jsx", () => ({ __esModule: true, default: VideoModeMock }));
-vi.mock("../../../src/ThreeKinshipScene.jsx", () => ({ __esModule: true, default: KinshipSceneMock }));
+vi.mock("../../../src/IframeMode", () => ({ __esModule: true, default: IframeModeMock }));
+vi.mock("../../../src/SlideMode", () => ({ __esModule: true, default: SlideModeMock }));
+vi.mock("../../../src/OrganicRoomScene", () => ({ __esModule: true, default: OrganicRoomSceneMock }));
+vi.mock("../../../src/SearchMode", () => ({ __esModule: true, default: SearchModeMock }));
+vi.mock("../../../src/CollageMode", () => ({ __esModule: true, default: CollageModeMock }));
+vi.mock("../../../src/CaptionMode", () => ({ __esModule: true, default: CaptionModeMock }));
+vi.mock("../../../src/CollageVersionMode", () => ({ __esModule: true, default: CollageVersionModeMock }));
+vi.mock("../../../src/GenerateMode", () => ({ __esModule: true, default: GenerateModeMock }));
+vi.mock("../../../src/StaticMode", () => ({ __esModule: true, default: StaticModeMock }));
+vi.mock("../../../src/VideoMode", () => ({ __esModule: true, default: VideoModeMock }));
+vi.mock("../../../src/ThreeKinshipScene", () => ({ __esModule: true, default: KinshipSceneMock }));
 vi.mock("../../../src/AdminPanel", () => ({ __esModule: true, default: AdminPanelMock }));
 
 import { createModeRenderMap } from "../../../src/modes/createModeRenderMap";

@@ -298,7 +298,7 @@ export default function TimelineEpisodeEditor() {
     }
   }, [episodeFilter, setMessageForMode]);
 
-  const refreshSnapshots = useCallback(async (clientOverride) => {
+  const refreshSnapshots = useCallback(async (clientOverride?: string | null) => {
     try {
       const targetClient = clientOverride ?? snapshotClient;
       const data = await listIframeSnapshots(targetClient || null);
@@ -325,30 +325,30 @@ export default function TimelineEpisodeEditor() {
       try {
         if (mode === "timeline") {
           const data = await fetchIframeTimeline(id, { resolve: false });
-          const payload = data.timeline || data;
+          const payload: any = data.timeline || data;
           updateTimeline(payload, { markDirty: false });
-        if (payload.clientId || payload.client_id) {
-          const nextClient = payload.clientId || payload.client_id;
-          setSnapshotClient(nextClient);
-          await refreshSnapshots(nextClient);
+          if (payload.clientId || payload.client_id) {
+            const nextClient = payload.clientId || payload.client_id;
+            setSnapshotClient(nextClient);
+            await refreshSnapshots(nextClient);
+          }
+          setMessageForMode(`已載入 timeline ${id}`, "timeline");
+        } else {
+          const data = await fetchEpisode(id, { resolve: false });
+          const payload = data.episode || data;
+          setEpisodeState(payload, { markDirty: false });
+          setMessageForMode(`已載入 episode ${id}`, "episode");
         }
-        setMessageForMode(`已載入 timeline ${id}`, "timeline");
-      } else {
-        const data = await fetchEpisode(id, { resolve: false });
-        const payload = data.episode || data;
-        setEpisodeState(payload, { markDirty: false });
-        setMessageForMode(`已載入 episode ${id}`, "episode");
+        setDirty(false);
+      } catch (err) {
+        setMessageForMode(err.message || "載入失敗", mode);
       }
-      setDirty(false);
-    } catch (err) {
-      setMessageForMode(err.message || "載入失敗", mode);
-    }
-  },
-  [mode, refreshSnapshots, setEpisodeState, setMessageForMode, updateTimeline],
-);
+    },
+    [mode, refreshSnapshots, setEpisodeState, setMessageForMode, updateTimeline],
+  );
 
   const handleLoadSnapshot = useCallback(
-    async (name, clientOverride) => {
+    async (name, clientOverride?: string | null) => {
       const targetClient = clientOverride ?? snapshotClient;
       if (!targetClient) {
         setMessageForMode("請先設定 client 再載入 snapshot", "snapshot");
@@ -375,7 +375,7 @@ export default function TimelineEpisodeEditor() {
     [refreshSnapshots, setMessageForMode, snapshotClient, updateSnapshot],
   );
 
-  const clampSnapshotPreviewWidth = useCallback((width) => {
+  const clampSnapshotPreviewWidth = useCallback((width: number) => {
     const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
     return Math.min(Math.max(width, 560), Math.min(max, 1800));
   }, []);
@@ -657,7 +657,7 @@ export default function TimelineEpisodeEditor() {
   const addPanel = useCallback(() => {
     const nextPanels = [...(snapshotData.panels || [])];
     const idBase = `panel_${nextPanels.length + 1}`;
-    nextPanels.push({ id: idBase, url: "/", ratio: 1 });
+    nextPanels.push({ id: idBase, url: "/", ratio: 1, params: {}, label: "" });
     updateSnapshot({ ...snapshotData, panels: nextPanels });
   }, [snapshotData, updateSnapshot]);
 
@@ -831,7 +831,7 @@ export default function TimelineEpisodeEditor() {
       setMessageForMode("請先設定 episode id", "episode");
       return;
     }
-    const payload = {};
+    const payload: Record<string, unknown> = {};
     const map = parseTargetMap(episodeTargetOverride);
     if (map && Object.keys(map).length > 0) {
       payload.target_client_map = map;

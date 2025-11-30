@@ -1,18 +1,41 @@
 import { useCallback, useState } from "react";
+import type { GenerateMixTwoParams } from "../types/generate";
+
+type GenerateParamsState = {
+  prompt: string;
+  strength: number;
+  outputFormat: string;
+  outputWidth: string;
+  outputHeight: string;
+  outputMaxSide: string;
+  resizeMode: string;
+  count: number;
+};
+
+const INITIAL_STATE: GenerateParamsState = {
+  prompt: "",
+  strength: 0.5,
+  outputFormat: "png",
+  outputWidth: "",
+  outputHeight: "",
+  outputMaxSide: "",
+  resizeMode: "cover",
+  count: 2,
+};
 
 export default function useGenerateParams() {
-  const [prompt, setPrompt] = useState("");
-  const [strength, setStrength] = useState(0.5);
-  const [outputFormat, setOutputFormat] = useState("png");
-  const [outputWidth, setOutputWidth] = useState("");
-  const [outputHeight, setOutputHeight] = useState("");
-  const [outputMaxSide, setOutputMaxSide] = useState("");
-  const [resizeMode, setResizeMode] = useState("cover");
-  const [count, setCount] = useState(2);
+  const [prompt, setPrompt] = useState(INITIAL_STATE.prompt);
+  const [strength, setStrength] = useState(INITIAL_STATE.strength);
+  const [outputFormat, setOutputFormat] = useState(INITIAL_STATE.outputFormat);
+  const [outputWidth, setOutputWidth] = useState(INITIAL_STATE.outputWidth);
+  const [outputHeight, setOutputHeight] = useState(INITIAL_STATE.outputHeight);
+  const [outputMaxSide, setOutputMaxSide] = useState(INITIAL_STATE.outputMaxSide);
+  const [resizeMode, setResizeMode] = useState(INITIAL_STATE.resizeMode);
+  const [count, setCount] = useState(INITIAL_STATE.count);
 
   const buildParams = useCallback(
-    (selectedImages = []) => {
-      const params = {};
+    (selectedImages: string[] = []): GenerateMixTwoParams => {
+      const params: GenerateMixTwoParams = {};
 
       if (selectedImages.length >= 2) {
         params.parents = selectedImages;
@@ -46,7 +69,7 @@ export default function useGenerateParams() {
 
       return params;
     },
-    [count, outputFormat, outputHeight, outputMaxSide, outputWidth, prompt, resizeMode, strength]
+    [count, outputFormat, outputHeight, outputMaxSide, outputWidth, prompt, resizeMode, strength],
   );
 
   return {

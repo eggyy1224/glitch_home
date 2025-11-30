@@ -1,4 +1,18 @@
 import React from "react";
+import type { OffspringImage } from "../../types/generate";
+import type { ResolvableImage } from "../../utils/generate";
+
+export type GenerateResultsListProps = {
+  displayMode: "all" | "search";
+  searchResultsLength: number;
+  onDisplayAll: () => void;
+  loadingImages: boolean;
+  images: OffspringImage[];
+  selectedImages: string[];
+  onToggleImage: (filename: string) => void;
+  onClearSelection: () => void;
+  resolveImageUrl: (image: ResolvableImage) => string;
+};
 
 export default function GenerateResultsList({
   displayMode,
@@ -10,7 +24,7 @@ export default function GenerateResultsList({
   onToggleImage,
   onClearSelection,
   resolveImageUrl,
-}) {
+}: GenerateResultsListProps) {
   return (
     <>
       {displayMode === "search" && (

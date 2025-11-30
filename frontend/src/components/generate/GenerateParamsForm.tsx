@@ -1,5 +1,25 @@
 import React from "react";
 
+export type GenerateParamsFormProps = {
+  prompt: string;
+  onPromptChange: (value: string) => void;
+  strength: number;
+  onStrengthChange: (value: number) => void;
+  outputFormat: string;
+  onOutputFormatChange: (value: string) => void;
+  outputWidth: string;
+  onOutputWidthChange: (value: string) => void;
+  outputHeight: string;
+  onOutputHeightChange: (value: string) => void;
+  outputMaxSide: string;
+  onOutputMaxSideChange: (value: string) => void;
+  resizeMode: string;
+  onResizeModeChange: (value: string) => void;
+  selectedImagesCount: number;
+  count: number;
+  onCountChange: (value: number) => void;
+};
+
 export default function GenerateParamsForm({
   prompt,
   onPromptChange,
@@ -18,7 +38,7 @@ export default function GenerateParamsForm({
   selectedImagesCount,
   count,
   onCountChange,
-}) {
+}: GenerateParamsFormProps) {
   return (
     <div className="generate-params">
       <div className="generate-param">
@@ -83,7 +103,7 @@ export default function GenerateParamsForm({
       {selectedImagesCount === 0 && (
         <div className="generate-param">
           <label>隨機抽樣數量 (count)</label>
-          <input type="number" min="2" value={count} onChange={(e) => onCountChange(parseInt(e.target.value) || 2)} />
+          <input type="number" min="2" value={count} onChange={(e) => onCountChange(parseInt(e.target.value, 10) || 2)} />
         </div>
       )}
     </div>

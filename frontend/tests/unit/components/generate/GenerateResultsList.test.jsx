@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import GenerateResultsList from "../../../../src/components/generate/GenerateResultsList.jsx";
+import GenerateResultsList from "../../../../src/components/generate/GenerateResultsList";
 
 const mockImages = [
   { filename: "one.png", url: "one.png" },

@@ -1,6 +1,22 @@
 import type { ClientQueueItem, ClientState, EpisodeEntry, IframeTimeline, SnapshotEntry } from "./types/admin";
+import type {
+  GenerateMixTwoParams,
+  GenerateMixTwoResponse,
+  ListOffspringImagesResponse,
+  SearchRequestResult,
+} from "./types/generate";
 
 declare module "./api.js" {
+  export function generateMixTwo(params: GenerateMixTwoParams): Promise<GenerateMixTwoResponse>;
+  export function listOffspringImages(options?: { signal?: AbortSignal }): Promise<ListOffspringImagesResponse>;
+  export function createImageSearchRequest(
+    imagePath: string,
+    topK?: number,
+  ): { controller: AbortController; promise: Promise<SearchRequestResult> };
+  export function createTextSearchRequest(
+    query: string,
+    topK?: number,
+  ): { controller: AbortController; promise: Promise<SearchRequestResult> };
   export function listIframeSnapshots(clientId?: string | null, options?: { signal?: AbortSignal }): Promise<{ snapshots?: SnapshotEntry[] }>;
   export function getIframeSnapshot(clientId: string | null, name: string, options?: { signal?: AbortSignal }): Promise<any>;
   export function saveIframeSnapshot(clientId: string | null, name: string, payload: unknown, options?: { signal?: AbortSignal }): Promise<any>;
@@ -27,6 +43,7 @@ declare module "./api.js" {
     payload?: Record<string, unknown>,
     options?: { targetClientId?: string | null; signal?: AbortSignal },
   ): Promise<any>;
+  export function listVideoAssets(options?: { signal?: AbortSignal }): Promise<any>;
   export function stopIframeTimeline(targetClientId?: string | null, timelineId?: string | null, options?: { commandId?: string; releaseControl?: boolean }): Promise<any>;
 
   export function fetchEpisode(episodeId: string, options?: { signal?: AbortSignal; resolve?: boolean }): Promise<EpisodeEntry>;
@@ -60,4 +77,8 @@ declare module "./api.js" {
     ids: string[] | string,
     options?: { priority?: number | null; position?: string | number | null; signal?: AbortSignal },
   ): Promise<any>;
+}
+
+declare module "./api" {
+  export * from "./api.js";
 }

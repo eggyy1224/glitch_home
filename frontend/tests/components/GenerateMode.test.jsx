@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
-import GenerateMode from "../../src/GenerateMode.jsx";
+import GenerateMode from "../../src/GenerateMode";
 
 const mockGenerateMixTwo = vi.fn();
 const mockListOffspringImages = vi.fn();
@@ -9,7 +9,7 @@ const mockCreateTextSearchRequest = vi.fn();
 const mockCreateImageUploadRequest = vi.fn();
 const mockCreateImageSearchRequest = vi.fn();
 
-vi.mock("../../src/api.js", () => ({
+vi.mock("../../src/api", () => ({
   __esModule: true,
   generateMixTwo: (...args) => mockGenerateMixTwo(...args),
   listOffspringImages: (...args) => mockListOffspringImages(...args),

@@ -1,20 +1,31 @@
-import { lazy } from "react";
+import { lazy, type ComponentType, type ReactNode } from "react";
 import { DisplayModes } from "../hooks/useDisplayMode";
 
-const IframeMode = lazy(() => import("../IframeMode.jsx"));
-const SlideMode = lazy(() => import("../SlideMode.jsx"));
-const OrganicRoomScene = lazy(() => import("../OrganicRoomScene.jsx"));
-const SearchMode = lazy(() => import("../SearchMode.jsx"));
-const CollageMode = lazy(() => import("../CollageMode.jsx"));
-const CaptionMode = lazy(() => import("../CaptionMode.jsx"));
-const CollageVersionMode = lazy(() => import("../CollageVersionMode.jsx"));
-const GenerateMode = lazy(() => import("../GenerateMode.jsx"));
-const StaticMode = lazy(() => import("../StaticMode.jsx"));
-const VideoMode = lazy(() => import("../VideoMode.jsx"));
-const KinshipScene = lazy(() => import("../ThreeKinshipScene.jsx"));
+type ModeBaseConfig = {
+  component: ComponentType<any>;
+  withCaptureReady?: boolean;
+};
+
+type ModeEntryOverrides = {
+  componentProps?: Record<string, unknown>;
+  beforeContent?: ReactNode;
+  afterContent?: ReactNode;
+} & Record<string, unknown>;
+
+const IframeMode = lazy(() => import("../IframeMode"));
+const SlideMode = lazy(() => import("../SlideMode"));
+const OrganicRoomScene = lazy(() => import("../OrganicRoomScene"));
+const SearchMode = lazy(() => import("../SearchMode"));
+const CollageMode = lazy(() => import("../CollageMode"));
+const CaptionMode = lazy(() => import("../CaptionMode"));
+const CollageVersionMode = lazy(() => import("../CollageVersionMode"));
+const GenerateMode = lazy(() => import("../GenerateMode"));
+const StaticMode = lazy(() => import("../StaticMode"));
+const VideoMode = lazy(() => import("../VideoMode"));
+const KinshipScene = lazy(() => import("../ThreeKinshipScene"));
 const AdminPanel = lazy(() => import("../AdminPanel"));
 
-const modeBaseConfigs = {
+const modeBaseConfigs: Record<string, ModeBaseConfig> = {
   [DisplayModes.IFRAME]: { component: IframeMode, withCaptureReady: true },
   [DisplayModes.SLIDE]: { component: SlideMode, withCaptureReady: true },
   [DisplayModes.ORGANIC]: { component: OrganicRoomScene, withCaptureReady: true },
@@ -29,11 +40,11 @@ const modeBaseConfigs = {
   [DisplayModes.ADMIN]: { component: AdminPanel },
 };
 
-function buildModeEntry(baseConfig, overrides = {}) {
+function buildModeEntry(baseConfig: ModeBaseConfig, overrides: ModeEntryOverrides = {}) {
   const { component, withCaptureReady } = baseConfig;
   const { componentProps, beforeContent, afterContent, ...restOverrides } = overrides;
 
-  const entry = {
+  const entry: Record<string, unknown> = {
     component,
     ...restOverrides,
   };

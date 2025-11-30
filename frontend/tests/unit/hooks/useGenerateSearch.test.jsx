@@ -1,12 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import useGenerateSearch from "../../../src/hooks/useGenerateSearch.js";
-import {
-  createImageSearchRequest,
-  createTextSearchRequest,
-} from "../../../src/api.js";
+import useGenerateSearch from "../../../src/hooks/useGenerateSearch";
+import { createImageSearchRequest, createTextSearchRequest } from "../../../src/api";
 
-vi.mock("../../../src/api.js", () => ({
+vi.mock("../../../src/api", () => ({
   __esModule: true,
   createImageSearchRequest: vi.fn(),
   createTextSearchRequest: vi.fn(),

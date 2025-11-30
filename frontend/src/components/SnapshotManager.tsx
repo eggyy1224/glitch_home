@@ -62,7 +62,7 @@ export default function SnapshotManager() {
     [clampPreviewWidth, snapshotPreviewWidth],
   );
 
-  const refreshSnapshots = useCallback(async (clientOverride) => {
+  const refreshSnapshots = useCallback(async (clientOverride?: string | null) => {
     const client = clientOverride ?? snapshotClient;
     const label = client || "(未設定)";
     const requestId = Date.now();

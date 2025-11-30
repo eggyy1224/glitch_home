@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import useGenerateParams from "../../../src/hooks/useGenerateParams.js";
+import useGenerateParams from "../../../src/hooks/useGenerateParams";
 
 describe("useGenerateParams", () => {
   it("組裝包含親代與可選參數的 payload", () => {
