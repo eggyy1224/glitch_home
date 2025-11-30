@@ -1,0 +1,35 @@
+{
+  "generation_type": "collage",
+  "parents": [
+    "offspring_20250923_161704_451.png",
+    "offspring_20250923_162135_155.png",
+    "offspring_20250923_161828_524.png",
+    "offspring_20250923_161624_066.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161704_451.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_162135_155.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161828_524.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161624_066.png"
+  ],
+  "collage_params": {
+    "rows": 21,
+    "cols": 26,
+    "mode": "source-cluster",
+    "base": "first",
+    "allow_self": false,
+    "seed": 537168,
+    "resize_w": 2048,
+    "pad_px": 0,
+    "jitter_px": 0,
+    "rotate_deg": 0
+  },
+  "output_image": "offspring_20251130_230520_694.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 2028,
+    "height": 3066
+  },
+  "created_at": "2025-11-30T15:05:23Z",
+  "tile_mapping": null
+}

@@ -1,0 +1,51 @@
+{
+  "generation_type": null,
+  "parents": [
+    "offspring_20250923_161624_066.png",
+    "offspring_20250923_161704_451.png",
+    "offspring_20250923_161828_524.png",
+    "offspring_20250923_162135_155.png"
+  ],
+  "parents_full_paths": [
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161624_066.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161704_451.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161828_524.png",
+    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_162135_155.png"
+  ],
+  "input_details": [
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161624_066.png",
+      "name": "offspring_20250923_161624_066.png",
+      "file_size": "2.37MB",
+      "dimensions": "683x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161704_451.png",
+      "name": "offspring_20250923_161704_451.png",
+      "file_size": "1.85MB",
+      "dimensions": "683x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_161828_524.png",
+      "name": "offspring_20250923_161828_524.png",
+      "file_size": "1.88MB",
+      "dimensions": "747x1024"
+    },
+    {
+      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250923_162135_155.png",
+      "name": "offspring_20250923_162135_155.png",
+      "file_size": "1.73MB",
+      "dimensions": "683x1024"
+    }
+  ],
+  "model_name": "gemini-3-pro-image-preview",
+  "prompt": "Study the provided images and identify their most distinctive subjects, forms, textures, colors, lighting, and spatial rhythms. Treat these as raw material and extend them into a new scene that feels like a natural continuation or variation of the originals, rather than a collage or copy. Reinterpret composition, perspective, and scale freely; you are not constrained to camera-accurate or strictly photorealistic rendering, as long as the key visual qualities and atmosphere remain recognizable. Avoid generic stock aesthetics; preserve idiosyncratic details, imperfections, and local character. Do not simply paste or overlay entire backgrounds; build a fresh arrangement that clearly grows out of the source images.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",
+  "strength": 0.5,
+  "created_at": "2025-11-30T15:07:29Z",
+  "output_image": "offspring_20251130_230729_173.png",
+  "output_format": "png",
+  "output_size": {
+    "width": 848,
+    "height": 1264
+  }
+}
