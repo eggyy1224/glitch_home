@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { DisplayModes } from "../hooks/useDisplayMode.js";
+import { DisplayModes } from "../hooks/useDisplayMode";
 
 const IframeMode = lazy(() => import("../IframeMode.jsx"));
 const SlideMode = lazy(() => import("../SlideMode.jsx"));
@@ -12,7 +12,7 @@ const GenerateMode = lazy(() => import("../GenerateMode.jsx"));
 const StaticMode = lazy(() => import("../StaticMode.jsx"));
 const VideoMode = lazy(() => import("../VideoMode.jsx"));
 const KinshipScene = lazy(() => import("../ThreeKinshipScene.jsx"));
-const AdminPanel = lazy(() => import("../AdminPanel.jsx"));
+const AdminPanel = lazy(() => import("../AdminPanel"));
 
 const modeBaseConfigs = {
   [DisplayModes.IFRAME]: { component: IframeMode, withCaptureReady: true },

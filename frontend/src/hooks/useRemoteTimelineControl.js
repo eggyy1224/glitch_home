@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DisplayModes } from "./useDisplayMode.js";
+import { DisplayModes } from "./useDisplayMode";
 import { useIframeTimelinePlayer } from "./useIframeTimelinePlayer.js";
 import { useTimelineStepActions } from "./useTimelineStepActions.js";
 

@@ -8,7 +8,7 @@ import {
   saveIframeSnapshot,
 } from "../api.js";
 import { AdminPanelContext } from "../AdminPanelContext";
-import { boxStyle, labelStyle, previewContainerStyle, previewTitleStyle, resizerHandleStyle, resizerHitboxStyle, snapshotPreviewIframeStyle } from "../AdminPanelStyles.js";
+import { boxStyle, labelStyle, previewContainerStyle, previewTitleStyle, resizerHandleStyle, resizerHitboxStyle, snapshotPreviewIframeStyle } from "../AdminPanelStyles";
 import { minimalConfigPayload, previewSrcFromConfig, pretty } from "../adminPanelUtils.js";
 
 export default function SnapshotManager() {
@@ -35,7 +35,7 @@ export default function SnapshotManager() {
     () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
     [snapshotPreviewWidth],
   );
-  const refreshTimerRef = useRef(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRequestIdRef = useRef(0);
 
   const clampPreviewWidth = useCallback((width) => {

@@ -1,8 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import EpisodeManager from "../../src/components/EpisodeManager.jsx";
-import { AdminPanelContext } from "../../src/AdminPanelContext.js";
+import EpisodeManager from "../../src/components/EpisodeManager";
+import { AdminPanelContext } from "../../src/AdminPanelContext";
 
 const {
   mockListEpisodes,

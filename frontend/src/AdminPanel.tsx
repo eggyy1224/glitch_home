@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { AdminPanelContext } from "./AdminPanelContext.js";
+import type { AdminPanelContextValue } from "./AdminPanelContext";
+import { AdminPanelContext } from "./AdminPanelContext";
 import "./AdminPanelMatrix.css";
 import {
   activeTabButtonStyle,
@@ -8,12 +9,22 @@ import {
   tabButtonStyle,
   tabPanelStyle,
   tabRowStyle,
-} from "./AdminPanelStyles.js";
-import SnapshotManager from "./components/SnapshotManager.jsx";
-import TimelineManager from "./components/TimelineManager.jsx";
-import EpisodeManager from "./components/EpisodeManager.jsx";
-import ClientStateQueuePanel from "./components/ClientStateQueuePanel.jsx";
-import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor.jsx";
+} from "./AdminPanelStyles";
+import SnapshotManager from "./components/SnapshotManager";
+import TimelineManager from "./components/TimelineManager";
+import EpisodeManager from "./components/EpisodeManager";
+import ClientStateQueuePanel from "./components/ClientStateQueuePanel";
+import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor";
+
+interface AdminPanelProps {
+  clientId?: string;
+  appMode?: string;
+  canWriteMetadata?: boolean;
+  canWriteAssets?: boolean;
+  canAnalyze?: boolean;
+  canRebuildIndex?: boolean;
+  forbidMessage?: string;
+}
 
 export default function AdminPanel({
   clientId,
@@ -23,16 +34,16 @@ export default function AdminPanel({
   canAnalyze = true,
   canRebuildIndex = true,
   forbidMessage = "",
-}) {
-  const [activeTab, setActiveTab] = useState("manage");
-  const [visitedTabs, setVisitedTabs] = useState(["manage"]);
-  const [manageTab, setManageTab] = useState("snapshot");
-  const [visitedManageTabs, setVisitedManageTabs] = useState(["snapshot"]);
+}: AdminPanelProps) {
+  const [activeTab, setActiveTab] = useState<string>("manage");
+  const [visitedTabs, setVisitedTabs] = useState<string[]>(["manage"]);
+  const [manageTab, setManageTab] = useState<string>("snapshot");
+  const [visitedManageTabs, setVisitedManageTabs] = useState<string[]>(["snapshot"]);
   const resolvedDefaultClient = useMemo(() => {
     if (clientId && clientId !== "admin") return clientId;
     return "desktop";
   }, [clientId]);
-  const contextValue = useMemo(
+  const contextValue = useMemo<AdminPanelContextValue>(
     () => ({
       defaultClientId: resolvedDefaultClient,
       appMode,
@@ -44,11 +55,11 @@ export default function AdminPanel({
     }),
     [appMode, canWriteAssets, canWriteMetadata, canAnalyze, canRebuildIndex, forbidMessage, resolvedDefaultClient],
   );
-  const handleTabChange = useCallback((tab) => {
+  const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
   }, []);
-  const handleManageTabChange = useCallback((tab) => {
+  const handleManageTabChange = useCallback((tab: string) => {
     setManageTab(tab);
     setVisitedManageTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
   }, []);

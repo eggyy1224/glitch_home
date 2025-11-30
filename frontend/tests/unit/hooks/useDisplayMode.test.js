@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DisplayModes, getActiveMode } from "../../../src/hooks/useDisplayMode.js";
+import { DisplayModes, getActiveMode } from "../../../src/hooks/useDisplayMode";
 
 const buildParams = (query = "") => new URLSearchParams(query);
 

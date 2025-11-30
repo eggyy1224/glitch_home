@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 const accent = "#0f4";
 const accentStrong = "#4f8";
 const border = "#0f4";
@@ -9,7 +11,7 @@ const panelBgAlt = "#000";
 const panelShadow = "none";
 const fontFamily = "monospace";
 
-export const containerStyle = {
+export const containerStyle: CSSProperties = {
   padding: 16,
   position: "relative",
   zIndex: 1,
@@ -18,10 +20,10 @@ export const containerStyle = {
   lineHeight: 1.5,
 };
 
-export const tabRowStyle = { display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" };
-export const tabPanelStyle = {};
-export const hiddenTabPanelStyle = { ...tabPanelStyle, display: "none" };
-export const tabButtonStyle = {
+export const tabRowStyle: CSSProperties = { display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" };
+export const tabPanelStyle: CSSProperties = {};
+export const hiddenTabPanelStyle: CSSProperties = { ...tabPanelStyle, display: "none" };
+export const tabButtonStyle: CSSProperties = {
   padding: "10px 14px",
   borderRadius: 0,
   border: `1px solid ${border}`,
@@ -32,7 +34,7 @@ export const tabButtonStyle = {
   letterSpacing: "0.06em",
   textTransform: "uppercase",
 };
-export const activeTabButtonStyle = {
+export const activeTabButtonStyle: CSSProperties = {
   ...tabButtonStyle,
   background: accent,
   color: "#000",
@@ -40,7 +42,7 @@ export const activeTabButtonStyle = {
   fontWeight: 700,
 };
 
-export const boxStyle = {
+export const boxStyle: CSSProperties = {
   border: `1px solid ${border}`,
   borderRadius: 0,
   padding: 12,
@@ -49,19 +51,19 @@ export const boxStyle = {
   boxShadow: panelShadow,
 };
 
-export const columnsStyle = {
+export const columnsStyle: CSSProperties = {
   display: "flex",
   gap: 16,
   alignItems: "flex-start",
   flexWrap: "wrap",
 };
 
-export const columnStyle = {
+export const columnStyle: CSSProperties = {
   flex: 1,
   minWidth: 420,
 };
 
-export const labelStyle = {
+export const labelStyle: CSSProperties = {
   display: "block",
   fontWeight: 600,
   marginBottom: 6,
@@ -69,7 +71,7 @@ export const labelStyle = {
   color: accentStrong,
 };
 
-export const previewContainerStyle = {
+export const previewContainerStyle: CSSProperties = {
   marginTop: 12,
   background: panelBg,
   borderRadius: 0,
@@ -79,9 +81,9 @@ export const previewContainerStyle = {
   boxShadow: panelShadow,
 };
 
-export const previewTitleStyle = { marginBottom: 6, fontWeight: 800, color: textMuted, letterSpacing: "0.08em" };
+export const previewTitleStyle: CSSProperties = { marginBottom: 6, fontWeight: 800, color: textMuted, letterSpacing: "0.08em" };
 
-export const snapshotPreviewIframeStyle = {
+export const snapshotPreviewIframeStyle: CSSProperties = {
   width: "100%",
   aspectRatio: "16 / 9",
   minHeight: 400,
@@ -91,14 +93,14 @@ export const snapshotPreviewIframeStyle = {
   boxShadow: "none",
 };
 
-export const timelinePreviewGridStyle = {
+export const timelinePreviewGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
   gap: 12,
   marginTop: 12,
 };
 
-export const timelinePreviewIframeStyle = {
+export const timelinePreviewIframeStyle: CSSProperties = {
   width: "100%",
   aspectRatio: "16 / 9",
   minHeight: 340,
@@ -108,7 +110,7 @@ export const timelinePreviewIframeStyle = {
   boxShadow: "none",
 };
 
-export const resizerHandleStyle = {
+export const resizerHandleStyle: CSSProperties = {
   position: "absolute",
   right: 8,
   bottom: 8,
@@ -121,7 +123,7 @@ export const resizerHandleStyle = {
   boxShadow: "none",
 };
 
-export const resizerHitboxStyle = {
+export const resizerHitboxStyle: CSSProperties = {
   position: "absolute",
   right: 0,
   bottom: 0,

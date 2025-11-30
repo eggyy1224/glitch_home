@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles.js";
+import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles";
 import { createTextSearchRequest, listOffspringImages, listVideoAssets } from "../../api.js";
 
 const MODE_PRESETS = {
@@ -88,7 +88,7 @@ export default function SnapshotPanelsEditor({
   const [semanticResults, setSemanticResults] = useState([]);
   const [searchingSemantic, setSearchingSemantic] = useState(false);
   const [assetSearchError, setAssetSearchError] = useState(null);
-  const semanticSearchControllerRef = useRef(null);
+  const semanticSearchControllerRef = useRef<AbortController | null>(null);
 
   const parseAssetList = useCallback((rawList) => {
     const list = Array.isArray(rawList) ? rawList : [];

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { clampInt } from "../utils/iframeConfig.js";
-import { DisplayModes, useDisplayMode } from "./useDisplayMode.js";
+import { DisplayModes, useDisplayMode } from "./useDisplayMode";
 
 const DEFAULT_SLIDE_INTERVAL = 3000;
 const MIN_SLIDE_INTERVAL = 1000;

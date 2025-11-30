@@ -43,10 +43,10 @@ vi.mock("../../../src/GenerateMode.jsx", () => ({ __esModule: true, default: Gen
 vi.mock("../../../src/StaticMode.jsx", () => ({ __esModule: true, default: StaticModeMock }));
 vi.mock("../../../src/VideoMode.jsx", () => ({ __esModule: true, default: VideoModeMock }));
 vi.mock("../../../src/ThreeKinshipScene.jsx", () => ({ __esModule: true, default: KinshipSceneMock }));
-vi.mock("../../../src/AdminPanel.jsx", () => ({ __esModule: true, default: AdminPanelMock }));
+vi.mock("../../../src/AdminPanel", () => ({ __esModule: true, default: AdminPanelMock }));
 
-import { createModeRenderMap } from "../../../src/modes/createModeRenderMap.js";
-import { DisplayModes } from "../../../src/hooks/useDisplayMode.js";
+import { createModeRenderMap } from "../../../src/modes/createModeRenderMap";
+import { DisplayModes } from "../../../src/hooks/useDisplayMode";
 
 const baseProps = {
   iframeActiveConfig: { layout: "grid" },

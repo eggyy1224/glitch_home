@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useModeParams } from "../../../src/hooks/useModeParams.js";
-import { DisplayModes } from "../../../src/hooks/useDisplayMode.js";
+import { DisplayModes } from "../../../src/hooks/useDisplayMode";
 
 const setSearch = (query = "") => {
   const search = query ? `?${query}` : "";

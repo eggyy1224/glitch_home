@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
 import { render, screen } from "@testing-library/react";
 import App from "../../src/App.jsx";
-import { DisplayModes } from "../../src/hooks/useDisplayMode.js";
+import { DisplayModes } from "../../src/hooks/useDisplayMode";
 
 const {
   mockUseModeParams,
@@ -118,7 +118,7 @@ vi.mock("../../src/components/IframeTimelineControls.jsx", () => ({
   default: IframeTimelineControlsMock,
 }));
 
-vi.mock("../../src/modes/createModeRenderMap.js", () => ({
+vi.mock("../../src/modes/createModeRenderMap", () => ({
   __esModule: true,
   createModeRenderMap: mockCreateModeRenderMap,
 }));

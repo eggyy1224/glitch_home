@@ -1,8 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import SnapshotManager from "../../src/components/SnapshotManager.jsx";
-import { AdminPanelContext } from "../../src/AdminPanelContext.js";
+import SnapshotManager from "../../src/components/SnapshotManager";
+import { AdminPanelContext } from "../../src/AdminPanelContext";
 
 const {
   mockListIframeSnapshots,

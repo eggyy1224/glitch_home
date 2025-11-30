@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import SnapshotPanelsEditor from "../../src/components/snapshot/SnapshotPanelsEditor.jsx";
+import SnapshotPanelsEditor from "../../src/components/snapshot/SnapshotPanelsEditor";
 
 const { mockListOffspringImages, mockListVideoAssets } = vi.hoisted(() => ({
   mockListOffspringImages: vi.fn(),

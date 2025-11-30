@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useRemoteTimelineControl } from "../../../src/hooks/useRemoteTimelineControl.js";
-import { DisplayModes } from "../../../src/hooks/useDisplayMode.js";
+import { DisplayModes } from "../../../src/hooks/useDisplayMode";
 
 vi.mock("../../../src/hooks/useIframeTimelinePlayer.js", () => ({
   __esModule: true,

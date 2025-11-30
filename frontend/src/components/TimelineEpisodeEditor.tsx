@@ -28,7 +28,7 @@ import {
   resizerHitboxStyle,
   snapshotPreviewIframeStyle,
   tabButtonStyle,
-} from "../AdminPanelStyles.js";
+} from "../AdminPanelStyles";
 import {
   defaultEpisodePayload,
   defaultTimelinePayload,
@@ -41,7 +41,7 @@ import {
 } from "../adminPanelUtils.js";
 import EpisodeListPanel from "./timeline/EpisodeListPanel";
 import EpisodeTracksEditor from "./timeline/EpisodeTracksEditor";
-import SnapshotPanelsEditor from "./snapshot/SnapshotPanelsEditor.jsx";
+import SnapshotPanelsEditor from "./snapshot/SnapshotPanelsEditor";
 import TimelineListPanel from "./timeline/TimelineListPanel";
 import TimelinePreviewPlayer from "./timeline/TimelinePreviewPlayer";
 import TimelineStepsEditor from "./timeline/TimelineStepsEditor";

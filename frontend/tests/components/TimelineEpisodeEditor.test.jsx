@@ -1,8 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
-import TimelineEpisodeEditor from "../../src/components/TimelineEpisodeEditor.jsx";
-import { AdminPanelContext } from "../../src/AdminPanelContext.js";
+import TimelineEpisodeEditor from "../../src/components/TimelineEpisodeEditor";
+import { AdminPanelContext } from "../../src/AdminPanelContext";
 
 const {
   mockListIframeTimelines,

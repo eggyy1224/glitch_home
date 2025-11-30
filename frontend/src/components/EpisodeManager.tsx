@@ -9,7 +9,7 @@ import {
   updateEpisode,
 } from "../api.js";
 import { AdminPanelContext } from "../AdminPanelContext";
-import { boxStyle, labelStyle } from "../AdminPanelStyles.js";
+import { boxStyle, labelStyle } from "../AdminPanelStyles";
 import { defaultEpisodePayload, parseTargetMap, pretty } from "../adminPanelUtils.js";
 
 export default function EpisodeManager() {

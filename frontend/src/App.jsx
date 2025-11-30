@@ -6,7 +6,7 @@ import { useIframeConfig } from "./hooks/useIframeConfig.js";
 import { useCollageConfig } from "./hooks/useCollageConfig.js";
 import { useControlSocket } from "./hooks/useControlSocket.js";
 import ModeLayout from "./components/ModeLayout.jsx";
-import { DisplayModes } from "./hooks/useDisplayMode.js";
+import { DisplayModes } from "./hooks/useDisplayMode";
 import { useModeParams, KINSHIP_DATA_EXCLUDED } from "./hooks/useModeParams.js";
 import { useCameraPresets } from "./hooks/useCameraPresets.js";
 import { useKinshipData } from "./hooks/useKinshipData.js";
@@ -16,7 +16,7 @@ import IframeTimelineControls from "./components/IframeTimelineControls.jsx";
 import { useSoundQueue } from "./hooks/useSoundQueue.js";
 import { useRemoteTimelineControl } from "./hooks/useRemoteTimelineControl.js";
 import { useControlSocketHandlers } from "./hooks/useControlSocketHandlers.js";
-import { createModeRenderMap } from "./modes/createModeRenderMap.js";
+import { createModeRenderMap } from "./modes/createModeRenderMap";
 import { useSilentAudioUnlock } from "./hooks/useSilentAudioUnlock.js";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";

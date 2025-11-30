@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-export const DisplayModes = Object.freeze({
+export const DisplayModes = {
   KINSHIP: "kinship",
   IFRAME: "iframe",
   SLIDE: "slide",
@@ -13,9 +13,11 @@ export const DisplayModes = Object.freeze({
   STATIC: "static",
   VIDEO: "video",
   ADMIN: "admin",
-});
+} as const;
 
-const PARAM_SEQUENCE = [
+export type DisplayModeType = (typeof DisplayModes)[keyof typeof DisplayModes];
+
+const PARAM_SEQUENCE: Array<{ type: DisplayModeType; key: string }> = [
   { type: DisplayModes.ADMIN, key: "admin_mode" },
   { type: DisplayModes.IFRAME, key: "iframe_mode" },
   { type: DisplayModes.SLIDE, key: "slide_mode" },
@@ -29,17 +31,17 @@ const PARAM_SEQUENCE = [
   { type: DisplayModes.VIDEO, key: "video_mode" },
 ];
 
-const parseBooleanParam = (params, key, defaultValue = "false") => {
+const parseBooleanParam = (params: URLSearchParams | undefined, key: string, defaultValue = "false") => {
   const rawValue = params?.get(key);
   return (rawValue ?? defaultValue) === "true";
 };
 
-const buildKinshipConfig = (incubatorMode, phylogenyMode) => ({
+const buildKinshipConfig = (incubatorMode: boolean, phylogenyMode: boolean) => ({
   incubator: incubatorMode,
   phylogeny: phylogenyMode,
 });
 
-export const getActiveMode = (params) => {
+export const getActiveMode = (params?: URLSearchParams) => {
   const incubatorMode = parseBooleanParam(params, "incubator");
   const phylogenyMode = parseBooleanParam(params, "phylogeny");
 
@@ -57,7 +59,7 @@ export const getActiveMode = (params) => {
   return { type: activeType, config: buildKinshipConfig(incubatorMode, phylogenyMode) };
 };
 
-export const useDisplayMode = (initialParams) => {
+export const useDisplayMode = (initialParams?: URLSearchParams) => {
   return useMemo(() => {
     const params = initialParams || new URLSearchParams(window.location.search);
     return getActiveMode(params);

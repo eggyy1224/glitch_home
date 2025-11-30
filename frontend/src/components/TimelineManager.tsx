@@ -18,7 +18,7 @@ import {
   resizerHitboxStyle,
   timelinePreviewGridStyle,
   timelinePreviewIframeStyle,
-} from "../AdminPanelStyles.js";
+} from "../AdminPanelStyles";
 import { defaultTimelinePayload, firstSnapshotRef, previewSrcFromConfig, pretty, timelinePlaybackSrc } from "../adminPanelUtils.js";
 import { getIframeSnapshot } from "../api.js";
 
