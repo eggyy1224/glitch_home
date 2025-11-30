@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
+import type { VideoController } from "./types/control";
 import "./VideoMode.css";
 
-const canvasToBlob = (canvas) =>
-  new Promise((resolve, reject) => {
+const canvasToBlob = (canvas: HTMLCanvasElement) =>
+  new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
@@ -18,16 +19,21 @@ const canvasToBlob = (canvas) =>
 
 const DEFAULT_VOLUME = 0.7;
 
-const clampVolume = (value, fallback = DEFAULT_VOLUME) => {
+const clampVolume = (value: number | string | null, fallback = DEFAULT_VOLUME) => {
   if (value == null) return fallback;
   const numberValue = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numberValue)) return fallback;
   return Math.min(1, Math.max(0, numberValue));
 };
 
-export default function VideoMode({ onCaptureReady = null, controlRef = null }) {
-  const rootRef = useRef(null);
-  const videoRef = useRef(null);
+export interface VideoModeProps {
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+  controlRef?: React.MutableRefObject<VideoController | null> | null;
+}
+
+export default function VideoMode({ onCaptureReady = null, controlRef = null }: VideoModeProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [volumeLevel, setVolumeLevel] = useState(DEFAULT_VOLUME);
   const [needsUserAction, setNeedsUserAction] = useState(false);

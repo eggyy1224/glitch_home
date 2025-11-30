@@ -1,7 +1,27 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchSoundFiles } from "./api";
 
-const styles = {
+interface SoundFile {
+  filename: string;
+  cleanId?: string;
+  url?: string;
+  size?: number | null;
+  modified_at?: string | null;
+  [key: string]: unknown;
+}
+
+interface PlayRequest {
+  filename?: string;
+  url?: string;
+}
+
+export interface SoundPlayerProps {
+  playRequest?: PlayRequest | null;
+  onPlayHandled?: () => void;
+  visible?: boolean;
+}
+
+const styles: Record<string, React.CSSProperties> = {
   container: {
     position: "fixed",
     right: "24px",
@@ -92,14 +112,14 @@ function formatDate(iso) {
   }
 }
 
-export default function SoundPlayer({ playRequest = null, onPlayHandled, visible = true }) {
-  const [files, setFiles] = useState([]);
+export default function SoundPlayer({ playRequest = null, onPlayHandled, visible = true }: SoundPlayerProps) {
+  const [files, setFiles] = useState<SoundFile[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const audioRef = useRef(null);
-  const filesRef = useRef([]);
-  const [pendingAutoPlay, setPendingAutoPlay] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const filesRef = useRef<SoundFile[]>([]);
+  const [pendingAutoPlay, setPendingAutoPlay] = useState<PlayRequest | null>(null);
   const [needsUserAction, setNeedsUserAction] = useState(false);
 
   const loadFiles = useCallback(async () => {
@@ -220,7 +240,7 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
     return () => document.removeEventListener("click", handler);
   }, [needsUserAction]);
 
-  const containerStyle = useMemo(() => {
+  const containerStyle = useMemo<React.CSSProperties>(() => {
     if (visible || needsUserAction) return styles.container;
     return {
       ...styles.container,

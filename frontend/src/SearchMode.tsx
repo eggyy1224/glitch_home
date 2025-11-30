@@ -7,8 +7,14 @@ import "./styles/search-mode.css";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 
-export default function SearchMode({ imagesBase = IMAGES_BASE }) {
-  const [searchType, setSearchType] = useState("image");
+export interface SearchModeProps {
+  imagesBase?: string;
+}
+
+type SearchType = "image" | "text";
+
+export default function SearchMode({ imagesBase = IMAGES_BASE }: SearchModeProps) {
+  const [searchType, setSearchType] = useState<SearchType>("image");
   const {
     fileInputRef,
     preview,

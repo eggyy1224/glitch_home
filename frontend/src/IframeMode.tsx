@@ -1,10 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
-import { DEFAULT_IFRAME_CONFIG, sanitizeIframeConfig } from "./utils/iframeConfig";
+import { DEFAULT_IFRAME_CONFIG, clampInt, sanitizeIframeConfig } from "./utils/iframeConfig";
+import type { IframeConfig } from "./types/control";
 
 const DEFAULT_CONFIG = DEFAULT_IFRAME_CONFIG;
 
-const blobToDrawable = async (blob) => {
+type Drawable =
+  | { kind: "bitmap"; value: ImageBitmap }
+  | { kind: "image"; value: HTMLCanvasElement | HTMLImageElement };
+
+const blobToDrawable = async (blob: Blob | null): Promise<Drawable | null> => {
   if (!blob) return null;
   if (typeof window !== "undefined" && typeof window.createImageBitmap === "function") {
     try {
@@ -29,14 +34,21 @@ const blobToDrawable = async (blob) => {
   });
 };
 
+export interface IframeModeProps {
+  config: IframeConfig;
+  controlsEnabled?: boolean;
+  onApplyConfig?: (config: IframeConfig) => void;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+}
+
 export default function IframeMode({
   config,
   controlsEnabled = false,
   onApplyConfig,
   onCaptureReady = null,
-}) {
-  const containerRef = useRef(null);
-  const iframeRefs = useRef({});
+}: IframeModeProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
   const sanitizedConfig = useMemo(() => sanitizeIframeConfig(config, DEFAULT_CONFIG), [config]);
   const panels = sanitizedConfig.panels;
 
@@ -52,7 +64,7 @@ export default function IframeMode({
       return undefined;
     }
 
-    const makeCapture = () => {
+    const makeCapture = (): (() => Promise<Blob>) => {
       return async () => {
         const container = containerRef.current;
         if (!container) {
@@ -200,7 +212,7 @@ export default function IframeMode({
         // 等待所有 iframe 截圖完成並疊上去
         await Promise.all(capturePromises);
 
-        return new Promise((resolve, reject) => {
+        return new Promise<Blob>((resolve, reject) => {
           finalCanvas.toBlob(
             (blob) => {
               if (!blob) {
@@ -255,7 +267,7 @@ export default function IframeMode({
     });
   }, [panelCount, controlsEnabled]);
 
-  const containerStyle = useMemo(() => {
+  const containerStyle = useMemo<React.CSSProperties>(() => {
     const base = {
       width: "100vw",
       height: "100vh",
@@ -271,17 +283,17 @@ export default function IframeMode({
         gridAutoRows: "minmax(0, 1fr)",
         gridAutoFlow: "dense",
         gap: `${sanitizedConfig.gap}px`,
-      };
+      } as React.CSSProperties;
     }
     return {
       ...base,
       display: "flex",
       flexDirection: sanitizedConfig.layout === "vertical" ? "column" : "row",
       gap: `${sanitizedConfig.gap}px`,
-    };
+    } as React.CSSProperties;
   }, [sanitizedConfig, panels.length]);
 
-  const panelStyle = useMemo(
+  const panelStyle = useMemo<React.CSSProperties>(
     () => ({
       position: "relative",
       display: "flex",
@@ -298,7 +310,7 @@ export default function IframeMode({
     [],
   );
 
-  const labelStyle = useMemo(
+  const labelStyle = useMemo<React.CSSProperties>(
     () => ({
       position: "absolute",
       top: "12px",
@@ -316,7 +328,7 @@ export default function IframeMode({
     [],
   );
 
-  const controlWrapperStyle = useMemo(
+  const controlWrapperStyle = useMemo<React.CSSProperties>(
     () => ({
       position: "fixed",
       top: 16,
@@ -332,7 +344,7 @@ export default function IframeMode({
     [],
   );
 
-  const controlPanelStyle = useMemo(
+  const controlPanelStyle = useMemo<React.CSSProperties>(
     () => ({
       pointerEvents: "auto",
       width: 320,
@@ -352,7 +364,7 @@ export default function IframeMode({
     [],
   );
 
-  const controlLabelStyle = useMemo(
+  const controlLabelStyle = useMemo<React.CSSProperties>(
     () => ({
       fontSize: "12px",
       letterSpacing: "0.05em",
@@ -361,7 +373,7 @@ export default function IframeMode({
     [],
   );
 
-  const controlInputStyle = useMemo(
+  const controlInputStyle = useMemo<React.CSSProperties>(
     () => ({
       width: "100%",
       padding: "8px 10px",
@@ -375,7 +387,7 @@ export default function IframeMode({
     [],
   );
 
-  const applyButtonStyle = useMemo(
+  const applyButtonStyle = useMemo<React.CSSProperties>(
     () => ({
       alignSelf: "flex-end",
       padding: "8px 16px",
@@ -442,15 +454,15 @@ export default function IframeMode({
         {panels.length ? (
           panels.map((panel, index) => {
             const panelId = panel.id || `panel_${index + 1}`;
-            const flexStyle = sanitizedConfig.layout === "grid" ? {} : { flex: `${panel.ratio} 1 0` };
-            const gridStyle =
+            const flexStyle: React.CSSProperties = sanitizedConfig.layout === "grid" ? {} : { flex: `${panel.ratio} 1 0` };
+            const gridStyle: React.CSSProperties =
               sanitizedConfig.layout === "grid"
                 ? {
                     ...(panel.colSpan ? { gridColumn: `span ${panel.colSpan}` } : {}),
                     ...(panel.rowSpan ? { gridRow: `span ${panel.rowSpan}` } : {}),
                   }
                 : {};
-            const combinedStyle = sanitizedConfig.layout === "grid"
+            const combinedStyle: React.CSSProperties = sanitizedConfig.layout === "grid"
               ? { ...panelStyle, ...gridStyle }
               : { ...panelStyle, ...flexStyle };
             return (

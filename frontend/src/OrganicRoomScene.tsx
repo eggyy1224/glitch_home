@@ -4,7 +4,22 @@ import { OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { searchImagesByImage } from "./api";
 
-const styles = {
+interface SearchResultItem {
+  id: string;
+  cleanId: string;
+  distance: number | null;
+  metadata: unknown;
+}
+
+interface OrganicRoomSceneProps {
+  imagesBase: string;
+  anchorImage?: string | null;
+  onSelectImage?: (imageId: string) => void;
+  showInfo?: boolean;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+}
+
+const styles: Record<string, React.CSSProperties> = {
   root: {
     position: "relative",
     width: "100vw",
@@ -123,7 +138,7 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 function CubeRoom({ faceUrls }) {
-  const textures = useTexture(faceUrls);
+  const textures = useTexture(faceUrls) as THREE.Texture[];
 
   useEffect(() => {
     textures.forEach((texture) => {
@@ -157,7 +172,7 @@ function CubeRoom({ faceUrls }) {
 }
 
 function OrganicCube({ faceUrls, enabled }) {
-  const groupRef = useRef();
+  const groupRef = useRef<THREE.Group | null>(null);
   const phaseRef = useRef(0);
   useFrame((_, delta) => {
     const ref = groupRef.current;
@@ -262,7 +277,11 @@ function OrganicCruise({ enabled, controlsRef, faceIds, onEnterFace }) {
   return null;
 }
 
-function ScreenshotCapture({ onCaptureReady }) {
+interface ScreenshotCaptureProps {
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+}
+
+function ScreenshotCapture({ onCaptureReady }: ScreenshotCaptureProps) {
   const { gl, scene, camera } = useThree();
 
   useEffect(() => {
@@ -270,10 +289,10 @@ function ScreenshotCapture({ onCaptureReady }) {
       return undefined;
     }
 
-    gl.preserveDrawingBuffer = true;
+    (gl as THREE.WebGLRenderer & { preserveDrawingBuffer?: boolean }).preserveDrawingBuffer = true;
 
-    const captureScreenshot = () => {
-      return new Promise((resolve, reject) => {
+    const captureScreenshot = (): Promise<Blob> => {
+      return new Promise<Blob>((resolve, reject) => {
         try {
           gl.render(scene, camera);
           gl.domElement.toBlob(
@@ -301,12 +320,18 @@ function ScreenshotCapture({ onCaptureReady }) {
   return null;
 }
 
-export default function OrganicRoomScene({ imagesBase, anchorImage, onSelectImage, showInfo = false, onCaptureReady = null }) {
+export default function OrganicRoomScene({
+  imagesBase,
+  anchorImage,
+  onSelectImage,
+  showInfo = false,
+  onCaptureReady = null,
+}: OrganicRoomSceneProps) {
   const anchorClean = cleanId(anchorImage);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [results, setResults] = useState([]);
-  const controlsRef = useRef(null);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<SearchResultItem[]>([]);
+  const controlsRef = useRef<any>(null);
   const motionEnabled = !showInfo;
 
   useEffect(() => {

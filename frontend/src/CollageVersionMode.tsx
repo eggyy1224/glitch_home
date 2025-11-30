@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./CollageVersionMode.css";
 import {
   createImageSearchRequest,
@@ -8,32 +8,58 @@ import {
   listOffspringImages,
 } from "./api";
 
+interface OffspringImageInfo {
+  filename: string;
+  url?: string;
+}
+
+interface CollageGenerationResult {
+  output_image?: string;
+  imageUrl?: string;
+  completed?: boolean;
+  error?: string | null;
+  progress?: number;
+  stage?: string;
+  message?: string;
+  width?: number;
+  height?: number;
+  output_format?: string;
+  parents?: string[];
+  [key: string]: unknown;
+}
+
+interface CollageVersionModeProps {
+  canGenerate?: boolean;
+  appMode?: string;
+  forbidMessage?: string;
+}
+
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
-export default function CollageVersionMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }) {
+export default function CollageVersionMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }: CollageVersionModeProps) {
   const generationDisabled = !canGenerate;
   const blockedMessage = forbidMessage || `目前 APP_MODE=${appMode || "未知"} 禁止生成`;
-  const [availableImages, setAvailableImages] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
+  const [availableImages, setAvailableImages] = useState<OffspringImageInfo[]>([]);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingImages, setLoadingImages] = useState(true);
-  const [error, setError] = useState(generationDisabled ? blockedMessage : null);
-  const [result, setResult] = useState(null);
+  const [error, setError] = useState<string | null>(generationDisabled ? blockedMessage : null);
+  const [result, setResult] = useState<CollageGenerationResult | null>(null);
   
   // Progress tracking
-  const [taskId, setTaskId] = useState(null);
+  const [taskId, setTaskId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [progressStage, setProgressStage] = useState("");
   const [progressMessage, setProgressMessage] = useState("");
-  const progressIntervalRef = useRef(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Search states (名稱搜尋)
   const [textQuery, setTextQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState<OffspringImageInfo[]>([]);
   const [searching, setSearching] = useState(false);
-  const [displayMode, setDisplayMode] = useState("all"); // "all" | "search"
-  const textSearchControllerRef = useRef(null);
+  const [displayMode, setDisplayMode] = useState<"all" | "search">("all");
+  const textSearchControllerRef = useRef<AbortController | null>(null);
   
   // Parameters
   const [rows, setRows] = useState(12);
@@ -547,7 +573,7 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
                 <p>檔名: {result.output_image}</p>
                 <p>尺寸: {result.width} × {result.height}</p>
                 <p>格式: {result.output_format}</p>
-                <p>親代圖: {result.parents.join(", ")}</p>
+                <p>親代圖: {result.parents?.join(", ")}</p>
               </div>
             </div>
           )}

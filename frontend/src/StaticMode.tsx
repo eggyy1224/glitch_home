@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
 import "./StaticMode.css";
 
-const canvasToBlob = (canvas) =>
-  new Promise((resolve, reject) => {
+const canvasToBlob = (canvas: HTMLCanvasElement) =>
+  new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
@@ -16,12 +16,18 @@ const canvasToBlob = (canvas) =>
     );
   });
 
-export default function StaticMode({ imagesBase, imgId, onCaptureReady = null }) {
-  const rootRef = useRef(null);
+export interface StaticModeProps {
+  imagesBase?: string;
+  imgId?: string | null;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+}
+
+export default function StaticMode({ imagesBase, imgId, onCaptureReady = null }: StaticModeProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const objectFit = params.get("object_fit") || "contain";
-  const objectPosition = params.get("object_position") || "center";
+  const objectFit = (params.get("object_fit") || "contain") as React.CSSProperties["objectFit"];
+  const objectPosition = (params.get("object_position") || "center") as React.CSSProperties["objectPosition"];
   const queryImagesBase = params.get("img_base");
 
   const effectiveImagesBase = useMemo(() => {

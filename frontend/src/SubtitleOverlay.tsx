@@ -1,6 +1,11 @@
 import React from "react";
+import type { OverlayContent } from "./types/overlay";
 
-export default function SubtitleOverlay({ subtitle = null }) {
+export interface SubtitleOverlayProps {
+  subtitle?: OverlayContent | null;
+}
+
+export default function SubtitleOverlay({ subtitle = null }: SubtitleOverlayProps) {
   if (!subtitle || !subtitle.text) return null;
   const langAttr = subtitle.language ? subtitle.language : undefined;
   return (

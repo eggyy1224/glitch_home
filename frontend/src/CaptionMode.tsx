@@ -1,7 +1,12 @@
 import React from "react";
 import "./CaptionMode.css";
+import type { OverlayContent } from "./types/overlay";
 
-export default function CaptionMode({ caption }) {
+export interface CaptionModeProps {
+  caption?: OverlayContent | null;
+}
+
+export default function CaptionMode({ caption }: CaptionModeProps) {
   return (
     <div className="caption-mode-container">
       {caption && caption.text && (

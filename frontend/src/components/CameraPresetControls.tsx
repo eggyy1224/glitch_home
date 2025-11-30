@@ -1,4 +1,14 @@
 import React from "react";
+import type { CameraPreset } from "../types/control";
+
+export interface CameraPresetControlsProps {
+  presets?: CameraPreset[];
+  selectedPresetName?: string;
+  onSelectPreset?: (name: string) => void;
+  onSavePreset?: () => void;
+  onApplyPreset?: () => void;
+  onDeletePreset?: () => void;
+}
 
 export default function CameraPresetControls({
   presets = [],
@@ -7,7 +17,7 @@ export default function CameraPresetControls({
   onSavePreset,
   onApplyPreset,
   onDeletePreset,
-}) {
+}: CameraPresetControlsProps) {
   return (
     <div className="controls">
       <button type="button" onClick={onSavePreset}>

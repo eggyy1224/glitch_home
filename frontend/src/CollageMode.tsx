@@ -8,7 +8,19 @@ import {
 } from "./constants/collage";
 import { useCollageControls } from "./hooks/useCollageControls";
 
-export default function CollageMode(props) {
+export interface CollageModeProps {
+  imagesBase: string;
+  anchorImage?: string | null;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+  remoteConfig?: unknown;
+  controlsEnabled?: boolean;
+  remoteSource?: string | null;
+  imageProcessing?: unknown;
+  stateUtils?: unknown;
+}
+
+export default function CollageMode({ anchorImage = null, ...rest }: CollageModeProps) {
+  const collageProps = { anchorImage, ...rest };
   const {
     rootRef,
     resizeHandleRef,
@@ -40,9 +52,9 @@ export default function CollageMode(props) {
     handleShuffle,
     handleResizePointerDown,
     imageCountMax,
-  } = useCollageControls(props);
+  } = useCollageControls(collageProps as any);
 
-  const { imagesBase } = props;
+  const { imagesBase } = collageProps;
 
   return (
     <div className="collage-root">

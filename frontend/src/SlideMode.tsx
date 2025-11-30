@@ -4,10 +4,17 @@ import { useSlidePlayback } from "./hooks/useSlidePlayback";
 import { useSlideScreenshot } from "./hooks/useSlideScreenshot";
 import { computeStyles, getSizeClass } from "./utils/slideMode";
 
-export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, onCaptureReady = null }) {
-  const rootRef = useRef(null);
+export interface SlideModeProps {
+  imagesBase: string;
+  anchorImage?: string | null;
+  intervalMs?: number;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+}
+
+export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, onCaptureReady = null }: SlideModeProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [sizeClass, setSizeClass] = useState("large");
-  const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]);
+  const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]) as Record<string, React.CSSProperties>;
 
   const { current, items, index, loading, error, showCaption, playbackSpeed, isPaused, setPlaybackSpeed, togglePause } =
     useSlidePlayback({ anchorImage, intervalMs });

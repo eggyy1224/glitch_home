@@ -1,6 +1,7 @@
 import React from "react";
 import SoundPlayer from "../SoundPlayer";
 import SubtitleOverlay from "../SubtitleOverlay";
+import type { OverlayContent } from "../types/overlay";
 
 interface ModeLayoutProps {
   component?: React.ComponentType<any>;
@@ -13,7 +14,7 @@ interface ModeLayoutProps {
   soundPlayRequest?: unknown;
   onSoundHandled?: () => void;
   showInfo?: boolean;
-  subtitle?: string | null;
+  subtitle?: OverlayContent | null;
 }
 
 export default function ModeLayout({
