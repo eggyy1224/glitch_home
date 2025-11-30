@@ -45,16 +45,16 @@ export interface CaptionPayload {
 
 export interface IframePanelConfig {
   id: string;
-  src?: string;
-  ratio?: number;
-  label?: string;
-  image?: string;
-  params?: Record<string, unknown>;
-  url?: string;
-  colSpan?: number;
-  rowSpan?: number;
-  col_span?: number;
-  row_span?: number;
+  src?: string | undefined;
+  ratio?: number | undefined;
+  label?: string | undefined;
+  image?: string | undefined;
+  params?: Record<string, unknown> | undefined;
+  url?: string | undefined;
+  colSpan?: number | undefined;
+  rowSpan?: number | undefined;
+  col_span?: number | undefined;
+  row_span?: number | undefined;
 }
 
 export interface IframeConfig {

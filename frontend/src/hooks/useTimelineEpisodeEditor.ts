@@ -27,14 +27,14 @@ import {
   pretty,
   timelinePlaybackSrc,
 } from "../adminPanelUtils";
-import type { IframeConfig } from "../types/control";
+import type { IframeConfig, IframePanelConfig } from "../types/control";
 import type { EpisodeEntry, EpisodeTrack, IframeTimeline, SnapshotEntry, TimelineStep } from "../types/timeline";
 import type { EditorMode, EditorValidationError } from "../utils/adminEditorUtils";
 import { validateEpisode, validateSnapshot, validateTimeline } from "../utils/adminEditorUtils";
 
 interface ClipboardState {
   mode: EditorMode;
-  items: unknown[];
+  items: Array<Record<string, unknown>>;
 }
 
 type SnapshotOption = SnapshotEntry & { id?: string; client: string };
@@ -666,27 +666,28 @@ export default function useTimelineEpisodeEditor() {
             ? episodeData.tracks?.[idx]
             : snapshotData.panels?.[idx],
       )
-      .filter(Boolean);
+      .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"));
     setClipboard({ mode, items });
     setMessageForMode(`已複製 ${items.length} 筆`);
   }, [episodeData.tracks, mode, selectedRows, setMessageForMode, snapshotData.panels, timelineData.steps]);
 
   const handlePaste = useCallback(() => {
     if (!clipboard || clipboard.mode !== mode || !clipboard.items?.length) return;
+    const clonedItems = clipboard.items.map((item) => ({ ...item }));
     if (mode === "timeline") {
       updateTimeline({
         ...timelineData,
-        steps: [...(timelineData.steps || []), ...clipboard.items.map((item) => ({ ...item }))],
+        steps: [...(timelineData.steps || []), ...(clonedItems as unknown as TimelineStep[])],
       } as IframeTimeline);
     } else if (mode === "episode") {
       setEpisodeState({
         ...episodeData,
-        tracks: [...(episodeData.tracks || []), ...clipboard.items.map((item) => ({ ...item }))],
+        tracks: [...(episodeData.tracks || []), ...(clonedItems as unknown as EpisodeTrack[])],
       } as EpisodeEntry);
     } else {
       updateSnapshot({
         ...snapshotData,
-        panels: [...(snapshotData.panels || []), ...clipboard.items.map((item) => ({ ...item }))],
+        panels: [...(snapshotData.panels || []), ...(clonedItems as unknown as IframePanelConfig[])],
       } as IframeConfig);
     }
     setMessageForMode(`已貼上 ${clipboard.items.length} 筆`);
@@ -738,7 +739,9 @@ export default function useTimelineEpisodeEditor() {
       return;
     }
     try {
-      await playIframeTimeline(id, {}, { targetClientId: timelineData.clientId || (timelineData as { client_id?: string }).client_id });
+      const targetClientId =
+        timelineData.clientId ?? (timelineData as { client_id?: string | null }).client_id ?? null;
+      await playIframeTimeline(id, {}, { targetClientId });
       setMessageForMode("已送出 timeline 播放", "timeline");
     } catch (err) {
       const errMessage = err instanceof Error ? err.message : "播放失敗";

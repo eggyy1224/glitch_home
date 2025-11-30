@@ -1,5 +1,26 @@
 import React, { useMemo } from "react";
 import { labelStyle } from "../../AdminPanelStyles";
+import type { EpisodeTrack, IframeTimeline } from "../../types/timeline";
+
+interface EpisodeTracksEditorProps {
+  tracks: EpisodeTrack[];
+  selectedRows: number[];
+  onToggleRow: (index: number) => void;
+  onMoveRow: (index: number, delta: number) => void;
+  onDuplicateRow: (index: number) => void;
+  onRemoveRow: (index: number) => void;
+  onAddTrack: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  canPaste: boolean;
+  batchTargetClient: string;
+  onBatchTargetChange: (value: string) => void;
+  onBatchApply: () => void;
+  onTrackChange: (index: number, patch: Partial<EpisodeTrack>) => void;
+  episodeTargetOverride: string;
+  onTargetOverrideChange: (value: string) => void;
+  timelineOptions?: IframeTimeline[];
+}
 
 export default function EpisodeTracksEditor({
   tracks,
@@ -19,13 +40,13 @@ export default function EpisodeTracksEditor({
   episodeTargetOverride,
   onTargetOverrideChange,
   timelineOptions = [],
-}) {
+}: EpisodeTracksEditorProps) {
   const lanes = useMemo(() => {
-    const groups = new Map();
+    const groups = new Map<string, Array<EpisodeTrack & { index: number }>>();
     (tracks || []).forEach((track, index) => {
       const target = track.targetClientId || track.target_client_id || "(未指定)";
       if (!groups.has(target)) groups.set(target, []);
-      groups.get(target).push({ ...track, index });
+      groups.get(target)?.push({ ...track, index });
     });
     return Array.from(groups.entries());
   }, [tracks]);

@@ -101,6 +101,9 @@ export interface EpisodeTrack {
   targetClientId?: ClientId;
   target_client_id?: ClientId;
   priority?: number;
+  offset?: number;
+  delay?: number;
+  label?: string;
   [key: string]: unknown;
 }
 

@@ -29,7 +29,10 @@
     "src/hooks/useIframeTimelinePlayer.ts",
     "src/hooks/useRemoteTimelineControl.ts",
     "src/hooks/useTimelineStepActions.ts",
+    "src/hooks/useTimelineEpisodeEditor.ts",
     "src/utils/html2canvasLoader.ts",
-    "src/utils/request.ts"
+    "src/utils/request.ts",
+    "src/utils/adminEditorUtils.ts",
+    "src/components/TimelineEpisodeEditor.tsx"
   ]
 }

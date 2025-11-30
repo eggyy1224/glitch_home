@@ -1,32 +1,64 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles";
 import { createTextSearchRequest, listOffspringImages, listVideoAssets } from "../../api";
+import type { IframePanelConfig } from "../../types/control";
 
 const MODE_PRESETS = {
   slide_mode: { assetKey: "img", label: "slide_mode (輪播)" },
   static_mode: { assetKey: "img", label: "static_mode (單張)" },
   video_mode: { assetKey: "video", label: "video_mode (影片)" },
+} as const;
+
+type PanelMode = keyof typeof MODE_PRESETS;
+type AssetTab = "images" | "videos";
+type AssetSearchMode = "name" | "semantic";
+type PanelConfig = IframePanelConfig & {
+  ratio?: number | undefined;
+  colSpan?: number | undefined;
+  rowSpan?: number | undefined;
+  col_span?: number | undefined;
+  row_span?: number | undefined;
+  params?: Record<string, unknown> | undefined;
+  url?: string | undefined;
+  image?: string | undefined;
 };
+
+interface SnapshotPanelsEditorProps {
+  panels: PanelConfig[];
+  selectedRows: number[];
+  onToggleRow: (index: number) => void;
+  onMoveRow: (index: number, delta: number) => void;
+  onDuplicateRow: (index: number) => void;
+  onRemoveRow: (index: number) => void;
+  onAddPanel: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  canPaste: boolean;
+  onPanelChange: (index: number, patch: Partial<PanelConfig>) => void;
+  layoutColumns?: number;
+  layoutGap?: number;
+  onSelectPanel?: (index: number) => void;
+}
 
 const PANEL_DRAG_TYPE = "application/x-snapshot-panel-index";
 const ASSET_DRAG_TYPE = "application/x-snapshot-asset";
 const ASSET_TYPE_DRAG_TYPE = "application/x-snapshot-asset-type";
 
-const truthy = (value) => {
+const truthy = (value: unknown): boolean => {
   if (value == null) return false;
   const text = String(value).toLowerCase();
   return text === "true" || text === "1" || text === "yes";
 };
 
-const getPanelModeAndAsset = (panel) => {
-  let mode = "";
+const getPanelModeAndAsset = (panel?: PanelConfig | null) => {
+  let mode: PanelMode | "" = "";
   let asset = panel?.image || "";
   const base = typeof window !== "undefined" ? window.location.origin : "http://localhost";
   if (panel?.url) {
     try {
       const parsed = new URL(panel.url, base);
       const params = parsed.searchParams;
-      Object.keys(MODE_PRESETS).some((key) => {
+      (Object.keys(MODE_PRESETS) as PanelMode[]).some((key) => {
         if (!truthy(params.get(key))) return false;
         mode = key;
         const assetKey = MODE_PRESETS[key].assetKey;
@@ -49,7 +81,7 @@ const getPanelModeAndAsset = (panel) => {
   return { mode, asset };
 };
 
-const buildUrlFromPreset = (mode, asset) => {
+const buildUrlFromPreset = (mode: PanelMode, asset: string) => {
   const preset = MODE_PRESETS[mode];
   if (!preset) return "";
   const qs = new URLSearchParams();
@@ -75,35 +107,37 @@ export default function SnapshotPanelsEditor({
   layoutColumns = 1,
   layoutGap = 0,
   onSelectPanel,
-}) {
-  const [imageAssets, setImageAssets] = useState([]);
-  const [videoAssets, setVideoAssets] = useState([]);
-  const [assetStatus, setAssetStatus] = useState("尚未載入資產");
+}: SnapshotPanelsEditorProps) {
+  const [imageAssets, setImageAssets] = useState<string[]>([]);
+  const [videoAssets, setVideoAssets] = useState<string[]>([]);
+  const [assetStatus, setAssetStatus] = useState<string>("尚未載入資產");
   const [loadingAssets, setLoadingAssets] = useState(false);
-  const [assetTab, setAssetTab] = useState("images");
-  const [assetKeyword, setAssetKeyword] = useState("");
+  const [assetTab, setAssetTab] = useState<AssetTab>("images");
+  const [assetKeyword, setAssetKeyword] = useState<string>("");
   const [assetDrawerOpen, setAssetDrawerOpen] = useState(true);
-  const [assetDrawerHeight, setAssetDrawerHeight] = useState(260);
-  const [assetSearchMode, setAssetSearchMode] = useState("name"); // name | semantic
-  const [semanticResults, setSemanticResults] = useState([]);
+  const [assetDrawerHeight, setAssetDrawerHeight] = useState<number>(260);
+  const [assetSearchMode, setAssetSearchMode] = useState<AssetSearchMode>("name"); // name | semantic
+  const [semanticResults, setSemanticResults] = useState<string[]>([]);
   const [searchingSemantic, setSearchingSemantic] = useState(false);
-  const [assetSearchError, setAssetSearchError] = useState(null);
+  const [assetSearchError, setAssetSearchError] = useState<string | null>(null);
   const semanticSearchControllerRef = useRef<AbortController | null>(null);
 
-  const parseAssetList = useCallback((rawList) => {
+  const parseAssetList = useCallback((rawList: unknown): string[] => {
     const list = Array.isArray(rawList) ? rawList : [];
-    const seen = new Set();
-    const names = [];
-    list.forEach((item) => {
+    const seen = new Set<string>();
+    const names: string[] = [];
+    list.forEach((item: unknown) => {
       let candidate = "";
       if (typeof item === "string") {
         candidate = item;
       } else if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        const urlTail = typeof obj.url === "string" ? obj.url.split("/").pop() || "" : "";
         candidate =
-          item.name ||
-          item.basename ||
-          item.filename ||
-          (typeof item.url === "string" ? item.url.split("/").pop() : "");
+          (typeof obj.name === "string" && obj.name) ||
+          (typeof obj.basename === "string" && obj.basename) ||
+          (typeof obj.filename === "string" && obj.filename) ||
+          urlTail;
       }
       if (candidate && !seen.has(candidate)) {
         seen.add(candidate);
@@ -117,14 +151,17 @@ export default function SnapshotPanelsEditor({
     try {
       setLoadingAssets(true);
       setAssetStatus("載入資產中...");
-      const [imgRes, videoRes] = await Promise.all([listOffspringImages(), listVideoAssets()]);
-      const images = parseAssetList(imgRes?.images ?? imgRes);
-      const videos = parseAssetList(videoRes?.videos ?? videoRes);
+      const [imgRes, videoRes] = (await Promise.all([listOffspringImages(), listVideoAssets()])) as Array<
+        Record<string, unknown> | unknown
+      >;
+      const images = parseAssetList((imgRes as { images?: unknown })?.images ?? imgRes);
+      const videos = parseAssetList((videoRes as { videos?: unknown })?.videos ?? videoRes);
       setImageAssets(images);
       setVideoAssets(videos);
       setAssetStatus(`圖片 ${images.length} / 影片 ${videos.length}`);
     } catch (err) {
-      setAssetStatus(err?.message || "載入資產失敗");
+      const message = (err as Error)?.message || "載入資產失敗";
+      setAssetStatus(message);
     } finally {
       setLoadingAssets(false);
     }
@@ -150,18 +187,18 @@ export default function SnapshotPanelsEditor({
     }
   }, [assetTab, assetSearchMode]);
 
-  const clampAssetDrawerHeight = useCallback((height) => {
+  const clampAssetDrawerHeight = useCallback((height: number) => {
     const min = 160;
     const max = typeof window !== "undefined" ? Math.max(320, window.innerHeight - 200) : 900;
     return Math.min(Math.max(height, min), max);
   }, []);
 
   const startAssetDrawerResize = useCallback(
-    (event) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       const startY = event.clientY;
       const startHeight = assetDrawerHeight;
-      const onMove = (e) => {
+      const onMove = (e: MouseEvent) => {
         const delta = e.clientY - startY;
         setAssetDrawerHeight(clampAssetDrawerHeight(startHeight + delta));
       };
@@ -211,8 +248,8 @@ export default function SnapshotPanelsEditor({
         setAssetSearchError(`未找到與「${query}」相關的圖像`);
       }
     } catch (err) {
-      if (err?.name === "AbortError") return;
-      setAssetSearchError(err?.message || "搜尋失敗");
+      if ((err as { name?: string })?.name === "AbortError") return;
+      setAssetSearchError((err as Error)?.message || "搜尋失敗");
     } finally {
       setSearchingSemantic(false);
     }
@@ -250,34 +287,36 @@ export default function SnapshotPanelsEditor({
     videoAssets,
   ]);
 
-  const assetPreviewUrl = (name) => {
+  const assetPreviewUrl = (name: string) => {
     if (!name) return "";
     if (assetTab === "videos") return "";
     if (name.startsWith("http")) return name;
     return `/generated_images/${name}`;
   };
 
-  const handleModeSelect = (index, nextMode, currentAsset, panel) => {
+  const handleModeSelect = (index: number, nextMode: PanelMode | "", currentAsset: string, panel?: PanelConfig) => {
     if (!nextMode) {
-      onPanelChange(index, { url: "", image: undefined });
+      onPanelChange(index, { url: "", image: "" });
       return;
     }
-    const nextUrl = buildUrlFromPreset(nextMode, currentAsset);
-    const patch: Record<string, unknown> = { url: nextUrl };
-    if (MODE_PRESETS[nextMode]?.assetKey === "img") {
-      patch.image = currentAsset || panel?.image || undefined;
+    const preset = MODE_PRESETS[nextMode as PanelMode];
+    const nextUrl = preset ? buildUrlFromPreset(nextMode as PanelMode, currentAsset) : "";
+    const patch: Partial<PanelConfig> = { url: nextUrl };
+    if (preset?.assetKey === "img") {
+      patch.image = currentAsset || panel?.image || "";
     }
     onPanelChange(index, patch);
   };
 
-  const handleAssetChange = (index, mode, assetValue, panel) => {
-    const hasModePreset = mode && MODE_PRESETS[mode];
-    const isImageMode = hasModePreset && MODE_PRESETS[mode].assetKey === "img";
+  const handleAssetChange = (index: number, mode: PanelMode | "", assetValue: string, panel?: PanelConfig) => {
+    const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
+    const isImageMode = preset?.assetKey === "img";
+    const hasModePreset = Boolean(preset);
     if (hasModePreset) {
-      const nextUrl = buildUrlFromPreset(mode, assetValue);
-      const patch: Record<string, unknown> = { url: nextUrl };
+      const nextUrl = preset ? buildUrlFromPreset(mode as PanelMode, assetValue) : "";
+      const patch: Partial<PanelConfig> = { url: nextUrl };
       if (isImageMode) {
-        patch.image = assetValue || undefined;
+        patch.image = assetValue || "";
       }
       onPanelChange(index, patch);
       return;
@@ -285,26 +324,28 @@ export default function SnapshotPanelsEditor({
 
     // 無 mode 時，預設用 static_mode 來生成網址，避免初次選擇 image 模式時不更新 url
     const fallbackUrl = assetValue ? buildUrlFromPreset("static_mode", assetValue) : panel?.url || "";
-    onPanelChange(index, { url: fallbackUrl, image: assetValue || undefined });
+    onPanelChange(index, { url: fallbackUrl, image: assetValue || "" });
   };
 
-  const handleImageChange = (index, value, panel) => {
+  const handleImageChange = (index: number, value: string, panel?: PanelConfig) => {
     const { mode } = getPanelModeAndAsset(panel);
-    const isImageMode = MODE_PRESETS[mode]?.assetKey === "img";
+    const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
+    const isImageMode = preset?.assetKey === "img";
     const resolvedMode = isImageMode ? mode : value ? "static_mode" : null;
-    const patch: Record<string, unknown> = { image: value };
+    const patch: Partial<PanelConfig> = { image: value || "" };
     if (resolvedMode) {
       patch.url = buildUrlFromPreset(resolvedMode, value);
     }
     onPanelChange(index, patch);
   };
 
-  const applyAssetToPanel = (index, asset, assetTypeHint) => {
+  const applyAssetToPanel = (index: number, asset: string, assetTypeHint?: "video" | "image") => {
     if (!asset || index == null || index < 0) return;
     const panel = panels?.[index];
     const assetType = assetTypeHint || (assetTab === "videos" ? "video" : "image");
     const { mode } = getPanelModeAndAsset(panel);
-    const currentAssetKey = MODE_PRESETS[mode]?.assetKey;
+    const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
+    const currentAssetKey = preset?.assetKey;
     const forceVideo = assetType === "video";
     const nextMode =
       forceVideo && currentAssetKey === "video"
@@ -323,22 +364,22 @@ export default function SnapshotPanelsEditor({
     }
   };
 
-  const handleAssetApply = (asset) => {
+  const handleAssetApply = (asset: string) => {
     if (!asset || !selectedRows.length) return;
     applyAssetToPanel(selectedRows[0], asset, assetTab === "videos" ? "video" : "image");
   };
 
-  const handlePanelDrag = (event, index) => {
+  const handlePanelDrag = (event: React.DragEvent<HTMLDivElement>, index: number) => {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData(PANEL_DRAG_TYPE, String(index));
     event.dataTransfer.setData("text/plain", `panel:${index}`);
   };
 
-  const handlePanelDrop = (event, targetIndex) => {
+  const handlePanelDrop = (event: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
     const assetPayload = event.dataTransfer.getData(ASSET_DRAG_TYPE);
     const assetTypePayload = event.dataTransfer.getData(ASSET_TYPE_DRAG_TYPE);
     if (assetPayload) {
-      const assetType = assetTypePayload || (assetTab === "videos" ? "video" : "image");
+      const assetType = (assetTypePayload as "video" | "image" | "") || (assetTab === "videos" ? "video" : "image");
       applyAssetToPanel(targetIndex, assetPayload, assetType);
       return;
     }
@@ -348,7 +389,7 @@ export default function SnapshotPanelsEditor({
     if (!raw) return;
 
     if (raw.startsWith("asset:")) {
-      const assetType = assetTypePayload || (assetTab === "videos" ? "video" : "image");
+      const assetType = (assetTypePayload as "video" | "image" | "") || (assetTab === "videos" ? "video" : "image");
       applyAssetToPanel(
         targetIndex,
         raw.replace(/^asset:/, ""),
@@ -409,7 +450,8 @@ export default function SnapshotPanelsEditor({
         >
           {(panels || []).map((panel, index) => {
             const { mode, asset } = getPanelModeAndAsset(panel);
-            const isVideo = MODE_PRESETS[mode]?.assetKey === "video";
+            const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
+            const isVideo = preset?.assetKey === "video";
             const isActive = selectedRows.includes(index);
             return (
               <div
@@ -682,10 +724,10 @@ export default function SnapshotPanelsEditor({
           >
             {(() => {
               const { mode, asset } = getPanelModeAndAsset(panel);
-              const preset = MODE_PRESETS[mode];
+              const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
               const assetPlaceholder = preset?.assetKey === "video" ? "影片檔名.mp4" : "offspring_xxx.png";
               const assetListId = `snapshot-panel-${index}-asset-options`;
-              const assetList = MODE_PRESETS[mode]?.assetKey === "video" ? videoAssets : imageAssets;
+              const assetList = preset?.assetKey === "video" ? videoAssets : imageAssets;
               const safeAssetList = Array.isArray(assetList) ? assetList : [];
               return (
                 <div
@@ -709,7 +751,7 @@ export default function SnapshotPanelsEditor({
                     模式
                     <select
                       value={mode}
-                      onChange={(e) => handleModeSelect(index, e.target.value, asset, panel)}
+                      onChange={(e) => handleModeSelect(index, e.target.value as PanelMode | "", asset, panel)}
                       data-ai-field={`snapshot.panel[${index}].mode`}
                     >
                       <option value="">手動輸入</option>

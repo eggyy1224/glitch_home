@@ -1,12 +1,14 @@
 import React from "react";
 import { previewContainerStyle, previewTitleStyle, timelinePreviewIframeStyle } from "../../AdminPanelStyles";
 
-export default function TimelinePreviewPlayer({
-  previewSrc,
-  previewError,
-  playSrc,
-  playError,
-}) {
+interface TimelinePreviewPlayerProps {
+  previewSrc: string | null;
+  previewError: string | null;
+  playSrc: string | null;
+  playError: string | null;
+}
+
+export default function TimelinePreviewPlayer({ previewSrc, previewError, playSrc, playError }: TimelinePreviewPlayerProps) {
   return (
     <div style={previewContainerStyle} data-ai-section="timeline.preview" data-ai-role="timeline.preview">
       <div style={previewTitleStyle} data-ai-section="timeline.preview.first" data-ai-role="timeline.preview.first-title">

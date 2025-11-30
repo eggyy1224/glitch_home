@@ -1,4 +1,32 @@
 import React, { useMemo } from "react";
+import type { TimelineStep } from "../../types/timeline";
+
+type SnapshotOption = { id?: string; name?: string; client?: string | null };
+
+interface TimelineStepsEditorProps {
+  steps: TimelineStep[];
+  selectedRows: number[];
+  onToggleRow: (index: number) => void;
+  onMoveRow: (index: number, delta: number) => void;
+  onDuplicateRow: (index: number) => void;
+  onRemoveRow: (index: number) => void;
+  onAddStep: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  canPaste: boolean;
+  batchDuration: string;
+  onBatchDurationChange: (value: string) => void;
+  onBatchApply: () => void;
+  snapshotClient: string;
+  snapshotKeyword: string;
+  onSnapshotClientChange: (value: string) => void;
+  onSnapshotKeywordChange: (value: string) => void;
+  onRefreshSnapshots: () => void;
+  snapshotMessage: string;
+  snapshotOptions: SnapshotOption[];
+  onStepChange: (index: number, patch: Partial<TimelineStep>) => void;
+  getSnapshotValue: (step: TimelineStep) => string;
+}
 
 export default function TimelineStepsEditor({
   steps,
@@ -23,19 +51,19 @@ export default function TimelineStepsEditor({
   snapshotOptions,
   onStepChange,
   getSnapshotValue,
-}) {
+}: TimelineStepsEditorProps) {
   const totalDuration = useMemo(
-    () => (steps || []).reduce((sum, step) => sum + Number(step.duration || 0), 0),
+    () => (steps || []).reduce<number>((sum, step) => sum + Number(step?.duration || 0), 0),
     [steps],
   );
 
-  const handleStepDrag = (event, index) => {
+  const handleStepDrag = (event: React.DragEvent<HTMLButtonElement>, index: number) => {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("application/x-timeline-step", String(index));
     event.dataTransfer.setData("text/plain", `step:${index}`);
   };
 
-  const handleStepDrop = (event, targetIndex) => {
+  const handleStepDrop = (event: React.DragEvent<HTMLButtonElement>, targetIndex: number) => {
     event.preventDefault();
     const raw =
       event.dataTransfer.getData("application/x-timeline-step") || event.dataTransfer.getData("text/plain") || "";
@@ -226,7 +254,11 @@ export default function TimelineStepsEditor({
                   onChange={(e) =>
                     onStepChange(index, {
                       snapshot: e.target.value,
-                      clientId: e.target.value?.includes("/") ? e.target.value.split("/")[0] : step.clientId,
+                      ...(e.target.value?.includes("/")
+                        ? { clientId: e.target.value.split("/")[0] }
+                        : step.clientId
+                          ? { clientId: step.clientId }
+                          : {}),
                     })
                   }
                   data-ai-field={`timeline.step[${index}].snapshot`}

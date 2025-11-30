@@ -1,13 +1,16 @@
 import React from "react";
 import { labelStyle } from "../../AdminPanelStyles";
+import type { IframeTimeline } from "../../types/timeline";
 
-export default function TimelineListPanel({
-  filter,
-  onFilterChange,
-  onReload,
-  timelines,
-  onSelect,
-}) {
+interface TimelineListPanelProps {
+  filter: string;
+  onFilterChange: (value: string) => void;
+  onReload: () => void;
+  timelines: IframeTimeline[];
+  onSelect: (id: string) => void;
+}
+
+export default function TimelineListPanel({ filter, onFilterChange, onReload, timelines, onSelect }: TimelineListPanelProps) {
   return (
     <div data-ai-role="editor.timeline-list">
       <div style={{ marginBottom: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

@@ -1,13 +1,19 @@
+import type { IframeConfig, IframePanelConfig } from "../types/control";
+
 const IFRAME_LAYOUTS = new Set(["grid", "horizontal", "vertical"]);
 
-export const DEFAULT_IFRAME_CONFIG = {
+export const DEFAULT_IFRAME_CONFIG: IframeConfig = {
   layout: "grid",
   gap: 0,
   columns: 2,
   panels: [],
 };
 
-export const clampInt = (value, fallback, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) => {
+export const clampInt = (
+  value: unknown,
+  fallback: number | undefined,
+  { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER }: { min?: number; max?: number } = {},
+): number | undefined => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   const intVal = Math.floor(parsed);
@@ -16,30 +22,30 @@ export const clampInt = (value, fallback, { min = Number.MIN_SAFE_INTEGER, max =
   return intVal;
 };
 
-const normalizeIframeLayout = (value, fallback = "grid") => {
+const normalizeIframeLayout = (value: unknown, fallback = "grid"): string => {
   const candidate = (value || "").toString().trim().toLowerCase();
   return IFRAME_LAYOUTS.has(candidate) ? candidate : fallback;
 };
 
-const parseRatio = (value, fallback = 1) => {
+const parseRatio = (value: unknown, fallback = 1): number => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
   return parsed;
 };
 
-export const parseIframeConfigFromParams = (params) => {
+export const parseIframeConfigFromParams = (params: URLSearchParams | null | undefined): IframeConfig | null => {
   if (!params) return null;
 
   const layout = normalizeIframeLayout(params.get("iframe_layout"));
-  const gap = clampInt(params.get("iframe_gap"), 0, { min: 0 });
-  const columns = clampInt(params.get("iframe_columns"), 2, { min: 1 });
+  const gap = clampInt(params.get("iframe_gap"), 0, { min: 0 }) ?? 0;
+  const columns = clampInt(params.get("iframe_columns"), 2, { min: 1 }) ?? 2;
 
   const rawKeys = (params.get("iframe_panels") || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
 
-  const panels = [];
+  const panels: IframePanelConfig[] = [];
   const keys = rawKeys.length ? rawKeys : null;
 
   if (keys) {
@@ -50,14 +56,15 @@ export const parseIframeConfigFromParams = (params) => {
       const label = params.get(`iframe_${key}_label`) || undefined;
       const colSpan = clampInt(params.get(`iframe_${key}_col_span`), undefined, { min: 1 });
       const rowSpan = clampInt(params.get(`iframe_${key}_row_span`), undefined, { min: 1 });
-      panels.push({
+      const panel: IframePanelConfig = {
         id: key || `panel_${index + 1}`,
         src,
         ratio,
-        label,
-        colSpan: Number.isFinite(colSpan) ? colSpan : undefined,
-        rowSpan: Number.isFinite(rowSpan) ? rowSpan : undefined,
-      });
+        ...(Number.isFinite(colSpan) ? { colSpan: colSpan as number } : {}),
+        ...(Number.isFinite(rowSpan) ? { rowSpan: rowSpan as number } : {}),
+      };
+      if (label) panel.label = label;
+      panels.push(panel);
     });
   } else {
     for (let index = 1; index <= 12; index += 1) {
@@ -68,14 +75,15 @@ export const parseIframeConfigFromParams = (params) => {
       const label = params.get(`iframe_${key}_label`) || undefined;
       const colSpan = clampInt(params.get(`iframe_${key}_col_span`), undefined, { min: 1 });
       const rowSpan = clampInt(params.get(`iframe_${key}_row_span`), undefined, { min: 1 });
-      panels.push({
+      const panel: IframePanelConfig = {
         id: key,
         src,
         ratio,
-        label,
-        colSpan: Number.isFinite(colSpan) ? colSpan : undefined,
-        rowSpan: Number.isFinite(rowSpan) ? rowSpan : undefined,
-      });
+        ...(Number.isFinite(colSpan) ? { colSpan: colSpan as number } : {}),
+        ...(Number.isFinite(rowSpan) ? { rowSpan: rowSpan as number } : {}),
+      };
+      if (label) panel.label = label;
+      panels.push(panel);
     }
   }
 
@@ -86,72 +94,80 @@ export const parseIframeConfigFromParams = (params) => {
   return { layout, gap, columns, panels };
 };
 
-export const sanitizePanels = (panels, fallbackPanels = []) => {
+export const sanitizePanels = (
+  panels: unknown,
+  fallbackPanels: IframePanelConfig[] = [],
+): IframePanelConfig[] => {
   if (!Array.isArray(panels)) return [...fallbackPanels];
-  const usedIds = new Set();
-  const result = [];
-  const clampSpan = (value) => {
+  const usedIds = new Set<string>();
+  const result: IframePanelConfig[] = [];
+  const clampSpan = (value: unknown) => {
     if (value === null || value === undefined) return undefined;
     return clampInt(value, 1, { min: 1 });
   };
   panels.forEach((panel, index) => {
     if (!panel || typeof panel !== "object") return;
-    const src = typeof panel.src === "string" ? panel.src.trim() : "";
+    const typed = panel as Record<string, unknown>;
+    const src = typeof typed.src === "string" ? typed.src.trim() : "";
     if (!src) return;
-    let id = typeof panel.id === "string" && panel.id.trim() ? panel.id.trim() : `panel_${index + 1}`;
+    let id = typeof typed.id === "string" && typed.id.trim() ? typed.id.trim() : `panel_${index + 1}`;
     if (usedIds.has(id)) {
       id = `${id}_${index + 1}`;
     }
     usedIds.add(id);
-    const ratio = parseRatio(panel.ratio, 1);
-    const label = typeof panel.label === "string" && panel.label.trim() ? panel.label.trim() : undefined;
-    const image = typeof panel.image === "string" && panel.image.trim() ? panel.image.trim() : undefined;
-    const params = panel.params && typeof panel.params === "object" ? { ...panel.params } : undefined;
-    const url = typeof panel.url === "string" && panel.url.trim() ? panel.url.trim() : undefined;
-    const colSpan = clampSpan(panel.col_span ?? panel.colSpan);
-    const rowSpan = clampSpan(panel.row_span ?? panel.rowSpan);
-    result.push({
+    const ratio = parseRatio(typed.ratio, 1);
+    const label = typeof typed.label === "string" && typed.label.trim() ? typed.label.trim() : undefined;
+    const image = typeof typed.image === "string" && typed.image.trim() ? typed.image.trim() : undefined;
+    const params = typed.params && typeof typed.params === "object" ? { ...(typed.params as Record<string, unknown>) } : undefined;
+    const url = typeof typed.url === "string" && typed.url.trim() ? typed.url.trim() : undefined;
+    const colSpan = clampSpan((typed as { col_span?: unknown; colSpan?: unknown }).col_span ?? typed.colSpan);
+    const rowSpan = clampSpan((typed as { row_span?: unknown; rowSpan?: unknown }).row_span ?? typed.rowSpan);
+    const panelEntry: IframePanelConfig = {
       id,
       src,
       ratio,
-      label,
-      image,
-      params,
-      url,
-      colSpan,
-      rowSpan,
-    });
+      ...(params ? { params } : {}),
+      ...(url ? { url } : {}),
+      ...(colSpan ? { colSpan } : {}),
+      ...(rowSpan ? { rowSpan } : {}),
+      ...(image ? { image } : {}),
+    };
+    if (label) panelEntry.label = label;
+    result.push(panelEntry);
   });
   return result.length ? result : [...fallbackPanels];
 };
 
-export const sanitizeIframeConfig = (config, fallback = DEFAULT_IFRAME_CONFIG) => {
+export const sanitizeIframeConfig = (
+  config: Partial<IframeConfig> | null | undefined,
+  fallback: IframeConfig = DEFAULT_IFRAME_CONFIG,
+): IframeConfig => {
   const base = fallback || DEFAULT_IFRAME_CONFIG;
   if (!config || typeof config !== "object") {
     return { ...base, panels: [...(base.panels || [])] };
   }
-  const layout = normalizeIframeLayout(config.layout, base.layout);
-  const gap = clampInt(config.gap, base.gap, { min: 0 });
-  const columns = clampInt(config.columns, base.columns, { min: 1 });
-  const panels = sanitizePanels(config.panels, base.panels || []);
+  const layout = normalizeIframeLayout((config as { layout?: unknown }).layout, base.layout);
+  const gap = clampInt((config as { gap?: unknown }).gap, base.gap, { min: 0 }) ?? base.gap;
+  const columns = clampInt((config as { columns?: unknown }).columns, base.columns, { min: 1 }) ?? base.columns;
+  const panels = sanitizePanels((config as { panels?: unknown }).panels, base.panels || []);
   return { layout, gap, columns, panels };
 };
 
-export const buildQueryFromIframeConfig = (config) => {
+export const buildQueryFromIframeConfig = (config: Partial<IframeConfig> | null | undefined): [string, string][] | null => {
   if (!config || typeof config !== "object") return null;
-  const panels = Array.isArray(config.panels) ? config.panels : [];
+  const panels = Array.isArray((config as { panels?: unknown }).panels) ? (config as { panels: IframePanelConfig[] }).panels : [];
   if (!panels.length) return null;
-  const normalizeSpan = (value) => {
+  const normalizeSpan = (value: unknown) => {
     if (value === null || value === undefined) return undefined;
     const span = clampInt(value, undefined, { min: 1 });
     return Number.isFinite(span) ? span : undefined;
   };
   const keys = panels.map((_, index) => `p${index + 1}`);
-  const entries = [];
+  const entries: [string, string][] = [];
   entries.push(["iframe_panels", keys.join(",")]);
-  entries.push(["iframe_layout", config.layout]);
-  entries.push(["iframe_gap", String(config.gap ?? 0)]);
-  entries.push(["iframe_columns", String(config.columns ?? 2)]);
+  entries.push(["iframe_layout", (config as { layout?: string }).layout ?? "grid"]);
+  entries.push(["iframe_gap", String((config as { gap?: number }).gap ?? 0)]);
+  entries.push(["iframe_columns", String((config as { columns?: number }).columns ?? 2)]);
   panels.forEach((panel, index) => {
     const key = keys[index];
     if (!panel || typeof panel !== "object") return;

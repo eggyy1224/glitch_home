@@ -1,7 +1,16 @@
 import React from "react";
 import { labelStyle } from "../../AdminPanelStyles";
+import type { EpisodeEntry } from "../../types/timeline";
 
-export default function EpisodeListPanel({ filter, onFilterChange, onReload, episodes, onSelect }) {
+interface EpisodeListPanelProps {
+  filter: string;
+  onFilterChange: (value: string) => void;
+  onReload: () => void;
+  episodes: EpisodeEntry[];
+  onSelect: (id: string) => void;
+}
+
+export default function EpisodeListPanel({ filter, onFilterChange, onReload, episodes, onSelect }: EpisodeListPanelProps) {
   return (
     <div>
       <div style={{ marginBottom: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

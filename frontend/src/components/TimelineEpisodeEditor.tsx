@@ -320,9 +320,11 @@ export default function TimelineEpisodeEditor() {
                       <button
                         type="button"
                         onClick={() => {
-                          setSnapshotName(item.name || item.id);
-                          setSnapshotClient(item.client);
-                          handleLoadSnapshot(item.name || item.id, item.client);
+                          const targetName = item.name || item.id || "";
+                          const targetClient = item.client ?? "";
+                          setSnapshotName(targetName);
+                          setSnapshotClient(targetClient);
+                          handleLoadSnapshot(targetName, item.client || undefined);
                         }}
                         data-ai-action="snapshot.editor.load-item"
                       >
@@ -369,7 +371,7 @@ export default function TimelineEpisodeEditor() {
               </div>
 
               <SnapshotPanelsEditor
-                panels={snapshotData.panels}
+                panels={snapshotData.panels || []}
                 selectedRows={selectedRows}
                 onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
                 onMoveRow={moveRow}
@@ -407,7 +409,7 @@ export default function TimelineEpisodeEditor() {
 
               {mode === "timeline" ? (
                 <TimelineStepsEditor
-                  steps={timelineData.steps}
+                  steps={timelineData.steps || []}
                   selectedRows={selectedRows}
                   onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
                   onMoveRow={moveRow}
@@ -432,7 +434,7 @@ export default function TimelineEpisodeEditor() {
                 />
               ) : (
                 <EpisodeTracksEditor
-                  tracks={episodeData.tracks}
+                  tracks={episodeData.tracks || []}
                   selectedRows={selectedRows}
                   onToggleRow={(index) => setSelectedRows((prev) => toggleIndex(prev, index))}
                   onMoveRow={moveRow}
