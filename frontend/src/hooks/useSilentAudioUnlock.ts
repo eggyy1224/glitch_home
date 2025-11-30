@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { SILENT_AUDIO_SRC } from "../constants/silentAudio.js";
+import { SILENT_AUDIO_SRC } from "../constants/silentAudio";
 
 export function useSilentAudioUnlock() {
   const unlockAudioElementRef = useRef(null);

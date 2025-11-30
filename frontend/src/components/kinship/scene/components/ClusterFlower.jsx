@@ -4,8 +4,8 @@ import { useFrame } from "@react-three/fiber";
 import { useSpring } from "@react-spring/three";
 
 import Photo from "./Photo.jsx";
-import { onlyOffspring, levelsOnlyOffspring } from "../../utils/data.js";
-import { makeRing, toVec3, wobblePosition, clamp01 } from "../../utils/math.js";
+import { onlyOffspring, levelsOnlyOffspring } from "../../utils/data";
+import { makeRing, toVec3, wobblePosition, clamp01 } from "../../utils/math";
 
 export default function ClusterFlower({ imagesBase, cluster, onPick }) {
   const group = useRef();

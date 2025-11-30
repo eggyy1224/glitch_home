@@ -11,9 +11,22 @@ import {
   COLLAGE_STAGE_MAX_WIDTH,
   COLLAGE_STAGE_MIN_HEIGHT,
   COLLAGE_STAGE_MIN_WIDTH,
-} from "../constants/collage.js";
+} from "../constants/collage";
 
-const clampInt = (value, min, max, fallback) => {
+export interface CollageConfig {
+  images: string[];
+  image_count: number;
+  rows: number;
+  cols: number;
+  mix: boolean;
+  stage_width: number;
+  stage_height: number;
+  seed: number | null;
+}
+
+export type CollageConfigInput = Partial<CollageConfig> | Record<string, unknown> | null | undefined;
+
+const clampInt = (value: unknown, min: number, max: number, fallback: number): number => {
   const num = Number.parseInt(`${value}`, 10);
   if (Number.isNaN(num)) return fallback;
   if (num < min) return min;
@@ -21,7 +34,7 @@ const clampInt = (value, min, max, fallback) => {
   return num;
 };
 
-const sanitizeImages = (value) => {
+const sanitizeImages = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
   const seen = new Set();
   const result = [];
@@ -39,7 +52,7 @@ const sanitizeImages = (value) => {
   return result;
 };
 
-export function sanitizeCollageConfig(payload) {
+export function sanitizeCollageConfig(payload: CollageConfigInput): CollageConfig | null {
   if (!payload || typeof payload !== "object") {
     return null;
   }
@@ -85,6 +98,6 @@ export function sanitizeCollageConfig(payload) {
   };
 }
 
-export function isRemoteCollageSource(source) {
+export function isRemoteCollageSource(source: string | null | undefined): boolean {
   return source === "client" || source === "global";
 }

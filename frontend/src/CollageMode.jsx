@@ -1,12 +1,12 @@
 import React from "react";
 import "./CollageMode.css";
-import { buildImageUrl } from "./utils/collageMath.js";
+import { buildImageUrl } from "./utils/collageMath";
 import {
   COLLAGE_MAX_COLS as MAX_COLS,
   COLLAGE_MAX_ROWS as MAX_ROWS,
   COLLAGE_PIECE_OVERLAP_PX as PIECE_OVERLAP_PX,
-} from "./constants/collage.js";
-import { useCollageControls } from "./hooks/useCollageControls.js";
+} from "./constants/collage";
+import { useCollageControls } from "./hooks/useCollageControls";
 
 export default function CollageMode(props) {
   const {

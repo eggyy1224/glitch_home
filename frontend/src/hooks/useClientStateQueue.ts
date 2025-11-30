@@ -7,12 +7,12 @@ import {
   fetchClientStates,
   moveClientQueueItems,
   stopIframeTimeline,
-} from "../api.js";
+} from "../api";
 import { useControlSocket } from "./useControlSocket";
 
 const POLL_INTERVAL_MS = 8000;
 
-function normalizeClients(clients) {
+function normalizeClients(clients: any): any[] {
   if (!Array.isArray(clients)) return [];
   return clients
     .map((item) => ({
@@ -27,11 +27,11 @@ function normalizeClients(clients) {
     .sort((a, b) => a.client_id.localeCompare(b.client_id));
 }
 
-export function useClientStateQueue(defaultClientId) {
-  const [clients, setClients] = useState([]);
+export function useClientStateQueue(defaultClientId?: string) {
+  const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState(defaultClientId || "");
   const selectedClientRef = useRef(defaultClientId || "");
-  const [queueItems, setQueueItems] = useState([]);
+  const [queueItems, setQueueItems] = useState<any[]>([]);
   const [loadingState, setLoadingState] = useState(false);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,7 +49,7 @@ export function useClientStateQueue(defaultClientId) {
   }, []);
 
   const refreshQueue = useCallback(
-    async (clientOverride, { silent = false } = {}) => {
+    async (clientOverride?: string, { silent = false }: { silent?: boolean } = {}) => {
       const client = clientOverride ?? selectedClient;
       if (!client) return;
       if (!silent) setLoadingQueue(true);
@@ -65,7 +65,7 @@ export function useClientStateQueue(defaultClientId) {
     [selectedClient],
   );
 
-  const handleClientStateEvent = useCallback((payload) => {
+  const handleClientStateEvent = useCallback((payload: any) => {
     const clientId = payload?.client_id || payload?.state?.client_id;
     if (!clientId) return;
     const nextState = payload?.state || payload;
@@ -106,10 +106,10 @@ export function useClientStateQueue(defaultClientId) {
   }, [refreshQueue, refreshStates, selectedClient]);
 
   const enqueueItem = useCallback(
-    async (payload) => {
+    async (payload: any) => {
       const clientId = payload.client_id || selectedClient;
       if (!clientId) throw new Error("client_id 必填");
-      const body = {
+      const body: Record<string, any> = {
         client_id: clientId,
         type: payload.type,
         target_id: payload.target_id,
@@ -128,7 +128,7 @@ export function useClientStateQueue(defaultClientId) {
   );
 
   const cancelItems = useCallback(
-    async (ids) => {
+    async (ids: string | string[]) => {
       await cancelClientQueueItems(ids);
       await refreshQueue();
       await refreshStates();
@@ -138,7 +138,7 @@ export function useClientStateQueue(defaultClientId) {
   );
 
   const delayItems = useCallback(
-    async (ids, deltaSeconds) => {
+    async (ids: string | string[], deltaSeconds?: number) => {
       await delayClientQueueItems(ids, { deltaSeconds });
       await refreshQueue();
       await refreshStates();
@@ -148,7 +148,7 @@ export function useClientStateQueue(defaultClientId) {
   );
 
   const moveItems = useCallback(
-    async (ids, position) => {
+    async (ids: string | string[], position?: number | string) => {
       await moveClientQueueItems(ids, { position });
       await refreshQueue();
       await refreshStates();

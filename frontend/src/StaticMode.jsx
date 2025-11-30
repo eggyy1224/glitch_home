@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
+import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
 import "./StaticMode.css";
 
 const canvasToBlob = (canvas) =>

@@ -8,9 +8,9 @@ import {
   PHYLO_LEVEL_GAP,
   PHYLO_NODE_BASE_SIZE,
   PHYLO_NODE_SPACING,
-} from "../../utils/constants.js";
-import { buildLineageGraph } from "../../utils/graph.js";
-import { computePhylogenyLayout } from "../../utils/layouts.js";
+} from "../../utils/constants";
+import { buildLineageGraph } from "../../utils/graph";
+import { computePhylogenyLayout } from "../../utils/layouts";
 
 function PhylogenyNode({ node, imagesBase, onPick }) {
   const url = `${imagesBase}${node.name}`;

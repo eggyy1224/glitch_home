@@ -2,8 +2,8 @@ import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-import { useKinshipCapture } from "./hooks/useKinshipCapture.js";
-import { useKinshipModeSelection } from "./hooks/useKinshipModeSelection.js";
+import { useKinshipCapture } from "./hooks/useKinshipCapture";
+import { useKinshipModeSelection } from "./hooks/useKinshipModeSelection";
 import CameraTracker from "./scene/trackers/CameraTracker.jsx";
 import FpsTracker from "./scene/trackers/FpsTracker.jsx";
 import CameraPresetApplier from "./scene/trackers/CameraPresetApplier.jsx";

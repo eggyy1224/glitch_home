@@ -6,10 +6,10 @@ import {
   listIframeSnapshots,
   restoreIframeSnapshot,
   saveIframeSnapshot,
-} from "../api.js";
+} from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, labelStyle, previewContainerStyle, previewTitleStyle, resizerHandleStyle, resizerHitboxStyle, snapshotPreviewIframeStyle } from "../AdminPanelStyles";
-import { minimalConfigPayload, previewSrcFromConfig, pretty } from "../adminPanelUtils.js";
+import { minimalConfigPayload, previewSrcFromConfig, pretty } from "../adminPanelUtils";
 
 export default function SnapshotManager() {
   const { defaultClientId } = useContext(AdminPanelContext);

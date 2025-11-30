@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchKinship } from "../api.js";
-import { useKinshipNavigation } from "./useKinshipNavigation.js";
+import { fetchKinship } from "../api";
+import { useKinshipNavigation } from "./useKinshipNavigation";
 
 const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
 

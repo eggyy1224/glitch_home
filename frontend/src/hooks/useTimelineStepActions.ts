@@ -10,33 +10,44 @@ import {
   speakWithSubtitle,
   triggerTts,
   unlockAudio,
-} from "../api.js";
+} from "../api";
 
-function numberOrUndefined(value) {
+function numberOrUndefined(value: any) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-function assignIfDefined(target, key, value) {
+function assignIfDefined(target: any, key: string, value: any) {
   if (value === undefined || value === null) return;
   target[key] = value;
+}
+
+interface TimelineStepActionsOptions {
+  clientId?: string;
+  onError?: (message: string) => void;
+  capabilities?: {
+    canWriteAssets?: boolean;
+    canAnalyze?: boolean;
+    forbidMessage?: string;
+    [key: string]: any;
+  };
 }
 
 export function useTimelineStepActions({
   clientId,
   onError,
   capabilities = {},
-} = {}) {
-  const [actionError, setActionError] = useState(null);
-  const controllerRef = useRef(null);
-  const activeRunRef = useRef(null);
-  const actionErrorRef = useRef(null);
-  const remoteClickTimersRef = useRef([]);
-  const videoControlTimersRef = useRef([]);
+}: TimelineStepActionsOptions = {}) {
+  const [actionError, setActionError] = useState<string | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const activeRunRef = useRef<any>(null);
+  const actionErrorRef = useRef<string | null>(null);
+  const remoteClickTimersRef = useRef<any[]>([]);
+  const videoControlTimersRef = useRef<any[]>([]);
   const {
     canWriteAssets = true,
     canAnalyze = true,
     forbidMessage = "",
-  } = capabilities;
+  } = capabilities || {};
 
   const clearRemoteClickTimers = useCallback(() => {
     if (!remoteClickTimersRef.current.length) {
@@ -159,7 +170,7 @@ export function useTimelineStepActions({
           (typeof action.label === "string" && action.label.trim()) || `remote_${index + 1}`;
         const getSelector = (value) => (typeof value === "string" ? value.trim() : "");
         const buildPayload = () => {
-          const payload = {};
+          const payload: any = {};
           const selector = getSelector(action.selector);
           if (selector) {
             payload.selector = selector;
@@ -218,7 +229,7 @@ export function useTimelineStepActions({
         const labelBase = typeof action.action === "string" ? action.action : "video";
         const actionLabel = `${labelBase}_${index + 1}`;
         const buildPayload = () => {
-          const payload = { action: action.action };
+          const payload: any = { action: action.action };
           const volumeValue = numberOrUndefined(action.volume);
           if (volumeValue !== undefined) {
             payload.volume = Math.min(1, Math.max(0, volumeValue));
@@ -286,7 +297,7 @@ export function useTimelineStepActions({
           }
           return;
         }
-        const payload = { text: action.text };
+        const payload: any = { text: action.text };
         assignIfDefined(payload, "language", action.language);
         const duration = numberOrUndefined(action.duration_seconds);
         if (duration !== undefined) {
@@ -316,7 +327,7 @@ export function useTimelineStepActions({
         if (!canAnalyze) {
           throw new Error(forbidMessage || "目前模式禁止語音生成/分析");
         }
-        const base = {
+        const base: any = {
           text: action.text,
         };
         assignIfDefined(base, "instructions", action.instructions);
@@ -336,7 +347,7 @@ export function useTimelineStepActions({
         }
 
         if (action.mode === "speak_with_subtitle") {
-          const payload = { ...base };
+          const payload: any = { ...base };
           assignIfDefined(payload, "subtitle_text", action.subtitle_text || action.text);
           assignIfDefined(payload, "subtitle_language", action.subtitle_language);
           const subtitleDuration = numberOrUndefined(action.subtitle_duration_seconds);

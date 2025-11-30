@@ -78,7 +78,7 @@ export const computeStyles = (sizeClass) => {
     letterSpacing: "0.04em",
   };
 
-  const controlBar = {
+  const controlBar: Record<string, any> = {
     display: "flex",
     alignItems: "center",
     gap: "16px",
@@ -89,7 +89,7 @@ export const computeStyles = (sizeClass) => {
     backdropFilter: "blur(10px)",
   };
 
-  const slider = {
+  const slider: Record<string, any> = {
     minWidth: "150px",
     height: "4px",
     borderRadius: "2px",
@@ -109,7 +109,7 @@ export const computeStyles = (sizeClass) => {
     fontVariantNumeric: "tabular-nums",
   };
 
-  const button = {
+  const button: Record<string, any> = {
     padding: "6px 12px",
     borderRadius: "6px",
     border: "1px solid rgba(255,255,255,0.2)",

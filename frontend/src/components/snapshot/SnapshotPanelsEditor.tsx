@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resizerHandleStyle, resizerHitboxStyle } from "../../AdminPanelStyles";
-import { createTextSearchRequest, listOffspringImages, listVideoAssets } from "../../api.js";
+import { createTextSearchRequest, listOffspringImages, listVideoAssets } from "../../api";
 
 const MODE_PRESETS = {
   slide_mode: { assetKey: "img", label: "slide_mode (輪播)" },

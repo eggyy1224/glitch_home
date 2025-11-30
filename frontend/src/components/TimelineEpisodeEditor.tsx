@@ -14,7 +14,7 @@ import {
   playIframeTimeline,
   updateEpisode as updateEpisodeApi,
   updateIframeTimeline,
-} from "../api.js";
+} from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
 import {
   activeTabButtonStyle,
@@ -38,7 +38,7 @@ import {
   previewSrcFromConfig,
   pretty,
   timelinePlaybackSrc,
-} from "../adminPanelUtils.js";
+} from "../adminPanelUtils";
 import EpisodeListPanel from "./timeline/EpisodeListPanel";
 import EpisodeTracksEditor from "./timeline/EpisodeTracksEditor";
 import SnapshotPanelsEditor from "./snapshot/SnapshotPanelsEditor";

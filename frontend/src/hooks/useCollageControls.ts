@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchKinship } from "../api.js";
-import { ensureHtml2Canvas } from "../utils/html2canvasLoader.js";
+import { fetchKinship } from "../api";
+import { ensureHtml2Canvas } from "../utils/html2canvasLoader";
 import {
   buildImagePool,
   buildImageUrl,
@@ -10,12 +10,12 @@ import {
   clamp,
   computeBoardLayout,
   computeStageWidthBounds,
-} from "../utils/collageMath.js";
+} from "../utils/collageMath";
 import {
   defaultImageProcessing,
   edgeKeyForPiece,
-} from "../utils/collageImageProcessing.js";
-import { defaultCollageStateUtils } from "../utils/collageStateUtils.js";
+} from "../utils/collageImageProcessing";
+import { defaultCollageStateUtils } from "../utils/collageStateUtils";
 import {
   COLLAGE_DEFAULT_COLS as DEFAULT_COLS,
   COLLAGE_DEFAULT_IMAGE_COUNT as DEFAULT_IMAGE_COUNT,
@@ -32,7 +32,7 @@ import {
   COLLAGE_STAGE_MAX_WIDTH as STAGE_MAX_WIDTH,
   COLLAGE_STAGE_MIN_HEIGHT as STAGE_MIN_HEIGHT,
   COLLAGE_STAGE_MIN_WIDTH as STAGE_MIN_WIDTH,
-} from "../constants/collage.js";
+} from "../constants/collage";
 
 const PERSIST_COLLAGE_QUERY =
   String(import.meta.env.VITE_COLLAGE_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";

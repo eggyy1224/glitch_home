@@ -7,7 +7,7 @@ import {
   listIframeTimelines,
   playIframeTimeline,
   updateIframeTimeline,
-} from "../api.js";
+} from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
 import {
   boxStyle,
@@ -19,8 +19,8 @@ import {
   timelinePreviewGridStyle,
   timelinePreviewIframeStyle,
 } from "../AdminPanelStyles";
-import { defaultTimelinePayload, firstSnapshotRef, previewSrcFromConfig, pretty, timelinePlaybackSrc } from "../adminPanelUtils.js";
-import { getIframeSnapshot } from "../api.js";
+import { defaultTimelinePayload, firstSnapshotRef, previewSrcFromConfig, pretty, timelinePlaybackSrc } from "../adminPanelUtils";
+import { getIframeSnapshot } from "../api";
 
 export default function TimelineManager() {
   const { defaultClientId } = useContext(AdminPanelContext);

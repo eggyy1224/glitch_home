@@ -1,4 +1,4 @@
-import { KIND_PRIORITY } from "./constants.js";
+import { KIND_PRIORITY } from "./constants";
 
 const defaultGraph = { nodes: [], edges: [] };
 

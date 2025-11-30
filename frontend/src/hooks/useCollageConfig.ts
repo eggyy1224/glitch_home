@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { isRemoteCollageSource, sanitizeCollageConfig } from "../utils/collageConfig.js";
+import { isRemoteCollageSource, sanitizeCollageConfig } from "../utils/collageConfig";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 

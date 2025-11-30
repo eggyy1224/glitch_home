@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteCameraPreset, fetchCameraPresets, saveCameraPreset } from "../api.js";
+import { deleteCameraPreset, fetchCameraPresets, saveCameraPreset } from "../api";
 
 export function useCameraPresets() {
   const [cameraInfo, setCameraInfo] = useState(null);

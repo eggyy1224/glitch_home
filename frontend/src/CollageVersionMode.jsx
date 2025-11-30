@@ -6,7 +6,7 @@ import {
   generateCollageVersionFromNames,
   getCollageProgress,
   listOffspringImages,
-} from "./api.js";
+} from "./api";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const API_BASE = import.meta.env.VITE_API_BASE || "";

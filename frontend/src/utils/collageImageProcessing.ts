@@ -1,8 +1,11 @@
-import { mulberry32 } from "./collageMath.js";
+import { mulberry32 } from "./collageMath";
+
+type EdgeSample = Map<string, Record<string, number[]>>;
+type EdgeCache = Map<string, EdgeSample>;
 
 const DEFAULT_MAX_CACHE_SIZE = 50;
 
-const cleanupCache = (cache, maxSize) => {
+const cleanupCache = (cache: Map<string, any>, maxSize: number) => {
   if (cache.size > maxSize) {
     const entriesToDelete = Math.floor(cache.size * 0.25);
     const keysToDelete = Array.from(cache.keys()).slice(0, entriesToDelete);
@@ -10,11 +13,11 @@ const cleanupCache = (cache, maxSize) => {
   }
 };
 
-const defaultCreateImageElement = () => new Image();
-const defaultCreateCanvas = () => document.createElement("canvas");
+const defaultCreateImageElement = (): HTMLImageElement => new Image();
+const defaultCreateCanvas = (): HTMLCanvasElement => document.createElement("canvas");
 
-const loadImageElement = (url, createImageElement) =>
-  new Promise((resolve, reject) => {
+const loadImageElement = (url: string, createImageElement: () => HTMLImageElement) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
     const img = createImageElement();
     img.decoding = "async";
     img.crossOrigin = "anonymous";
@@ -23,7 +26,15 @@ const loadImageElement = (url, createImageElement) =>
     img.src = url;
   });
 
-const averageRectColor = (data, width, height, startX, startY, rectWidth, rectHeight) => {
+const averageRectColor = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  startX: number,
+  startY: number,
+  rectWidth: number,
+  rectHeight: number,
+): number[] => {
   if (!rectWidth || !rectHeight) return [0, 0, 0];
   const stepX = Math.max(1, Math.floor(rectWidth / 6));
   const stepY = Math.max(1, Math.floor(rectHeight / 6));
@@ -46,7 +57,7 @@ const averageRectColor = (data, width, height, startX, startY, rectWidth, rectHe
   return [r / samples, g / samples, b / samples];
 };
 
-const colorDistance = (a, b) => {
+const colorDistance = (a?: number[], b?: number[]): number => {
   if (!a || !b) return 255 * 5;
   const dr = a[0] - b[0];
   const dg = a[1] - b[1];
@@ -54,9 +65,16 @@ const colorDistance = (a, b) => {
   return Math.sqrt(dr * dr + dg * dg + db * db);
 };
 
-export const edgeKeyForPiece = (piece) => `${piece.imageId}|${piece.sourceRow}|${piece.sourceCol}`;
+export const edgeKeyForPiece = (piece: any) => `${piece.imageId}|${piece.sourceRow}|${piece.sourceCol}`;
 
-const evaluateSlotScore = (matrix, row, col, rows, cols, edgeLookup) => {
+const evaluateSlotScore = (
+  matrix: any[][],
+  row: number,
+  col: number,
+  rows: number,
+  cols: number,
+  edgeLookup: EdgeSample,
+): number => {
   const piece = matrix[row][col];
   if (!piece) return Number.POSITIVE_INFINITY;
   const edges = edgeLookup.get(edgeKeyForPiece(piece));
@@ -83,7 +101,7 @@ const evaluateSlotScore = (matrix, row, col, rows, cols, edgeLookup) => {
   return total / matches;
 };
 
-const optimizeBottomRightPlacement = (matrix, rows, cols, edgeLookup) => {
+const optimizeBottomRightPlacement = (matrix: any[][], rows: number, cols: number, edgeLookup: EdgeSample) => {
   const targetRow = rows - 1;
   const targetCol = cols - 1;
   let bestSwap = null;
@@ -123,11 +141,15 @@ export const createImageProcessing = ({
   maxCacheSize = DEFAULT_MAX_CACHE_SIZE,
   createImageElement = defaultCreateImageElement,
   createCanvas = defaultCreateCanvas,
+}: {
+  maxCacheSize?: number;
+  createImageElement?: () => HTMLImageElement;
+  createCanvas?: () => HTMLCanvasElement;
 } = {}) => {
-  const edgeSampleCache = new Map();
-  const imageDimensionCache = new Map();
+  const edgeSampleCache: EdgeCache = new Map();
+  const imageDimensionCache: Map<string, any> = new Map();
 
-  const ensureImageDimensions = (imageUrl) => {
+  const ensureImageDimensions = (imageUrl: string | null): Promise<{ width: number; height: number; ratio: number } | null> => {
     if (!imageUrl) {
       return Promise.resolve(null);
     }
@@ -158,10 +180,15 @@ export const createImageProcessing = ({
     return promise;
   };
 
-  const computeEdgesForImage = async (imageId, imageUrl, rows, cols) => {
+  const computeEdgesForImage = async (
+    imageId: string,
+    imageUrl: string,
+    rows: number,
+    cols: number,
+  ): Promise<EdgeSample> => {
     const cacheKey = `${imageUrl}|${rows}|${cols}`;
     if (edgeSampleCache.has(cacheKey)) {
-      return edgeSampleCache.get(cacheKey);
+      return edgeSampleCache.get(cacheKey) as EdgeSample;
     }
 
     const img = await loadImageElement(imageUrl, createImageElement);
@@ -175,9 +202,9 @@ export const createImageProcessing = ({
     const pieceSourceHeight = sourceHeight / rows;
 
     const workCanvas = createCanvas();
-    const workCtx = workCanvas.getContext("2d", { willReadFrequently: true });
+    const workCtx = workCanvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
 
-    const result = new Map();
+    const result: EdgeSample = new Map();
 
     try {
       for (let row = 0; row < rows; row += 1) {
@@ -232,7 +259,7 @@ export const createImageProcessing = ({
       workCanvas.width = 0;
       workCanvas.height = 0;
       workCtx.clearRect(0, 0, 0, 0);
-      img.src = "";
+      (img as HTMLImageElement).src = "";
     }
 
     edgeSampleCache.set(cacheKey, result);
@@ -240,7 +267,13 @@ export const createImageProcessing = ({
     return result;
   };
 
-  const buildEdgeAwareMixedPieces = (pieces, rows, cols, seed, edgeLookup) => {
+  const buildEdgeAwareMixedPieces = (
+    pieces: any[],
+    rows: number,
+    cols: number,
+    seed: number,
+    edgeLookup: EdgeSample,
+  ) => {
     if (!pieces.length || !rows || !cols) return [];
     const capacity = rows * cols;
     const piecesPool = [];

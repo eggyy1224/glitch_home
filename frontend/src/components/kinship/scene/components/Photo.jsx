@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Float, useTexture } from "@react-three/drei";
 
-import { clamp01 } from "../../utils/math.js";
+import { clamp01 } from "../../utils/math";
 
 export default function Photo({
   url,

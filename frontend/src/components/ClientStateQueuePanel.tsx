@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, columnsStyle, columnStyle, labelStyle } from "../AdminPanelStyles";
-import { useClientStateQueue } from "../hooks/useClientStateQueue.js";
-import { listEpisodes, listIframeSnapshots, listIframeTimelines } from "../api.js";
+import { useClientStateQueue } from "../hooks/useClientStateQueue";
+import { listEpisodes, listIframeSnapshots, listIframeTimelines } from "../api";
 
 function formatTime(value) {
   if (!value) return "--";

@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { reportScreenshotFailure, uploadScreenshot } from "../api.js";
+import { reportScreenshotFailure, uploadScreenshot } from "../api";
+
+declare global {
+  interface Window {
+    __APP_CAPTURE_SCENE?: (() => Promise<Blob>) | null;
+  }
+}
 
 export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMessage = "" } = {}) {
   const [isCapturing, setIsCapturing] = useState(false);

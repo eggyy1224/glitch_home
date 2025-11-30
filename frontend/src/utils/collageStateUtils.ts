@@ -1,10 +1,10 @@
-import { clamp } from "./collageMath.js";
+import { clamp } from "./collageMath";
 import {
   COLLAGE_RATIO_MAX as RATIO_MAX,
   COLLAGE_RATIO_MIN as RATIO_MIN,
-} from "../constants/collage.js";
+} from "../constants/collage";
 
-const buildSearchParams = (search) => {
+const buildSearchParams = (search?: string | URLSearchParams) => {
   if (search instanceof URLSearchParams) return search;
   if (typeof search === "string") return new URLSearchParams(search);
   if (typeof window !== "undefined" && window.location?.search) {
@@ -13,7 +13,13 @@ const buildSearchParams = (search) => {
   return new URLSearchParams();
 };
 
-export const readInitialParam = (key, fallback, min, max, search) => {
+export const readInitialParam = (
+  key: string,
+  fallback: number,
+  min: number,
+  max: number,
+  search?: string | URLSearchParams,
+): number => {
   const params = buildSearchParams(search);
   const raw = params.get(key);
   if (!raw) return fallback;
@@ -22,7 +28,11 @@ export const readInitialParam = (key, fallback, min, max, search) => {
   return clamp(parsed, min, max);
 };
 
-export const readInitialBooleanParam = (key, fallback, search) => {
+export const readInitialBooleanParam = (
+  key: string,
+  fallback: boolean,
+  search?: string | URLSearchParams,
+): boolean => {
   const params = buildSearchParams(search);
   const raw = params.get(key);
   if (!raw) return fallback;

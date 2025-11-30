@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchSoundFiles } from "./api.js";
+import { fetchSoundFiles } from "./api";
 
 const styles = {
   container: {

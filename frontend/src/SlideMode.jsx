@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./SlideMode.css";
-import { useSlidePlayback } from "./hooks/useSlidePlayback.js";
-import { useSlideScreenshot } from "./hooks/useSlideScreenshot.js";
-import { computeStyles, getSizeClass } from "./utils/slideMode.js";
+import { useSlidePlayback } from "./hooks/useSlidePlayback";
+import { useSlideScreenshot } from "./hooks/useSlideScreenshot";
+import { computeStyles, getSizeClass } from "./utils/slideMode";
 
 export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, onCaptureReady = null }) {
   const rootRef = useRef(null);

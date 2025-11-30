@@ -7,10 +7,10 @@ import {
   listEpisodes,
   playEpisode,
   updateEpisode,
-} from "../api.js";
+} from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, labelStyle } from "../AdminPanelStyles";
-import { defaultEpisodePayload, parseTargetMap, pretty } from "../adminPanelUtils.js";
+import { defaultEpisodePayload, parseTargetMap, pretty } from "../adminPanelUtils";
 
 export default function EpisodeManager() {
   const { defaultClientId } = useContext(AdminPanelContext);

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
-import { DEFAULT_IFRAME_CONFIG, sanitizeIframeConfig } from "./utils/iframeConfig.js";
+import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
+import { DEFAULT_IFRAME_CONFIG, sanitizeIframeConfig } from "./utils/iframeConfig";
 
 const DEFAULT_CONFIG = DEFAULT_IFRAME_CONFIG;
 

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { searchImagesByImage, fetchKinship } from "../api.js";
+import { searchImagesByImage, fetchKinship } from "../api";
 import {
   BATCH_SIZE,
   DISPLAY_ORDER,
   SlideSourceMode,
   cleanId,
   getSlideSourceMode,
-} from "../utils/slideMode.js";
+} from "../utils/slideMode";
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -83,13 +83,18 @@ export function useSlidePlayback({
   intervalMs = 3000,
   searchByImage = searchImagesByImage,
   fetchKinshipData = fetchKinship,
+}: {
+  anchorImage?: string | null;
+  intervalMs?: number;
+  searchByImage?: typeof searchImagesByImage;
+  fetchKinshipData?: typeof fetchKinship;
 } = {}) {
   const anchorClean = cleanId(anchorImage);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<any[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [anchor, setAnchor] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [anchor, setAnchor] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
   const [showCaption, setShowCaption] = useState(false);
   const [sourceMode, setSourceMode] = useState(() =>
@@ -102,14 +107,14 @@ export function useSlidePlayback({
   const togglePause = useCallback(() => setIsPaused((prev) => !prev), []);
 
   useEffect(() => {
-    const handler = (event) => {
+    const handler = (event: KeyboardEvent) => {
       if (event.ctrlKey && (event.key === "r" || event.key === "R")) {
         event.preventDefault();
         toggleCaption();
       }
     };
-    window.addEventListener("keydown", handler, { passive: false });
-    return () => window.removeEventListener("keydown", handler, { passive: false });
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [toggleCaption]);
 
   useEffect(() => {

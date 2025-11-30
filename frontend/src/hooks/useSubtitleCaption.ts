@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchCaptionState, fetchSubtitleState } from "../api.js";
+import { fetchCaptionState, fetchSubtitleState } from "../api";
 
 const normalizeOverlayPayload = (payload) => {
   if (!payload || typeof payload !== "object") {

@@ -6,7 +6,7 @@ import {
   COLLAGE_STAGE_MAX_WIDTH,
   COLLAGE_STAGE_MIN_HEIGHT,
   COLLAGE_STAGE_MIN_WIDTH,
-} from "../constants/collage.js";
+} from "../constants/collage";
 
 export const cleanCollageId = (value) => (value ? value.replace(/:(en|zh)$/i, "") : value);
 

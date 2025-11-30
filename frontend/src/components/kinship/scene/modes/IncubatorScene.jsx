@@ -9,10 +9,10 @@ import {
   FLOW_TINTS,
   INCUBATOR_PARTICLE_COUNT,
   INCUBATOR_LONG_CYCLE,
-} from "../../utils/constants.js";
-import { buildLineageGraph } from "../../utils/graph.js";
-import { createIncubatorEdges, createIncubatorLayout } from "../../utils/layouts.js";
-import { clamp01, easeOutCubic, seededRandom } from "../../utils/math.js";
+} from "../../utils/constants";
+import { buildLineageGraph } from "../../utils/graph";
+import { createIncubatorEdges, createIncubatorLayout } from "../../utils/layouts";
+import { clamp01, easeOutCubic, seededRandom } from "../../utils/math";
 
 function IncubatorMist({ fieldRef }) {
   const configs = useMemo(() => {

@@ -8,8 +8,8 @@ import {
   INCUBATOR_RADIUS_STEP,
   PHYLO_LEVEL_GAP,
   PHYLO_NODE_SPACING,
-} from "./constants.js";
-import { seededRandom } from "./math.js";
+} from "./constants";
+import { seededRandom } from "./math";
 
 export const createIncubatorLayout = (graph) => {
   if (!graph || !Array.isArray(graph.nodes) || graph.nodes.length === 0) return [];
@@ -110,12 +110,12 @@ export const createIncubatorLayout = (graph) => {
   return nodes;
 };
 
-export const createIncubatorEdges = (graph, layoutNodes) => {
+export const createIncubatorEdges = (graph: any, layoutNodes: any[]): any[] => {
   if (!graph || !Array.isArray(graph.edges) || !layoutNodes.length) return [];
-  const lookup = new Map(layoutNodes.map((node) => [node.name, node]));
-  const seen = new Set();
+  const lookup = new Map(layoutNodes.map((node: any) => [node.name, node]));
+  const seen = new Set<string>();
   return graph.edges
-    .map((edge) => {
+    .map((edge: any) => {
       const source = lookup.get(edge.source);
       const target = lookup.get(edge.target);
       if (!source || !target) return null;
@@ -133,14 +133,14 @@ export const createIncubatorEdges = (graph, layoutNodes) => {
     .filter(Boolean);
 };
 
-export const computePhylogenyLayout = (graph) => {
+export const computePhylogenyLayout = (graph: any): any => {
   if (!graph || !graph.nodes.length) {
     return { nodes: [], edges: [], bounds: null };
   }
 
-  const levels = Array.from(
-    new Set(graph.nodes.map((node) => (Number.isFinite(node.level) ? node.level : 0))),
-  ).sort((a, b) => a - b);
+  const levels = (Array.from(
+    new Set<number>(graph.nodes.map((node: any) => (Number.isFinite(node.level) ? Number(node.level) : 0))),
+  ) as number[]).sort((a, b) => a - b);
 
   if (!levels.length) {
     return { nodes: [], edges: [], bounds: null };

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ensureHtml2Canvas } from "./utils/html2canvasLoader.js";
+import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
 import "./VideoMode.css";
 
 const canvasToBlob = (canvas) =>

@@ -1,14 +1,25 @@
 import { useEffect } from "react";
-import { ensureHtml2Canvas } from "../utils/html2canvasLoader.js";
-import { canvasToBlob } from "../utils/slideMode.js";
+import type React from "react";
+import { ensureHtml2Canvas } from "../utils/html2canvasLoader";
+import { canvasToBlob } from "../utils/slideMode";
 
-export function useSlideScreenshot({ rootRef, onCaptureReady, html2canvasLoader = ensureHtml2Canvas } = {}) {
+interface UseSlideScreenshotOptions {
+  rootRef?: React.RefObject<HTMLElement>;
+  onCaptureReady?: (capture: (() => Promise<Blob>) | null) => void;
+  html2canvasLoader?: () => Promise<any>;
+}
+
+export function useSlideScreenshot({
+  rootRef,
+  onCaptureReady,
+  html2canvasLoader = ensureHtml2Canvas,
+}: UseSlideScreenshotOptions = {}) {
   useEffect(() => {
     if (typeof onCaptureReady !== "function") {
       return undefined;
     }
 
-    const captureScene = async () => {
+    const captureScene = async (): Promise<Blob> => {
       const root = rootRef?.current;
       if (!root) {
         throw new Error("Slide 模式尚未準備好");
@@ -20,7 +31,7 @@ export function useSlideScreenshot({ rootRef, onCaptureReady, html2canvasLoader 
         logging: false,
         useCORS: true,
       });
-      return canvasToBlob(canvas);
+      return canvasToBlob(canvas) as Promise<Blob>;
     };
 
     onCaptureReady(captureScene);

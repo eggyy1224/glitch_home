@@ -1,7 +1,13 @@
-let html2canvasPromise = null;
+declare global {
+  interface Window {
+    html2canvas?: any;
+  }
+}
 
-function loadFromModule() {
-  return import("html2canvas").then((mod) => {
+let html2canvasPromise: Promise<any> | null = null;
+
+function loadFromModule(): Promise<any> {
+  return import("html2canvas").then((mod: any) => {
     const html2canvas = mod?.default ?? mod;
     if (!html2canvas) {
       throw new Error("html2canvas 模組載入失敗");
@@ -13,7 +19,7 @@ function loadFromModule() {
   });
 }
 
-function loadFromCdn() {
+function loadFromCdn(): Promise<any> {
   return new Promise((resolve, reject) => {
     const existingScript = document.querySelector('script[data-html2canvas="cdn"]');
     if (existingScript) {
@@ -31,7 +37,7 @@ function loadFromCdn() {
     }
 
     const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+    script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min";
     script.async = true;
     script.setAttribute("data-html2canvas", "cdn");
     script.onload = () => {
@@ -48,7 +54,7 @@ function loadFromCdn() {
   });
 }
 
-export function ensureHtml2Canvas() {
+export function ensureHtml2Canvas(): Promise<any> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("瀏覽器環境才支援截圖"));
   }
