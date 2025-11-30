@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 
-export default function CameraPresetApplier({ preset }) {
-  const controls = useThree((state) => state.controls);
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { KinshipCameraPreset } from "../../../../types/kinship";
+
+export default function CameraPresetApplier({ preset }: { preset: KinshipCameraPreset | null }) {
+  const controls = useThree((state) => state.controls as OrbitControlsImpl | undefined);
   const camera = useThree((state) => state.camera);
 
   useEffect(() => {

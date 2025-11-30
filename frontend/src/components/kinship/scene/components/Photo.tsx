@@ -5,6 +5,15 @@ import { Float, useTexture } from "@react-three/drei";
 
 import { clamp01 } from "../../utils/math";
 
+interface PhotoProps {
+  url: string;
+  size?: number;
+  name: string | number;
+  onPick?: (name: string | number) => void;
+  externalRef?: React.MutableRefObject<THREE.Mesh | null> | React.RefObject<THREE.Mesh> | null;
+  getProgress?: (() => number) | number | null;
+}
+
 export default function Photo({
   url,
   size = 3,
@@ -12,14 +21,14 @@ export default function Photo({
   onPick,
   externalRef = null,
   getProgress = null,
-}) {
+}: PhotoProps) {
   const tex = useTexture(url);
-  const meshRef = useRef();
-  const scaleRef = useRef([size, size, 1]);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const scaleRef = useRef<[number, number, number]>([size, size, 1]);
   const phaseRef = useRef(Math.random() * Math.PI * 2);
   const speedRef = useRef(0.25 + Math.random() * 0.15);
   const ampRef = useRef(0.06 + Math.random() * 0.03);
-  const progressFnRef = useRef(() => 1);
+  const progressFnRef = useRef<() => number>(() => 1);
 
   useEffect(() => {
     if (tex.image) {
@@ -56,7 +65,9 @@ export default function Photo({
       <mesh
         ref={(node) => {
           meshRef.current = node;
-          if (externalRef) externalRef.current = node;
+          if (externalRef && "current" in externalRef) {
+            (externalRef as React.MutableRefObject<THREE.Mesh | null>).current = node;
+          }
         }}
         onClick={() => onPick?.(name)}
         onPointerOver={() => (document.body.style.cursor = "pointer")}

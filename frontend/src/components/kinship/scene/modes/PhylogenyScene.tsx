@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Line, useTexture } from "@react-three/drei";
 
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { KinshipData, KinshipLayoutNode, PhylogenyLayout } from "../../../../types/kinship";
 import {
   KIND_COLORS,
   PHYLO_LEVEL_GAP,
@@ -12,37 +14,45 @@ import {
 import { buildLineageGraph } from "../../utils/graph";
 import { computePhylogenyLayout } from "../../utils/layouts";
 
-function PhylogenyNode({ node, imagesBase, onPick }) {
+interface PhylogenyNodeProps {
+  node: KinshipLayoutNode;
+  imagesBase: string;
+  onPick?: (name: string) => void;
+}
+
+function PhylogenyNode({ node, imagesBase, onPick }: PhylogenyNodeProps) {
   const url = `${imagesBase}${node.name}`;
   const tex = useTexture(url);
   const sizeMultiplier = node.kind === "original" ? 1.2 : 1;
   const size = PHYLO_NODE_BASE_SIZE * sizeMultiplier;
   const frameSize = size * 1.1;
   const color = KIND_COLORS[node.kind] || "#d0d0d0";
-  const frameRef = useRef();
-  const imageRef = useRef();
-  const [scales, setScales] = useState({
-    frame: [frameSize, frameSize, 1],
-    image: [size, size, 1],
-  });
+  const frameRef = useRef<THREE.Mesh>(null);
+  const imageRef = useRef<THREE.Mesh>(null);
+  const [scales, setScales] = useState<{ frame: [number, number, number]; image: [number, number, number] }>(
+    {
+      frame: [frameSize, frameSize, 1],
+      image: [size, size, 1],
+    },
+  );
 
   useEffect(() => {
     if (!tex.image) return;
     const width = tex.image.width || 1;
     const height = tex.image.height || 1;
     const aspect = width / height || 1;
-    const imageScale = [size, size / aspect, 1];
-    const frameScale = [frameSize, frameSize / aspect, 1];
+    const imageScale = [size, size / aspect, 1] as [number, number, number];
+    const frameScale = [frameSize, frameSize / aspect, 1] as [number, number, number];
     setScales({ frame: frameScale, image: imageScale });
     if (frameRef.current) frameRef.current.scale.set(...frameScale);
     if (imageRef.current) imageRef.current.scale.set(...imageScale);
   }, [tex.image, size, frameSize]);
 
   return (
-    <group position={node.position.toArray()}>
+    <group position={node.position.toArray() as [number, number, number]}>
       <Billboard follow>
         <group>
-          <mesh ref={frameRef} position={[0, 0, -0.02]} scale={scales.frame}>
+            <mesh ref={frameRef} position={[0, 0, -0.02]} scale={scales.frame}>
             <planeGeometry args={[1, 1]} />
             <meshBasicMaterial color={color} transparent opacity={0.9} />
           </mesh>
@@ -62,11 +72,11 @@ function PhylogenyNode({ node, imagesBase, onPick }) {
   );
 }
 
-function PhylogenyAutoFrame({ width, height }) {
+function PhylogenyAutoFrame({ width, height }: { width: number; height: number }) {
   const { camera, size, controls } = useThree((state) => ({
-    camera: state.camera,
+    camera: state.camera as THREE.PerspectiveCamera,
     size: state.size,
-    controls: state.controls,
+    controls: state.controls as OrbitControlsImpl | undefined,
   }));
 
   useEffect(() => {
@@ -100,8 +110,8 @@ function PhylogenyAutoFrame({ width, height }) {
   return null;
 }
 
-function PhylogenyAnimatedWrapper({ children }) {
-  const groupRef = useRef();
+function PhylogenyAnimatedWrapper({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
@@ -116,9 +126,13 @@ function PhylogenyAnimatedWrapper({ children }) {
   return <group ref={groupRef}>{children}</group>;
 }
 
-export default function PhylogenyScene({ imagesBase, data, onPick }) {
+export default function PhylogenyScene({
+  imagesBase,
+  data,
+  onPick,
+}: { imagesBase: string; data: KinshipData | null; onPick?: (name: string) => void }) {
   const graph = useMemo(() => buildLineageGraph(data), [data]);
-  const layout = useMemo(() => computePhylogenyLayout(graph), [graph]);
+  const layout = useMemo<PhylogenyLayout>(() => computePhylogenyLayout(graph), [graph]);
 
   if (!layout.nodes.length) {
     return null;
@@ -140,8 +154,8 @@ export default function PhylogenyScene({ imagesBase, data, onPick }) {
         <Line
           key={`${edge.source.name}->${edge.target.name}`}
           points={[
-            edge.source.position.toArray(),
-            edge.target.position.toArray(),
+            edge.source.position.toArray() as [number, number, number],
+            edge.target.position.toArray() as [number, number, number],
           ]}
           color="#9aa0a6"
           lineWidth={2}

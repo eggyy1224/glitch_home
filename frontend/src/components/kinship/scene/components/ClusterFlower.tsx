@@ -3,13 +3,32 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useSpring } from "@react-spring/three";
 
-import Photo from "./Photo.jsx";
+import type { SpringValue } from "@react-spring/three";
+import type { KinshipCluster } from "../../../../types/kinship";
+import Photo from "./Photo";
 import { onlyOffspring, levelsOnlyOffspring } from "../../utils/data";
 import { makeRing, toVec3, wobblePosition, clamp01 } from "../../utils/math";
 
-export default function ClusterFlower({ imagesBase, cluster, onPick }) {
-  const group = useRef();
-  const centerRef = useRef();
+interface RingEntry {
+  name: string;
+  meshRef: React.RefObject<THREE.Mesh>;
+  lineRef?: React.RefObject<THREE.Line>;
+  basePos: THREE.Vector3;
+  speed: number;
+  amp: number;
+  lineOpacity?: number;
+  getProgress?: ((ringIndex?: number) => number) | number;
+}
+
+interface ClusterFlowerProps {
+  imagesBase: string;
+  cluster: KinshipCluster;
+  onPick?: (name: string) => void;
+}
+
+export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFlowerProps) {
+  const group = useRef<THREE.Group>(null);
+  const centerRef = useRef<THREE.Mesh>(null);
   const { data, anchor } = cluster;
   const original = data?.original_image || cluster.original || cluster.id;
   const parents = data?.parents || [];
@@ -42,13 +61,20 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
     return rings;
   }, [ancestorsByLevel, anchorVec]);
 
-  const [springs, api] = useSpring(() => ({
+  const [rawSprings, api] = useSpring(() => ({
     center: 0,
     parents: 0,
     siblings: 0,
     children: 0,
     ancestors: 0,
   }));
+  const springs = rawSprings as unknown as {
+    center: SpringValue<number>;
+    parents: SpringValue<number>;
+    siblings: SpringValue<number>;
+    children: SpringValue<number>;
+    ancestors: SpringValue<number>;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -80,7 +106,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
           await next({ ancestors: 0 });
         }
       },
-    });
+    } as any);
 
     return () => {
       cancelled = true;
@@ -88,7 +114,8 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
     };
   }, [api, cluster.id, parentsRing.length, siblingsRing.length, childrenRing.length, ancestorRings.length]);
 
-  const readSpring = (value, fallback = 0) => {
+  const readSpring = (value: SpringValue<number> | number | undefined, fallback = 0) => {
+    if (typeof value === "number") return value;
     if (!value || typeof value.get !== "function") return fallback;
     return value.get();
   };
@@ -96,13 +123,13 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
   const getCenterProgress = () => clamp01(readSpring(springs.center, 0));
   const getParentProgress = () => clamp01(readSpring(springs.parents, 0));
   const getSiblingProgress = () => clamp01(readSpring(springs.siblings, 0));
-  const getChildrenProgress = () => clamp01(readSpring(springs.children, 0));
-  const getAncestorProgress = (ringIndex) => () => clamp01(readSpring(springs.ancestors, 0) - ringIndex);
+  const getChildrenProgress = () => clamp01(readSpring(springs.children as SpringValue<number> | number, 0));
+  const getAncestorProgress = (ringIndex: number) => () => clamp01(readSpring(springs.ancestors, 0) - ringIndex);
 
-  const parentRefs = useRef([]);
-  const siblingRefs = useRef([]);
-  const childRefs = useRef([]);
-  const ancestorRefs = useRef([]);
+  const parentRefs = useRef<RingEntry[]>([]);
+  const siblingRefs = useRef<RingEntry[]>([]);
+  const childRefs = useRef<RingEntry[]>([]);
+  const ancestorRefs = useRef<RingEntry[][]>([]);
   parentRefs.current = [];
   siblingRefs.current = [];
   childRefs.current = [];
@@ -118,7 +145,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
     const t = clock.getElapsedTime();
     if (group.current) group.current.rotation.y = t * 0.06;
 
-    const updateNodes = (entries, baseAnchor) => {
+    const updateNodes = (entries: RingEntry[], baseAnchor: THREE.Vector3) => {
       entries.forEach((entry, index) => {
         const ref = entry.meshRef?.current;
         if (!ref) return;
@@ -133,8 +160,9 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
           lineRef.geometry.attributes.position.needsUpdate = true;
         }
         if (lineRef?.material) {
-          lineRef.material.opacity = (entry.lineOpacity ?? 1) * factor;
-          lineRef.material.transparent = true;
+          const material = lineRef.material as THREE.Material & { opacity?: number; transparent?: boolean };
+          material.opacity = (entry.lineOpacity ?? 1) * factor;
+          material.transparent = true;
           lineRef.visible = factor > 0.001;
         }
       });
@@ -157,7 +185,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
         getProgress={getCenterProgress}
       />
       {parentsRing.map((node) => {
-        const meshRef = React.createRef();
+        const meshRef = React.createRef<THREE.Mesh>();
         parentRefs.current.push({
           name: node.name,
           meshRef,
@@ -181,7 +209,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
         );
       })}
       {siblingsRing.map((node) => {
-        const meshRef = React.createRef();
+        const meshRef = React.createRef<THREE.Mesh>();
         siblingRefs.current.push({
           name: node.name,
           meshRef,
@@ -209,7 +237,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
         return (
           <group key={`a-ring-${cluster.id}-${index}`}>
             {ringNodes.map((node) => {
-              const meshRef = React.createRef();
+              const meshRef = React.createRef<THREE.Mesh>();
               if (!ancestorRefs.current[index]) ancestorRefs.current[index] = [];
               ancestorRefs.current[index].push({
                 name: node.name,
@@ -237,7 +265,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }) {
         );
       })}
       {childrenRing.map((node) => {
-        const meshRef = React.createRef();
+        const meshRef = React.createRef<THREE.Mesh>();
         childRefs.current.push({
           name: node.name,
           meshRef,

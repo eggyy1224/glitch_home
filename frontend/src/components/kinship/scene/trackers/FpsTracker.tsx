@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-export default function FpsTracker({ onFpsUpdate }) {
+export default function FpsTracker({ onFpsUpdate }: { onFpsUpdate?: (fps: number) => void }) {
   const frameCount = useRef(0);
   const timeAccum = useRef(0);
-  const lastReported = useRef(null);
+  const lastReported = useRef<number | null>(null);
   const callbackRef = useRef(onFpsUpdate);
 
   useEffect(() => {
