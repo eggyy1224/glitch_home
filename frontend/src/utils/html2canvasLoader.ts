@@ -1,25 +1,28 @@
 declare global {
   interface Window {
-    html2canvas?: any;
+    html2canvas?: Html2CanvasFn;
   }
 }
 
-let html2canvasPromise: Promise<any> | null = null;
+type Html2CanvasModule = typeof import("html2canvas");
+type Html2CanvasFn = Html2CanvasModule extends { default: infer D } ? D : never;
 
-function loadFromModule(): Promise<any> {
-  return import("html2canvas").then((mod: any) => {
-    const html2canvas = mod?.default ?? mod;
+let html2canvasPromise: Promise<Html2CanvasFn> | null = null;
+
+function loadFromModule(): Promise<Html2CanvasFn> {
+  return import("html2canvas").then((mod: Html2CanvasModule) => {
+    const html2canvas = (mod as { default?: Html2CanvasFn }).default ?? (mod as unknown as Html2CanvasFn);
     if (!html2canvas) {
       throw new Error("html2canvas 模組載入失敗");
     }
     if (typeof window !== "undefined" && !window.html2canvas) {
       window.html2canvas = html2canvas;
     }
-    return html2canvas;
+    return html2canvas as Html2CanvasFn;
   });
 }
 
-function loadFromCdn(): Promise<any> {
+function loadFromCdn(): Promise<Html2CanvasFn> {
   return new Promise((resolve, reject) => {
     const existingScript = document.querySelector('script[data-html2canvas="cdn"]');
     if (existingScript) {
@@ -54,7 +57,7 @@ function loadFromCdn(): Promise<any> {
   });
 }
 
-export function ensureHtml2Canvas(): Promise<any> {
+export function ensureHtml2Canvas(): Promise<Html2CanvasFn> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("瀏覽器環境才支援截圖"));
   }

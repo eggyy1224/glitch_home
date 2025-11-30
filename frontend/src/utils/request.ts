@@ -21,13 +21,16 @@ function formatError(status: number, detail: string): string {
   return detail ? `API ${status}: ${detail}` : `API ${status}`;
 }
 
-function extractDetail(payload: any): string {
+function extractDetail(payload: unknown): string {
   if (!payload) return "";
   if (typeof payload === "string") return payload;
   if (typeof payload === "object") {
-    if (typeof payload.detail === "string") return payload.detail;
-    if (payload.detail && typeof payload.detail.message === "string") return payload.detail.message;
-    if (typeof payload.message === "string") return payload.message;
+    const detail = (payload as { detail?: unknown }).detail;
+    if (typeof detail === "string") return detail;
+    if (detail && typeof (detail as { message?: unknown }).message === "string") {
+      return String((detail as { message: unknown }).message);
+    }
+    if (typeof (payload as { message?: unknown }).message === "string") return String((payload as { message: unknown }).message);
   }
   return "";
 }
@@ -40,7 +43,7 @@ export function buildImageUrl(filename: string | null, base: string = IMAGES_BAS
 
 export interface RequestOptions {
   method?: string;
-  body?: any;
+  body?: unknown;
   headers?: Record<string, string>;
   signal?: AbortSignal | null | undefined;
   baseUrl?: string;
@@ -52,16 +55,18 @@ export interface RequestWithResponse<T = unknown> {
   response: Response;
 }
 
-export async function request<T = any>(
+export async function request<T = unknown>(
   path: string,
   options: RequestOptions & { returnResponse: true },
 ): Promise<RequestWithResponse<T>>;
-export async function request<T = any>(path: string, options?: RequestOptions): Promise<T>;
-export async function request<T = any>(path: string, options: RequestOptions = {}): Promise<T | RequestWithResponse<T>> {
+export async function request<T = unknown>(path: string, options?: RequestOptions): Promise<T>;
+export async function request<T = unknown>(path: string, options: RequestOptions = {}): Promise<T | RequestWithResponse<T>> {
   const { method = "GET", body, headers = {}, signal, baseUrl = API_BASE, returnResponse = false } = options;
   const url = joinUrl(baseUrl, path);
   const init: RequestInit = { method, headers: { ...headers } };
-  init.signal = signal ?? undefined;
+  if (signal !== undefined) {
+    init.signal = signal;
+  }
 
   if (body !== undefined) {
     if (body instanceof FormData) {

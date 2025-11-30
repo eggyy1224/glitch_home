@@ -1,16 +1,17 @@
 const FONT_FAMILY = "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif";
+type StyleMap = Record<string, string | number | undefined>;
 
 export const SlideSourceMode = Object.freeze({
   VECTOR: "vector",
   KINSHIP: "kinship",
 });
 
-export const getSlideSourceMode = (params) => {
+export const getSlideSourceMode = (params: URLSearchParams | null | undefined) => {
   const mode = (params?.get("slide_source") || SlideSourceMode.VECTOR).toLowerCase();
   return mode === SlideSourceMode.KINSHIP ? SlideSourceMode.KINSHIP : SlideSourceMode.VECTOR;
 };
 
-export const getSizeClass = (width, height) => {
+export const getSizeClass = (width?: number | null, height?: number | null) => {
   if (!width || !height) return "large";
   if (width <= 420 || height <= 360) return "xsmall";
   if (width <= 720 || height <= 520) return "small";
@@ -18,8 +19,8 @@ export const getSizeClass = (width, height) => {
   return "large";
 };
 
-export const computeStyles = (sizeClass) => {
-  const root = {
+export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall") => {
+  const root: StyleMap = {
     width: "100vw",
     height: "100vh",
     backgroundColor: "#000",
@@ -78,7 +79,7 @@ export const computeStyles = (sizeClass) => {
     letterSpacing: "0.04em",
   };
 
-  const controlBar: Record<string, any> = {
+  const controlBar: StyleMap = {
     display: "flex",
     alignItems: "center",
     gap: "16px",
@@ -89,7 +90,7 @@ export const computeStyles = (sizeClass) => {
     backdropFilter: "blur(10px)",
   };
 
-  const slider: Record<string, any> = {
+  const slider: StyleMap = {
     minWidth: "150px",
     height: "4px",
     borderRadius: "2px",
@@ -109,7 +110,7 @@ export const computeStyles = (sizeClass) => {
     fontVariantNumeric: "tabular-nums",
   };
 
-  const button: Record<string, any> = {
+  const button: StyleMap = {
     padding: "6px 12px",
     borderRadius: "6px",
     border: "1px solid rgba(255,255,255,0.2)",
@@ -169,13 +170,13 @@ export const computeStyles = (sizeClass) => {
   return { root, stage, image, caption, status, controlBar, slider, sliderLabel, button };
 };
 
-export const cleanId = (value) => (value ? value.replace(/:(en|zh)$/i, "") : value);
+export const cleanId = (value: string | null | undefined) => (value ? value.replace(/:(en|zh)$/i, "") : value);
 
 export const DISPLAY_ORDER = Array.from({ length: 15 }, (_, i) => i);
 export const BATCH_SIZE = 15;
 
-export const canvasToBlob = (canvas) =>
-  new Promise((resolve, reject) => {
+export const canvasToBlob = (canvas: HTMLCanvasElement) =>
+  new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {

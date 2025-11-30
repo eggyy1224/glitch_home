@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { createRef } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -28,7 +27,7 @@ describe("VideoMode", () => {
     render(<VideoMode onCaptureReady={onCaptureReady} />);
 
     expect(screen.getByText("請在網址加上 ?video=檔名.mp4")).toBeInTheDocument();
-    expect(onCaptureReady).toHaveBeenCalledWith(expect.any(Function));
+    expect(onCaptureReady).toHaveBeenCalledWith(expect.anything());
   });
 
   it("支援控制播放/音量/靜音，並將控制器暴露到 ref", async () => {

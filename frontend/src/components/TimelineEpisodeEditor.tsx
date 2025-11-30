@@ -325,10 +325,13 @@ export default function TimelineEpisodeEditor() {
       try {
         if (mode === "timeline") {
           const data = await fetchIframeTimeline(id, { resolve: false });
-          const payload: any = data.timeline || data;
+          const payload = (data as { timeline?: unknown }).timeline ?? data;
           updateTimeline(payload, { markDirty: false });
-          if (payload.clientId || payload.client_id) {
-            const nextClient = payload.clientId || payload.client_id;
+          const timelineClient =
+            (payload as { clientId?: string; client_id?: string }).clientId ||
+            (payload as { client_id?: string }).client_id;
+          if (timelineClient) {
+            const nextClient = timelineClient;
             setSnapshotClient(nextClient);
             await refreshSnapshots(nextClient);
           }

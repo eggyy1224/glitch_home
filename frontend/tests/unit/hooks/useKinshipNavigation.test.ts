@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useKinshipNavigation } from "../../../src/hooks/useKinshipNavigation";
@@ -64,7 +63,10 @@ describe("useKinshipNavigation", () => {
       cancel = result.current.scheduleNavigation("next.png", onNavigate, 5);
     });
 
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 5000);
+    expect(setTimeout).toHaveBeenCalled();
+    const [callback, delay] = (setTimeout as jest.Mock).mock.calls[0];
+    expect(typeof callback).toBe("function");
+    expect(delay).toBe(5000);
     scheduledCallback();
     expect(onNavigate).toHaveBeenCalledWith("next.png");
 

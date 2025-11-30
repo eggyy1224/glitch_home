@@ -1,11 +1,35 @@
 import { mulberry32 } from "./collageMath";
 
-type EdgeSample = Map<string, Record<string, number[]>>;
+type EdgeColors = {
+  top: number[];
+  bottom: number[];
+  left: number[];
+  right: number[];
+  center: number[];
+};
+
+type EdgeSample = Map<string, EdgeColors>;
 type EdgeCache = Map<string, EdgeSample>;
+
+export interface CollagePiece {
+  imageId: string;
+  sourceRow: number;
+  sourceCol: number;
+  key?: string;
+  row?: number;
+  col?: number;
+  [key: string]: unknown;
+}
+
+interface ImageDimensions {
+  width: number;
+  height: number;
+  ratio: number;
+}
 
 const DEFAULT_MAX_CACHE_SIZE = 50;
 
-const cleanupCache = (cache: Map<string, any>, maxSize: number) => {
+const cleanupCache = <T>(cache: Map<string, T>, maxSize: number) => {
   if (cache.size > maxSize) {
     const entriesToDelete = Math.floor(cache.size * 0.25);
     const keysToDelete = Array.from(cache.keys()).slice(0, entriesToDelete);
@@ -65,10 +89,11 @@ const colorDistance = (a?: number[], b?: number[]): number => {
   return Math.sqrt(dr * dr + dg * dg + db * db);
 };
 
-export const edgeKeyForPiece = (piece: any) => `${piece.imageId}|${piece.sourceRow}|${piece.sourceCol}`;
+export const edgeKeyForPiece = (piece: Pick<CollagePiece, "imageId" | "sourceRow" | "sourceCol">) =>
+  `${piece.imageId}|${piece.sourceRow}|${piece.sourceCol}`;
 
 const evaluateSlotScore = (
-  matrix: any[][],
+  matrix: Array<Array<CollagePiece | null>>,
   row: number,
   col: number,
   rows: number,
@@ -83,7 +108,12 @@ const evaluateSlotScore = (
   let total = 0;
   let matches = 0;
 
-  const accumulate = (neighborRow, neighborCol, selfEdgeKey, neighborEdgeKey) => {
+  const accumulate = (
+    neighborRow: number,
+    neighborCol: number,
+    selfEdgeKey: keyof EdgeColors,
+    neighborEdgeKey: keyof EdgeColors,
+  ) => {
     const neighbor = matrix[neighborRow][neighborCol];
     if (!neighbor) return;
     const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
@@ -101,7 +131,12 @@ const evaluateSlotScore = (
   return total / matches;
 };
 
-const optimizeBottomRightPlacement = (matrix: any[][], rows: number, cols: number, edgeLookup: EdgeSample) => {
+const optimizeBottomRightPlacement = (
+  matrix: Array<Array<CollagePiece | null>>,
+  rows: number,
+  cols: number,
+  edgeLookup: EdgeSample,
+) => {
   const targetRow = rows - 1;
   const targetCol = cols - 1;
   let bestSwap = null;
@@ -147,9 +182,9 @@ export const createImageProcessing = ({
   createCanvas?: () => HTMLCanvasElement;
 } = {}) => {
   const edgeSampleCache: EdgeCache = new Map();
-  const imageDimensionCache: Map<string, any> = new Map();
+  const imageDimensionCache: Map<string, ImageDimensions | Promise<ImageDimensions>> = new Map();
 
-  const ensureImageDimensions = (imageUrl: string | null): Promise<{ width: number; height: number; ratio: number } | null> => {
+  const ensureImageDimensions = (imageUrl: string | null): Promise<ImageDimensions | null> => {
     if (!imageUrl) {
       return Promise.resolve(null);
     }
@@ -202,7 +237,10 @@ export const createImageProcessing = ({
     const pieceSourceHeight = sourceHeight / rows;
 
     const workCanvas = createCanvas();
-    const workCtx = workCanvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
+    const workCtx = workCanvas.getContext("2d", { willReadFrequently: true });
+    if (!workCtx) {
+      throw new Error("無法取得 2D 繪圖上下文");
+    }
 
     const result: EdgeSample = new Map();
 
@@ -268,15 +306,15 @@ export const createImageProcessing = ({
   };
 
   const buildEdgeAwareMixedPieces = (
-    pieces: any[],
+    pieces: CollagePiece[],
     rows: number,
     cols: number,
     seed: number,
     edgeLookup: EdgeSample,
-  ) => {
+  ): Array<CollagePiece & { row: number; col: number; key: string }> => {
     if (!pieces.length || !rows || !cols) return [];
     const capacity = rows * cols;
-    const piecesPool = [];
+    const piecesPool: CollagePiece[] = [];
     while (piecesPool.length < capacity) {
       piecesPool.push(...pieces.map((piece) => ({ ...piece })));
     }
@@ -284,7 +322,9 @@ export const createImageProcessing = ({
 
     const rand = mulberry32(seed ^ 0xabcdef);
     const available = availablePieces.map((piece) => ({ piece }));
-    const placedMatrix = Array.from({ length: rows }, () => Array(cols).fill(null));
+    const placedMatrix: Array<Array<CollagePiece | null>> = Array.from({ length: rows }, () =>
+      Array<CollagePiece | null>(cols).fill(null),
+    );
 
     const slotOrder = Array.from({ length: capacity }, (_, index) => ({
       row: Math.floor(index / cols),
@@ -333,20 +373,20 @@ export const createImageProcessing = ({
         }
       }
 
-      let chosen;
+      let chosen: CollagePiece | undefined;
       if (bestIdx < 0) {
         const fallbackIdx = Math.floor(rand() * available.length);
-        chosen = available.splice(fallbackIdx, 1)[0].piece;
+        chosen = available.splice(fallbackIdx, 1)[0]?.piece;
       } else {
-        chosen = available.splice(bestIdx, 1)[0].piece;
+        chosen = available.splice(bestIdx, 1)[0]?.piece;
       }
 
-      placedMatrix[row][col] = chosen;
+      placedMatrix[row][col] = chosen || null;
     });
 
     optimizeBottomRightPlacement(placedMatrix, rows, cols, edgeLookup);
 
-    const results = [];
+    const results: Array<CollagePiece & { row: number; col: number; key: string }> = [];
     for (let row = 0; row < rows; row += 1) {
       for (let col = 0; col < cols; col += 1) {
         const chosen = placedMatrix[row][col];

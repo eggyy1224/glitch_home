@@ -138,7 +138,7 @@ function FlowOverlay({ url, baseRef, getProgress, kind, flowRef, seed }: FlowOve
   });
 
   const overlayOpacity = springs.opacity as unknown as number;
-  const AnimatedMaterial = a.meshBasicMaterial as React.ComponentType<any>;
+  const AnimatedMaterial = a.meshBasicMaterial as React.ComponentType<Record<string, unknown>>;
 
   return (
     <a.mesh ref={overlayRef}>

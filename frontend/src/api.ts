@@ -41,7 +41,7 @@ export interface SoundFileEntry {
   [key: string]: unknown;
 }
 
-export async function fetchKinship(img: string, depth = -1, { signal }: RequestOptions = {}): Promise<any> {
+export async function fetchKinship(img: string, depth = -1, { signal }: RequestOptions = {}): Promise<unknown> {
   const url = `/api/kinship?img=${encodeURIComponent(img)}&depth=${encodeURIComponent(depth)}`;
   return request(url, withSignal(signal));
 }
@@ -62,7 +62,7 @@ export async function deleteCameraPreset(name: string): Promise<boolean> {
   return true;
 }
 
-export async function fetchCollageConfig(clientId: string | null = null, { signal }: RequestOptions = {}): Promise<any> {
+export async function fetchCollageConfig(clientId: string | null = null, { signal }: RequestOptions = {}): Promise<unknown> {
   let url = `/api/collage-config`;
   if (clientId) {
     const params = new URLSearchParams({ client: clientId });
@@ -112,7 +112,7 @@ export async function listEpisodes({ signal }: RequestOptions = {}): Promise<{ e
   return request(url, withSignal(signal));
 }
 
-export async function saveCollageConfig(config: CollageConfigPayload): Promise<any> {
+export async function saveCollageConfig(config: CollageConfigPayload): Promise<unknown> {
   const url = `/api/collage-config`;
   return request(url, { method: "PUT", body: config });
 }
@@ -121,7 +121,7 @@ export async function uploadScreenshot(
   blob: Blob,
   requestId: string | null = null,
   clientId: string | null = null,
-): Promise<any> {
+): Promise<unknown> {
   const url = `/api/screenshots`;
   const form = new FormData();
   const filename = `scene-${Date.now()}.png`;
@@ -207,9 +207,9 @@ export async function fetchSubtitleState(clientId: string | null = null): Promis
     const params = new URLSearchParams({ client: clientId });
     url = `${url}?${params.toString()}`;
   }
-  const data = await request(url);
+  const data = await request<{ subtitle?: string | null }>(url);
   return {
-    subtitle: data?.subtitle ?? null,
+    subtitle: data.subtitle ?? null,
   };
 }
 
@@ -219,9 +219,9 @@ export async function fetchCaptionState(clientId: string | null = null): Promise
     const params = new URLSearchParams({ client: clientId });
     url = `${url}?${params.toString()}`;
   }
-  const data = await request(url);
+  const data = await request<{ caption?: string | null }>(url);
   return {
-    caption: data?.caption ?? null,
+    caption: data.caption ?? null,
   };
 }
 
@@ -231,9 +231,9 @@ function buildTargetQuery(targetClientId: string | null | undefined): string {
   return `?${qs.toString()}`;
 }
 
-async function postJson(url: string, payload: unknown, { signal }: RequestOptions = {}): Promise<any> {
+async function postJson<T = unknown>(url: string, payload: unknown, { signal }: RequestOptions = {}): Promise<T> {
   const options: RequestOptions = { method: "POST", body: payload, ...withSignal(signal) };
-  return request(url, options);
+  return request<T>(url, options);
 }
 
 export async function createEpisode(
@@ -241,7 +241,7 @@ export async function createEpisode(
   { resolve = true, signal }: ResolveOption = {},
 ): Promise<EpisodeEntry> {
   const qs = resolve === false ? "?resolve=false" : "";
-  return postJson(`/api/episodes${qs}`, payload, { signal });
+  return postJson<EpisodeEntry>(`/api/episodes${qs}`, payload, { signal });
 }
 
 export async function updateEpisode(
@@ -251,14 +251,14 @@ export async function updateEpisode(
 ): Promise<EpisodeEntry> {
   if (!episodeId) throw new Error("episodeId is required");
   const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/episodes/${encodeURIComponent(episodeId)}${qs}`, {
+  return request<EpisodeEntry>(`/api/episodes/${encodeURIComponent(episodeId)}${qs}`, {
     method: "PUT",
     body: payload,
     ...withSignal(signal),
   });
 }
 
-export async function deleteEpisode(episodeId: string): Promise<any> {
+export async function deleteEpisode(episodeId: string): Promise<unknown> {
   if (!episodeId) throw new Error("episodeId is required");
   return request(`/api/episodes/${encodeURIComponent(episodeId)}`, { method: "DELETE" });
 }
@@ -271,24 +271,24 @@ export async function cloneEpisode(
   if (!episodeId) throw new Error("episodeId is required");
   if (!payload || typeof payload !== "object") throw new Error("payload is required");
   const qs = resolve === false ? "?resolve=false" : "";
-  return postJson(`/api/episodes/${encodeURIComponent(episodeId)}/clone${qs}`, payload, { signal });
+  return postJson<EpisodeEntry>(`/api/episodes/${encodeURIComponent(episodeId)}/clone${qs}`, payload, { signal });
 }
 
 export async function playEpisode(
   episodeId: string,
   payload: Record<string, unknown> = {},
   { signal }: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   if (!episodeId) throw new Error("episodeId is required");
   const body = payload && typeof payload === "object" ? payload : {};
   return postJson(`/api/episodes/${encodeURIComponent(episodeId)}/play`, body, { signal });
 }
 
-export async function triggerTts(payload: unknown, options: RequestOptions = {}): Promise<any> {
+export async function triggerTts(payload: unknown, options: RequestOptions = {}): Promise<unknown> {
   return postJson(`/api/tts`, payload, options);
 }
 
-export async function speakWithSubtitle(payload: unknown, options: RequestOptions = {}): Promise<any> {
+export async function speakWithSubtitle(payload: unknown, options: RequestOptions = {}): Promise<unknown> {
   return postJson(`/api/speak-with-subtitle`, payload, options);
 }
 
@@ -296,7 +296,7 @@ export async function queueSoundPlay(
   filename: string,
   targetClientId: string | null = null,
   options: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   const body: Record<string, unknown> = { filename };
   if (targetClientId) {
     body.target_client_id = targetClientId;
@@ -308,7 +308,7 @@ export async function setSubtitle(
   payload: Record<string, unknown>,
   targetClientId: string | null = null,
   options: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   const url = `/api/subtitles${buildTargetQuery(targetClientId)}`;
   return postJson(url, payload, options);
 }
@@ -323,7 +323,7 @@ export async function setCaption(
   payload: Record<string, unknown>,
   targetClientId: string | null = null,
   options: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   const url = `/api/captions${buildTargetQuery(targetClientId)}`;
   return postJson(url, payload, options);
 }
@@ -334,19 +334,19 @@ export async function clearCaption(targetClientId: string | null = null, { signa
   return true;
 }
 
-export async function unlockAudio(targetClientId: string | null = null, { signal }: RequestOptions = {}): Promise<any> {
+export async function unlockAudio(targetClientId: string | null = null, { signal }: RequestOptions = {}): Promise<unknown> {
   const url = `/api/unlock-audio${buildTargetQuery(targetClientId)}`;
   return request(url, { method: "POST", ...withSignal(signal) });
 }
 
-export async function sendRemoteClick(payload: Record<string, unknown>, options: RequestOptions = {}): Promise<any> {
+export async function sendRemoteClick(payload: Record<string, unknown>, options: RequestOptions = {}): Promise<unknown> {
   if (!payload || typeof payload !== "object") {
     throw new Error("remote click payload is required");
   }
   return postJson(`/api/remote-click`, payload, options);
 }
 
-export async function sendVideoControl(payload: Record<string, unknown>, options: RequestOptions = {}): Promise<any> {
+export async function sendVideoControl(payload: Record<string, unknown>, options: RequestOptions = {}): Promise<unknown> {
   if (!payload || typeof payload !== "object") {
     throw new Error("video control payload is required");
   }
@@ -357,7 +357,7 @@ export async function stopIframeTimeline(
   targetClientId: string | null,
   timelineId: string | null = null,
   options: { commandId?: string; releaseControl?: boolean } = {},
-): Promise<any> {
+): Promise<unknown> {
   const body: Record<string, unknown> = {
     target_client_id: targetClientId || null,
     timeline_id: timelineId || null,
@@ -368,8 +368,8 @@ export async function stopIframeTimeline(
 }
 
 export async function fetchClientStates({ signal }: RequestOptions = {}): Promise<ClientState[]> {
-  const data = await request(`/api/clients/state`, withSignal(signal));
-  return Array.isArray(data?.clients) ? data.clients : [];
+  const data = await request<{ clients?: ClientState[] }>(`/api/clients/state`, withSignal(signal));
+  return Array.isArray(data.clients) ? data.clients : [];
 }
 
 export async function fetchClientQueue(
@@ -382,7 +382,10 @@ export async function fetchClientQueue(
   return request(`/api/clients/queue?${params.toString()}`, withSignal(signal));
 }
 
-export async function enqueueClientQueueItem(payload: Record<string, unknown>, { signal }: RequestOptions = {}): Promise<any> {
+export async function enqueueClientQueueItem(
+  payload: Record<string, unknown>,
+  { signal }: RequestOptions = {},
+): Promise<unknown> {
   return request(`/api/clients/queue`, { method: "POST", body: payload, ...withSignal(signal) });
 }
 
@@ -391,7 +394,7 @@ function queueActionPath(ids: string[] | string, action: string): string {
   return `/api/clients/queue/${encodeURIComponent(first)}/${action}`;
 }
 
-export async function cancelClientQueueItems(ids: string[] | string, { signal }: RequestOptions = {}): Promise<any> {
+export async function cancelClientQueueItems(ids: string[] | string, { signal }: RequestOptions = {}): Promise<unknown> {
   const url = queueActionPath(ids, "cancel");
   return request(url, { method: "POST", body: { ids }, ...withSignal(signal) });
 }
@@ -399,7 +402,7 @@ export async function cancelClientQueueItems(ids: string[] | string, { signal }:
 export async function delayClientQueueItems(
   ids: string[] | string,
   { deltaSeconds = null, eta = null, signal }: { deltaSeconds?: number | null; eta?: string | number | null; signal?: AbortSignal } = {},
-): Promise<any> {
+): Promise<unknown> {
   const url = queueActionPath(ids, "delay");
   const body: Record<string, unknown> = { ids };
   if (deltaSeconds !== null && deltaSeconds !== undefined) body.delta_seconds = deltaSeconds;
@@ -410,7 +413,7 @@ export async function delayClientQueueItems(
 export async function moveClientQueueItems(
   ids: string[] | string,
   { priority = null, position = null, signal }: { priority?: number | null; position?: string | number | null; signal?: AbortSignal } = {},
-): Promise<any> {
+): Promise<unknown> {
   const url = queueActionPath(ids, "move");
   const body: Record<string, unknown> = { ids };
   if (priority !== null && priority !== undefined) body.priority = priority;
@@ -418,7 +421,14 @@ export async function moveClientQueueItems(
   return request(url, { method: "POST", body, ...withSignal(signal) });
 }
 
-export async function generateCollageVersion(files: File[], params: Record<string, unknown>): Promise<any> {
+interface CollageVersionResponse {
+  output_image_path?: string;
+  output_image?: string;
+  imageUrl?: string | null;
+  [key: string]: unknown;
+}
+
+export async function generateCollageVersion(files: File[], params: Record<string, unknown>): Promise<CollageVersionResponse> {
   const url = `/api/generate-collage-version`;
   const formData = new FormData();
   
@@ -430,10 +440,10 @@ export async function generateCollageVersion(files: File[], params: Record<strin
   // Add params as JSON string
   formData.append("params", JSON.stringify(params));
   
-  const result = await request(url, { method: "POST", body: formData });
+  const result = (await request<CollageVersionResponse>(url, { method: "POST", body: formData })) || {};
   
   // Build image URL
-  const imageUrl = buildImageUrl(result.output_image, `${API_BASE}/generated_images/`);
+  const imageUrl = buildImageUrl(result.output_image ?? null, `${API_BASE}/generated_images/`);
   
   return {
     ...result,
@@ -446,7 +456,7 @@ export async function listOffspringImages({ signal }: RequestOptions = {}): Prom
   return request(url, withSignal(signal));
 }
 
-export async function listVideoAssets({ signal }: RequestOptions = {}): Promise<any> {
+export async function listVideoAssets({ signal }: RequestOptions = {}): Promise<unknown> {
   const url = `/api/video-assets`;
   return request(url, withSignal(signal));
 }
@@ -454,7 +464,7 @@ export async function listVideoAssets({ signal }: RequestOptions = {}): Promise<
 export async function generateCollageVersionFromNames(
   imageNames: string[],
   params: Record<string, unknown>,
-): Promise<any> {
+): Promise<unknown> {
   const url = `/api/generate-collage-version`;
   return request(url, {
     method: "POST",
@@ -465,7 +475,7 @@ export async function generateCollageVersionFromNames(
   });
 }
 
-export async function getCollageProgress(taskId: string): Promise<any> {
+export async function getCollageProgress(taskId: string): Promise<unknown> {
   const url = `/api/collage-version/${taskId}/progress`;
   return request(url);
 }
@@ -508,7 +518,7 @@ export async function updateIframeTimeline(
   });
 }
 
-export async function deleteIframeTimeline(timelineId: string, { signal }: RequestOptions = {}): Promise<any> {
+export async function deleteIframeTimeline(timelineId: string, { signal }: RequestOptions = {}): Promise<unknown> {
   return request(`/api/iframe-timelines/${encodeURIComponent(timelineId)}`, { method: "DELETE", ...withSignal(signal) });
 }
 
@@ -529,7 +539,7 @@ export async function playIframeTimeline(
   timelineId: string,
   payload: Record<string, unknown> = {},
   { targetClientId = null, signal }: { targetClientId?: string | null; signal?: AbortSignal } = {},
-): Promise<any> {
+): Promise<unknown> {
   if (!timelineId) {
     throw new Error("timelineId is required");
   }
@@ -554,7 +564,11 @@ export async function listIframeSnapshots(
   return request(url, withSignal(signal));
 }
 
-export async function getIframeSnapshot(clientId: string | null, name: string, { signal }: RequestOptions = {}): Promise<any> {
+export async function getIframeSnapshot(
+  clientId: string | null,
+  name: string,
+  { signal }: RequestOptions = {},
+): Promise<unknown> {
   if (!clientId) {
     throw new Error("clientId is required");
   }
@@ -567,7 +581,7 @@ export async function saveIframeSnapshot(
   name: string,
   payload: unknown,
   { signal }: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   if (!clientId) {
     throw new Error("clientId is required");
   }
@@ -575,7 +589,11 @@ export async function saveIframeSnapshot(
   return request(url, { method: "PUT", body: payload, ...withSignal(signal) });
 }
 
-export async function deleteIframeSnapshot(clientId: string | null, name: string, { signal }: RequestOptions = {}): Promise<any> {
+export async function deleteIframeSnapshot(
+  clientId: string | null,
+  name: string,
+  { signal }: RequestOptions = {},
+): Promise<unknown> {
   if (!clientId) {
     throw new Error("clientId is required");
   }
@@ -588,7 +606,7 @@ export async function cloneIframeSnapshot(
   name: string,
   payload: Record<string, unknown>,
   { signal }: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   if (!clientId) {
     throw new Error("clientId is required");
   }
@@ -600,7 +618,7 @@ export async function restoreIframeSnapshot(
   clientId: string | null,
   snapshotName: string,
   { signal }: RequestOptions = {},
-): Promise<any> {
+): Promise<unknown> {
   if (!snapshotName) {
     throw new Error("snapshotName is required");
   }
@@ -623,7 +641,11 @@ async function uploadImageForSearch(file: File | Blob, { signal }: RequestOption
   const formData = new FormData();
   formData.append("file", file);
 
-  const data = await request(url, { method: "POST", body: formData, ...withSignal(signal) });
+  const data = await request<{
+    absolute_path?: string;
+    relative_path?: string;
+    original_filename?: string;
+  }>(url, { method: "POST", body: formData, ...withSignal(signal) });
   const uploadedPath = data.absolute_path || data.relative_path;
 
   if (!uploadedPath) {

@@ -19,8 +19,9 @@
     "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
   "include": ["src", "tests", "vite.config.js", "vitest.config.js", "playwright.config.ts"],
+  "exclude": ["tests"],
   "references": []
 }

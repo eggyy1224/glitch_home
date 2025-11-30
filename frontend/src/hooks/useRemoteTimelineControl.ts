@@ -171,8 +171,8 @@ export function useRemoteTimelineControl({
       }
       if (action === "stop") {
         const requestedTimelineId =
-          typeof (payload as any)?.timeline_id === "string" && (payload as any).timeline_id.trim().length > 0
-            ? (payload as any).timeline_id.trim()
+          typeof payload?.timeline_id === "string" && payload.timeline_id.trim().length > 0
+            ? payload.timeline_id.trim()
             : null;
         if (requestedTimelineId) {
           if (remoteTimelineControl) {

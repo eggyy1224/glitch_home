@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
@@ -330,7 +329,7 @@ describe("TimelineEpisodeEditor", () => {
         "desktop",
         "snap-demo",
         expect.objectContaining({
-          panels: expect.any(Array),
+          panels: expect.arrayContaining([]),
         }),
       ),
     );

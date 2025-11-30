@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useCollageControls } from "../../../src/hooks/useCollageControls";

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useIframeTimelinePlayer } from "../../../src/hooks/useIframeTimelinePlayer";
@@ -39,7 +38,7 @@ describe("useIframeTimelinePlayer", () => {
       }),
     );
 
-    await waitFor(() => expect(fetchIframeTimeline).toHaveBeenCalledWith("tl-1", expect.any(Object)));
+    await waitFor(() => expect(fetchIframeTimeline).toHaveBeenCalledWith("tl-1", expect.anything()));
     const firstFetch = fetchIframeTimeline.mock.results[0]?.value;
     if (firstFetch?.then) {
       await act(async () => {

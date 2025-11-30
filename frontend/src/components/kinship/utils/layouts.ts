@@ -11,23 +11,71 @@ import {
 } from "./constants";
 import { seededRandom } from "./math";
 
-export const createIncubatorLayout = (graph) => {
+export interface KinshipNode {
+  name: string;
+  kind?: string;
+  level?: number;
+  [key: string]: unknown;
+}
+
+export interface KinshipEdge {
+  source: string;
+  target: string;
+  [key: string]: unknown;
+}
+
+export interface KinshipGraph {
+  nodes: KinshipNode[];
+  edges: KinshipEdge[];
+}
+
+export interface LayoutNode extends KinshipNode {
+  angle?: number;
+  radius?: number;
+  baseY?: number;
+  orbitSpeed?: number;
+  floatAmp?: number;
+  floatSpeed?: number;
+  floatPhase?: number;
+  wobbleAmp?: number;
+  wobbleSpeed?: number;
+  growthDuration?: number;
+  spawnDelay?: number;
+  position?: THREE.Vector3;
+}
+
+export interface LayoutEdge {
+  source: LayoutNode;
+  target: LayoutNode;
+  baseOpacity: number;
+}
+
+export interface PhylogenyBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  width: number;
+  height: number;
+}
+
+export const createIncubatorLayout = (graph: KinshipGraph | null | undefined): LayoutNode[] => {
   if (!graph || !Array.isArray(graph.nodes) || graph.nodes.length === 0) return [];
 
   const nodesSorted = [...graph.nodes].sort((a, b) => {
-    const pa = KIND_PRIORITY[a.kind] ?? 99;
-    const pb = KIND_PRIORITY[b.kind] ?? 99;
+    const pa = KIND_PRIORITY[a.kind as keyof typeof KIND_PRIORITY] ?? 99;
+    const pb = KIND_PRIORITY[b.kind as keyof typeof KIND_PRIORITY] ?? 99;
     if (pa !== pb) return pa - pb;
-    const la = Number.isFinite(a.level) ? a.level : 0;
-    const lb = Number.isFinite(b.level) ? b.level : 0;
+    const la = Number.isFinite(a.level) ? (a.level as number) : 0;
+    const lb = Number.isFinite(b.level) ? (b.level as number) : 0;
     if (la !== lb) return la - lb;
     return a.name.localeCompare(b.name);
   });
 
   const limited = nodesSorted.slice(0, MAX_INCUBATOR_NODES);
 
-  const nodes = limited.map((node, index) => {
-    const level = Number.isFinite(node.level) ? node.level : 0;
+  const nodes: LayoutNode[] = limited.map((node, index) => {
+    const level = Number.isFinite(node.level) ? (node.level as number) : 0;
     const kind = node.kind || (level === 0 ? "sibling" : level > 0 ? "child" : "ancestor");
     const absLevel = Math.abs(level);
     const seedBase = `${node.name}:${index}`;
@@ -99,7 +147,7 @@ export const createIncubatorLayout = (graph) => {
 
   let cursor = 0;
   groups.forEach(({ kinds, step, gapAfter }) => {
-    const subset = nodes.filter((node) => kinds.includes(node.kind));
+    const subset = nodes.filter((node) => kinds.includes(node.kind || ""));
     if (!subset.length) return;
     subset.forEach((node, index) => {
       node.spawnDelay = cursor + index * step;
@@ -110,12 +158,12 @@ export const createIncubatorLayout = (graph) => {
   return nodes;
 };
 
-export const createIncubatorEdges = (graph: any, layoutNodes: any[]): any[] => {
+export const createIncubatorEdges = (graph: KinshipGraph | null | undefined, layoutNodes: LayoutNode[]): LayoutEdge[] => {
   if (!graph || !Array.isArray(graph.edges) || !layoutNodes.length) return [];
-  const lookup = new Map(layoutNodes.map((node: any) => [node.name, node]));
+  const lookup = new Map(layoutNodes.map((node) => [node.name, node]));
   const seen = new Set<string>();
   return graph.edges
-    .map((edge: any) => {
+    .map((edge) => {
       const source = lookup.get(edge.source);
       const target = lookup.get(edge.target);
       if (!source || !target) return null;
@@ -130,16 +178,18 @@ export const createIncubatorEdges = (graph: any, layoutNodes: any[]): any[] => {
       const baseOpacity = tight ? 0.6 : 0.35;
       return { source, target, baseOpacity };
     })
-    .filter(Boolean);
+    .filter(Boolean) as LayoutEdge[];
 };
 
-export const computePhylogenyLayout = (graph: any): any => {
-  if (!graph || !graph.nodes.length) {
+export const computePhylogenyLayout = (
+  graph: KinshipGraph | null | undefined,
+): { nodes: LayoutNode[]; edges: Array<KinshipEdge & { source: LayoutNode; target: LayoutNode }>; bounds: PhylogenyBounds | null } => {
+  if (!graph || !graph.nodes?.length) {
     return { nodes: [], edges: [], bounds: null };
   }
 
   const levels = (Array.from(
-    new Set<number>(graph.nodes.map((node: any) => (Number.isFinite(node.level) ? Number(node.level) : 0))),
+    new Set<number>(graph.nodes.map((node) => (Number.isFinite(node.level) ? Number(node.level) : 0))),
   ) as number[]).sort((a, b) => a - b);
 
   if (!levels.length) {
@@ -148,19 +198,19 @@ export const computePhylogenyLayout = (graph: any): any => {
 
   const zeroIndex = levels.indexOf(0);
   const indexLookup = new Map(levels.map((level, index) => [level, index]));
-  const nodesByLevel = new Map();
+  const nodesByLevel = new Map<number, KinshipNode[]>();
 
   graph.nodes.forEach((node) => {
-    const level = Number.isFinite(node.level) ? node.level : 0;
+    const level = Number.isFinite(node.level) ? (node.level as number) : 0;
     if (!nodesByLevel.has(level)) nodesByLevel.set(level, []);
-    nodesByLevel.get(level).push(node);
+    nodesByLevel.get(level)?.push(node);
   });
 
   nodesByLevel.forEach((list) => {
     list.sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  const tempEntries = [];
+  const tempEntries: Array<{ node: KinshipNode; x: number; y: number }> = [];
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
@@ -188,12 +238,12 @@ export const computePhylogenyLayout = (graph: any): any => {
   const offsetX = (minX + maxX) / 2 || 0;
   const offsetY = (minY + maxY) / 2 || 0;
 
-  const placedNodes = [];
-  const positionLookup = new Map();
+  const placedNodes: LayoutNode[] = [];
+  const positionLookup = new Map<string, LayoutNode>();
 
   tempEntries.forEach(({ node, x, y }) => {
     const position = new THREE.Vector3(x - offsetX, y - offsetY, 0);
-    const entry = { ...node, position };
+    const entry: LayoutNode = { ...node, position };
     placedNodes.push(entry);
     positionLookup.set(node.name, entry);
   });
@@ -205,9 +255,9 @@ export const computePhylogenyLayout = (graph: any): any => {
       if (!source || !target) return null;
       return { ...edge, source, target };
     })
-    .filter(Boolean);
+    .filter(Boolean) as Array<KinshipEdge & { source: LayoutNode; target: LayoutNode }>;
 
-  const bounds = {
+  const bounds: PhylogenyBounds = {
     minX: minX - offsetX,
     maxX: maxX - offsetX,
     minY: minY - offsetY,

@@ -8,7 +8,13 @@ import {
   getSlideSourceMode,
 } from "../utils/slideMode";
 
-const ensureArray = (value) => (Array.isArray(value) ? value : []);
+interface SlideItem {
+  id: string;
+  cleanId: string;
+  distance: number | null;
+}
+
+const ensureArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
 const deduplicate = (entries) => {
   const seen = new Set();
@@ -23,8 +29,8 @@ const deduplicate = (entries) => {
   return ordered;
 };
 
-const buildVectorResults = (list, fallbackId) => {
-  const prepared = ensureArray(list)
+const buildVectorResults = (list: unknown, fallbackId: string | null | undefined): SlideItem[] => {
+  const prepared = ensureArray<{ id?: string; distance?: number }>(list)
     .map((item) => ({
       id: item?.id || "",
       cleanId: cleanId(item?.id || ""),
@@ -48,25 +54,26 @@ const buildVectorResults = (list, fallbackId) => {
   return deduped.slice(0, BATCH_SIZE);
 };
 
-const buildKinshipResults = (data, fallbackId) => {
-  const ordered = [];
-  const pushList = (list) => {
+const buildKinshipResults = (data: unknown, fallbackId: string | null | undefined): SlideItem[] => {
+  const ordered: SlideItem[] = [];
+  const pushList = (list: unknown) => {
     ensureArray(list).forEach((item) => {
-      const clean = cleanId(item);
+      const clean = cleanId(item as string);
       if (!clean) return;
       ordered.push({ id: clean, cleanId: clean, distance: null });
     });
   };
 
-  pushList(data?.children);
-  pushList(data?.siblings);
-  pushList(data?.parents);
-  ensureArray(data?.ancestors_by_level).forEach((level) => pushList(level));
-  pushList(data?.ancestors);
-  pushList(data?.related_images);
+  const payload = (data || {}) as Record<string, unknown>;
+  pushList(payload.children);
+  pushList(payload.siblings);
+  pushList(payload.parents);
+  ensureArray(payload.ancestors_by_level).forEach((level) => pushList(level));
+  pushList(payload.ancestors);
+  pushList(payload.related_images);
 
   const list = deduplicate(ordered);
-  const original = cleanId(data?.original_image || fallbackId);
+  const original = cleanId((payload.original_image as string) || fallbackId);
   if (original) {
     list.unshift({ id: original, cleanId: original, distance: null });
   }
@@ -90,7 +97,7 @@ export function useSlidePlayback({
   fetchKinshipData?: typeof fetchKinship;
 } = {}) {
   const anchorClean = cleanId(anchorImage);
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<SlideItem[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +135,7 @@ export function useSlidePlayback({
   }, [anchorClean]);
 
   const performSearch = useCallback(
-    (imageId, currentGeneration, mode) => {
+    (imageId: string | null, currentGeneration: number, mode: string) => {
       if (!imageId) {
         setItems([]);
         setError("請在網址加入 ?img=offspring_xxx.png 以決定播放內容。");
@@ -158,7 +165,8 @@ export function useSlidePlayback({
           setError(null);
         } catch (err) {
           if (cancelled || currentGeneration !== generation) return;
-          setError(err?.message || "搜尋失敗，請稍後再試。");
+          const message = err instanceof Error ? err.message : "搜尋失敗，請稍後再試。";
+          setError(message);
           setItems([{ id: imageId, cleanId: cleanId(imageId), distance: null }]);
           setIndex(0);
         } finally {

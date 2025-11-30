@@ -86,7 +86,7 @@ export function useIframeTimelinePlayer({
     fetchIframeTimeline(timelineId, { signal: controller.signal })
       .then((data) => {
         if (cancelled) return;
-        const payload = (data as any)?.timeline || data;
+        const payload = (data as { timeline?: IframeTimelineResolved }).timeline ?? data;
         let resolvedTimeline = payload as IframeTimelineResolved | null;
         if (payload && loopOverride !== null && loopOverride !== undefined) {
           resolvedTimeline = { ...(payload as IframeTimelineResolved), loop: loopOverride };
@@ -102,9 +102,10 @@ export function useIframeTimelinePlayer({
         runIdRef.current = 0;
         setIsPlaying(hasSteps && autoPlayOnLoad);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err?.message || "載入 timeline 失敗");
+        const message = err instanceof Error ? err.message : "載入 timeline 失敗";
+        setError(message);
         setTimeline(null);
         setIsPlaying(false);
       })

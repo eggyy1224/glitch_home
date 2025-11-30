@@ -1,15 +1,24 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": false,
+    "checkJs": false,
+    "jsx": "react-jsx",
     "strict": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
     "useUnknownInCatchVariables": true,
     "exactOptionalPropertyTypes": true,
     "strictNullChecks": true,
-    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
-    "allowJs": false
+    "skipLibCheck": true,
+    "types": ["vite/client", "node"]
   },
   "include": [
     "src/types/**/*",
@@ -19,6 +28,8 @@
     "src/hooks/useControlSocket.ts",
     "src/hooks/useIframeTimelinePlayer.ts",
     "src/hooks/useRemoteTimelineControl.ts",
-    "src/hooks/useTimelineStepActions.ts"
+    "src/hooks/useTimelineStepActions.ts",
+    "src/utils/html2canvasLoader.ts",
+    "src/utils/request.ts"
   ]
 }

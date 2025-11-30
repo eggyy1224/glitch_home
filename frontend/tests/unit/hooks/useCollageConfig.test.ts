@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useCollageConfig } from '../../../src/hooks/useCollageConfig'
@@ -70,7 +69,7 @@ describe('useCollageConfig', () => {
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining('client=test_client'),
-      expect.any(Object)
+      expect.anything()
     )
   })
 
@@ -124,4 +123,3 @@ describe('useCollageConfig', () => {
     expect(result.current.remoteSource).toBe('client')
   })
 })
-

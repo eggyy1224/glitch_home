@@ -122,7 +122,7 @@ export function useClientStateQueue(defaultClientId?: string) {
     async (payload: EnqueuePayload) => {
       const clientId = payload.client_id || selectedClient;
       if (!clientId) throw new Error("client_id 必填");
-      const body: Record<string, any> = {
+      const body: Record<string, unknown> = {
         client_id: clientId,
         type: payload.type,
         target_id: payload.target_id,
@@ -131,8 +131,9 @@ export function useClientStateQueue(defaultClientId?: string) {
       if (payload.retries !== undefined && payload.retries !== null) body.retries = Number(payload.retries);
       if (payload.eta !== undefined && payload.eta !== null) body.eta = payload.eta;
       if (payload.payload) body.payload = payload.payload;
-      const result = await enqueueClientQueueItem(body);
-      setMessage(`已送出佇列：${result?.item?.type || payload.type} → ${clientId}`);
+      const result = (await enqueueClientQueueItem(body)) as { item?: { type?: string } } | null;
+      const typeLabel = result?.item?.type || payload.type;
+      setMessage(`已送出佇列：${typeLabel} → ${clientId}`);
       await refreshQueue(clientId);
       await refreshStates();
       return result;

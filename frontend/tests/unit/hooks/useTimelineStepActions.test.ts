@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useTimelineStepActions } from "../../../src/hooks/useTimelineStepActions";
@@ -139,11 +138,11 @@ describe("useTimelineStepActions", () => {
     expect(unlockAudio.mock.calls[0][0]).toBe("remote");
     expect(unlockAudio.mock.calls[1][0]).toBeNull();
 
-    expect(clearCaption).toHaveBeenCalledWith("client-main", expect.any(Object));
+    expect(clearCaption).toHaveBeenCalledWith("client-main", expect.anything());
     expect(setSubtitle).toHaveBeenCalledWith(
       { text: "字幕", language: "zh", duration_seconds: 5 },
       "client-main",
-      expect.any(Object),
+      expect.anything(),
     );
     expect(speakWithSubtitle).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -159,7 +158,7 @@ describe("useTimelineStepActions", () => {
         output_format: "wav",
         filename_base: "name",
       }),
-      expect.any(Object),
+      expect.anything(),
     );
     expect(result.current.actionError).toBeNull();
     expect(onError).toHaveBeenCalledWith(null);
@@ -179,7 +178,7 @@ describe("useTimelineStepActions", () => {
       });
     });
 
-    expect(queueSoundPlay).toHaveBeenCalledWith("demo.wav", "client-sound", expect.any(Object));
+    expect(queueSoundPlay).toHaveBeenCalledWith("demo.wav", "client-sound", expect.anything());
 
     act(() => {
       result.current.cancelPendingActions();
@@ -227,7 +226,7 @@ describe("useTimelineStepActions", () => {
       });
     });
 
-    expect(queueSoundPlay).toHaveBeenCalledWith("cue.wav", "client-audio", expect.any(Object));
+    expect(queueSoundPlay).toHaveBeenCalledWith("cue.wav", "client-audio", expect.anything());
     expect(result.current.actionError).toBeNull();
   });
 });

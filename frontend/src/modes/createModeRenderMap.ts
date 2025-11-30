@@ -2,7 +2,7 @@ import { lazy, type ComponentType, type ReactNode } from "react";
 import { DisplayModes } from "../hooks/useDisplayMode";
 
 export type ModeRenderEntry = {
-  component: ComponentType<any>;
+  component: ComponentType<unknown>;
   componentProps?: Record<string, unknown>;
   withCaptureReady?: boolean;
   beforeContent?: ReactNode;
@@ -10,7 +10,7 @@ export type ModeRenderEntry = {
 };
 
 type ModeBaseConfig = {
-  component: ComponentType<any>;
+  component: ComponentType<unknown>;
   withCaptureReady?: boolean;
 };
 

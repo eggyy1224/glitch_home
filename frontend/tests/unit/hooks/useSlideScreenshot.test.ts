@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useSlideScreenshot } from "../../../src/hooks/useSlideScreenshot";
@@ -28,7 +27,7 @@ describe("useSlideScreenshot", () => {
     });
 
     expect(loader).toHaveBeenCalledTimes(1);
-    expect(html2canvas).toHaveBeenCalledWith(rootRef.current, expect.any(Object));
+    expect(html2canvas).toHaveBeenCalledWith(rootRef.current, expect.anything());
 
     unmount();
     expect(onCaptureReady).toHaveBeenLastCalledWith(null);

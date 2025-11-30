@@ -60,21 +60,23 @@ export function useControlSocketHandlers({
   );
 
   const handleIframeConfigMessage = useCallback(
-    (payload: Record<string, any>) => {
-      if (!payload?.config) return;
-      const targetId = payload?.target_client_id;
+    (payload: Record<string, unknown>) => {
+      const config = payload?.config;
+      if (!config || typeof config !== "object") return;
+      const targetId = payload?.target_client_id as string | undefined;
       if (targetId && targetId !== clientId) {
         return;
       }
-      applyRemoteIframeConfig(payload.config);
+      applyRemoteIframeConfig(config as Record<string, unknown>);
     },
     [clientId, applyRemoteIframeConfig],
   );
 
   const handleCollageConfigMessage = useCallback(
-    (payload: Record<string, any>) => {
-      if (!payload?.config) return;
-      const targetId = payload?.target_client_id;
+    (payload: Record<string, unknown>) => {
+      const config = payload?.config;
+      if (!config || typeof config !== "object") return;
+      const targetId = payload?.target_client_id as string | undefined;
       if (targetId && targetId !== clientId) {
         return;
       }
@@ -84,8 +86,8 @@ export function useControlSocketHandlers({
   );
 
   const handleUnlockAudioMessage = useCallback(
-    (payload: Record<string, any>) => {
-      const targetId = payload?.target_client_id;
+    (payload: Record<string, unknown>) => {
+      const targetId = payload?.target_client_id as string | undefined;
       if (targetId && targetId !== clientId) {
         return;
       }
@@ -138,8 +140,8 @@ export function useControlSocketHandlers({
   );
 
   const handleRemoteClickMessage = useCallback(
-    (payload: Record<string, any>) => {
-      const targetId = payload?.target_client_id;
+    (payload: Record<string, unknown>) => {
+      const targetId = payload?.target_client_id as string | undefined;
       if (targetId && targetId !== clientId) {
         return;
       }
@@ -200,8 +202,8 @@ export function useControlSocketHandlers({
   );
 
   const handleVideoControlMessage = useCallback(
-    (payload: Record<string, any>) => {
-      const targetId = payload?.target_client_id;
+    (payload: Record<string, unknown>) => {
+      const targetId = payload?.target_client_id as string | undefined;
       if (targetId && targetId !== clientId) {
         return;
       }
@@ -210,6 +212,9 @@ export function useControlSocketHandlers({
         return;
       }
       const action = typeof payload.action === "string" ? payload.action.trim().toLowerCase() : "";
+      const timeValue = (payload as { time?: unknown }).time;
+      const volumeValue = (payload as { volume?: unknown }).volume;
+      const mutedValue = (payload as { muted?: unknown }).muted;
       if (!action) {
         return;
       }
@@ -221,16 +226,16 @@ export function useControlSocketHandlers({
         controller.pause?.();
         return;
       }
-      if (action === "seek" && payload.time != null) {
-        controller.seek?.(payload.time);
+      if (action === "seek" && timeValue != null) {
+        controller.seek?.(Number(timeValue));
         return;
       }
       if (action === "set_volume" || action === "volume") {
-        controller.setVolume?.(payload.volume);
+        controller.setVolume?.(typeof volumeValue === "number" ? volumeValue : undefined);
         return;
       }
       if (action === "set_muted") {
-        controller.setMuted?.(payload.muted);
+        controller.setMuted?.(Boolean(mutedValue));
         return;
       }
       if (action === "mute") {
@@ -239,8 +244,8 @@ export function useControlSocketHandlers({
       }
       if (action === "unmute") {
         controller.setMuted?.(false);
-        if (payload.volume != null) {
-          controller.setVolume?.(payload.volume);
+        if (typeof volumeValue === "number") {
+          controller.setVolume?.(volumeValue);
         }
       }
     },

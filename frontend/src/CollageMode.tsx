@@ -52,7 +52,7 @@ export default function CollageMode({ anchorImage = null, ...rest }: CollageMode
     handleShuffle,
     handleResizePointerDown,
     imageCountMax,
-  } = useCollageControls(collageProps as any);
+  } = useCollageControls(collageProps);
 
   const { imagesBase } = collageProps;
 

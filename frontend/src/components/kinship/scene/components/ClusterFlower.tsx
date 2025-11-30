@@ -106,7 +106,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
           await next({ ancestors: 0 });
         }
       },
-    } as any);
+    } as Parameters<typeof api.start>[0]);
 
     return () => {
       cancelled = true;

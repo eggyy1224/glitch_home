@@ -22,7 +22,7 @@ interface KinshipModeConfig {
   directionalIntensity: number;
   orbitControls: { minDistance: number; maxDistance: number };
   pointLightProps?: ThreeElements["pointLight"];
-  SceneComponent: React.ComponentType<any>;
+  SceneComponent: React.ComponentType<Record<string, unknown>>;
   buildSceneProps: (args: {
     imagesBase: string;
     clusters?: KinshipCluster[];

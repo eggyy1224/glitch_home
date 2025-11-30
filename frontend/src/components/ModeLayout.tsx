@@ -4,10 +4,10 @@ import SubtitleOverlay from "../SubtitleOverlay";
 import type { OverlayContent } from "../types/overlay";
 
 interface ModeLayoutProps {
-  component?: React.ComponentType<any>;
+  component?: React.ComponentType<Record<string, unknown>>;
   componentProps?: Record<string, unknown>;
   withCaptureReady?: boolean;
-  onCaptureReady?: (...args: any[]) => void;
+  onCaptureReady?: (...args: unknown[]) => void;
   beforeContent?: React.ReactNode;
   afterContent?: React.ReactNode;
   soundPlayerEnabled?: boolean;

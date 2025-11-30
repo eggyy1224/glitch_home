@@ -37,6 +37,17 @@ import {
 const PERSIST_COLLAGE_QUERY =
   String(import.meta.env.VITE_COLLAGE_PERSIST_QUERY ?? "false").trim().toLowerCase() === "true";
 
+export interface CollageControlsOptions {
+  imagesBase?: string;
+  anchorImage?: string | null;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+  remoteConfig?: unknown;
+  controlsEnabled?: boolean;
+  remoteSource?: string | null;
+  imageProcessing?: typeof defaultImageProcessing;
+  stateUtils?: typeof defaultCollageStateUtils;
+}
+
 export function useCollageControls({
   imagesBase,
   anchorImage,
@@ -46,7 +57,7 @@ export function useCollageControls({
   remoteSource = null,
   imageProcessing = defaultImageProcessing,
   stateUtils = defaultCollageStateUtils,
-}) {
+}: CollageControlsOptions) {
   const rootRef = useRef(null);
   const resizeHandleRef = useRef(null);
   const html2canvasPromiseRef = useRef(null);

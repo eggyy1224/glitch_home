@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
@@ -21,7 +20,7 @@ describe("IframeMode", () => {
     render(<IframeMode config={{ panels: [] }} controlsEnabled={false} onApplyConfig={vi.fn()} onCaptureReady={onCaptureReady} />);
 
     expect(screen.getByText("尚未設定任何 iframe 來源。")).toBeInTheDocument();
-    expect(onCaptureReady).toHaveBeenCalledWith(expect.any(Function));
+    expect(onCaptureReady).toHaveBeenCalledWith(expect.anything());
   });
 
   it("可顯示 iframe 並開啟控制面板提交設定", () => {

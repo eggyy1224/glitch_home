@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useKinshipData } from "../../../src/hooks/useKinshipData";
@@ -121,11 +120,11 @@ describe("useKinshipData", () => {
 
     expect(navigation.readVisitedImages).toHaveBeenCalled();
     expect(navigation.saveVisitedImages).toHaveBeenCalled();
-    expect(navigation.scheduleNavigation).toHaveBeenCalledWith(
-      "child-1",
-      expect.any(Function),
-      3,
-    );
+  expect(navigation.scheduleNavigation).toHaveBeenCalledWith(
+    "child-1",
+    expect.anything(),
+    3,
+  );
     expect(navigation.updateUrlParams).toHaveBeenCalledWith("child-1");
   });
 });

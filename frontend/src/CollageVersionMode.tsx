@@ -230,7 +230,7 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
     setProgressStage("");
     setProgressMessage("");
     
-    // Clear any existing interval
+    // Clear existing interval
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
     }

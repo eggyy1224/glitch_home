@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   fetchKinship,
@@ -44,7 +43,7 @@ describe("api.js fetch helpers", () => {
     const result = await fetchKinship("kinship image", 2);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/kinship?img=kinship%20image&depth=2",
-      expect.objectContaining({ method: "GET", signal: undefined }),
+      expect.objectContaining({ method: "GET" }),
     );
     expect(result).toEqual(payload);
 
@@ -60,7 +59,7 @@ describe("api.js fetch helpers", () => {
     const result = await fetchIframeTimeline("timeline-1");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/iframe-timelines/timeline-1",
-      expect.objectContaining({ method: "GET", signal: undefined }),
+      expect.objectContaining({ method: "GET" }),
     );
     expect(result).toEqual(timelinePayload);
 
