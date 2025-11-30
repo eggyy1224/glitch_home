@@ -49,8 +49,8 @@ export function defaultEpisodePayload(targetClient?: string | null): EpisodeEntr
     id: "new_episode",
     title: "範例 Episode",
     tracks: [
-      { timelineId: "timeline_a", targetClientId: targetClient },
-      { timelineId: "timeline_b", targetClientId: clientB },
+      { timelineId: "timeline_a", ...(targetClient ? { targetClientId: targetClient } : {}) },
+      { timelineId: "timeline_b", ...(clientB ? { targetClientId: clientB } : {}) },
     ],
     tags: ["demo"],
   };
@@ -119,11 +119,12 @@ export function previewSrcFromConfig(config: Partial<IframeConfig> | null | unde
         : typeof panelObj.row_span === "number"
           ? panelObj.row_span
           : undefined;
+    const label = typeof panelObj.label === "string" ? panelObj.label : null;
     panels.push({
       id: (typeof panelObj.id === "string" && panelObj.id) || `p${index + 1}`,
       src,
       ratio: typeof panelObj.ratio === "number" ? panelObj.ratio : 1,
-      label: typeof panelObj.label === "string" ? panelObj.label : undefined,
+      ...(label ? { label } : {}),
       ...(colSpan ? { colSpan } : {}),
       ...(rowSpan ? { rowSpan } : {}),
     });

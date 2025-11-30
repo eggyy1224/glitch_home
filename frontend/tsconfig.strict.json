@@ -12,6 +12,13 @@
     "allowJs": false
   },
   "include": [
-    "src/types/**/*"
+    "src/types/**/*",
+    "src/api.ts",
+    "src/appMode/AppModeContext.tsx",
+    "src/hooks/useClientStateQueue.ts",
+    "src/hooks/useControlSocket.ts",
+    "src/hooks/useIframeTimelinePlayer.ts",
+    "src/hooks/useRemoteTimelineControl.ts",
+    "src/hooks/useTimelineStepActions.ts"
   ]
 }

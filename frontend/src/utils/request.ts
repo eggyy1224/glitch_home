@@ -42,7 +42,7 @@ export interface RequestOptions {
   method?: string;
   body?: any;
   headers?: Record<string, string>;
-  signal?: AbortSignal;
+  signal?: AbortSignal | null | undefined;
   baseUrl?: string;
   returnResponse?: boolean;
 }
@@ -60,13 +60,15 @@ export async function request<T = any>(path: string, options?: RequestOptions): 
 export async function request<T = any>(path: string, options: RequestOptions = {}): Promise<T | RequestWithResponse<T>> {
   const { method = "GET", body, headers = {}, signal, baseUrl = API_BASE, returnResponse = false } = options;
   const url = joinUrl(baseUrl, path);
-  const init: RequestInit = { method, headers: { ...headers }, signal };
+  const init: RequestInit = { method, headers: { ...headers } };
+  init.signal = signal ?? undefined;
 
   if (body !== undefined) {
     if (body instanceof FormData) {
       init.body = body;
     } else {
-      init.headers["Content-Type"] = init.headers["Content-Type"] || "application/json";
+      (init.headers as Record<string, string>)["Content-Type"] =
+        (init.headers as Record<string, string>)["Content-Type"] || "application/json";
       init.body = JSON.stringify(body);
     }
   }

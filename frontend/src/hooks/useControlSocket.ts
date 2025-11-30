@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 interface ControlSocketOptions {
-  clientId: string;
+  clientId: string | null;
   onScreenshotRequest?: (payload: Record<string, unknown>) => void;
   onScreenshotLifecycle?: (payload: Record<string, unknown>) => void;
   onSoundPlay?: (payload: Record<string, unknown>) => void;
@@ -116,30 +116,32 @@ export function useControlSocket({
         } catch (err) {
           return;
         }
+        if (!payload || typeof payload !== "object") return;
+        const type = (payload as { type?: unknown }).type;
 
-        if ((payload as any)?.type === "screenshot_request") {
+        if (type === "screenshot_request") {
           onScreenshotRequest?.(payload);
-        } else if ((payload as any)?.type === "screenshot_completed" || (payload as any)?.type === "screenshot_failed") {
+        } else if (type === "screenshot_completed" || type === "screenshot_failed") {
           onScreenshotLifecycle?.(payload);
-        } else if ((payload as any)?.type === "sound_play") {
+        } else if (type === "sound_play") {
           onSoundPlay?.(payload);
-        } else if ((payload as any)?.type === "subtitle_update") {
+        } else if (type === "subtitle_update") {
           onSubtitleUpdate?.(payload);
-        } else if ((payload as any)?.type === "caption_update") {
+        } else if (type === "caption_update") {
           onCaptionUpdate?.(payload);
-        } else if ((payload as any)?.type === "iframe_config" && (payload as any)?.config) {
+        } else if (type === "iframe_config" && (payload as { config?: unknown }).config) {
           onIframeConfig?.(payload);
-        } else if ((payload as any)?.type === "collage_config" && (payload as any)?.config) {
+        } else if (type === "collage_config" && (payload as { config?: unknown }).config) {
           onCollageConfig?.(payload);
-        } else if ((payload as any)?.type === "unlock_audio") {
+        } else if (type === "unlock_audio") {
           onUnlockAudio?.(payload);
-        } else if ((payload as any)?.type === "remote_click") {
+        } else if (type === "remote_click") {
           onRemoteClick?.(payload);
-        } else if ((payload as any)?.type === "video_control") {
+        } else if (type === "video_control") {
           onVideoControl?.(payload);
-        } else if ((payload as any)?.type === "timeline_control") {
+        } else if (type === "timeline_control") {
           onTimelineControl?.(payload);
-        } else if ((payload as any)?.type === "client_state") {
+        } else if (type === "client_state") {
           onClientState?.(payload);
         }
       };

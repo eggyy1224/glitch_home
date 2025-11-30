@@ -42,7 +42,7 @@ export function useRemoteTimelineControl({
     actionError: timelineActionError,
     clearActionError,
     cancelPendingActions,
-  } = useTimelineStepActions({ clientId, capabilities });
+  } = useTimelineStepActions({ clientId, capabilities: capabilities || {} });
 
   const effectiveTimelineId = remoteTimelineControl?.timelineId ?? iframeTimelineId;
   const remoteTimelineInitialStep = remoteTimelineControl?.startStep ?? null;

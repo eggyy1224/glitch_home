@@ -32,7 +32,7 @@ function assignIfDefined(target: Record<string, unknown>, key: string, value: un
 
 interface TimelineStepActionsOptions {
   clientId?: string;
-  onError?: (message: string) => void;
+  onError?: (message: string | null) => void;
   capabilities?: Partial<Pick<AppModeCapabilities, "canWriteAssets" | "canAnalyze">> & { forbidMessage?: string };
 }
 
@@ -410,7 +410,7 @@ export function useTimelineStepActions({
       try {
         if (step.tts) {
           await runSpeech(step.tts);
-          actionsRan.push(step.tts.mode);
+          actionsRan.push(step.tts.mode || "tts");
         }
       } catch (err) {
         handleError("tts", err);

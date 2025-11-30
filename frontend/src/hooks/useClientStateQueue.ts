@@ -152,7 +152,7 @@ export function useClientStateQueue(defaultClientId?: string) {
 
   const delayItems = useCallback(
     async (ids: string | string[], deltaSeconds?: number) => {
-      await delayClientQueueItems(ids, { deltaSeconds });
+      await delayClientQueueItems(ids, { deltaSeconds: deltaSeconds ?? null });
       await refreshQueue();
       await refreshStates();
       setMessage("已延後指定項目");
@@ -162,7 +162,7 @@ export function useClientStateQueue(defaultClientId?: string) {
 
   const moveItems = useCallback(
     async (ids: string | string[], position?: number | string) => {
-      await moveClientQueueItems(ids, { position });
+      await moveClientQueueItems(ids, { position: position ?? null });
       await refreshQueue();
       await refreshStates();
       setMessage("已重新排序指定項目");
@@ -174,9 +174,9 @@ export function useClientStateQueue(defaultClientId?: string) {
     async (item: ClientQueueItem | null | undefined) => {
       if (!item) return;
       if (item.type === "timeline") {
-        await stopIframeTimeline(item.client_id, item.target_id);
+        await stopIframeTimeline(item.client_id || null, item.target_id);
       } else if (item.type === "episode") {
-        await stopIframeTimeline(item.client_id, null);
+        await stopIframeTimeline(item.client_id || null, null);
       }
       await cancelClientQueueItems([item.id]);
       await refreshQueue();
