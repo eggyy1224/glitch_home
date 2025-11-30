@@ -1,11 +1,19 @@
 import { useEffect, useRef } from "react";
+import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
+import type { OrbitControls } from "three-stdlib";
 
-export default function CameraTracker({ onCameraUpdate }) {
-  const controls = useThree((state) => state.controls);
-  const camera = useThree((state) => state.camera);
-  const callbackRef = useRef(onCameraUpdate);
-  const lastPayload = useRef(null);
+import { CameraPreset } from "../../../../types/kinship";
+
+interface CameraTrackerProps {
+  onCameraUpdate?: (payload: CameraPreset) => void;
+}
+
+export default function CameraTracker({ onCameraUpdate }: CameraTrackerProps) {
+  const controls = useThree((state) => state.controls as OrbitControls | undefined);
+  const camera = useThree((state) => state.camera as THREE.PerspectiveCamera | undefined);
+  const callbackRef = useRef<typeof onCameraUpdate>(onCameraUpdate);
+  const lastPayload = useRef<CameraPreset | null>(null);
 
   useEffect(() => {
     callbackRef.current = onCameraUpdate;

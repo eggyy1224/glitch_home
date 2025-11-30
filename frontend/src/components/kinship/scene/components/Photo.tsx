@@ -3,7 +3,17 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Float, useTexture } from "@react-three/drei";
 
+import { KinshipOnPick } from "../../../../types/kinship";
 import { clamp01 } from "../../utils/math";
+
+interface PhotoProps {
+  url: string;
+  size?: number;
+  name: string;
+  onPick?: KinshipOnPick;
+  externalRef?: React.MutableRefObject<THREE.Mesh | null> | null;
+  getProgress?: (() => number) | number | null;
+}
 
 export default function Photo({
   url,
@@ -12,14 +22,14 @@ export default function Photo({
   onPick,
   externalRef = null,
   getProgress = null,
-}) {
-  const tex = useTexture(url);
-  const meshRef = useRef();
-  const scaleRef = useRef([size, size, 1]);
+}: PhotoProps) {
+  const tex = useTexture(url) as THREE.Texture;
+  const meshRef = useRef<THREE.Mesh | null>(null);
+  const scaleRef = useRef<[number, number, number]>([size, size, 1]);
   const phaseRef = useRef(Math.random() * Math.PI * 2);
   const speedRef = useRef(0.25 + Math.random() * 0.15);
   const ampRef = useRef(0.06 + Math.random() * 0.03);
-  const progressFnRef = useRef(() => 1);
+  const progressFnRef = useRef<() => number>(() => 1);
 
   useEffect(() => {
     if (tex.image) {

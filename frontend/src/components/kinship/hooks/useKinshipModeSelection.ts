@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 
-import SceneClusters from "../scene/components/SceneClusters.jsx";
-import IncubatorScene from "../scene/modes/IncubatorScene.jsx";
-import PhylogenyScene from "../scene/modes/PhylogenyScene.jsx";
+import SceneClusters from "../scene/components/SceneClusters";
+import IncubatorScene from "../scene/modes/IncubatorScene";
+import PhylogenyScene from "../scene/modes/PhylogenyScene";
 
 export const KinshipModes = {
   PHYLOGENY: "phylogeny",

@@ -3,8 +3,15 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Line, useTexture } from "@react-three/drei";
 import { a, useSpring } from "@react-spring/three";
+import type { Line2 } from "three-stdlib";
 
-import Photo from "../components/Photo.jsx";
+import {
+  IncubatorEdge,
+  IncubatorLayoutNode,
+  KinshipData,
+  KinshipOnPick,
+} from "../../../../types/kinship";
+import Photo from "../components/Photo";
 import {
   FLOW_TINTS,
   INCUBATOR_PARTICLE_COUNT,
@@ -14,9 +21,52 @@ import { buildLineageGraph } from "../../utils/graph";
 import { createIncubatorEdges, createIncubatorLayout } from "../../utils/layouts";
 import { clamp01, easeOutCubic, seededRandom } from "../../utils/math";
 
-function IncubatorMist({ fieldRef }) {
-  const configs = useMemo(() => {
-    const entries = [];
+interface IncubatorMistProps {
+  fieldRef: React.MutableRefObject<number>;
+}
+
+interface MistConfig {
+  radius: number;
+  baseAngle: number;
+  speed: number;
+  verticalSpeed: number;
+  height: number;
+  scale: number;
+  scaleSpeed: number;
+  seed: number;
+}
+
+interface FlowOverlayProps {
+  url: string;
+  baseRef: React.MutableRefObject<THREE.Mesh | null>;
+  getProgress?: () => number;
+  kind: string;
+  flowRef: React.MutableRefObject<number>;
+  seed: number;
+}
+
+interface IncubatorSceneProps {
+  imagesBase: string;
+  data?: KinshipData | null;
+  onPick?: KinshipOnPick;
+}
+
+interface NodeEntry {
+  node: IncubatorLayoutNode;
+  meshRef: React.MutableRefObject<THREE.Mesh | null>;
+  progressRef: React.MutableRefObject<number>;
+}
+
+interface EdgeEntry {
+  lineRef: React.RefObject<Line2>;
+  sourceEntry: NodeEntry;
+  targetEntry: NodeEntry;
+  baseOpacity: number;
+}
+
+function IncubatorMist({ fieldRef }: IncubatorMistProps) {
+  const configs = useMemo<MistConfig[]>(() => {
+    const entries: MistConfig[] = [];
     for (let index = 0; index < INCUBATOR_PARTICLE_COUNT; index += 1) {
       entries.push({
         radius: 8 + Math.random() * 14,
@@ -31,7 +81,7 @@ function IncubatorMist({ fieldRef }) {
     }
     return entries;
   }, []);
-  const instancedRef = useRef();
+  const instancedRef = useRef<THREE.InstancedMesh | null>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useFrame(({ clock }) => {
@@ -56,7 +106,7 @@ function IncubatorMist({ fieldRef }) {
   });
 
   return (
-    <instancedMesh ref={instancedRef} args={[null, null, configs.length]}>
+    <instancedMesh ref={instancedRef} args={[undefined as any, undefined as any, configs.length]}>
       <sphereGeometry args={[1, 6, 6]} />
       <meshStandardMaterial
         color="#1a5e7a"
@@ -70,15 +120,16 @@ function IncubatorMist({ fieldRef }) {
   );
 }
 
-function FlowOverlay({ url, baseRef, getProgress, kind, flowRef, seed }) {
-  const overlayRef = useRef();
-  const tex = useTexture(url);
+function FlowOverlay({ url, baseRef, getProgress, kind, flowRef, seed }: FlowOverlayProps) {
+  const overlayRef = useRef<THREE.Mesh | null>(null);
+  const tex = useTexture(url) as THREE.Texture;
   const color = useMemo(() => new THREE.Color(FLOW_TINTS[kind] || "#b4cffd"), [kind]);
   const [springs, api] = useSpring(() => ({
     opacity: 0,
     config: { mass: 1, tension: 38, friction: 18 },
   }));
   const lastOpacity = useRef(0);
+  const AnimatedMaterial = a.meshBasicMaterial as any;
 
   useEffect(() => {
     tex.wrapS = tex.wrapT = THREE.MirroredRepeatWrapping;
@@ -121,7 +172,7 @@ function FlowOverlay({ url, baseRef, getProgress, kind, flowRef, seed }) {
   return (
     <a.mesh ref={overlayRef}>
       <planeGeometry args={[1, 1]} />
-      <a.meshBasicMaterial
+      <AnimatedMaterial
         transparent
         toneMapped={false}
         depthWrite={false}
@@ -134,17 +185,23 @@ function FlowOverlay({ url, baseRef, getProgress, kind, flowRef, seed }) {
   );
 }
 
-export default function IncubatorScene({ imagesBase, data, onPick }) {
+export default function IncubatorScene({ imagesBase, data, onPick }: IncubatorSceneProps) {
   const graph = useMemo(() => buildLineageGraph(data), [data]);
-  const nodes = useMemo(() => createIncubatorLayout(graph), [graph]);
-  const edges = useMemo(() => createIncubatorEdges(graph, nodes), [graph, nodes]);
+  const nodes = useMemo<IncubatorLayoutNode[]>(
+    () => createIncubatorLayout(graph) as IncubatorLayoutNode[],
+    [graph],
+  );
+  const edges = useMemo<IncubatorEdge[]>(
+    () => createIncubatorEdges(graph, nodes) as IncubatorEdge[],
+    [graph, nodes],
+  );
 
-  const groupRef = useRef();
-  const backgroundRef = useRef();
-  const spawnStart = useRef(null);
-  const nodeEntriesRef = useRef([]);
-  const nodeLookupRef = useRef(new Map());
-  const edgeEntriesRef = useRef([]);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const backgroundRef = useRef<THREE.Mesh | null>(null);
+  const spawnStart = useRef<number | null>(null);
+  const nodeEntriesRef = useRef<NodeEntry[]>([]);
+  const nodeLookupRef = useRef<Map<string, NodeEntry>>(new Map());
+  const edgeEntriesRef = useRef<EdgeEntry[]>([]);
   const quantumFieldIntensityRef = useRef(0.6);
 
   nodeEntriesRef.current = [];
@@ -152,9 +209,9 @@ export default function IncubatorScene({ imagesBase, data, onPick }) {
   edgeEntriesRef.current = [];
 
   const nodeElements = nodes.map((node) => {
-    const meshRef = React.createRef();
-    const progressRef = { current: 0 };
-    const entry = { node, meshRef, progressRef };
+    const meshRef: React.MutableRefObject<THREE.Mesh | null> = { current: null };
+    const progressRef: React.MutableRefObject<number> = { current: 0 };
+    const entry: NodeEntry = { node, meshRef, progressRef };
     nodeEntriesRef.current.push(entry);
     nodeLookupRef.current.set(node.name, entry);
 
@@ -199,7 +256,7 @@ export default function IncubatorScene({ imagesBase, data, onPick }) {
       const sourceEntry = nodeLookupRef.current.get(edge.source.name);
       const targetEntry = nodeLookupRef.current.get(edge.target.name);
       if (!sourceEntry || !targetEntry) return null;
-      const lineRef = React.createRef();
+      const lineRef = React.createRef<Line2>();
       edgeEntriesRef.current.push({
         lineRef,
         sourceEntry,
@@ -222,7 +279,7 @@ export default function IncubatorScene({ imagesBase, data, onPick }) {
         />
       );
     })
-    .filter(Boolean);
+    .filter(Boolean) as JSX.Element[];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -273,11 +330,17 @@ export default function IncubatorScene({ imagesBase, data, onPick }) {
         entry.sourceEntry.progressRef.current,
         entry.targetEntry.progressRef.current,
       );
-      line.geometry.setFromPoints([sourceMesh.position, targetMesh.position]);
-      if (line.material) {
+      const geometry = line.geometry as THREE.BufferGeometry & {
+        setFromPoints?: (points: THREE.Vector3[]) => void;
+      };
+      geometry.setFromPoints?.([sourceMesh.position, targetMesh.position]);
+      const positionAttr = geometry.getAttribute("position");
+      if (positionAttr) positionAttr.needsUpdate = true;
+      const material = line.material;
+      if (material && !Array.isArray(material)) {
         const flowMod = 0.4 + (quantumFieldIntensityRef.current ?? 0.6) * 0.6;
-        line.material.opacity = visibility * entry.baseOpacity * flowMod;
-        line.material.transparent = true;
+        material.opacity = visibility * entry.baseOpacity * flowMod;
+        material.transparent = true;
       }
       line.visible = visibility > 0.08;
     });
@@ -292,10 +355,11 @@ export default function IncubatorScene({ imagesBase, data, onPick }) {
     quantumFieldIntensityRef.current = clamp01(averageProgress * 0.6 + longCycle * 0.4);
 
     const bg = backgroundRef.current;
-    if (bg?.material) {
+    if (bg?.material && !Array.isArray(bg.material)) {
       const flow = quantumFieldIntensityRef.current;
-      bg.material.emissiveIntensity = 0.4 + flow * 0.4;
-      bg.material.opacity = 0.26 + flow * 0.1;
+      const material = bg.material as THREE.MeshStandardMaterial;
+      material.emissiveIntensity = 0.4 + flow * 0.4;
+      material.opacity = 0.26 + flow * 0.1;
     }
   });
 

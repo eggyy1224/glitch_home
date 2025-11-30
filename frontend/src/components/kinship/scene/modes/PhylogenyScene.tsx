@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Line, useTexture } from "@react-three/drei";
+import type { OrbitControls } from "three-stdlib";
 
+import { KinshipData, KinshipOnPick, PhylogenyLayout, PhylogenyLayoutNode } from "../../../../types/kinship";
 import {
   KIND_COLORS,
   PHYLO_LEVEL_GAP,
@@ -12,16 +14,38 @@ import {
 import { buildLineageGraph } from "../../utils/graph";
 import { computePhylogenyLayout } from "../../utils/layouts";
 
-function PhylogenyNode({ node, imagesBase, onPick }) {
+interface PhylogenyNodeProps {
+  node: PhylogenyLayoutNode;
+  imagesBase: string;
+  onPick?: KinshipOnPick;
+}
+
+interface PhylogenyAutoFrameProps {
+  width: number;
+  height: number;
+}
+
+interface PhylogenySceneProps {
+  imagesBase: string;
+  data?: KinshipData | null;
+  onPick?: KinshipOnPick;
+}
+
+type ScaleState = {
+  frame: [number, number, number];
+  image: [number, number, number];
+};
+
+function PhylogenyNode({ node, imagesBase, onPick }: PhylogenyNodeProps) {
   const url = `${imagesBase}${node.name}`;
-  const tex = useTexture(url);
+  const tex = useTexture(url) as THREE.Texture;
   const sizeMultiplier = node.kind === "original" ? 1.2 : 1;
   const size = PHYLO_NODE_BASE_SIZE * sizeMultiplier;
   const frameSize = size * 1.1;
   const color = KIND_COLORS[node.kind] || "#d0d0d0";
-  const frameRef = useRef();
-  const imageRef = useRef();
-  const [scales, setScales] = useState({
+  const frameRef = useRef<THREE.Mesh | null>(null);
+  const imageRef = useRef<THREE.Mesh | null>(null);
+  const [scales, setScales] = useState<ScaleState>({
     frame: [frameSize, frameSize, 1],
     image: [size, size, 1],
   });
@@ -31,8 +55,8 @@ function PhylogenyNode({ node, imagesBase, onPick }) {
     const width = tex.image.width || 1;
     const height = tex.image.height || 1;
     const aspect = width / height || 1;
-    const imageScale = [size, size / aspect, 1];
-    const frameScale = [frameSize, frameSize / aspect, 1];
+    const imageScale: [number, number, number] = [size, size / aspect, 1];
+    const frameScale: [number, number, number] = [frameSize, frameSize / aspect, 1];
     setScales({ frame: frameScale, image: imageScale });
     if (frameRef.current) frameRef.current.scale.set(...frameScale);
     if (imageRef.current) imageRef.current.scale.set(...imageScale);
@@ -62,15 +86,15 @@ function PhylogenyNode({ node, imagesBase, onPick }) {
   );
 }
 
-function PhylogenyAutoFrame({ width, height }) {
+function PhylogenyAutoFrame({ width, height }: PhylogenyAutoFrameProps) {
   const { camera, size, controls } = useThree((state) => ({
     camera: state.camera,
     size: state.size,
-    controls: state.controls,
+    controls: state.controls as OrbitControls | undefined,
   }));
 
   useEffect(() => {
-    if (!camera?.isPerspectiveCamera) return;
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
     if (!width || !height) return;
 
     const aspect = size.width / Math.max(size.height, 1);
@@ -100,8 +124,8 @@ function PhylogenyAutoFrame({ width, height }) {
   return null;
 }
 
-function PhylogenyAnimatedWrapper({ children }) {
-  const groupRef = useRef();
+function PhylogenyAnimatedWrapper({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group | null>(null);
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
@@ -116,9 +140,12 @@ function PhylogenyAnimatedWrapper({ children }) {
   return <group ref={groupRef}>{children}</group>;
 }
 
-export default function PhylogenyScene({ imagesBase, data, onPick }) {
+export default function PhylogenyScene({ imagesBase, data, onPick }: PhylogenySceneProps) {
   const graph = useMemo(() => buildLineageGraph(data), [data]);
-  const layout = useMemo(() => computePhylogenyLayout(graph), [graph]);
+  const layout = useMemo<PhylogenyLayout>(
+    () => computePhylogenyLayout(graph) as PhylogenyLayout,
+    [graph],
+  );
 
   if (!layout.nodes.length) {
     return null;

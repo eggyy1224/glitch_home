@@ -1,1 +1,1 @@
-export { default } from "./components/kinship/KinshipScene.jsx";
+export { default } from "./components/kinship/KinshipScene";
