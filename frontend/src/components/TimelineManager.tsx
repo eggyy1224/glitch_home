@@ -106,12 +106,12 @@ export default function TimelineManager() {
       setTimelinePlaySrc(null);
       setTimelinePlayError(null);
     } catch (err) {
-      setTimelineMessage(err.message || "載入 timeline 失敗");
+      setTimelineMessage(((err as Error)?.message) || "載入 timeline 失敗");
     }
   }, [timelinePlayTarget]);
 
   const handleSaveTimeline = useCallback(
-    async (mode) => {
+    async (mode: "update" | "create") => {
       try {
         const parsed = JSON.parse(timelineJson);
         const inputId = (timelineId || "").trim();
@@ -141,7 +141,7 @@ export default function TimelineManager() {
   );
 
   const handleDeleteTimeline = useCallback(
-    async (id) => {
+    async (id: string) => {
       try {
         await deleteIframeTimeline(id);
         setTimelineMessage(`已刪除 timeline ${id}`);
@@ -176,7 +176,7 @@ export default function TimelineManager() {
       setTimelineMessage(`已複製 timeline 為 ${timelineCloneId}`);
       await refreshTimelines();
     } catch (err) {
-      setTimelineMessage(err.message || "複製失敗");
+      setTimelineMessage(((err as Error)?.message) || "複製失敗");
     }
   }, [refreshTimelines, timelineCloneId, timelineCloneTarget, timelineId]);
 
@@ -209,7 +209,7 @@ export default function TimelineManager() {
       await playIframeTimeline(timelineId, {}, { targetClientId: timelinePlayTarget.trim() });
       setTimelinePlayStatus(`已送出播放到 ${timelinePlayTarget.trim()}`);
     } catch (err) {
-      setTimelinePlayStatus(err.message || "播放指令失敗");
+      setTimelinePlayStatus(((err as Error)?.message) || "播放指令失敗");
     }
   }, [timelineId, timelinePlayTarget]);
 
@@ -228,12 +228,13 @@ export default function TimelineManager() {
         setTimelinePreviewError(null);
         const snapshot = await getIframeSnapshot(firstRef.client, firstRef.name, { signal: controller.signal });
         if (cancelled) return;
-        const raw = snapshot.raw || snapshot.snapshot || snapshot;
-        setTimelinePreviewSrc(previewSrcFromConfig(raw));
+        const snapshotData = snapshot as { raw?: unknown; snapshot?: unknown; name?: string };
+        const raw = snapshotData.raw || snapshotData.snapshot || snapshot;
+        setTimelinePreviewSrc(previewSrcFromConfig(raw as Partial<SnapshotConfig>));
       } catch (err) {
-        if (cancelled || err?.name === "AbortError") return;
+        if (cancelled || (err as { name?: string })?.name === "AbortError") return;
         setTimelinePreviewSrc(null);
-        setTimelinePreviewError(err.message || "預覽取得失敗");
+        setTimelinePreviewError(((err as Error)?.message) || "預覽取得失敗");
       }
     };
     void updatePreview();

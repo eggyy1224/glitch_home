@@ -6,23 +6,28 @@ import { listEpisodes, listIframeSnapshots, listIframeTimelines } from "../api";
 import type { ClientQueueItem, ClientState, EpisodeEntry, IframeTimeline, SnapshotEntry } from "../types/admin";
 
 function formatTime(value: unknown) {
-  if (!value) return "--";
-  try {
-    const date = new Date(value);
-    return date.toLocaleTimeString();
-  } catch (err) {
-    return String(value);
+  if (value === null || value === undefined) return "--";
+  if (value instanceof Date) return value.toLocaleTimeString();
+  if (typeof value === "string" || typeof value === "number") {
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleTimeString();
+    } catch (err) {
+      return String(value);
+    }
   }
+  return String(value);
 }
 
-function StatusBadge({ status }: { status?: string | null }) {
-  const palette = {
+function StatusBadge({ status }: { status?: string | null | undefined }) {
+  const palette: Record<"online" | "busy" | "idle" | "offline", string> = {
     online: "#3aff85",
     busy: "#f4c15c",
     idle: "#7ad7ff",
     offline: "#5a6b5f",
   };
-  const color = palette[status] || "#5a6b5f";
+  const color = status && status in palette ? palette[status as keyof typeof palette] : "#5a6b5f";
   return (
     <span
       style={{
@@ -266,14 +271,24 @@ export default function ClientStateQueuePanel() {
     }
     const eta = etaSeconds ? Number(etaSeconds) : null;
     try {
-      await enqueueItem({
+      const payload: {
+        client_id: string;
+        type: string;
+        target_id: string;
+        retries: number;
+        eta: number | null;
+        priority?: number;
+      } = {
         client_id: activeClient,
         type,
         target_id: targetId.trim(),
-        priority: priority === "" ? null : Number(priority),
         retries: `${retries}` === "" ? 0 : Number(retries),
-        eta: eta,
-      });
+        eta,
+      };
+      if (priority !== "") {
+        payload.priority = Number(priority);
+      }
+      await enqueueItem(payload);
       setTargetId("");
     } catch (err) {
       alert((err as Error)?.message || "新增佇列失敗");
@@ -353,7 +368,12 @@ export default function ClientStateQueuePanel() {
           </div>
           <div style={{ display: "grid", gap: 10 }} role="list" aria-label="client 狀態列表" data-ai-id="state-queue.client-list" data-ai-role="state-queue.client-list">
             {filteredClients.map((client) => (
-              <ClientCard key={client.client_id || Math.random()} client={client} active={client.client_id === selectedClient} onSelect={setSelectedClient} />
+              <ClientCard
+                key={client.client_id || Math.random()}
+                client={client}
+                active={client.client_id === selectedClient}
+                onSelect={(id) => setSelectedClient(id || "")}
+              />
             ))}
             {filteredClients.length === 0 && (
               <div style={{ color: "#82dca5" }} data-ai-state="empty">

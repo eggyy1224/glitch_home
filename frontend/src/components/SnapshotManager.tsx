@@ -137,7 +137,7 @@ export default function SnapshotManager() {
       setSnapshotMessage(`已複製 snapshot 到 ${snapshotCloneTarget}/${snapshotCloneName || snapshotName || ""}`);
       await refreshSnapshots();
     } catch (err) {
-      setSnapshotMessage(err.message || "複製失敗");
+      setSnapshotMessage((err as Error)?.message || "複製失敗");
     }
   }, [refreshSnapshots, snapshotClient, snapshotCloneName, snapshotCloneTarget, snapshotName]);
 
@@ -259,13 +259,14 @@ export default function SnapshotManager() {
             }}
           >
             {snapshotList.length === 0 && <li data-ai-state="empty">尚無 snapshot</li>}
-            {snapshotList.map((item) => {
-              const isSelected = snapshotName === item.name;
+            {snapshotList.map((item, idx) => {
+              const itemName = item.name || "";
+              const isSelected = snapshotName === itemName;
               return (
                 <li
-                  key={item.name}
+                  key={itemName || idx}
                   role="listitem"
-                  data-ai-item={`snapshot:${item.name}`}
+                  data-ai-item={`snapshot:${itemName}`}
                   data-ai-role="snapshot.row"
                   data-ai-state={isSelected ? "selected" : "idle"}
                   aria-selected={isSelected}
@@ -280,43 +281,43 @@ export default function SnapshotManager() {
                     boxShadow: isSelected ? "0 0 0 1px rgba(58, 255, 133, 0.4)" : "none",
                   }}
                 >
-                  <span style={{ flex: 1, fontWeight: isSelected ? 700 : 600 }}>{item.name}</span>
+                  <span style={{ flex: 1, fontWeight: isSelected ? 700 : 600 }}>{itemName || "(未命名)"}</span>
                 <button
                   type="button"
-                  onClick={() => handleLoadSnapshot(item.name)}
+                  onClick={() => handleLoadSnapshot(itemName)}
                   style={{ marginRight: 4 }}
                   data-ai-action="snapshot.load"
                   data-testid="snapshot-load"
-                  aria-label={`查看 snapshot ${item.name}（載入到表單並預覽）`}
+                  aria-label={`查看 snapshot ${itemName}（載入到表單並預覽）`}
                 >
                   查看/載入
                 </button>
                   <button
                     type="button"
-                    onClick={() => setSnapshotName(item.name)}
+                    onClick={() => setSnapshotName(itemName)}
                     style={{ marginRight: 4 }}
                     data-ai-action="snapshot.select"
                     data-testid="snapshot-select"
-                    aria-label={`設為當前 snapshot 名稱：${item.name}`}
+                    aria-label={`設為當前 snapshot 名稱：${itemName}`}
                   >
                     設為當前名稱
                   </button>
                   <button
                     type="button"
-                    onClick={() => handlePlaySnapshot(item.name)}
+                    onClick={() => handlePlaySnapshot(itemName)}
                     style={{ marginRight: 4 }}
                     data-ai-action="snapshot.play"
                     data-testid="snapshot-play"
-                    aria-label={`播放 snapshot ${item.name} 到 client ${snapshotClient || "(未指定)"}`}
+                    aria-label={`播放 snapshot ${itemName} 到 client ${snapshotClient || "(未指定)"}`}
                   >
                     播放到 client
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDeleteSnapshot(item.name)}
+                    onClick={() => handleDeleteSnapshot(itemName)}
                     data-ai-action="snapshot.delete"
                     data-testid="snapshot-delete"
-                    aria-label={`刪除 snapshot ${item.name}`}
+                    aria-label={`刪除 snapshot ${itemName}`}
                     data-ai-danger="true"
                   >
                     刪除

@@ -117,7 +117,8 @@ export default function EpisodeManager() {
         payload.command_id_prefix = prefix;
       }
       const data = await playEpisode(episodeId, payload);
-      setEpisodePlayStatus(`已送出（${data?.tracks?.length ?? 0} 條 track）`);
+      const trackCount = (data as { tracks?: unknown[] })?.tracks?.length ?? 0;
+      setEpisodePlayStatus(`已送出（${trackCount} 條 track）`);
     } catch (err) {
       setEpisodePlayStatus((err as Error)?.message || "播放指令失敗");
     }
@@ -151,11 +152,16 @@ export default function EpisodeManager() {
             }}
           >
             {episodeList.length === 0 && <li data-ai-state="empty">尚無 episode</li>}
-            {episodeList.map((item) => (
+            {episodeList.map((item) => {
+              const itemId = item.id || "";
+              const trackCount = (item as { track_count?: number; trackCount?: number; tracks?: unknown[] }).track_count ??
+                (item as { trackCount?: number }).trackCount ??
+                (Array.isArray(item.tracks) ? item.tracks.length : 0);
+              return (
               <li
-                key={item.id}
+                key={itemId || Math.random()}
                 role="listitem"
-                data-ai-item={`episode:${item.id}`}
+                data-ai-item={`episode:${itemId}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -167,29 +173,30 @@ export default function EpisodeManager() {
                 }}
               >
                 <span style={{ flex: 1 }}>
-                  {item.id}
-                  {item.title ? `（${item.title}）` : ""} · {item.track_count ?? item.trackCount ?? item.tracks?.length ?? 0} tracks
+                  {itemId}
+                  {item.title ? `（${item.title}）` : ""} · {trackCount} tracks
                 </span>
                 <button
                   type="button"
-                  onClick={() => handleLoadEpisode(item.id)}
+                  onClick={() => handleLoadEpisode(itemId)}
                   style={{ marginRight: 4 }}
                   data-ai-action="episode.load"
-                  aria-label={`載入 episode ${item.id}`}
+                  aria-label={`載入 episode ${itemId}`}
                 >
                   載入
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDeleteEpisode(item.id)}
+                  onClick={() => handleDeleteEpisode(itemId)}
                   data-ai-action="episode.delete"
-                  aria-label={`刪除 episode ${item.id}`}
+                  aria-label={`刪除 episode ${itemId}`}
                   data-ai-danger="true"
                 >
                   刪除
                 </button>
               </li>
-            ))}
+            );
+            })}
           </ul>
           <div style={{ marginTop: 8 }}>
             <div style={{ marginBottom: 4 }}>複製：</div>
