@@ -1,21 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import {
-  createEpisode,
-  createIframeTimeline,
-  fetchEpisode,
-  fetchIframeTimeline,
-  getIframeSnapshot,
-  restoreIframeSnapshot,
-  saveIframeSnapshot,
-  listEpisodes,
-  listIframeSnapshots,
-  listIframeTimelines,
-  playEpisode,
-  playIframeTimeline,
-  updateEpisode as updateEpisodeApi,
-  updateIframeTimeline,
-} from "../api";
-import { AdminPanelContext } from "../AdminPanelContext";
+import React from "react";
 import {
   activeTabButtonStyle,
   boxStyle,
@@ -29,16 +12,8 @@ import {
   snapshotPreviewIframeStyle,
   tabButtonStyle,
 } from "../AdminPanelStyles";
-import {
-  defaultEpisodePayload,
-  defaultTimelinePayload,
-  firstSnapshotRef,
-  minimalConfigPayload,
-  parseTargetMap,
-  previewSrcFromConfig,
-  pretty,
-  timelinePlaybackSrc,
-} from "../adminPanelUtils";
+import useTimelineEpisodeEditor from "../hooks/useTimelineEpisodeEditor";
+import { formatTs, snapshotValueForSelect, toggleIndex } from "../utils/adminEditorUtils";
 import EpisodeListPanel from "./timeline/EpisodeListPanel";
 import EpisodeTracksEditor from "./timeline/EpisodeTracksEditor";
 import SnapshotPanelsEditor from "./snapshot/SnapshotPanelsEditor";
@@ -46,836 +21,89 @@ import TimelineListPanel from "./timeline/TimelineListPanel";
 import TimelinePreviewPlayer from "./timeline/TimelinePreviewPlayer";
 import TimelineStepsEditor from "./timeline/TimelineStepsEditor";
 
-function validateTimeline(data) {
-  const errors = [];
-  if (!data || typeof data !== "object") {
-    return [{ path: "root", message: "timeline 需要是物件" }];
-  }
-  if (!data.id) {
-    errors.push({ path: "id", message: "缺少 timeline id" });
-  }
-  if (!Array.isArray(data.steps) || data.steps.length === 0) {
-    errors.push({ path: "steps", message: "需要至少一個 step" });
-  } else {
-    data.steps.forEach((step, index) => {
-      if (!step || typeof step !== "object") {
-        errors.push({ path: `steps[${index}]`, message: "step 格式不正確" });
-        return;
-      }
-      if (!step.snapshot) {
-        errors.push({ path: `steps[${index}].snapshot`, message: "缺少 snapshot" });
-      }
-      if (step.duration === undefined || step.duration === null || Number(step.duration) <= 0) {
-        errors.push({ path: `steps[${index}].duration`, message: "duration 必須大於 0" });
-      }
-    });
-  }
-  return errors;
-}
-
-function validateEpisode(data) {
-  const errors = [];
-  if (!data || typeof data !== "object") {
-    return [{ path: "root", message: "episode 需要是物件" }];
-  }
-  if (!data.id) {
-    errors.push({ path: "id", message: "缺少 episode id" });
-  }
-  if (!Array.isArray(data.tracks) || data.tracks.length === 0) {
-    errors.push({ path: "tracks", message: "需要至少一條 track" });
-  } else {
-    data.tracks.forEach((track, index) => {
-      if (!track.timelineId && !track.timeline_id) {
-        errors.push({ path: `tracks[${index}].timelineId`, message: "缺少 timelineId" });
-      }
-      const target = track.targetClientId || track.target_client_id;
-      if (!target) {
-        errors.push({ path: `tracks[${index}].targetClientId`, message: "缺少 target client" });
-      }
-    });
-  }
-  return errors;
-}
-
-function validateSnapshot(data) {
-  const errors = [];
-  if (!data || typeof data !== "object") {
-    return [{ path: "root", message: "snapshot 需要是物件" }];
-  }
-  if (!Array.isArray(data.panels) || data.panels.length === 0) {
-    errors.push({ path: "panels", message: "需要至少一個 panel" });
-  } else {
-    data.panels.forEach((panel, index) => {
-      if (!panel || typeof panel !== "object") {
-        errors.push({ path: `panels[${index}]`, message: "panel 格式不正確" });
-        return;
-      }
-      const hasUrl = typeof panel.url === "string" && panel.url.trim();
-      const hasImage = typeof panel.image === "string" && panel.image.trim();
-      if (!hasUrl && !hasImage) {
-        errors.push({ path: `panels[${index}]`, message: "需要 url 或 image" });
-      }
-      if (panel.ratio !== undefined && Number(panel.ratio) <= 0) {
-        errors.push({ path: `panels[${index}].ratio`, message: "ratio 必須大於 0" });
-      }
-    });
-  }
-  return errors;
-}
-
-function formatTs(ts) {
-  if (!ts) return "";
-  const date = typeof ts === "string" ? new Date(ts) : ts;
-  return date.toLocaleString();
-}
-
-function toggleIndex(selected, index) {
-  if (selected.includes(index)) return selected.filter((i) => i !== index);
-  return [...selected, index];
-}
-
-function snapshotValueForSelect(step, timeline, fallbackClient) {
-  if (!step || !step.snapshot) return "";
-  const ref = String(step.snapshot).trim();
-  if (!ref) return "";
-  if (ref.includes("/")) return ref;
-  const client =
-    step.clientId || step.client_id || timeline?.clientId || timeline?.client_id || fallbackClient || "";
-  return client ? `${client}/${ref}` : ref;
-}
-
 export default function TimelineEpisodeEditor() {
-  const { defaultClientId } = useContext(AdminPanelContext);
-  const [mode, setMode] = useState("timeline");
-  const [timelineData, setTimelineData] = useState(() => defaultTimelinePayload(defaultClientId));
-  const [episodeData, setEpisodeData] = useState(() => defaultEpisodePayload(defaultClientId));
-  const [snapshotData, setSnapshotData] = useState(() => minimalConfigPayload(defaultClientId));
-  const [jsonText, setJsonText] = useState(() => pretty(defaultTimelinePayload(defaultClientId)));
-  const [jsonLocked, setJsonLocked] = useState(false);
-  const [lastSyncAt, setLastSyncAt] = useState(null);
-  const [dirty, setDirty] = useState(false);
-  const [validationErrors, setValidationErrors] = useState([]);
-  const [message, setMessage] = useState("");
-  const [messageByMode, setMessageByMode] = useState({ timeline: "", episode: "", snapshot: "" });
-  const [timelineList, setTimelineList] = useState([]);
-  const [episodeList, setEpisodeList] = useState([]);
-  const [timelineFilter, setTimelineFilter] = useState("");
-  const [episodeFilter, setEpisodeFilter] = useState("");
-  const [snapshotClient, setSnapshotClient] = useState(defaultClientId);
-  const [snapshotKeyword, setSnapshotKeyword] = useState("");
-  const [snapshotName, setSnapshotName] = useState("new_snapshot");
-  const [snapshotOptions, setSnapshotOptions] = useState([]);
-  const [snapshotMessage, setSnapshotMessage] = useState("");
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [clipboard, setClipboard] = useState(null);
-  const [batchDuration, setBatchDuration] = useState("");
-  const [batchTargetClient, setBatchTargetClient] = useState("");
-  const [timelinePreviewSrc, setTimelinePreviewSrc] = useState(null);
-  const [timelinePreviewError, setTimelinePreviewError] = useState(null);
-  const [timelinePlaySrc, setTimelinePlaySrc] = useState(null);
-  const [timelinePlayError, setTimelinePlayError] = useState(null);
-  const [snapshotPreviewSrc, setSnapshotPreviewSrc] = useState(null);
-  const [snapshotPreviewError, setSnapshotPreviewError] = useState(null);
-  const [snapshotPreviewWidth, setSnapshotPreviewWidth] = useState(() => {
-    if (typeof window === "undefined") return 960;
-    return Math.max(Math.min(window.innerWidth - 100, 1200), 720);
-  });
-  const [episodeTargetOverride, setEpisodeTargetOverride] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [jsonReadOnly, setJsonReadOnly] = useState(false);
-
-  const activeData = useMemo(
-    () => (mode === "timeline" ? timelineData : mode === "episode" ? episodeData : snapshotData),
-    [episodeData, mode, snapshotData, timelineData],
-  );
-  const snapshotFrameHeight = useMemo(
-    () => Math.max(320, Math.round((snapshotPreviewWidth * 9) / 16)),
-    [snapshotPreviewWidth],
-  );
-
-  const setMessageForMode = useCallback(
-    (value, targetMode = mode) => {
-      setMessageByMode((prev) => {
-        const current = prev[targetMode];
-        if (current === value) return prev;
-        return { ...prev, [targetMode]: value };
-      });
-      if (targetMode === mode) {
-        setMessage((prev) => (prev === value ? prev : value));
-      }
-    },
-    [mode],
-  );
-
-  useEffect(() => {
-    const next = messageByMode[mode] || "";
-    setMessage((prev) => (prev === next ? prev : next));
-  }, [messageByMode, mode]);
-
-  const syncJsonFromData = useCallback(
-    (data) => {
-      if (jsonLocked) return;
-      setJsonText(pretty(data));
-      setLastSyncAt(new Date());
-    },
-    [jsonLocked],
-  );
-
-  const updateTimeline = useCallback(
-    (next, { markDirty = true } = {}) => {
-      setTimelineData(next);
-      syncJsonFromData(next);
-      setDirty(Boolean(markDirty));
-      setValidationErrors(validateTimeline(next));
-    },
-    [syncJsonFromData],
-  );
-
-  const setEpisodeState = useCallback(
-    (next, { markDirty = true } = {}) => {
-      setEpisodeData((prev) => {
-        const resolved = typeof next === "function" ? next(prev) : next;
-        syncJsonFromData(resolved);
-        setDirty(Boolean(markDirty));
-        setValidationErrors(validateEpisode(resolved));
-        return resolved;
-      });
-    },
-    [syncJsonFromData],
-  );
-
-  const updateSnapshot = useCallback(
-    (next, { markDirty = true } = {}) => {
-      setSnapshotData(next);
-      syncJsonFromData(next);
-      setDirty(Boolean(markDirty));
-      setValidationErrors(validateSnapshot(next));
-    },
-    [syncJsonFromData],
-  );
-
-  const handleModeChange = useCallback(
-    (nextMode) => {
-      setMode(nextMode);
-      const savedMessage = messageByMode[nextMode] || "";
-      setMessage((prev) => (prev === savedMessage ? prev : savedMessage));
-      setSelectedRows([]);
-      setTimelinePlaySrc(null);
-      setTimelinePlayError(null);
-      if (nextMode === "timeline") {
-        setValidationErrors(validateTimeline(timelineData));
-        syncJsonFromData(timelineData);
-      } else if (nextMode === "episode") {
-        setValidationErrors(validateEpisode(episodeData));
-        syncJsonFromData(episodeData);
-      } else {
-        setValidationErrors(validateSnapshot(snapshotData));
-        syncJsonFromData(snapshotData);
-      }
-    },
-    [episodeData, messageByMode, snapshotData, syncJsonFromData, timelineData],
-  );
-
-  const refreshTimelines = useCallback(async () => {
-    try {
-      const data = await listIframeTimelines(timelineFilter || null);
-      setTimelineList(Array.isArray(data.timelines) ? data.timelines : []);
-      setMessageForMode(`已載入 ${data.timelines?.length ?? 0} 筆 timeline`, "timeline");
-    } catch (err) {
-      setMessageForMode(err.message || "載入 timeline 失敗", "timeline");
-    }
-  }, [setMessageForMode, timelineFilter]);
-
-  const refreshEpisodes = useCallback(async () => {
-    try {
-      const data = await listEpisodes();
-      const list = Array.isArray(data.episodes) ? data.episodes : [];
-      const filtered = episodeFilter ? list.filter((e) => `${e.id}`.includes(episodeFilter)) : list;
-      setEpisodeList(filtered);
-      setMessageForMode(`已載入 ${filtered.length} 筆 episode`, "episode");
-    } catch (err) {
-      setMessageForMode(err.message || "載入 episode 失敗", "episode");
-    }
-  }, [episodeFilter, setMessageForMode]);
-
-  const refreshSnapshots = useCallback(async (clientOverride?: string | null) => {
-    try {
-      const targetClient = clientOverride ?? snapshotClient;
-      const data = await listIframeSnapshots(targetClient || null);
-      const list = Array.isArray(data.snapshots) ? data.snapshots : [];
-      const filtered = snapshotKeyword
-        ? list.filter((item) => `${item.id || item.name}`.includes(snapshotKeyword) || `${item.client}`.includes(snapshotKeyword))
-        : list;
-      const normalized = filtered.map((item) => ({
-        ...item,
-        client: item.client || item.client_id || targetClient || timelineData.clientId || timelineData.client_id || "",
-      }));
-      setSnapshotOptions(normalized);
-      setSnapshotMessage(`取得 ${filtered.length} 筆 snapshot`);
-      setMessageForMode(`取得 ${filtered.length} 筆 snapshot`, "snapshot");
-    } catch (err) {
-      setSnapshotMessage(err.message || "載入 snapshot 清單失敗");
-      setMessageForMode(err.message || "載入 snapshot 清單失敗", "snapshot");
-    }
-  }, [setMessageForMode, snapshotClient, snapshotKeyword, timelineData.clientId, timelineData.client_id]);
-
-  const handleLoadSelected = useCallback(
-    async (id) => {
-      if (!id) return;
-      try {
-        if (mode === "timeline") {
-          const data = await fetchIframeTimeline(id, { resolve: false });
-          const payload = (data as { timeline?: unknown }).timeline ?? data;
-          updateTimeline(payload, { markDirty: false });
-          const timelineClient =
-            (payload as { clientId?: string; client_id?: string }).clientId ||
-            (payload as { client_id?: string }).client_id;
-          if (timelineClient) {
-            const nextClient = timelineClient;
-            setSnapshotClient(nextClient);
-            await refreshSnapshots(nextClient);
-          }
-          setMessageForMode(`已載入 timeline ${id}`, "timeline");
-        } else {
-          const data = await fetchEpisode(id, { resolve: false });
-          const payload = data.episode || data;
-          setEpisodeState(payload, { markDirty: false });
-          setMessageForMode(`已載入 episode ${id}`, "episode");
-        }
-        setDirty(false);
-      } catch (err) {
-        setMessageForMode(err.message || "載入失敗", mode);
-      }
-    },
-    [mode, refreshSnapshots, setEpisodeState, setMessageForMode, updateTimeline],
-  );
-
-  const handleLoadSnapshot = useCallback(
-    async (name, clientOverride?: string | null) => {
-      const targetClient = clientOverride ?? snapshotClient;
-      if (!targetClient) {
-        setMessageForMode("請先設定 client 再載入 snapshot", "snapshot");
-        return;
-      }
-      if (!name) return;
-      try {
-        const data = await getIframeSnapshot(targetClient, name);
-        const raw = data.raw || data.snapshot || data;
-        const resolvedClient = targetClient || data.client_id || data.client;
-        setSnapshotClient(resolvedClient || targetClient);
-        setSnapshotName(name);
-        updateSnapshot(raw, { markDirty: false });
-        const src = previewSrcFromConfig(raw);
-        setSnapshotPreviewSrc(src);
-        setSnapshotPreviewError(src ? null : "預覽來源不足");
-        await refreshSnapshots(resolvedClient || targetClient);
-        setMessageForMode(`已載入 snapshot ${resolvedClient || targetClient}/${name}`, "snapshot");
-        setDirty(false);
-      } catch (err) {
-        setMessageForMode(err.message || "載入 snapshot 失敗", "snapshot");
-      }
-    },
-    [refreshSnapshots, setMessageForMode, snapshotClient, updateSnapshot],
-  );
-
-  const clampSnapshotPreviewWidth = useCallback((width: number) => {
-    const max = typeof window !== "undefined" ? Math.max(window.innerWidth - 60, 640) : 1400;
-    return Math.min(Math.max(width, 560), Math.min(max, 1800));
-  }, []);
-
-  const startSnapshotResize = useCallback(
-    (event) => {
-      event.preventDefault();
-      const startX = event.clientX;
-      const startWidth = snapshotPreviewWidth;
-      const onMove = (e) => {
-        const delta = e.clientX - startX;
-        setSnapshotPreviewWidth(clampSnapshotPreviewWidth(startWidth + delta));
-      };
-      const onUp = () => {
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-      };
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    },
-    [clampSnapshotPreviewWidth, snapshotPreviewWidth],
-  );
-
-  const handleSave = useCallback(async () => {
-    try {
-      setIsSaving(true);
-      if (mode === "timeline") {
-        const payload = timelineData;
-        const targetId = (payload.id || "").trim();
-        if (!targetId) throw new Error("timeline id 必填");
-        const normalizedPayload = { ...payload, id: targetId };
-        updateTimeline(normalizedPayload);
-        let action = "update";
-        try {
-          await updateIframeTimeline(targetId, normalizedPayload, { resolve: false });
-        } catch (err) {
-          const msg = err?.message || "";
-          if (msg.includes("404")) {
-            action = "create";
-            await createIframeTimeline(normalizedPayload, { resolve: false });
-          } else {
-            throw err;
-          }
-        }
-        setMessageForMode(`${action === "update" ? "已更新" : "已建立"} timeline ${targetId}`, "timeline");
-        await refreshTimelines();
-      } else if (mode === "episode") {
-        const payload = episodeData;
-        const targetId = (payload.id || "").trim();
-        if (!targetId) throw new Error("episode id 必填");
-        const normalizedPayload = { ...payload, id: targetId };
-        setEpisodeState(normalizedPayload);
-        let action = "update";
-        try {
-          await updateEpisodeApi(targetId, normalizedPayload, { resolve: false });
-        } catch (err) {
-          const msg = err?.message || "";
-          if (msg.includes("404")) {
-            action = "create";
-            await createEpisode(normalizedPayload, { resolve: false });
-          } else {
-            throw err;
-          }
-        }
-        setMessageForMode(`${action === "update" ? "已更新" : "已建立"} episode ${targetId}`, "episode");
-        await refreshEpisodes();
-      } else {
-        const payload = snapshotData;
-        const client = (snapshotClient || defaultClientId || "").trim();
-        const name = (snapshotName || "").trim();
-        if (!client) throw new Error("client 必填");
-        if (!name) throw new Error("snapshot 名稱必填");
-        const errors = validateSnapshot(payload);
-        if (errors.length) {
-          const first = errors[0];
-          throw new Error(`驗證錯誤：${first.path} ${first.message}`);
-        }
-        updateSnapshot(payload);
-        await saveIframeSnapshot(client, name, payload);
-        setSnapshotName(name);
-        setMessageForMode(`已儲存 snapshot ${client}/${name}`, "snapshot");
-        await refreshSnapshots(client);
-      }
-      setDirty(false);
-      return true;
-    } catch (err) {
-      setMessageForMode(err.message || "儲存失敗", mode);
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    defaultClientId,
-    episodeData,
+  const {
     mode,
+    dirty,
+    message,
+    lastSyncAt,
+    jsonLocked,
+    jsonReadOnly,
+    setJsonLocked,
+    setJsonReadOnly,
+    dataState,
+    validationErrors,
+    validationState,
+    activeData,
+    timelineData,
+    episodeData,
+    snapshotData,
+    setEpisodeState,
+    updateTimeline,
+    updateSnapshot,
+    timelineList,
+    episodeList,
+    timelineFilter,
+    episodeFilter,
+    setTimelineFilter,
+    setEpisodeFilter,
+    refreshTimelines,
     refreshEpisodes,
     refreshSnapshots,
-    refreshTimelines,
-    setEpisodeState,
-    setMessageForMode,
     snapshotClient,
-    snapshotData,
+    setSnapshotClient,
+    snapshotKeyword,
+    setSnapshotKeyword,
     snapshotName,
-    timelineData,
-    updateSnapshot,
-    updateTimeline,
-  ]);
-
-  const handleJsonChange = useCallback((text) => {
-    setJsonText(text);
-    setDirty(true);
-  }, []);
-
-  const focusRow = useCallback((index) => {
-    setSelectedRows([index]);
-  }, []);
-
-  useEffect(() => {
-    if (jsonLocked) return undefined;
-    const handle = setTimeout(() => {
-      try {
-        const parsed = JSON.parse(jsonText);
-        if (mode === "timeline") {
-          setTimelineData(parsed);
-          setValidationErrors(validateTimeline(parsed));
-        } else if (mode === "episode") {
-          setEpisodeData(parsed);
-          setValidationErrors(validateEpisode(parsed));
-        } else {
-          setSnapshotData(parsed);
-          setValidationErrors(validateSnapshot(parsed));
-        }
-        setLastSyncAt(new Date());
-      } catch (err) {
-        setValidationErrors([{ path: "json", message: err.message || "JSON 解析失敗" }]);
-      }
-    }, 500);
-    return () => clearTimeout(handle);
-  }, [jsonLocked, jsonText, mode]);
-
-  useEffect(() => {
-    const nextTimeline = defaultTimelinePayload(defaultClientId);
-    const nextEpisode = defaultEpisodePayload(defaultClientId);
-    const nextSnapshot = minimalConfigPayload(defaultClientId);
-    setTimelineData(nextTimeline);
-    setEpisodeData(nextEpisode);
-    setSnapshotData(nextSnapshot);
-    setSnapshotClient(defaultClientId);
-    setSnapshotName("new_snapshot");
-    if (mode === "timeline") {
-      setJsonText(pretty(nextTimeline));
-      setValidationErrors(validateTimeline(nextTimeline));
-    } else if (mode === "episode") {
-      setJsonText(pretty(nextEpisode));
-      setValidationErrors(validateEpisode(nextEpisode));
-    } else {
-      setJsonText(pretty(nextSnapshot));
-      setValidationErrors(validateSnapshot(nextSnapshot));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在 defaultClientId 變更時重置，避免切換模式時清空編輯中的資料
-  }, [defaultClientId]);
-
-  useEffect(() => {
-    refreshTimelines();
-    refreshEpisodes();
-    refreshSnapshots();
-  }, [refreshEpisodes, refreshSnapshots, refreshTimelines]);
-
-  useEffect(() => {
-    if (mode !== "episode") return;
-    if (!timelineList.length) return;
-    if (dirty) return;
-    setEpisodeState(
-      (prev) => {
-        if (!prev || !Array.isArray(prev.tracks) || prev.tracks.length === 0) return prev;
-        const timelineIds = new Set(timelineList.map((t) => t.id));
-        let changed = false;
-        const nextTracks = prev.tracks.map((track) => {
-          if (!track) return track;
-          const currentId = track.timelineId || track.timeline_id || "";
-          if (currentId && timelineIds.has(currentId)) return track;
-          const targetClient = track.targetClientId || track.target_client_id || "";
-          const candidate =
-            timelineList.find((item) => (item.client_id || item.clientId || item.client) === targetClient) ||
-            timelineList[0];
-          if (!candidate) return track;
-          changed = true;
-          return { ...track, timelineId: candidate.id };
-        });
-        return changed ? { ...prev, tracks: nextTracks } : prev;
-      },
-      { markDirty: false },
-    );
-  }, [dirty, mode, setEpisodeState, timelineList]);
-
-  useEffect(() => {
-    if (mode !== "timeline") return undefined;
-    let cancelled = false;
-    const controller = new AbortController();
-    const fetchPreview = async () => {
-      try {
-        const first = firstSnapshotRef(timelineData);
-        if (!first) {
-          setTimelinePreviewSrc(null);
-          setTimelinePreviewError("無 snapshot 可預覽");
-          return;
-        }
-        const snapshot = await getIframeSnapshot(first.client, first.name, { signal: controller.signal });
-        if (cancelled) return;
-        const raw = snapshot.raw || snapshot.snapshot || snapshot;
-        const src = previewSrcFromConfig(raw);
-        setTimelinePreviewError(src ? null : "預覽來源不足");
-        setTimelinePreviewSrc(src);
-      } catch (err) {
-        if (cancelled || err?.name === "AbortError") return;
-        setTimelinePreviewError(err.message || "預覽取得失敗");
-        setTimelinePreviewSrc(null);
-      }
-    };
-    void fetchPreview();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [mode, timelineData]);
-
-  useEffect(() => {
-    if (mode !== "snapshot") return;
-    try {
-      const src = previewSrcFromConfig(snapshotData);
-      setSnapshotPreviewSrc(src);
-      setSnapshotPreviewError(src ? null : "預覽來源不足");
-    } catch (err) {
-      setSnapshotPreviewSrc(null);
-      setSnapshotPreviewError(err.message || "預覽取得失敗");
-    }
-  }, [mode, snapshotData]);
-
-  const handleStepChange = useCallback(
-    (index, patch) => {
-      updateTimeline({
-        ...timelineData,
-        steps: timelineData.steps.map((step, i) => (i === index ? { ...step, ...patch } : step)),
-      });
-    },
-    [timelineData, updateTimeline],
-  );
-
-  const handleTrackChange = useCallback(
-    (index, patch) => {
-      setEpisodeState({
-        ...episodeData,
-        tracks: episodeData.tracks.map((track, i) => (i === index ? { ...track, ...patch } : track)),
-      });
-    },
-    [episodeData, setEpisodeState],
-  );
-
-  const addStep = useCallback(() => {
-    updateTimeline({
-      ...timelineData,
-      steps: [...(timelineData.steps || []), { snapshot: `${defaultClientId}/snapshot_x`, duration: 5, label: "新步驟" }],
-    });
-  }, [defaultClientId, timelineData, updateTimeline]);
-
-  const addTrack = useCallback(() => {
-    const fallbackTimeline =
-      timelineList.find((item) => (item.client_id || item.clientId || item.client) === defaultClientId) ||
-      timelineList[0];
-    setEpisodeState({
-      ...episodeData,
-      tracks: [
-        ...(episodeData.tracks || []),
-        { timelineId: fallbackTimeline?.id || "", targetClientId: defaultClientId, offset: 0 },
-      ],
-    });
-  }, [defaultClientId, episodeData, setEpisodeState, timelineList]);
-
-  const addPanel = useCallback(() => {
-    const nextPanels = [...(snapshotData.panels || [])];
-    const idBase = `panel_${nextPanels.length + 1}`;
-    nextPanels.push({ id: idBase, url: "/", ratio: 1, params: {}, label: "" });
-    updateSnapshot({ ...snapshotData, panels: nextPanels });
-  }, [snapshotData, updateSnapshot]);
-
-  const handlePanelChange = useCallback(
-    (index, patch) => {
-      updateSnapshot({
-        ...snapshotData,
-        panels: (snapshotData.panels || []).map((panel, i) => (i === index ? { ...panel, ...patch } : panel)),
-      });
-    },
-    [snapshotData, updateSnapshot],
-  );
-
-  const moveRow = useCallback(
-    (index, delta) => {
-      if (mode === "timeline") {
-        const steps = [...(timelineData.steps || [])];
-        const target = index + delta;
-        if (target < 0 || target >= steps.length) return;
-        const [item] = steps.splice(index, 1);
-        steps.splice(target, 0, item);
-        updateTimeline({ ...timelineData, steps });
-      } else if (mode === "episode") {
-        const tracks = [...(episodeData.tracks || [])];
-        const target = index + delta;
-        if (target < 0 || target >= tracks.length) return;
-        const [item] = tracks.splice(index, 1);
-        tracks.splice(target, 0, item);
-        setEpisodeState({ ...episodeData, tracks });
-      } else {
-        const panels = [...(snapshotData.panels || [])];
-        const target = index + delta;
-        if (target < 0 || target >= panels.length) return;
-        const [item] = panels.splice(index, 1);
-        panels.splice(target, 0, item);
-        updateSnapshot({ ...snapshotData, panels });
-      }
-    },
-    [episodeData, mode, snapshotData, timelineData, setEpisodeState, updateSnapshot, updateTimeline],
-  );
-
-  const removeRow = useCallback(
-    (index) => {
-      if (mode === "timeline") {
-        updateTimeline({ ...timelineData, steps: timelineData.steps.filter((_, i) => i !== index) });
-      } else if (mode === "episode") {
-        setEpisodeState({ ...episodeData, tracks: episodeData.tracks.filter((_, i) => i !== index) });
-      } else {
-        updateSnapshot({ ...snapshotData, panels: (snapshotData.panels || []).filter((_, i) => i !== index) });
-      }
-      setSelectedRows((prev) => prev.filter((i) => i !== index));
-    },
-    [episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline],
-  );
-
-  const duplicateRow = useCallback(
-    (index) => {
-      if (mode === "timeline") {
-        const steps = [...(timelineData.steps || [])];
-        const target = steps[index];
-        steps.splice(index + 1, 0, { ...target });
-        updateTimeline({ ...timelineData, steps });
-      } else if (mode === "episode") {
-        const tracks = [...(episodeData.tracks || [])];
-        const target = tracks[index];
-        tracks.splice(index + 1, 0, { ...target });
-        setEpisodeState({ ...episodeData, tracks });
-      } else {
-        const panels = [...(snapshotData.panels || [])];
-        const target = panels[index];
-        panels.splice(index + 1, 0, { ...target });
-        updateSnapshot({ ...snapshotData, panels });
-      }
-    },
-    [episodeData, mode, setEpisodeState, snapshotData, timelineData, updateSnapshot, updateTimeline],
-  );
-
-  const handleCopy = useCallback(() => {
-    if (!selectedRows.length) return;
-    const items = selectedRows
-      .map((idx) =>
-        mode === "timeline"
-          ? timelineData.steps[idx]
-          : mode === "episode"
-            ? episodeData.tracks[idx]
-            : snapshotData.panels[idx],
-      )
-      .filter(Boolean);
-    setClipboard({ mode, items });
-    setMessageForMode(`已複製 ${items.length} 筆`);
-  }, [episodeData.tracks, mode, selectedRows, setMessageForMode, snapshotData.panels, timelineData.steps]);
-
-  const handlePaste = useCallback(() => {
-    if (!clipboard || clipboard.mode !== mode || !clipboard.items?.length) return;
-    if (mode === "timeline") {
-      updateTimeline({
-        ...timelineData,
-        steps: [...(timelineData.steps || []), ...clipboard.items.map((item) => ({ ...item }))],
-      });
-    } else if (mode === "episode") {
-      setEpisodeState({
-        ...episodeData,
-        tracks: [...(episodeData.tracks || []), ...clipboard.items.map((item) => ({ ...item }))],
-      });
-    } else {
-      updateSnapshot({
-        ...snapshotData,
-        panels: [...(snapshotData.panels || []), ...clipboard.items.map((item) => ({ ...item }))],
-      });
-    }
-    setMessageForMode(`已貼上 ${clipboard.items.length} 筆`);
-  }, [clipboard, episodeData, mode, setEpisodeState, setMessageForMode, snapshotData, timelineData, updateSnapshot, updateTimeline]);
-
-  const handleBatchApply = useCallback(() => {
-    if (!selectedRows.length) return;
-    if (mode === "timeline" && batchDuration) {
-      updateTimeline({
-        ...timelineData,
-        steps: timelineData.steps.map((step, idx) =>
-          selectedRows.includes(idx) ? { ...step, duration: Number(batchDuration) } : step,
-        ),
-      });
-    }
-    if (mode === "episode" && batchTargetClient) {
-      setEpisodeState({
-        ...episodeData,
-        tracks: episodeData.tracks.map((track, idx) =>
-          selectedRows.includes(idx) ? { ...track, targetClientId: batchTargetClient } : track,
-        ),
-      });
-    }
-  }, [batchDuration, batchTargetClient, episodeData, mode, selectedRows, setEpisodeState, timelineData, updateTimeline]);
-
-  const handlePlayPreview = useCallback(async () => {
-    if (mode !== "timeline") return;
-    const id = timelineData.id;
-    if (!id) {
-      setTimelinePlayError("請先設定 id");
-      return;
-    }
-    if (dirty) {
-      const ok = await handleSave();
-      if (!ok) {
-        setTimelinePlayError("儲存失敗，無法預覽");
-        return;
-      }
-    }
-    setTimelinePlayError(null);
-    setTimelinePlaySrc(timelinePlaybackSrc(id));
-  }, [dirty, handleSave, mode, timelineData.id]);
-
-  const handlePlayTimelineToClient = useCallback(async () => {
-    if (mode !== "timeline") return;
-    const id = timelineData.id;
-    if (!id) {
-      setMessageForMode("請先設定 timeline id", "timeline");
-      return;
-    }
-    try {
-      await playIframeTimeline(id, {}, { targetClientId: timelineData.clientId || timelineData.client_id });
-      setMessageForMode("已送出 timeline 播放", "timeline");
-    } catch (err) {
-      setMessageForMode(err.message || "播放失敗", "timeline");
-    }
-  }, [mode, setMessageForMode, timelineData.clientId, timelineData.client_id, timelineData.id]);
-
-  const handlePlayEpisode = useCallback(async () => {
-    if (mode !== "episode") return;
-    const id = episodeData.id;
-    if (!id) {
-      setMessageForMode("請先設定 episode id", "episode");
-      return;
-    }
-    const payload: Record<string, unknown> = {};
-    const map = parseTargetMap(episodeTargetOverride);
-    if (map && Object.keys(map).length > 0) {
-      payload.target_client_map = map;
-    }
-    try {
-      await playEpisode(id, payload);
-      setMessageForMode("已送出 episode 播放", "episode");
-    } catch (err) {
-      setMessageForMode(err.message || "播放失敗", "episode");
-    }
-  }, [episodeData.id, episodeTargetOverride, mode, setMessageForMode]);
-
-  const handlePlaySnapshot = useCallback(async () => {
-    if (mode !== "snapshot") return;
-    const client = (snapshotClient || "").trim();
-    const name = (snapshotName || "").trim();
-    if (!client || !name) {
-      setMessageForMode("請先設定 client 與 snapshot 名稱", "snapshot");
-      return;
-    }
-    if (dirty) {
-      const ok = await handleSave();
-      if (!ok) {
-        setMessageForMode("儲存失敗，無法播放", "snapshot");
-        return;
-      }
-    }
-    try {
-      setMessageForMode(`播放中 ${name} → ${client}...`, "snapshot");
-      await restoreIframeSnapshot(client, name);
-      setMessageForMode(`已送出 snapshot 到 ${client}`, "snapshot");
-    } catch (err) {
-      setMessageForMode(err.message || "播放失敗", "snapshot");
-    }
-  }, [dirty, handleSave, mode, setMessageForMode, snapshotClient, snapshotName]);
-
-  const canTimelinePaste = Boolean(clipboard && clipboard.mode === "timeline");
-  const canEpisodePaste = Boolean(clipboard && clipboard.mode === "episode");
-  const canSnapshotPaste = Boolean(clipboard && clipboard.mode === "snapshot");
-  const validationState = validationErrors.length ? "error" : "ok";
-  const dataState = isSaving ? "saving" : dirty ? "dirty" : "clean";
+    setSnapshotName,
+    snapshotOptions,
+    snapshotMessage,
+    selectedRows,
+    setSelectedRows,
+    batchDuration,
+    setBatchDuration,
+    batchTargetClient,
+    setBatchTargetClient,
+    timelinePreviewSrc,
+    timelinePreviewError,
+    timelinePlaySrc,
+    timelinePlayError,
+    snapshotPreviewSrc,
+    snapshotPreviewError,
+    snapshotPreviewWidth,
+    snapshotFrameHeight,
+    episodeTargetOverride,
+    setEpisodeTargetOverride,
+    isSaving,
+    jsonText,
+    handleModeChange,
+    handleLoadSelected,
+    handleLoadSnapshot,
+    handleSave,
+    handleJsonChange,
+    handleStepChange,
+    handleTrackChange,
+    handlePanelChange,
+    handleCopy,
+    handlePaste,
+    handleBatchApply,
+    handlePlayPreview,
+    handlePlayTimelineToClient,
+    handlePlayEpisode,
+    handlePlaySnapshot,
+    addStep,
+    addTrack,
+    addPanel,
+    moveRow,
+    duplicateRow,
+    removeRow,
+    focusRow,
+    syncJsonFromData,
+    canTimelinePaste,
+    canEpisodePaste,
+    canSnapshotPaste,
+    startSnapshotResize,
+  } = useTimelineEpisodeEditor();
 
   return (
     <div
