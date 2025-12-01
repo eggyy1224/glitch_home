@@ -1,5 +1,6 @@
 import type { IframeConfig, IframePanelConfig } from "../types/control";
 import type { SnapshotConfig, SnapshotPanel } from "../types/admin";
+import type { Scene } from "../types/scene";
 import type { EpisodeEntry, EpisodeTrack, IframeTimeline, TimelineStep } from "../types/timeline";
 
 export type EditorMode = "timeline" | "episode" | "snapshot";
@@ -7,6 +8,85 @@ export type EditorMode = "timeline" | "episode" | "snapshot";
 export interface EditorValidationError {
   path: string;
   message: string;
+}
+
+function validateAudioMix(
+  mix: Partial<Scene["audio_mix"]> | null | undefined,
+  basePath: string,
+  errors: EditorValidationError[],
+): void {
+  if (!mix || typeof mix !== "object") return;
+  const left = (mix as { left?: unknown }).left;
+  const right = (mix as { right?: unknown }).right;
+  const mode = (mix as { mode?: unknown }).mode;
+  const push = (field: string, message: string) => errors.push({ path: `${basePath}.${field}`, message });
+  if (left !== undefined && left !== null && (Number(left) < 0 || Number(left) > 1)) {
+    push("left", "left 需介於 0~1");
+  }
+  if (right !== undefined && right !== null && (Number(right) < 0 || Number(right) > 1)) {
+    push("right", "right 需介於 0~1");
+  }
+  if (mode !== undefined && mode !== null && typeof mode === "string" && mode.trim().length > 64) {
+    push("mode", "mode 長度過長");
+  }
+}
+
+export function validateScene(data: Partial<Scene> | null | undefined): EditorValidationError[] {
+  const errors: EditorValidationError[] = [];
+  if (!data || typeof data !== "object") {
+    return [{ path: "root", message: "scene 需要是物件" }];
+  }
+  const id = (data as { id?: unknown }).id;
+  if (!id || String(id).trim().length === 0) {
+    errors.push({ path: "id", message: "缺少 scene id" });
+  } else {
+    const cleaned = String(id).trim();
+    if (!/^[A-Za-z0-9_-]+$/.test(cleaned)) {
+      errors.push({ path: "id", message: "scene id 僅允許英數、底線、連字號" });
+    }
+  }
+
+  const rawTargets = (data as { targets?: unknown }).targets;
+  const normalizedTargets: Array<{ client: string; snapshot: string }> = [];
+  if (rawTargets && typeof rawTargets === "object" && !Array.isArray(rawTargets)) {
+    Object.entries(rawTargets as Record<string, unknown>).forEach(([client, ref]) => {
+      const c = (client || "").trim();
+      const snapshot = String(ref ?? "").trim();
+      if (c || snapshot) {
+        normalizedTargets.push({ client: c, snapshot });
+      }
+    });
+  } else if (Array.isArray(rawTargets)) {
+    rawTargets.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      const client = String((item as { client?: unknown }).client ?? "").trim();
+      const snapshot = String((item as { snapshot?: unknown }).snapshot ?? "").trim();
+      if (client || snapshot) {
+        normalizedTargets.push({ client, snapshot });
+      }
+    });
+  }
+
+  if (normalizedTargets.length === 0) {
+    errors.push({ path: "targets", message: "需要至少一個 target" });
+  } else {
+    normalizedTargets.forEach((item, index) => {
+      if (!item.client) {
+        errors.push({ path: `targets[${index}].client`, message: "client 不可為空" });
+      }
+      if (!item.snapshot) {
+        errors.push({ path: `targets[${index}].snapshot`, message: "snapshot 參考不可為空" });
+      } else if (item.snapshot.includes("/")) {
+        const [, namePart] = item.snapshot.split("/", 2);
+        if (!namePart || !namePart.trim()) {
+          errors.push({ path: `targets[${index}].snapshot`, message: "snapshot 名稱不可為空白" });
+        }
+      }
+    });
+  }
+
+  validateAudioMix((data as { audio_mix?: Scene["audio_mix"] }).audio_mix, "audio_mix", errors);
+  return errors;
 }
 
 export function validateTimeline(data: Partial<IframeTimeline> | null | undefined): EditorValidationError[] {

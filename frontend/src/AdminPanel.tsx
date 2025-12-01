@@ -15,6 +15,7 @@ import TimelineManager from "./components/TimelineManager";
 import EpisodeManager from "./components/EpisodeManager";
 import ScenesManager from "./components/ScenesManager";
 import ScriptsManager from "./components/ScriptsManager";
+import SceneEditor from "./components/scene/SceneEditor";
 import ClientStateQueuePanel from "./components/ClientStateQueuePanel";
 import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor";
 
@@ -41,6 +42,7 @@ export default function AdminPanel({
   const [visitedTabs, setVisitedTabs] = useState<string[]>(["manage"]);
   const [manageTab, setManageTab] = useState<string>("snapshot");
   const [visitedManageTabs, setVisitedManageTabs] = useState<string[]>(["snapshot"]);
+  const [editorTab, setEditorTab] = useState<string>("timeline");
   const resolvedDefaultClient = useMemo(() => {
     if (clientId && clientId !== "admin") return clientId;
     return "desktop";
@@ -259,7 +261,31 @@ export default function AdminPanel({
             id="admin-tabpanel-editor"
             data-ai-section="admin.tabpanel.editor"
           >
-            <TimelineEpisodeEditor />
+            <div style={{ marginBottom: 10, display: "flex", gap: 8, flexWrap: "wrap" }} role="tablist" aria-label="Editor 類型切換">
+              <button
+                type="button"
+                onClick={() => setEditorTab("timeline")}
+                style={editorTab === "timeline" ? activeTabButtonStyle : tabButtonStyle}
+                role="tab"
+                aria-selected={editorTab === "timeline"}
+                aria-controls="admin-editor-panel"
+                id="admin-editor-tab-timeline"
+              >
+                Snapshot / Timeline / Episode
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorTab("scene")}
+                style={editorTab === "scene" ? activeTabButtonStyle : tabButtonStyle}
+                role="tab"
+                aria-selected={editorTab === "scene"}
+                aria-controls="admin-editor-panel"
+                id="admin-editor-tab-scene"
+              >
+                Scene
+              </button>
+            </div>
+            {editorTab === "timeline" ? <TimelineEpisodeEditor /> : <SceneEditor />}
           </div>
         )}
         {visitedTabs.includes("state") && (
