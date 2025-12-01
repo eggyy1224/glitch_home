@@ -4,6 +4,8 @@ import { useCollageControls } from "../../../src/hooks/useCollageControls";
 import { fetchKinship } from "../../../src/api";
 import { ensureHtml2Canvas } from "../../../src/utils/html2canvasLoader";
 import type { Mock } from "vitest";
+import type { CollageControlsOptions } from "../../../src/hooks/useCollageControls";
+import type React from "react";
 
 vi.mock("../../../src/api", () => ({
   fetchKinship: vi.fn(),
@@ -88,7 +90,7 @@ describe("useCollageControls", () => {
   });
 
   it("套用遠端配置並在移除後恢復原本 pool", async () => {
-    const initialProps = {
+    const initialProps: CollageControlsOptions = {
       imagesBase: "/images",
       anchorImage: "anchor.png",
       remoteConfig: null,
@@ -133,6 +135,7 @@ describe("useCollageControls", () => {
   });
 
   it("在 controlsDisabled 時忽略控制輸入", async () => {
+    const createEvent = (value: string) => ({ target: { value } } as unknown as React.ChangeEvent<HTMLInputElement>);
     const { result } = renderHook(() =>
       useCollageControls({
         imagesBase: "/images",
@@ -147,9 +150,9 @@ describe("useCollageControls", () => {
 
     const beforeCount = result.current.imageCount;
     act(() => {
-      result.current.handleImageCountChange({ target: { value: beforeCount + 5 } });
-      result.current.handleRowsChange({ target: { value: 99 } });
-      result.current.handleColsChange({ target: { value: 99 } });
+      result.current.handleImageCountChange(createEvent(String(beforeCount + 5)));
+      result.current.handleRowsChange(createEvent("99"));
+      result.current.handleColsChange(createEvent("99"));
       result.current.toggleMixPieces();
       result.current.handleShuffle();
     });

@@ -5,7 +5,9 @@ const renderMock = vi.fn();
 const createRootMock = vi.fn(() => ({ render: renderMock }));
 
 const AppMock = () => <div data-testid="app" />;
-const AppModeProviderMock = ({ children }) => <div data-testid="app-mode-provider">{children}</div>;
+const AppModeProviderMock: React.FC<React.PropsWithChildren> = ({ children }) => (
+  <div data-testid="app-mode-provider">{children}</div>
+);
 
 vi.mock("react-dom/client", () => ({
   createRoot: createRootMock,

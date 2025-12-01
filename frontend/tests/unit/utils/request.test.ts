@@ -70,7 +70,9 @@ describe("request utility", () => {
         headers: expect.objectContaining({ "Content-Type": "application/json" }),
       }),
     );
-    const body = fetchMock.mock.lastCall[1].body;
+    const lastCall = fetchMock.mock.lastCall;
+    expect(lastCall).toBeTruthy();
+    const body = lastCall?.[1]?.body;
     expect(body).toBe(JSON.stringify({ hello: "world" }));
   });
 

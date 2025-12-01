@@ -48,30 +48,31 @@ describe("useKinshipNavigation", () => {
   });
 
   it("使用注入的 clock 安排導覽並能取消", () => {
-    const clearTimeout = vi.fn();
-    let scheduledCallback = null;
-    const setTimeout = vi.fn((cb: () => void, delay: number) => {
-      scheduledCallback = cb;
-      return delay;
+    vi.useFakeTimers();
+    const clearTimeoutMock = vi.fn<Parameters<typeof clearTimeout>, ReturnType<typeof clearTimeout>>();
+    const setTimeoutMock = vi.fn<Parameters<typeof setTimeout>, ReturnType<typeof setTimeout>>((cb, delay) => {
+      return setTimeout(cb, delay);
     });
     const onNavigate = vi.fn();
-    const clock = { setTimeout, clearTimeout };
+    const clock = { setTimeout: setTimeoutMock, clearTimeout: clearTimeoutMock };
     const { result } = renderHook(() => useKinshipNavigation({ clock, getSearch: () => "" }));
 
-    let cancel;
+    let cancel: (() => void) | undefined;
     act(() => {
       cancel = result.current.scheduleNavigation("next.png", onNavigate, 5);
     });
 
-    expect(setTimeout).toHaveBeenCalled();
-    const firstCall = setTimeout.mock.calls[0] || [];
-    const [callback, delay] = firstCall;
-    expect(typeof callback).toBe("function");
-    expect(delay).toBe(5000);
-    scheduledCallback();
+    expect(setTimeoutMock).toHaveBeenCalled();
+    expect(setTimeoutMock).toHaveBeenCalledWith(expect.any(Function), 5000);
+    const [callback] = setTimeoutMock.mock.calls[0] ?? [];
+    if (typeof callback === "function") {
+      callback();
+    }
     expect(onNavigate).toHaveBeenCalledWith("next.png");
 
-    cancel();
-    expect(clearTimeout).toHaveBeenCalledWith(5000);
+    cancel?.();
+    const timerId = setTimeoutMock.mock.results[0]?.value;
+    expect(clearTimeoutMock).toHaveBeenCalledWith(timerId);
+    vi.useRealTimers();
   });
 });

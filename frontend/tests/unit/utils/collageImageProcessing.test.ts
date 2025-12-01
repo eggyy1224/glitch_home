@@ -1,31 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createImageProcessing, edgeKeyForPiece } from "../../../src/utils/collageImageProcessing";
+import { createImageProcessing, edgeKeyForPiece, type CollageImageProcessing } from "../../../src/utils/collageImageProcessing";
 
 class FakeImage {
-  constructor() {
-    this.width = 2;
-    this.height = 2;
-    this.naturalWidth = 2;
-    this.naturalHeight = 2;
-    this.onload = null;
-    this.onerror = null;
+  width = 2;
+  height = 2;
+  naturalWidth = 2;
+  naturalHeight = 2;
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  private _src = "";
+
+  set src(value: string) {
+    this._src = value;
+    this.onload?.();
   }
 
-  set src(value) {
-    this._src = value;
-    if (this.onload) {
-      this.onload();
-    }
+  get src() {
+    return this._src;
   }
 }
 
 describe("createImageProcessing", () => {
-  let createImageElement;
-  let createCanvas;
-  let service;
+  let createImageElement: () => HTMLImageElement;
+  let createCanvas: () => HTMLCanvasElement;
+  let service: CollageImageProcessing;
 
   beforeEach(() => {
-    createImageElement = vi.fn(() => new FakeImage());
+    createImageElement = vi.fn(() => new FakeImage() as unknown as HTMLImageElement);
     createCanvas = vi.fn(() => {
       const ctx = {
         clearRect: vi.fn(),
@@ -37,7 +38,7 @@ describe("createImageProcessing", () => {
           ]),
         })),
       };
-      return { width: 0, height: 0, getContext: vi.fn(() => ctx) };
+      return { width: 0, height: 0, getContext: vi.fn(() => ctx) } as unknown as HTMLCanvasElement;
     });
 
     service = createImageProcessing({
@@ -63,6 +64,10 @@ describe("createImageProcessing", () => {
     expect(first).toBe(second);
     expect(createImageElement).toHaveBeenCalledTimes(1);
     const edges = first.get(edgeKeyForPiece({ imageId: "image-a", sourceRow: 0, sourceCol: 0 }));
+    expect(edges).toBeDefined();
+    if (!edges) {
+      throw new Error("edges not computed");
+    }
     expect(edges).toHaveProperty("center");
     expect(edges.top[0]).toBeGreaterThan(0);
   });

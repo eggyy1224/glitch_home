@@ -1,8 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type APIRequestContext, type FrameLocator } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
 
-async function fetchIframePanels(request, clientId?: string | null) {
+async function fetchIframePanels(request: APIRequestContext, clientId?: string | null) {
   const suffix = clientId ? `?client=${clientId}` : "";
   const response = await request.get(`/api/iframe-config${suffix}`);
   expect(response.ok()).toBeTruthy();
@@ -12,9 +12,11 @@ async function fetchIframePanels(request, clientId?: string | null) {
   return panels;
 }
 
-async function expectFrameHasContent(frameLocator) {
+async function expectFrameHasContent(frameLocator: FrameLocator) {
   await expect(frameLocator.locator("body")).toBeVisible({ timeout: 20_000 });
-  const childCount = await frameLocator.locator("body").evaluate((node) => node.childElementCount);
+  const childCount = await frameLocator
+    .locator("body")
+    .evaluate((node) => (node as HTMLElement).childElementCount);
   expect(childCount).toBeGreaterThan(0);
 }
 

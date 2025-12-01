@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vite
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useKinshipData } from "../../../src/hooks/useKinshipData";
 import type * as api from "../../../src/api";
-import type { KinshipNavigation } from "../../../src/hooks/useKinshipNavigation";
 
 type ApiMocks = {
   fetchKinship: Mock;
@@ -58,15 +57,19 @@ describe("useKinshipData", () => {
     );
 
     await waitFor(() => expect(result.current.data).not.toBeNull());
+    const data = result.current.data;
     expect(result.current.err).toBeNull();
-    expect(result.current.data.original_image).toBe("seed.png");
+    if (!data) {
+      throw new Error("data not loaded");
+    }
+    expect(data.original_image).toBe("seed.png");
     expect(result.current.clusters).toHaveLength(1);
     expect(result.current.clusters[0].original).toBe("seed.png");
   });
 
   it("navigateToImage 會透過注入的 URL 更新器並設定 imgId", async () => {
     apiMocks.fetchKinship.mockResolvedValue(kinshipPayload);
-    const navigation: KinshipNavigation = {
+    const navigation = {
       updateUrlParams: vi.fn(),
       getAutoplayConfig: () => ({ continuous: true, autoplay: false, stepSec: 2 }),
       readVisitedImages: () => new Set<string>(),
@@ -109,7 +112,7 @@ describe("useKinshipData", () => {
 
   it("會使用注入的導覽工具安排自動播放並更新 imgId", async () => {
     apiMocks.fetchKinship.mockResolvedValue(kinshipPayload);
-    const navigation: KinshipNavigation = {
+    const navigation = {
       updateUrlParams: vi.fn(),
       readVisitedImages: vi.fn(() => new Set<string>(["seed.png"])),
       saveVisitedImages: vi.fn(),
@@ -136,11 +139,7 @@ describe("useKinshipData", () => {
 
     expect(navigation.readVisitedImages).toHaveBeenCalled();
     expect(navigation.saveVisitedImages).toHaveBeenCalled();
-  expect(navigation.scheduleNavigation).toHaveBeenCalledWith(
-    "child-1",
-    expect.anything(),
-    3,
-  );
+    expect(navigation.scheduleNavigation).toHaveBeenCalledWith("child-1", expect.anything(), 3);
     expect(navigation.updateUrlParams).toHaveBeenCalledWith("child-1");
   });
 });

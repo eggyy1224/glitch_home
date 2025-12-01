@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { useIframeTimelinePlayer } from "../../../src/hooks/useIframeTimelinePlayer";
 import { fetchIframeTimeline } from "../../../src/api";
 import type { Mock } from "vitest";
+import type { IframeTimeline } from "../../../src/types/timeline";
 
 vi.mock("../../../src/api", () => ({
   fetchIframeTimeline: vi.fn(),
@@ -23,16 +24,15 @@ describe("useIframeTimelinePlayer", () => {
   });
 
   it("載入 timeline 後自動播放並循環步驟", async () => {
-    fetchIframeTimelineMock.mockResolvedValue({
-      timeline: {
-        id: "tl-1",
-        loop: true,
-        steps: [
-          { snapshot: "a", duration: 0.1, config: { foo: 1 } },
-          { snapshot: "b", duration: 0.1, config: { foo: 2 } },
-        ],
-      },
-    });
+    const timeline: IframeTimeline = {
+      id: "tl-1",
+      loop: true,
+      steps: [
+        { snapshot: "a", duration: 0.1, config: { foo: 1 } },
+        { snapshot: "b", duration: 0.1, config: { foo: 2 } },
+      ],
+    };
+    fetchIframeTimelineMock.mockResolvedValue(timeline);
 
     const { result } = renderHook(() =>
       useIframeTimelinePlayer({
@@ -72,16 +72,15 @@ describe("useIframeTimelinePlayer", () => {
   });
 
   it("支援跳轉、播放/暫停、重載並套用配置", async () => {
-    fetchIframeTimeline.mockResolvedValue({
-      timeline: {
-        id: "tl-2",
-        loop: false,
-        steps: [
-          { snapshot: "x", duration: 0.1, config: { foo: "x" } },
-          { snapshot: "y", duration: 0.1, config: { foo: "y" } },
-        ],
-      },
-    });
+    const timeline: IframeTimeline = {
+      id: "tl-2",
+      loop: false,
+      steps: [
+        { snapshot: "x", duration: 0.1, config: { foo: "x" } },
+        { snapshot: "y", duration: 0.1, config: { foo: "y" } },
+      ],
+    };
+    fetchIframeTimelineMock.mockResolvedValue(timeline);
 
     const { result, rerender } = renderHook(
       (props) =>

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from "vitest";
+import type { IframeConfig } from "../../../src/types/control";
 import {
   buildQueryFromIframeConfig,
   clampInt,
@@ -31,25 +32,27 @@ describe('iframeConfig utilities', () => {
   describe('parseIframeConfigFromParams', () => {
     it('should parse valid iframe config from URL params', () => {
       const params = new URLSearchParams({
-        iframe_layout: 'grid',
-        iframe_gap: '12',
-        iframe_columns: '2',
-        iframe_panels: 'panel1,panel2',
-        iframe_panel1: '/?test1=true',
-        iframe_panel1_ratio: '1',
-        iframe_panel2: '/?test2=true',
-        iframe_panel2_ratio: '1.5'
-      })
+        iframe_layout: "grid",
+        iframe_gap: "12",
+        iframe_columns: "2",
+        iframe_panels: "panel1,panel2",
+        iframe_panel1: "/?test1=true",
+        iframe_panel1_ratio: "1",
+        iframe_panel2: "/?test2=true",
+        iframe_panel2_ratio: "1.5",
+      });
 
-      const config = parseIframeConfigFromParams(params)
-
-      expect(config).not.toBeNull()
-      expect(config.layout).toBe('grid')
-      expect(config.gap).toBe(12)
-      expect(config.columns).toBe(2)
-      expect(config.panels).toHaveLength(2)
-      expect(config.panels[0].src).toBe('/?test1=true')
-      expect(config.panels[1].ratio).toBe(1.5)
+      const config = parseIframeConfigFromParams(params);
+      expect(config).not.toBeNull();
+      if (!config) {
+        throw new Error("config is null");
+      }
+      expect(config.layout).toBe("grid");
+      expect(config.gap).toBe(12);
+      expect(config.columns).toBe(2);
+      expect(config.panels).toHaveLength(2);
+      expect(config.panels[0].src).toBe("/?test1=true");
+      expect(config.panels[1].ratio).toBe(1.5);
     })
 
     it('should return null for empty params', () => {
@@ -59,39 +62,44 @@ describe('iframeConfig utilities', () => {
 
     it('should use default layout when invalid', () => {
       const params = new URLSearchParams({
-        iframe_layout: 'invalid',
-        iframe_1: '/?test=true'
-      })
+        iframe_layout: "invalid",
+        iframe_1: "/?test=true",
+      });
 
-      const config = parseIframeConfigFromParams(params)
-      expect(config.layout).toBe('grid') // default
+      const config = parseIframeConfigFromParams(params);
+      expect(config).not.toBeNull();
+      expect(config?.layout).toBe("grid"); // default
     })
 
     it('should parse panels without iframe_panels param', () => {
       const params = new URLSearchParams({
-        iframe_layout: 'grid',
-        iframe_1: '/?test1=true',
-        iframe_2: '/?test2=true'
-      })
+        iframe_layout: "grid",
+        iframe_1: "/?test1=true",
+        iframe_2: "/?test2=true",
+      });
 
-      const config = parseIframeConfigFromParams(params)
-      expect(config.panels).toHaveLength(2)
-      expect(config.panels[0].id).toBe('1')
-      expect(config.panels[1].id).toBe('2')
+      const config = parseIframeConfigFromParams(params);
+      expect(config).not.toBeNull();
+      if (!config) {
+        throw new Error("config is null");
+      }
+      expect(config.panels).toHaveLength(2);
+      expect(config.panels[0].id).toBe("1");
+      expect(config.panels[1].id).toBe("2");
     })
   })
 
   describe('sanitizeIframeConfig', () => {
     it('should sanitize valid config', () => {
-      const config = {
-        layout: 'horizontal',
+      const config: IframeConfig = {
+        layout: "horizontal",
         gap: 10,
         columns: 3,
         panels: [
-          { id: 'panel1', src: '/?test=true', ratio: 1 },
-          { id: 'panel2', src: '/?test2=true', ratio: 1.5 }
-        ]
-      }
+          { id: "panel1", src: "/?test=true", ratio: 1, colSpan: 1, rowSpan: 1 },
+          { id: "panel2", src: "/?test2=true", ratio: 1.5, colSpan: 1, rowSpan: 1 },
+        ],
+      };
 
       const sanitized = sanitizeIframeConfig(config)
 
@@ -102,12 +110,12 @@ describe('iframeConfig utilities', () => {
     })
 
     it('should use fallback for invalid config', () => {
-      const fallback = {
-        layout: 'grid',
+      const fallback: IframeConfig = {
+        layout: "grid",
         gap: 0,
         columns: 2,
-        panels: []
-      }
+        panels: [],
+      };
 
       const sanitized = sanitizeIframeConfig(null, fallback)
       expect(sanitized.layout).toBe('grid')
@@ -116,27 +124,30 @@ describe('iframeConfig utilities', () => {
 
     it('should sanitize panels array', () => {
       const config = {
-        layout: 'grid',
+        layout: "grid",
         panels: [
-          { src: '/?test=true', ratio: 1 },
-          { src: '', ratio: 1 }, // Invalid - empty src
-          { src: '/?test2=true', ratio: 'invalid' } // Invalid ratio
-        ]
-      }
+          { id: "p1", src: "/?test=true", ratio: 1 },
+          { id: "p2", src: "", ratio: 1 }, // Invalid - empty src
+          { id: "p3", src: "/?test2=true", ratio: "invalid" as unknown as number }, // Invalid ratio
+        ],
+      };
 
       const sanitized = sanitizeIframeConfig(config)
+      if (!sanitized) {
+        throw new Error("sanitized config is null");
+      }
       // Should filter out invalid panels
       expect(sanitized.panels.length).toBeGreaterThanOrEqual(1)
     })
 
     it('should handle duplicate panel IDs', () => {
       const config = {
-        layout: 'grid',
+        layout: "grid",
         panels: [
-          { id: 'panel1', src: '/?test1=true' },
-          { id: 'panel1', src: '/?test2=true' } // Duplicate ID
-        ]
-      }
+          { id: "panel1", src: "/?test1=true" },
+          { id: "panel1", src: "/?test2=true" }, // Duplicate ID
+        ],
+      };
 
     const sanitized = sanitizeIframeConfig(config)
     expect(sanitized.panels).toHaveLength(2)
@@ -154,10 +165,10 @@ describe('iframeConfig utilities', () => {
   describe('sanitizePanels', () => {
     it('should filter invalid panels and clamp spans', () => {
       const panels = [
-        { id: 'p1', src: '/one', colSpan: 0, rowSpan: Infinity },
-        { src: '   ', ratio: -1 },
-        { id: 'p2', src: '/two', col_span: '3', row_span: '2' }
-      ]
+        { id: "p1", src: "/one", colSpan: 0, rowSpan: Infinity },
+        { id: "p-invalid", src: "   ", ratio: -1 },
+        { id: "p2", src: "/two", col_span: "3", row_span: "2" },
+      ];
 
       const sanitized = sanitizePanels(panels)
       expect(sanitized).toHaveLength(2)
@@ -168,7 +179,7 @@ describe('iframeConfig utilities', () => {
     })
 
     it('should return fallback panels when sanitized list is empty', () => {
-      const fallback = [{ id: 'fallback', src: '/fallback' }]
+      const fallback = [{ id: "fallback", src: "/fallback" }];
       const sanitized = sanitizePanels([{ src: '' }], fallback)
       expect(sanitized).toEqual(fallback)
       expect(sanitized).not.toBe(fallback)
@@ -177,25 +188,28 @@ describe('iframeConfig utilities', () => {
 
   describe('buildQueryFromIframeConfig', () => {
     it('should build query params from config', () => {
-      const config = {
-        layout: 'grid',
+      const config: IframeConfig = {
+        layout: "grid",
         gap: 12,
         columns: 2,
         panels: [
-          { id: 'panel1', src: '/?test1=true', ratio: 1, label: 'Panel 1' },
-          { id: 'panel2', src: '/?test2=true', ratio: 1.5 }
-        ]
+          { id: "panel1", src: "/?test1=true", ratio: 1, label: "Panel 1", colSpan: 1, rowSpan: 1 },
+          { id: "panel2", src: "/?test2=true", ratio: 1.5, colSpan: 1, rowSpan: 1 },
+        ],
+      };
+
+      const query = buildQueryFromIframeConfig(config);
+
+      expect(query).not.toBeNull();
+      if (!query) {
+        throw new Error("query is null");
       }
-
-      const query = buildQueryFromIframeConfig(config)
-
-      expect(query).not.toBeNull()
-      expect(query).toContainEqual(['iframe_layout', 'grid'])
-      expect(query).toContainEqual(['iframe_gap', '12'])
-      expect(query).toContainEqual(['iframe_columns', '2'])
-      expect(query).toContainEqual(['iframe_p1', '/?test1=true'])
-      expect(query).toContainEqual(['iframe_p1_label', 'Panel 1'])
-      expect(query).toContainEqual(['iframe_p2_ratio', '1.5'])
+      expect(query).toContainEqual(["iframe_layout", "grid"]);
+      expect(query).toContainEqual(["iframe_gap", "12"]);
+      expect(query).toContainEqual(["iframe_columns", "2"]);
+      expect(query).toContainEqual(["iframe_p1", "/?test1=true"]);
+      expect(query).toContainEqual(["iframe_p1_label", "Panel 1"]);
+      expect(query).toContainEqual(["iframe_p2_ratio", "1.5"]);
     })
 
     it('should return null for empty config', () => {
@@ -214,10 +228,12 @@ describe('iframeConfig utilities', () => {
       }
 
       const query = buildQueryFromIframeConfig(config)
+      if (!query) {
+        throw new Error("query is null");
+      }
       const panelKeys = query.filter(([key]) => key.startsWith('iframe_p'))
       // Should only have entries for panel1
       expect(panelKeys.length).toBeGreaterThan(0)
     })
   })
 })
-

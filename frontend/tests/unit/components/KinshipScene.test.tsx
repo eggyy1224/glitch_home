@@ -8,6 +8,7 @@ import {
   KinshipModes,
   selectKinshipMode,
 } from "../../../src/components/kinship/hooks/useKinshipModeSelection";
+import type { KinshipCluster, KinshipData } from "../../../src/types/kinship";
 
 const {
   PhylogenySceneMock,
@@ -15,7 +16,8 @@ const {
   SceneClustersMock,
   handleCreatedMock,
 } = vi.hoisted(() => {
-  const stub = (name) => vi.fn((props) => <div data-testid={name} data-props={JSON.stringify(props)} />);
+  const stub = (name: string) =>
+    vi.fn((props: Record<string, unknown>) => <div data-testid={name} data-props={JSON.stringify(props)} />);
   return {
     PhylogenySceneMock: stub("phylogeny"),
     IncubatorSceneMock: stub("incubator"),
@@ -33,7 +35,15 @@ vi.mock("@react-three/fiber", () => {
   const cameraStub = { position: { x: 0, y: 0, z: 0 } };
 
   return {
-    Canvas: ({ children, camera, onCreated }) => {
+    Canvas: ({
+      children,
+      camera,
+      onCreated,
+    }: {
+      children?: React.ReactNode | (() => React.ReactNode);
+      camera?: unknown;
+      onCreated?: (state: { gl: unknown; scene: unknown; camera: unknown }) => void;
+    }) => {
       if (onCreated) {
         onCreated({ gl: {}, scene: {}, camera: {} });
       }
@@ -43,13 +53,14 @@ vi.mock("@react-three/fiber", () => {
         </div>
       );
     },
-    useThree: (selector) => selector({ controls: controlsStub, camera: cameraStub }),
-    useFrame: (cb) => cb?.({ camera: cameraStub }, 0),
+    useThree: (selector: (state: { controls: typeof controlsStub; camera: typeof cameraStub }) => unknown) =>
+      selector({ controls: controlsStub, camera: cameraStub }),
+    useFrame: (cb?: (state: { camera: typeof cameraStub }, delta: number) => void) => cb?.({ camera: cameraStub }, 0),
   };
 });
 
 vi.mock("@react-three/drei", () => ({
-  OrbitControls: ({ minDistance, maxDistance }) => (
+  OrbitControls: ({ minDistance, maxDistance }: { minDistance?: number; maxDistance?: number }) => (
     <div
       data-testid="orbit-controls"
       data-min-distance={minDistance}
@@ -109,8 +120,8 @@ describe("useKinshipModeSelection", () => {
 });
 
 describe("KinshipScene 渲染", () => {
-  const clusters = [{ id: "c1" }];
-  const data = { id: "d1" };
+  const clusters: KinshipCluster[] = [{ id: "c1", anchor: { x: 0, y: 0, z: 0 }, original: "seed.png" }];
+  const data: KinshipData = { original_image: "d1", children: [], parents: [], siblings: [] };
   const baseProps = { imagesBase: "/imgs/", onPick: vi.fn() };
 
   beforeEach(() => {

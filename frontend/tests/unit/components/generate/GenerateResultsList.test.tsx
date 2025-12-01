@@ -1,13 +1,14 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import GenerateResultsList from "../../../../src/components/generate/GenerateResultsList";
+import type { ResolvableImage } from "../../../../src/utils/generate";
 
 const mockImages = [
   { filename: "one.png", url: "one.png" },
   { filename: "two.png", url: "two.png" },
 ];
 
-const resolver = (image) => image.url ?? image.filename;
+const resolver = (image: ResolvableImage) => image.url ?? image.filename ?? "";
 
 describe("GenerateResultsList", () => {
   it("會顯示搜尋模式切換並回呼返回按鈕", () => {

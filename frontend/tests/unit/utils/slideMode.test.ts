@@ -47,14 +47,14 @@ describe("slideMode utils", () => {
 
   it("canvasToBlob 成功與失敗", async () => {
     const okCanvas = {
-      toBlob: (cb) => cb(new Blob(["ok"])),
-    };
+      toBlob: (cb: BlobCallback) => cb(new Blob(["ok"])),
+    } as unknown as HTMLCanvasElement;
     const okBlob = await canvasToBlob(okCanvas);
     expect(okBlob).toBeInstanceOf(Blob);
 
     const badCanvas = {
-      toBlob: (cb) => cb(null),
-    };
+      toBlob: (cb: BlobCallback) => cb(null),
+    } as unknown as HTMLCanvasElement;
     await expect(canvasToBlob(badCanvas)).rejects.toThrow("無法產生截圖");
   });
 });

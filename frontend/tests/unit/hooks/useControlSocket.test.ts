@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useControlSocket } from "../../../src/hooks/useControlSocket";
 
@@ -11,7 +11,7 @@ Object.assign(wsCtor, {
   CLOSED: 3,
 });
 global.WebSocket = wsCtor;
-const webSocketMock = global.WebSocket as unknown as vi.Mock;
+const webSocketMock = global.WebSocket as unknown as Mock;
 
 // Mock import.meta.env
 vi.stubGlobal("import", {
@@ -192,7 +192,7 @@ describe("useControlSocket", () => {
     { type: 'video_control', handler: 'onVideoControl', payload: { action: 'pause' } },
     { type: 'timeline_control', handler: 'onTimelineControl', payload: { command: 'next' } }
   ])('handles %s messages', async ({ type, handler, payload }) => {
-    const handlers = {
+    const handlers: Record<string, ReturnType<typeof vi.fn>> = {
       onScreenshotLifecycle: vi.fn(),
       onSoundPlay: vi.fn(),
       onIframeConfig: vi.fn(),

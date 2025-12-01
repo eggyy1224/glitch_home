@@ -13,13 +13,13 @@
    - 檔案：`tests/components/**`
    - 重點：補足必填 props、ref/null 守衛、使用共用樣板，移除 implicit any/rest any；API 改用 typed mock helpers。
    - 備註：typecheck 仍有 hooks/utils/e2e 未修，待後續任務處理。
-3) Hooks/API 測試修正
+3) Hooks/API 測試修正（已完成）
    - 檔案：`tests/unit/hooks/**`、`tests/unit/api.test.ts`、`tests/unit/utils/request.test.ts`
    - 重點：vi mock 具體化（mockReturnValue/mockResolvedValue），處理 unknown/null refs。
-4) Utils/E2E 假物件修正
+4) Utils/E2E 假物件修正（已完成）
    - 檔案：`tests/unit/utils/**`、`tests/e2e/display.spec.ts`
    - 重點：補 FakeImage/FakeCanvas 型別、Iframe panels 必填欄位、Playwright handler 型別。
-5) 驗證
+5) 驗證（已完成）
    - 命令：`npm run typecheck:strict -- --pretty false`
 
 ## 依賴

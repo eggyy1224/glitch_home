@@ -2,17 +2,23 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import ModeLayout from "../../../src/components/ModeLayout";
+import type { OverlayContent } from "../../../src/types/overlay";
+import type { PlayRequest } from "../../../src/SoundPlayer";
 
-const DummyComponent = vi.fn(() => <div data-testid="dummy" />);
+const DummyComponent: React.FC<Record<string, unknown>> = vi.fn(() => <div data-testid="dummy" />);
 
 vi.mock("../../../src/SoundPlayer", () => ({
   __esModule: true,
-  default: (props) => <div data-testid="sound-player" data-visible={props.visible ? "1" : "0"} />,
+  default: (props: { visible?: boolean; playRequest?: PlayRequest | null }) => (
+    <div data-testid="sound-player" data-visible={props.visible ? "1" : "0"} data-play={props.playRequest?.filename ?? ""} />
+  ),
 }));
 
 vi.mock("../../../src/SubtitleOverlay", () => ({
   __esModule: true,
-  default: (props) => <div data-testid="subtitle" data-text={props.subtitle || ""} />,
+  default: (props: { subtitle?: OverlayContent | null }) => (
+    <div data-testid="subtitle" data-text={props.subtitle?.text ?? ""} />
+  ),
 }));
 
 beforeEach(() => {
@@ -24,6 +30,13 @@ describe("ModeLayout", () => {
     const onCaptureReady = vi.fn();
     const beforeContent = <div data-testid="before" />;
     const afterContent = <div data-testid="after" />;
+    const subtitle: OverlayContent = {
+      text: "hello",
+      language: "zh-TW",
+      durationSeconds: null,
+      expiresAt: null,
+      updatedAt: null,
+    };
 
     render(
       <ModeLayout
@@ -37,7 +50,7 @@ describe("ModeLayout", () => {
         soundPlayRequest={{ filename: "tone.wav" }}
         onSoundHandled={vi.fn()}
         showInfo
-        subtitle="hello"
+        subtitle={subtitle}
       />,
     );
 

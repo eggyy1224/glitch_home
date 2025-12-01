@@ -1,5 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { CollageConfig } from "../../../src/utils/collageConfig";
+import type { OverlayContent } from "../../../src/types/overlay";
+import type { KinshipCluster, KinshipData } from "../../../src/types/kinship";
 
 const {
   IframeModeMock,
@@ -15,7 +18,7 @@ const {
   KinshipSceneMock,
   AdminPanelMock,
 } = vi.hoisted(() => {
-  const stub = (name) => vi.fn(() => name);
+  const stub = (name: string) => vi.fn(() => name);
   return {
     IframeModeMock: stub("IframeMode"),
     SlideModeMock: stub("SlideMode"),
@@ -47,6 +50,12 @@ vi.mock("../../../src/AdminPanel", () => ({ __esModule: true, default: AdminPane
 
 import { createModeRenderMap } from "../../../src/modes/createModeRenderMap";
 import { DisplayModes } from "../../../src/hooks/useDisplayMode";
+import { createCollageConfig } from "../../testUtils";
+
+const collageRemoteConfig: CollageConfig = createCollageConfig();
+const clusters: KinshipCluster[] = [{ id: "c1", anchor: { x: 0, y: 0, z: 0 }, original: "seed.png" }];
+const kinshipData: KinshipData = { original_image: "img-1", children: [], siblings: [], parents: [] };
+const caption: OverlayContent = { text: "hello", language: null, durationSeconds: null, expiresAt: null, updatedAt: null };
 
 const baseProps = {
   iframeActiveConfig: { layout: "grid" },
@@ -58,18 +67,18 @@ const baseProps = {
   slideIntervalMs: 3000,
   navigateToImage: vi.fn(),
   showInfo: true,
-  collageRemoteConfig: { panels: [] },
+  collageRemoteConfig,
   collageControlsEnabled: false,
   collageRemoteSource: "server",
-  caption: "hello",
+  caption,
   videoControllerRef: { current: null },
-  clusters: [{ id: "c1" }],
-  data: { original_image: "img-1" },
+  clusters,
+  data: kinshipData,
   phylogenyMode: false,
   incubatorMode: false,
   handleFpsUpdate: vi.fn(),
   handleCameraUpdate: vi.fn(),
-  pendingPreset: { name: "p1" },
+  pendingPreset: { position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 } },
   topbarContent: <div data-testid="top" />,
   screenshotContent: <div data-testid="shot" />,
   clientId: "client-a",
@@ -82,9 +91,10 @@ const baseProps = {
   canRebuildIndex: true,
 };
 
-const resolveComponent = async (component) => {
-  if (component?.$$typeof === Symbol.for("react.lazy")) {
-    const payloadResult = component._payload?._result;
+const resolveComponent = async (component: React.ComponentType<any> | React.LazyExoticComponent<any> | null) => {
+  const lazyComponent = component as any;
+  if (lazyComponent?.$$typeof === Symbol.for("react.lazy")) {
+    const payloadResult = lazyComponent._payload?._result;
     if (typeof payloadResult === "function") {
       const mod = await payloadResult();
       return mod.default ?? mod;
@@ -129,8 +139,8 @@ describe("createModeRenderMap", () => {
       remoteSource: "server",
     });
 
-    const caption = map[DisplayModes.CAPTION];
-    expect(caption.componentProps).toEqual({ caption: "hello" });
+    const captionEntry = map[DisplayModes.CAPTION];
+    expect(captionEntry.componentProps).toEqual({ caption });
 
     const staticMode = map[DisplayModes.STATIC];
     expect(staticMode.withCaptureReady).toBe(true);
