@@ -6,6 +6,7 @@ import {
   queueSoundPlay,
   generateMixTwo,
 } from "../../src/api";
+import type { Mock } from "vitest";
 
 const originalFetch = global.fetch;
 const createResponse = ({
@@ -15,17 +16,18 @@ const createResponse = ({
   textData = "ok",
   url = "http://localhost/test",
   contentType = "application/json",
-} = {}) => ({
-  ok,
-  status,
-  url,
-  headers: { get: vi.fn().mockReturnValue(contentType) },
-  json: vi.fn().mockResolvedValue(jsonData),
-  text: vi.fn().mockResolvedValue(textData),
-});
+} = {}) =>
+  ({
+    ok,
+    status,
+    url,
+    headers: { get: vi.fn().mockReturnValue(contentType) },
+    json: vi.fn().mockResolvedValue(jsonData),
+    text: vi.fn().mockResolvedValue(textData),
+  }) as unknown as Response;
 
 describe("api.js fetch helpers", () => {
-  let fetchMock;
+  let fetchMock: Mock<[input: RequestInfo | URL, init?: RequestInit | undefined], Promise<Response>>;
 
   beforeEach(() => {
     fetchMock = vi.fn();
@@ -52,6 +54,7 @@ describe("api.js fetch helpers", () => {
   });
 
   it("fetchIframeTimeline 需要 timelineId 並回傳詳細錯誤訊息", async () => {
+    // @ts-expect-error  intentionally missing timelineId to assert error
     await expect(fetchIframeTimeline()).rejects.toThrow("timelineId is required");
 
     const timelinePayload = { steps: [] };
@@ -91,7 +94,9 @@ describe("api.js fetch helpers", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/sound-play", expect.objectContaining({
       method: "POST",
     }));
-    const body = JSON.parse(fetchMock.mock.lastCall[1].body);
+    const lastCall = fetchMock.mock.lastCall;
+    expect(lastCall).toBeDefined();
+    const body = JSON.parse((lastCall?.[1]?.body as string) ?? "{}");
     expect(body).toMatchObject({ filename: "effect.wav", target_client_id: "client-z" });
 
     fetchMock.mockResolvedValueOnce(

@@ -2,31 +2,39 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } 
 import { renderHook, act } from "@testing-library/react";
 import { useScreenshotManager } from "../../../src/hooks/useScreenshotManager";
 import { uploadScreenshot, reportScreenshotFailure } from "../../../src/api";
+import type { Mock } from "vitest";
 
 vi.mock("../../../src/api", () => ({
   uploadScreenshot: vi.fn(),
   reportScreenshotFailure: vi.fn(),
 }));
 
-const createManager = (clientId = "client-a", options) =>
+const uploadScreenshotMock = uploadScreenshot as Mock<Parameters<typeof uploadScreenshot>, ReturnType<typeof uploadScreenshot>>;
+const reportScreenshotFailureMock = reportScreenshotFailure as Mock<
+  Parameters<typeof reportScreenshotFailure>,
+  ReturnType<typeof reportScreenshotFailure>
+>;
+
+const createManager = (clientId = "client-a", options?: { canWriteAssets?: boolean; forbidMessage?: string }) =>
   renderHook(() => useScreenshotManager(clientId, options));
 
 describe("useScreenshotManager", () => {
-  let originalActEnv;
+  let originalActEnv: boolean | undefined;
   beforeAll(() => {
-    originalActEnv = globalThis.IS_REACT_ACT_ENVIRONMENT;
-    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const globalObj = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    originalActEnv = globalObj.IS_REACT_ACT_ENVIRONMENT;
+    globalObj.IS_REACT_ACT_ENVIRONMENT = true;
   });
 
   afterAll(() => {
-    globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnv;
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = originalActEnv;
   });
 
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    uploadScreenshot.mockResolvedValue({ filename: "capture.png" });
-    reportScreenshotFailure.mockResolvedValue({});
+    uploadScreenshotMock.mockResolvedValue({ filename: "capture.png" });
+    reportScreenshotFailureMock.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -60,7 +68,7 @@ describe("useScreenshotManager", () => {
   });
 
   it("排隊截圖會自動處理請求並在失敗時回報", async () => {
-    uploadScreenshot.mockRejectedValueOnce(new Error("oops"));
+    uploadScreenshotMock.mockRejectedValueOnce(new Error("oops"));
     const capture = vi.fn(() => Promise.resolve(new Blob()));
     const { result } = createManager("client-auto");
 
@@ -80,7 +88,7 @@ describe("useScreenshotManager", () => {
     });
 
     expect(result.current.isCapturing).toBe(false);
-    expect(reportScreenshotFailure).toHaveBeenCalledWith("auto-1", "oops", "client-auto");
+    expect(reportScreenshotFailureMock).toHaveBeenCalledWith("auto-1", "oops", "client-auto");
     expect(result.current.screenshotMessage).toContain("自動截圖失敗");
   });
 
@@ -98,8 +106,8 @@ describe("useScreenshotManager", () => {
       await Promise.resolve();
     });
 
-    expect(uploadScreenshot).not.toHaveBeenCalled();
-    expect(reportScreenshotFailure).toHaveBeenCalledWith("blocked-1", "禁止寫入", "client-readonly");
+    expect(uploadScreenshotMock).not.toHaveBeenCalled();
+    expect(reportScreenshotFailureMock).toHaveBeenCalledWith("blocked-1", "禁止寫入", "client-readonly");
     expect(result.current.screenshotMessage).toContain("禁止寫入");
   });
 
@@ -110,7 +118,7 @@ describe("useScreenshotManager", () => {
       result.current.enqueueScreenshotRequest({ request_id: "skip", target_client_id: "other" });
     });
     expect(result.current.screenshotMessage).toBeNull();
-    expect(uploadScreenshot).not.toHaveBeenCalled();
+    expect(uploadScreenshotMock).not.toHaveBeenCalled();
   });
 
   it("handleCaptureReady(null) 不會觸發截圖", () => {

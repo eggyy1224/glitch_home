@@ -1,27 +1,54 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useClientStateQueue } from "../../../src/hooks/useClientStateQueue";
-import {
-  fetchClientStates,
-  fetchClientQueue,
-  enqueueClientQueueItem,
-  cancelClientQueueItems,
-  delayClientQueueItems,
-  moveClientQueueItems,
-  stopIframeTimeline,
-} from "../../../src/api";
+import type * as api from "../../../src/api";
 
-vi.mock("../../../src/api", () => ({
-  fetchClientStates: vi.fn(),
-  fetchClientQueue: vi.fn(),
-  enqueueClientQueueItem: vi.fn(),
-  cancelClientQueueItems: vi.fn(),
-  delayClientQueueItems: vi.fn(),
-  moveClientQueueItems: vi.fn(),
-  stopIframeTimeline: vi.fn(),
-}));
+type ApiMocks = {
+  fetchClientStates: Mock;
+  fetchClientQueue: Mock;
+  enqueueClientQueueItem: Mock;
+  cancelClientQueueItems: Mock;
+  delayClientQueueItems: Mock;
+  moveClientQueueItems: Mock;
+  stopIframeTimeline: Mock;
+};
 
-let socketConfig;
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../../src/api", async () => {
+  const { createMockApi } = await import("../../testUtils");
+  const { mocks, factory } = createMockApi<
+    typeof api,
+    | "fetchClientStates"
+    | "fetchClientQueue"
+    | "enqueueClientQueueItem"
+    | "cancelClientQueueItems"
+    | "delayClientQueueItems"
+    | "moveClientQueueItems"
+    | "stopIframeTimeline"
+  >([
+    "fetchClientStates",
+    "fetchClientQueue",
+    "enqueueClientQueueItem",
+    "cancelClientQueueItems",
+    "delayClientQueueItems",
+    "moveClientQueueItems",
+    "stopIframeTimeline",
+  ]);
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
+});
+
+let socketConfig: { onClientState?: (payload: unknown) => void } | null;
 vi.mock("../../../src/hooks/useControlSocket", () => ({
   useControlSocket: vi.fn((options) => {
     socketConfig = options;
@@ -30,10 +57,11 @@ vi.mock("../../../src/hooks/useControlSocket", () => ({
 
 describe("useClientStateQueue", () => {
   beforeEach(() => {
+    apiMocks = getApiMocks();
     vi.clearAllMocks();
     socketConfig = null;
-    fetchClientStates.mockResolvedValue([]);
-    fetchClientQueue.mockResolvedValue({ items: [] });
+    apiMocks.fetchClientStates.mockResolvedValue([]);
+    apiMocks.fetchClientQueue.mockResolvedValue({ items: [] });
   });
 
   afterEach(() => {
@@ -41,11 +69,11 @@ describe("useClientStateQueue", () => {
   });
 
   it("初始化會載入並排序 client 狀態，並自動載入預設 client 的佇列", async () => {
-    fetchClientStates.mockResolvedValue([
+    apiMocks.fetchClientStates.mockResolvedValue([
       { client_id: "bravo", status: "idle", queue_size: 2 },
       { client_id: "alpha", status: "online", queue_size: 1 },
     ]);
-    fetchClientQueue.mockResolvedValue({ items: [{ id: "q1", type: "timeline" }] });
+    apiMocks.fetchClientQueue.mockResolvedValue({ items: [{ id: "q1", type: "timeline" }] });
 
     const { result, unmount } = renderHook(() => useClientStateQueue("bravo"));
 
@@ -54,7 +82,7 @@ describe("useClientStateQueue", () => {
     });
     expect(result.current.selectedClient).toBe("bravo");
     await waitFor(() => {
-      expect(fetchClientQueue).toHaveBeenCalledWith("bravo");
+      expect(apiMocks.fetchClientQueue).toHaveBeenCalledWith("bravo");
     });
     expect(result.current.queueItems).toEqual([{ id: "q1", type: "timeline" }]);
     expect(result.current.currentClientState?.status).toBe("idle");
@@ -62,14 +90,14 @@ describe("useClientStateQueue", () => {
   });
 
   it("支援 enqueue / delay / move / cancel / forceStop 流程並重整狀態", async () => {
-    fetchClientStates.mockResolvedValue([{ client_id: "client-1", status: "online" }]);
-    fetchClientQueue.mockResolvedValue({ items: [] });
-    enqueueClientQueueItem.mockResolvedValue({ item: { type: "snapshot" } });
+    apiMocks.fetchClientStates.mockResolvedValue([{ client_id: "client-1", status: "online" }]);
+    apiMocks.fetchClientQueue.mockResolvedValue({ items: [] });
+    apiMocks.enqueueClientQueueItem.mockResolvedValue({ item: { type: "snapshot" } });
 
     const { result, unmount } = renderHook(() => useClientStateQueue("client-1"));
 
     await waitFor(() => {
-      expect(fetchClientQueue).toHaveBeenCalledWith("client-1");
+      expect(apiMocks.fetchClientQueue).toHaveBeenCalledWith("client-1");
     });
 
     await act(async () => {
@@ -84,7 +112,7 @@ describe("useClientStateQueue", () => {
       });
     });
 
-    expect(enqueueClientQueueItem).toHaveBeenCalledWith({
+    expect(apiMocks.enqueueClientQueueItem).toHaveBeenCalledWith({
       client_id: "client-1",
       type: "snapshot",
       target_id: "snap-1",
@@ -93,8 +121,8 @@ describe("useClientStateQueue", () => {
       eta: "soon",
       payload: { foo: "bar" },
     });
-    expect(fetchClientQueue).toHaveBeenCalledTimes(2);
-    expect(fetchClientStates).toHaveBeenCalledTimes(2);
+    expect(apiMocks.fetchClientQueue).toHaveBeenCalledTimes(2);
+    expect(apiMocks.fetchClientStates).toHaveBeenCalledTimes(2);
 
     await act(async () => {
       await result.current.delayItems(["a", "b"], 30);
@@ -102,22 +130,22 @@ describe("useClientStateQueue", () => {
       await result.current.cancelItems(["b"]);
     });
 
-    expect(delayClientQueueItems).toHaveBeenCalledWith(["a", "b"], { deltaSeconds: 30 });
-    expect(moveClientQueueItems).toHaveBeenCalledWith(["a"], { position: "front" });
-    expect(cancelClientQueueItems).toHaveBeenCalledWith(["b"]);
+    expect(apiMocks.delayClientQueueItems).toHaveBeenCalledWith(["a", "b"], { deltaSeconds: 30 });
+    expect(apiMocks.moveClientQueueItems).toHaveBeenCalledWith(["a"], { position: "front" });
+    expect(apiMocks.cancelClientQueueItems).toHaveBeenCalledWith(["b"]);
 
     await act(async () => {
       await result.current.forceStopItem({ id: "z1", type: "timeline", client_id: "client-1", target_id: "tl-9" });
     });
 
-    expect(stopIframeTimeline).toHaveBeenCalledWith("client-1", "tl-9");
-    expect(cancelClientQueueItems).toHaveBeenCalledWith(["z1"]);
+    expect(apiMocks.stopIframeTimeline).toHaveBeenCalledWith("client-1", "tl-9");
+    expect(apiMocks.cancelClientQueueItems).toHaveBeenCalledWith(["z1"]);
     unmount();
   });
 
   it("收到 socket 狀態事件會更新 clients 與 queueItems", async () => {
-    fetchClientStates.mockResolvedValue([{ client_id: "c-1", status: "offline", queue_size: 0 }]);
-    fetchClientQueue.mockResolvedValue({ items: [] });
+    apiMocks.fetchClientStates.mockResolvedValue([{ client_id: "c-1", status: "offline", queue_size: 0 }]);
+    apiMocks.fetchClientQueue.mockResolvedValue({ items: [] });
 
     const { result, unmount } = renderHook(() => useClientStateQueue("c-1"));
 
@@ -126,7 +154,7 @@ describe("useClientStateQueue", () => {
     });
 
     act(() => {
-      socketConfig.onClientState({
+      socketConfig?.onClientState?.({
         client_id: "c-1",
         status: "busy",
         queue: [{ id: "live" }],

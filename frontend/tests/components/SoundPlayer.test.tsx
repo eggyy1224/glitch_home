@@ -1,19 +1,30 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type SpyInstance } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type SpyInstance, type Mock } from "vitest";
 import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SoundPlayer from "../../src/SoundPlayer";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
-  const { mocks, factory } = createMockApi<typeof api, "fetchSoundFiles">(["fetchSoundFiles"]);
-  return { mocks, createApi: factory };
-});
+type ApiMocks = {
+  fetchSoundFiles: Mock;
+};
 
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
+  const { mocks, factory } = createMockApi<typeof api, "fetchSoundFiles">(["fetchSoundFiles"]);
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
+});
 
 const mockFiles = [
   {
@@ -35,6 +46,7 @@ describe("SoundPlayer", () => {
   let pauseSpy: SpyInstance | undefined;
 
   beforeEach(() => {
+    apiMocks = getApiMocks();
     apiMocks.fetchSoundFiles.mockReset();
     apiMocks.fetchSoundFiles.mockResolvedValue({ files: mockFiles });
     playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());

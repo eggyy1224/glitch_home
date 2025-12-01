@@ -1,12 +1,33 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import EpisodeManager from "../../src/components/EpisodeManager";
 import { AdminPanelContext, type AdminPanelContextValue } from "../../src/AdminPanelContext";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  listEpisodes: Mock;
+  fetchEpisode: Mock;
+  createEpisode: Mock;
+  updateEpisode: Mock;
+  deleteEpisode: Mock;
+  cloneEpisode: Mock;
+  playEpisode: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<
     typeof api,
     | "listEpisodes"
@@ -17,13 +38,9 @@ const { mocks: apiMocks, createApi } = vi.hoisted(() => {
     | "cloneEpisode"
     | "playEpisode"
   >(["listEpisodes", "fetchEpisode", "createEpisode", "updateEpisode", "deleteEpisode", "cloneEpisode", "playEpisode"]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 const episodeData = {
   id: "ep1",
@@ -46,6 +63,7 @@ function renderWithContext(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", title: "demo", track_count: 1 }] });
   apiMocks.fetchEpisode.mockResolvedValue(episodeData);

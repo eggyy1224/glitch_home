@@ -1,11 +1,30 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import GenerateMode from "../../src/GenerateMode";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  generateMixTwo: Mock;
+  listOffspringImages: Mock;
+  createTextSearchRequest: Mock;
+  createImageUploadRequest: Mock;
+  createImageSearchRequest: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<
     typeof api,
     | "generateMixTwo"
@@ -14,13 +33,9 @@ const { mocks: apiMocks, createApi } = vi.hoisted(() => {
     | "createImageUploadRequest"
     | "createImageSearchRequest"
   >(["generateMixTwo", "listOffspringImages", "createTextSearchRequest", "createImageUploadRequest", "createImageSearchRequest"]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 const sampleImages = [
   { filename: "a.png", url: "/imgs/a.png" },
@@ -28,6 +43,7 @@ const sampleImages = [
 ];
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listOffspringImages.mockResolvedValue({ images: sampleImages });
   const resolvedRequest = <T,>(value: T) => ({ controller: new AbortController(), promise: Promise.resolve(value) });

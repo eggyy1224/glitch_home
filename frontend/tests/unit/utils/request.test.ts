@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { request, buildImageUrl } from "../../../src/utils/request";
+import type { Mock } from "vitest";
 
 const originalFetch = global.fetch;
 
@@ -10,17 +11,18 @@ const createResponse = ({
   textData = "",
   url = "http://localhost/api/test",
   contentType = "application/json",
-} = {}) => ({
-  ok,
-  status,
-  url,
-  headers: { get: vi.fn().mockReturnValue(contentType) },
-  json: vi.fn().mockResolvedValue(jsonData),
-  text: vi.fn().mockResolvedValue(textData),
-});
+} = {}) =>
+  ({
+    ok,
+    status,
+    url,
+    headers: { get: vi.fn().mockReturnValue(contentType) },
+    json: vi.fn().mockResolvedValue(jsonData),
+    text: vi.fn().mockResolvedValue(textData),
+  }) as unknown as Response;
 
 describe("request utility", () => {
-  let fetchMock;
+  let fetchMock: Mock<[input: RequestInfo | URL, init?: RequestInit | undefined], Promise<Response>>;
 
   beforeEach(() => {
     fetchMock = vi.fn();

@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { useCollageControls } from "../../../src/hooks/useCollageControls";
 import { fetchKinship } from "../../../src/api";
 import { ensureHtml2Canvas } from "../../../src/utils/html2canvasLoader";
+import type { Mock } from "vitest";
 
 vi.mock("../../../src/api", () => ({
   fetchKinship: vi.fn(),
@@ -14,26 +15,30 @@ vi.mock("../../../src/utils/html2canvasLoader", () => ({
 
 describe("useCollageControls", () => {
   const originalImage = global.Image;
+  const fetchKinshipMock = fetchKinship as Mock<Parameters<typeof fetchKinship>, ReturnType<typeof fetchKinship>>;
+  const ensureHtml2CanvasMock = ensureHtml2Canvas as Mock<
+    Parameters<typeof ensureHtml2Canvas>,
+    ReturnType<typeof ensureHtml2Canvas>
+  >;
 
   beforeAll(() => {
     class FakeImage {
-      constructor() {
-        this.width = 160;
-        this.height = 90;
-        this.naturalWidth = 160;
-        this.naturalHeight = 90;
-        this.onload = null;
-        this.onerror = null;
-      }
+      width = 160;
+      height = 90;
+      naturalWidth = 160;
+      naturalHeight = 90;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      _src = "";
 
-      set src(value) {
+      set src(value: string) {
         this._src = value;
         if (this.onload) {
           this.onload();
         }
       }
     }
-    global.Image = FakeImage;
+    global.Image = FakeImage as unknown as typeof Image;
   });
 
   afterAll(() => {
@@ -42,11 +47,11 @@ describe("useCollageControls", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchKinship.mockResolvedValue({
+    fetchKinshipMock.mockResolvedValue({
       original_image: "anchor.png",
       children: ["child-a.png", "child-b.png"],
     });
-    ensureHtml2Canvas.mockResolvedValue(() => {});
+    ensureHtml2CanvasMock.mockResolvedValue(() => Promise.resolve(document.createElement("canvas")));
   });
 
   it("當缺少 anchor 圖像時顯示提示錯誤並不觸發載入", async () => {
@@ -73,7 +78,7 @@ describe("useCollageControls", () => {
     );
 
     await waitFor(() => {
-      expect(fetchKinship).toHaveBeenCalledWith("anchor.png", -1);
+      expect(fetchKinshipMock).toHaveBeenCalledWith("anchor.png", -1);
     });
 
     await waitFor(() => {

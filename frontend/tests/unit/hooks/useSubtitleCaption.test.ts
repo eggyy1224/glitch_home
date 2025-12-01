@@ -1,100 +1,104 @@
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+import { renderHook, act } from "@testing-library/react";
 
 // Mock the API module before importing the hook
-vi.mock('../../../src/api', () => ({
+vi.mock("../../../src/api", () => ({
   fetchSubtitleState: vi.fn(() => Promise.resolve({ subtitle: null })),
-  fetchCaptionState: vi.fn(() => Promise.resolve({ caption: null }))
-}))
+  fetchCaptionState: vi.fn(() => Promise.resolve({ caption: null })),
+}));
 
-import { useSubtitleCaption } from '../../../src/hooks/useSubtitleCaption'
+import { useSubtitleCaption } from "../../../src/hooks/useSubtitleCaption";
 
-const flushAsyncUpdates = () => act(async () => { await Promise.resolve() })
+const flushAsyncUpdates = () =>
+  act(async () => {
+    await Promise.resolve();
+  });
 
-describe('useSubtitleCaption', () => {
-  let originalActEnv
+describe("useSubtitleCaption", () => {
+  let originalActEnv: boolean | undefined;
   beforeAll(() => {
-    originalActEnv = globalThis.IS_REACT_ACT_ENVIRONMENT
-    globalThis.IS_REACT_ACT_ENVIRONMENT = true
-  })
+    const globalObj = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    originalActEnv = globalObj.IS_REACT_ACT_ENVIRONMENT;
+    globalObj.IS_REACT_ACT_ENVIRONMENT = true;
+  });
 
   afterAll(() => {
-    globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnv
-  })
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = originalActEnv;
+  });
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    vi.useFakeTimers()
-  })
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
 
   afterEach(() => {
-    vi.useRealTimers()
-  })
+    vi.useRealTimers();
+  });
 
   it.skip('should initialize with null subtitle and caption', async () => {
     // Skipped: Mock timing issues
   })
 
   it('should apply subtitle with duration', async () => {
-    const { result } = renderHook(() => useSubtitleCaption(null))
-    await flushAsyncUpdates()
+    const { result } = renderHook(() => useSubtitleCaption(null));
+    await flushAsyncUpdates();
 
     const subtitle = {
-      text: '測試字幕',
-      language: 'zh-TW',
-      duration_seconds: 5
-    }
+      text: "測試字幕",
+      language: "zh-TW",
+      duration_seconds: 5,
+    };
 
     act(() => {
-      result.current.applySubtitle(subtitle)
-    })
+      result.current.applySubtitle(subtitle);
+    });
 
     // Check normalized format (duration_seconds -> durationSeconds)
-    expect(result.current.subtitle).not.toBeNull()
-    expect(result.current.subtitle.text).toBe('測試字幕')
-    expect(result.current.subtitle.language).toBe('zh-TW')
-    expect(result.current.subtitle.durationSeconds).toBe(5)
+    expect(result.current.subtitle).not.toBeNull();
+    expect(result.current.subtitle?.text).toBe("測試字幕");
+    expect(result.current.subtitle?.language).toBe("zh-TW");
+    expect(result.current.subtitle?.durationSeconds).toBe(5);
 
     // Fast-forward time to test timer
     act(() => {
-      vi.advanceTimersByTime(5000)
-    })
+      vi.advanceTimersByTime(5000);
+    });
 
     // After duration, subtitle should be cleared
-    expect(result.current.subtitle).toBeNull()
-  })
+    expect(result.current.subtitle).toBeNull();
+  });
 
   it('should apply caption', async () => {
-    const { result } = renderHook(() => useSubtitleCaption(null))
-    await flushAsyncUpdates()
+    const { result } = renderHook(() => useSubtitleCaption(null));
+    await flushAsyncUpdates();
 
     const caption = {
-      text: '測試說明',
-      language: 'zh-TW'
-    }
+      text: "測試說明",
+      language: "zh-TW",
+    };
 
     act(() => {
-      result.current.applyCaption(caption)
-    })
+      result.current.applyCaption(caption);
+    });
 
-    expect(result.current.caption).not.toBeNull()
-    expect(result.current.caption.text).toBe('測試說明')
-  })
+    expect(result.current.caption).not.toBeNull();
+    expect(result.current.caption?.text).toBe("測試說明");
+  });
 
   it('should clear subtitle when null is applied', async () => {
-    const { result } = renderHook(() => useSubtitleCaption(null))
-    await flushAsyncUpdates()
+    const { result } = renderHook(() => useSubtitleCaption(null));
+    await flushAsyncUpdates();
 
     act(() => {
-      result.current.applySubtitle({ text: '測試' })
-    })
+      result.current.applySubtitle({ text: "測試" });
+    });
 
-    expect(result.current.subtitle).not.toBeNull()
+    expect(result.current.subtitle).not.toBeNull();
 
     act(() => {
-      result.current.applySubtitle(null)
-    })
+      result.current.applySubtitle(null);
+    });
 
-    expect(result.current.subtitle).toBeNull()
-  })
-})
+    expect(result.current.subtitle).toBeNull();
+  });
+});

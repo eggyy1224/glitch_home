@@ -7,7 +7,7 @@ describe("useSlideScreenshot", () => {
     const rootRef = { current: document.createElement("div") };
     const onCaptureReady = vi.fn();
     const fakeCanvas = {
-      toBlob: (cb) => {
+      toBlob: (cb: (blob: Blob | null) => void) => {
         cb(new Blob(["data"], { type: "image/png" }));
       },
     };

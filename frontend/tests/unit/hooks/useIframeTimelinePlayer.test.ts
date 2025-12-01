@@ -2,10 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useIframeTimelinePlayer } from "../../../src/hooks/useIframeTimelinePlayer";
 import { fetchIframeTimeline } from "../../../src/api";
+import type { Mock } from "vitest";
 
 vi.mock("../../../src/api", () => ({
   fetchIframeTimeline: vi.fn(),
 }));
+
+const fetchIframeTimelineMock = fetchIframeTimeline as Mock<
+  Parameters<typeof fetchIframeTimeline>,
+  ReturnType<typeof fetchIframeTimeline>
+>;
 
 describe("useIframeTimelinePlayer", () => {
   const mockApplyConfig = vi.fn();
@@ -17,7 +23,7 @@ describe("useIframeTimelinePlayer", () => {
   });
 
   it("載入 timeline 後自動播放並循環步驟", async () => {
-    fetchIframeTimeline.mockResolvedValue({
+    fetchIframeTimelineMock.mockResolvedValue({
       timeline: {
         id: "tl-1",
         loop: true,
@@ -38,8 +44,8 @@ describe("useIframeTimelinePlayer", () => {
       }),
     );
 
-    await waitFor(() => expect(fetchIframeTimeline).toHaveBeenCalledWith("tl-1", expect.anything()));
-    const firstFetch = fetchIframeTimeline.mock.results[0]?.value;
+    await waitFor(() => expect(fetchIframeTimelineMock).toHaveBeenCalledWith("tl-1", expect.anything()));
+    const firstFetch = fetchIframeTimelineMock.mock.results[0]?.value;
     if (firstFetch?.then) {
       await act(async () => {
         await firstFetch;
@@ -91,8 +97,8 @@ describe("useIframeTimelinePlayer", () => {
       { initialProps: { isActive: true } },
     );
 
-    await waitFor(() => expect(fetchIframeTimeline).toHaveBeenCalledTimes(1));
-    const firstFetch = fetchIframeTimeline.mock.results[0]?.value;
+    await waitFor(() => expect(fetchIframeTimelineMock).toHaveBeenCalledTimes(1));
+    const firstFetch = fetchIframeTimelineMock.mock.results[0]?.value;
     if (firstFetch?.then) {
       await act(async () => {
         await firstFetch;
@@ -119,8 +125,8 @@ describe("useIframeTimelinePlayer", () => {
     act(() => {
       result.current.reload();
     });
-    await waitFor(() => expect(fetchIframeTimeline).toHaveBeenCalledTimes(2));
-    const secondFetch = fetchIframeTimeline.mock.results[1]?.value;
+    await waitFor(() => expect(fetchIframeTimelineMock).toHaveBeenCalledTimes(2));
+    const secondFetch = fetchIframeTimelineMock.mock.results[1]?.value;
     if (secondFetch?.then) {
       await act(async () => {
         await secondFetch;
@@ -133,7 +139,7 @@ describe("useIframeTimelinePlayer", () => {
   });
 
   it("載入失敗時回報錯誤並停播", async () => {
-    fetchIframeTimeline.mockRejectedValue(new Error("boom"));
+    fetchIframeTimelineMock.mockRejectedValue(new Error("boom"));
 
     const { result } = renderHook(() =>
       useIframeTimelinePlayer({
@@ -142,7 +148,7 @@ describe("useIframeTimelinePlayer", () => {
       }),
     );
 
-    await waitFor(() => expect(fetchIframeTimeline).toHaveBeenCalled());
+    await waitFor(() => expect(fetchIframeTimelineMock).toHaveBeenCalled());
     await waitFor(() => expect(result.current.status).toBe("error"));
     expect(result.current.error).toBe("boom");
     expect(result.current.isPlaying).toBe(false);

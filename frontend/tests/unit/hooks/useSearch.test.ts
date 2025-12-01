@@ -6,6 +6,7 @@ import {
   createImageUploadRequest,
   createTextSearchRequest,
 } from "../../../src/api";
+import type { Mock } from "vitest";
 
 vi.mock("../../../src/api", () => ({
   __esModule: true,
@@ -14,12 +15,25 @@ vi.mock("../../../src/api", () => ({
   createTextSearchRequest: vi.fn(),
 }));
 
+const createImageSearchRequestMock = createImageSearchRequest as Mock<
+  Parameters<typeof createImageSearchRequest>,
+  ReturnType<typeof createImageSearchRequest>
+>;
+const createImageUploadRequestMock = createImageUploadRequest as Mock<
+  Parameters<typeof createImageUploadRequest>,
+  ReturnType<typeof createImageUploadRequest>
+>;
+const createTextSearchRequestMock = createTextSearchRequest as Mock<
+  Parameters<typeof createTextSearchRequest>,
+  ReturnType<typeof createTextSearchRequest>
+>;
+
 beforeEach(() => {
   vi.clearAllMocks();
-  const resolvedRequest = (value) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
-  createTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
-  createImageUploadRequest.mockReturnValue(resolvedRequest({ searchPath: "", fallbackPath: "" }));
-  createImageSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
+  const resolvedRequest = <T,>(value: T) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
+  createTextSearchRequestMock.mockReturnValue(resolvedRequest({ results: [] }));
+  createImageUploadRequestMock.mockReturnValue(resolvedRequest({ searchPath: "", fallbackPath: "" }));
+  createImageSearchRequestMock.mockReturnValue(resolvedRequest({ results: [] }));
 });
 
 describe("useSearch", () => {
@@ -31,12 +45,12 @@ describe("useSearch", () => {
     });
 
     expect(result.current.error).toBe("請輸入搜尋詞");
-    expect(createTextSearchRequest).not.toHaveBeenCalled();
+    expect(createTextSearchRequestMock).not.toHaveBeenCalled();
   });
 
   it("文字搜尋成功時更新結果並清除錯誤", async () => {
     const payload = { results: [{ id: "img-1", distance: 0.12 }] };
-    createTextSearchRequest.mockReturnValue({ controller: new AbortController(), promise: Promise.resolve(payload) });
+    createTextSearchRequestMock.mockReturnValue({ controller: new AbortController(), promise: Promise.resolve(payload) });
 
     const { result } = renderHook(() => useSearch({ limit: 5 }));
 
@@ -48,7 +62,7 @@ describe("useSearch", () => {
       await result.current.searchByText();
     });
 
-    expect(createTextSearchRequest).toHaveBeenCalledWith("night horse", 5);
+    expect(createTextSearchRequestMock).toHaveBeenCalledWith("night horse", 5);
     await waitFor(() => {
       expect(result.current.results).toEqual(payload.results);
       expect(result.current.error).toBeNull();
@@ -64,18 +78,18 @@ describe("useSearch", () => {
     });
 
     expect(result.current.error).toBe("請先選擇圖片");
-    expect(createImageUploadRequest).not.toHaveBeenCalled();
+    expect(createImageUploadRequestMock).not.toHaveBeenCalled();
   });
 
   it("從結果觸發搜尋會呼叫圖片搜尋並處理空結果訊息", async () => {
-    createImageSearchRequest.mockReturnValue({ controller: new AbortController(), promise: Promise.resolve({ results: [] }) });
+    createImageSearchRequestMock.mockReturnValue({ controller: new AbortController(), promise: Promise.resolve({ results: [] }) });
     const { result } = renderHook(() => useSearch());
 
     await act(async () => {
       await result.current.searchFromResult("offspring.png");
     });
 
-    expect(createImageSearchRequest).toHaveBeenCalledWith("backend/offspring_images/offspring.png", 15);
+    expect(createImageSearchRequestMock).toHaveBeenCalledWith("backend/offspring_images/offspring.png", 15);
     await waitFor(() => {
       expect(result.current.error).toBe("搜尋完成，但沒有找到相似的圖像");
       expect(result.current.searching).toBe(false);
@@ -85,7 +99,7 @@ describe("useSearch", () => {
   it("取消文字搜尋時不會殘留 loading 或錯誤", async () => {
     const abortError = new Error("aborted");
     abortError.name = "AbortError";
-    createTextSearchRequest.mockReturnValue({ controller: new AbortController(), promise: Promise.reject(abortError) });
+    createTextSearchRequestMock.mockReturnValue({ controller: new AbortController(), promise: Promise.reject(abortError) });
 
     const { result } = renderHook(() => useSearch());
 

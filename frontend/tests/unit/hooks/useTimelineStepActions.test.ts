@@ -13,6 +13,7 @@ import {
   triggerTts,
   unlockAudio,
 } from "../../../src/api";
+import type { Mock } from "vitest";
 
 vi.mock("../../../src/api", () => ({
   clearCaption: vi.fn(() => Promise.resolve()),
@@ -26,6 +27,20 @@ vi.mock("../../../src/api", () => ({
   triggerTts: vi.fn(() => Promise.resolve()),
   unlockAudio: vi.fn(() => Promise.resolve()),
 }));
+
+const clearCaptionMock = clearCaption as Mock<Parameters<typeof clearCaption>, ReturnType<typeof clearCaption>>;
+const clearSubtitleMock = clearSubtitle as Mock<Parameters<typeof clearSubtitle>, ReturnType<typeof clearSubtitle>>;
+const queueSoundPlayMock = queueSoundPlay as Mock<Parameters<typeof queueSoundPlay>, ReturnType<typeof queueSoundPlay>>;
+const sendRemoteClickMock = sendRemoteClick as Mock<Parameters<typeof sendRemoteClick>, ReturnType<typeof sendRemoteClick>>;
+const sendVideoControlMock = sendVideoControl as Mock<Parameters<typeof sendVideoControl>, ReturnType<typeof sendVideoControl>>;
+const setCaptionMock = setCaption as Mock<Parameters<typeof setCaption>, ReturnType<typeof setCaption>>;
+const setSubtitleMock = setSubtitle as Mock<Parameters<typeof setSubtitle>, ReturnType<typeof setSubtitle>>;
+const speakWithSubtitleMock = speakWithSubtitle as Mock<
+  Parameters<typeof speakWithSubtitle>,
+  ReturnType<typeof speakWithSubtitle>
+>;
+const triggerTtsMock = triggerTts as Mock<Parameters<typeof triggerTts>, ReturnType<typeof triggerTts>>;
+const unlockAudioMock = unlockAudio as Mock<Parameters<typeof unlockAudio>, ReturnType<typeof unlockAudio>>;
 
 describe("useTimelineStepActions", () => {
   beforeEach(() => {
@@ -74,17 +89,17 @@ describe("useTimelineStepActions", () => {
       });
     });
 
-    expect(sendRemoteClick).not.toHaveBeenCalled();
-    expect(sendVideoControl).not.toHaveBeenCalled();
+    expect(sendRemoteClickMock).not.toHaveBeenCalled();
+    expect(sendVideoControlMock).not.toHaveBeenCalled();
 
     await act(async () => {
       await vi.runAllTimersAsync();
     });
 
-    expect(sendRemoteClick).toHaveBeenCalledTimes(1);
-    expect(sendVideoControl).toHaveBeenCalledTimes(1);
+    expect(sendRemoteClickMock).toHaveBeenCalledTimes(1);
+    expect(sendVideoControlMock).toHaveBeenCalledTimes(1);
 
-    const [clickPayload] = sendRemoteClick.mock.calls[0];
+    const [clickPayload] = sendRemoteClickMock.mock.calls[0];
     expect(clickPayload).toMatchObject({
       selector: "#btn",
       x: 10,
@@ -92,7 +107,7 @@ describe("useTimelineStepActions", () => {
       target_client_id: "override-client",
     });
 
-    const [videoPayload] = sendVideoControl.mock.calls[0];
+    const [videoPayload] = sendVideoControlMock.mock.calls[0];
     expect(videoPayload).toMatchObject({
       action: "set",
       volume: 1,
@@ -133,18 +148,18 @@ describe("useTimelineStepActions", () => {
     });
 
     await waitFor(() => {
-      expect(unlockAudio).toHaveBeenCalledTimes(2);
+      expect(unlockAudioMock).toHaveBeenCalledTimes(2);
     });
-    expect(unlockAudio.mock.calls[0][0]).toBe("remote");
-    expect(unlockAudio.mock.calls[1][0]).toBeNull();
+    expect(unlockAudioMock.mock.calls[0][0]).toBe("remote");
+    expect(unlockAudioMock.mock.calls[1][0]).toBeNull();
 
-    expect(clearCaption).toHaveBeenCalledWith("client-main", expect.anything());
-    expect(setSubtitle).toHaveBeenCalledWith(
+    expect(clearCaptionMock).toHaveBeenCalledWith("client-main", expect.anything());
+    expect(setSubtitleMock).toHaveBeenCalledWith(
       { text: "字幕", language: "zh", duration_seconds: 5 },
       "client-main",
       expect.anything(),
     );
-    expect(speakWithSubtitle).toHaveBeenCalledWith(
+    expect(speakWithSubtitleMock).toHaveBeenCalledWith(
       expect.objectContaining({
         text: "hi",
         subtitle_text: "subtitle text",
@@ -178,14 +193,14 @@ describe("useTimelineStepActions", () => {
       });
     });
 
-    expect(queueSoundPlay).toHaveBeenCalledWith("demo.wav", "client-sound", expect.anything());
+    expect(queueSoundPlayMock).toHaveBeenCalledWith("demo.wav", "client-sound", expect.anything());
 
     act(() => {
       result.current.cancelPendingActions();
       vi.runAllTimers();
     });
 
-    expect(sendRemoteClick).not.toHaveBeenCalled();
+    expect(sendRemoteClickMock).not.toHaveBeenCalled();
   });
 
   it("在資產寫入被禁用時會阻擋 TTS 並回報錯誤", async () => {
@@ -205,8 +220,8 @@ describe("useTimelineStepActions", () => {
       });
     });
 
-    expect(speakWithSubtitle).not.toHaveBeenCalled();
-    expect(triggerTts).not.toHaveBeenCalled();
+    expect(speakWithSubtitleMock).not.toHaveBeenCalled();
+    expect(triggerTtsMock).not.toHaveBeenCalled();
     expect(result.current.actionError).toContain("no write");
     expect(onError).toHaveBeenCalled();
   });
@@ -226,7 +241,7 @@ describe("useTimelineStepActions", () => {
       });
     });
 
-    expect(queueSoundPlay).toHaveBeenCalledWith("cue.wav", "client-audio", expect.anything());
+    expect(queueSoundPlayMock).toHaveBeenCalledWith("cue.wav", "client-audio", expect.anything());
     expect(result.current.actionError).toBeNull();
   });
 });

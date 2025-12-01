@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import useGenerateSearch from "../../../src/hooks/useGenerateSearch";
 import { createImageSearchRequest, createTextSearchRequest } from "../../../src/api";
+import type { Mock } from "vitest";
 
 vi.mock("../../../src/api", () => ({
   __esModule: true,
@@ -9,19 +10,28 @@ vi.mock("../../../src/api", () => ({
   createTextSearchRequest: vi.fn(),
 }));
 
-const resolvedRequest = (value) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
+const createImageSearchRequestMock = createImageSearchRequest as Mock<
+  Parameters<typeof createImageSearchRequest>,
+  ReturnType<typeof createImageSearchRequest>
+>;
+const createTextSearchRequestMock = createTextSearchRequest as Mock<
+  Parameters<typeof createTextSearchRequest>,
+  ReturnType<typeof createTextSearchRequest>
+>;
+
+const resolvedRequest = <T,>(value: T) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  createTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
-  createImageSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
+  createTextSearchRequestMock.mockReturnValue(resolvedRequest({ results: [] }));
+  createImageSearchRequestMock.mockReturnValue(resolvedRequest({ results: [] }));
 });
 
 describe("useGenerateSearch", () => {
   it("檔名匹配時會以圖搜圖（去除語系後綴）並切換到搜尋結果", async () => {
     const onError = vi.fn();
     const payload = { results: [{ id: "image-1:en", distance: 0.42 }] };
-    createImageSearchRequest.mockReturnValue(resolvedRequest(payload));
+    createImageSearchRequestMock.mockReturnValue(resolvedRequest(payload));
 
     const availableImages = [{ filename: "horse.png" }];
     const { result } = renderHook(() => useGenerateSearch({ onError, availableImages }));
@@ -35,8 +45,8 @@ describe("useGenerateSearch", () => {
     });
 
     await waitFor(() => {
-      expect(createImageSearchRequest).toHaveBeenCalledWith("horse.png", 50);
-      expect(createTextSearchRequest).not.toHaveBeenCalled();
+      expect(createImageSearchRequestMock).toHaveBeenCalledWith("horse.png", 50);
+      expect(createTextSearchRequestMock).not.toHaveBeenCalled();
       expect(result.current.searchResults).toEqual([
         { filename: "image-1", url: "/generated_images/image-1" },
       ]);
@@ -48,7 +58,7 @@ describe("useGenerateSearch", () => {
   it("沒有檔名匹配時會退回文字語意搜尋", async () => {
     const onError = vi.fn();
     const payload = { results: [{ id: "image-1:en", distance: 0.42 }] };
-    createTextSearchRequest.mockReturnValue(resolvedRequest(payload));
+    createTextSearchRequestMock.mockReturnValue(resolvedRequest(payload));
 
     const { result } = renderHook(() => useGenerateSearch({ onError }));
 
@@ -61,7 +71,7 @@ describe("useGenerateSearch", () => {
     });
 
     await waitFor(() => {
-      expect(createImageSearchRequest).not.toHaveBeenCalled();
+      expect(createImageSearchRequestMock).not.toHaveBeenCalled();
       expect(result.current.searchResults).toEqual([{ filename: "image-1", url: "/generated_images/image-1" }]);
       expect(result.current.displayMode).toBe("search");
       expect(onError).toHaveBeenLastCalledWith(null);
@@ -70,7 +80,7 @@ describe("useGenerateSearch", () => {
 
   it("沒有結果時會重置顯示模式並回傳訊息", async () => {
     const onError = vi.fn();
-    createTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
+    createTextSearchRequestMock.mockReturnValue(resolvedRequest({ results: [] }));
 
     const { result } = renderHook(() => useGenerateSearch({ onError }));
 

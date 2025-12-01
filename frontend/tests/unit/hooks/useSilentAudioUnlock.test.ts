@@ -12,6 +12,9 @@ describe("useSilentAudioUnlock", () => {
     const { result, unmount } = renderHook(() => useSilentAudioUnlock());
 
     const audio = result.current.current;
+    if (!audio) {
+      throw new Error("audio element not created");
+    }
 
     expect(audio).toBeInstanceOf(HTMLAudioElement);
     expect(audio.src).toContain(SILENT_AUDIO_SRC);

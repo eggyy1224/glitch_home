@@ -1,23 +1,38 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SnapshotManager from "../../src/components/SnapshotManager";
 import { AdminPanelContext, type AdminPanelContextValue } from "../../src/AdminPanelContext";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  listIframeSnapshots: Mock;
+  getIframeSnapshot: Mock;
+  saveIframeSnapshot: Mock;
+  deleteIframeSnapshot: Mock;
+  cloneIframeSnapshot: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<
     typeof api,
     "listIframeSnapshots" | "getIframeSnapshot" | "saveIframeSnapshot" | "deleteIframeSnapshot" | "cloneIframeSnapshot"
   >(["listIframeSnapshots", "getIframeSnapshot", "saveIframeSnapshot", "deleteIframeSnapshot", "cloneIframeSnapshot"]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 const snapshotConfig = {
   layout: "grid",
@@ -41,6 +56,7 @@ function renderWithContext(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listIframeSnapshots.mockResolvedValue({ snapshots: [{ name: "snapA" }] });
   apiMocks.getIframeSnapshot.mockResolvedValue({ raw: snapshotConfig });

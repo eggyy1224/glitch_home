@@ -1,26 +1,40 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, waitFor, act } from '@testing-library/react'
-import { useControlSocket } from '../../../src/hooks/useControlSocket'
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { useControlSocket } from "../../../src/hooks/useControlSocket";
 
 // Mock WebSocket
-global.WebSocket = vi.fn()
+const wsCtor = vi.fn() as unknown as typeof WebSocket;
+Object.assign(wsCtor, {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+});
+global.WebSocket = wsCtor;
+const webSocketMock = global.WebSocket as unknown as vi.Mock;
 
 // Mock import.meta.env
-vi.stubGlobal('import', {
+vi.stubGlobal("import", {
   meta: {
     env: {
-      VITE_API_BASE: ''
-    }
-  }
-})
+      VITE_API_BASE: "",
+    },
+  },
+});
 
-describe('useControlSocket', () => {
-  let mockSocket
-  let socketCallbacks
+describe("useControlSocket", () => {
+  let mockSocket: {
+    send: ReturnType<typeof vi.fn>;
+    close: ReturnType<typeof vi.fn>;
+    onopen: (() => void) | null;
+    onmessage: ((event: { data: string }) => void) | null;
+    onclose: (() => void) | null;
+    onerror: ((err: unknown) => void) | null;
+    readyState: number;
+  };
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    socketCallbacks = {}
+    vi.clearAllMocks();
 
     mockSocket = {
       send: vi.fn(),
@@ -29,10 +43,10 @@ describe('useControlSocket', () => {
       onmessage: null,
       onclose: null,
       onerror: null,
-      readyState: WebSocket.CONNECTING
-    }
+      readyState: WebSocket.CONNECTING,
+    };
 
-    global.WebSocket.mockImplementation(() => {
+    webSocketMock.mockImplementation(() => {
       // Set callbacks when socket is created
       setTimeout(() => {
         if (mockSocket.onopen) {
@@ -44,8 +58,8 @@ describe('useControlSocket', () => {
   })
 
   afterEach(() => {
-    vi.useRealTimers()
-  })
+    vi.useRealTimers();
+  });
 
   it('should connect to WebSocket on mount', () => {
     const handlers = {

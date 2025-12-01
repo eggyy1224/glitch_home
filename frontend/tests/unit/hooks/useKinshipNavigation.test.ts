@@ -3,10 +3,10 @@ import { renderHook, act } from "@testing-library/react";
 import { useKinshipNavigation } from "../../../src/hooks/useKinshipNavigation";
 
 const createStorage = () => {
-  const store = new Map();
+  const store = new Map<string, string>();
   return {
-    getItem: (key) => store.get(key) || null,
-    setItem: (key, value) => store.set(key, value),
+    getItem: (key: string) => store.get(key) || null,
+    setItem: (key: string, value: string) => store.set(key, value),
     clear: () => store.clear(),
   };
 };
@@ -16,7 +16,7 @@ describe("useKinshipNavigation", () => {
     const getSearch = vi.fn(() => "?foo=bar&img=old");
     const replaceUrl = vi.fn();
     const { result } = renderHook(() =>
-      useKinshipNavigation({ getSearch, replaceUrl, clock: {} }),
+      useKinshipNavigation({ getSearch, replaceUrl, clock: { setTimeout, clearTimeout } }),
     );
 
     act(() => {
@@ -28,7 +28,7 @@ describe("useKinshipNavigation", () => {
 
   it("會從查詢參數取得自動播放設定並套用步進下限", () => {
     const getSearch = vi.fn(() => "?continuous=true&autoplay=1&step=1");
-    const { result } = renderHook(() => useKinshipNavigation({ getSearch, clock: {} }));
+    const { result } = renderHook(() => useKinshipNavigation({ getSearch, clock: { setTimeout, clearTimeout } }));
 
     const config = result.current.getAutoplayConfig();
     expect(config).toEqual({ continuous: true, autoplay: true, stepSec: 2 });
@@ -36,7 +36,7 @@ describe("useKinshipNavigation", () => {
 
   it("使用注入的 storage 讀寫造訪紀錄", () => {
     const storage = createStorage();
-    const { result } = renderHook(() => useKinshipNavigation({ storage, clock: {} }));
+    const { result } = renderHook(() => useKinshipNavigation({ storage, clock: { setTimeout, clearTimeout } }));
 
     act(() => {
       const visited = result.current.readVisitedImages();
@@ -50,7 +50,7 @@ describe("useKinshipNavigation", () => {
   it("使用注入的 clock 安排導覽並能取消", () => {
     const clearTimeout = vi.fn();
     let scheduledCallback = null;
-    const setTimeout = vi.fn((cb, delay) => {
+    const setTimeout = vi.fn((cb: () => void, delay: number) => {
       scheduledCallback = cb;
       return delay;
     });

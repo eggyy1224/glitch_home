@@ -1,15 +1,30 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useKinshipData } from "../../../src/hooks/useKinshipData";
+import type * as api from "../../../src/api";
+import type { KinshipNavigation } from "../../../src/hooks/useKinshipNavigation";
 
-const { mockFetchKinship } = vi.hoisted(() => ({
-  mockFetchKinship: vi.fn(),
-}));
+type ApiMocks = {
+  fetchKinship: Mock;
+};
 
-vi.mock("../../../src/api", () => ({
-  __esModule: true,
-  fetchKinship: (...args) => mockFetchKinship(...args),
-}));
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../../src/api", async () => {
+  const { createMockApi } = await import("../../testUtils");
+  const { mocks, factory } = createMockApi<typeof api, "fetchKinship">(["fetchKinship"]);
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
+});
 
 const kinshipPayload = {
   original_image: "seed.png",
@@ -19,6 +34,7 @@ const kinshipPayload = {
 };
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   window.history.replaceState({}, "", "?autoplay=0");
   sessionStorage.clear();
@@ -30,7 +46,7 @@ afterEach(() => {
 
 describe("useKinshipData", () => {
   it("載入資料並建立 clusters（非 phylogeny/incubator）", async () => {
-    mockFetchKinship.mockResolvedValue(kinshipPayload);
+    apiMocks.fetchKinship.mockResolvedValue(kinshipPayload);
     const { result } = renderHook(() =>
       useKinshipData({
         initialImg: "seed.png",
@@ -49,11 +65,11 @@ describe("useKinshipData", () => {
   });
 
   it("navigateToImage 會透過注入的 URL 更新器並設定 imgId", async () => {
-    mockFetchKinship.mockResolvedValue(kinshipPayload);
-    const navigation = {
+    apiMocks.fetchKinship.mockResolvedValue(kinshipPayload);
+    const navigation: KinshipNavigation = {
       updateUrlParams: vi.fn(),
       getAutoplayConfig: () => ({ continuous: true, autoplay: false, stepSec: 2 }),
-      readVisitedImages: () => new Set(),
+      readVisitedImages: () => new Set<string>(),
       saveVisitedImages: vi.fn(),
       scheduleNavigation: vi.fn(),
     };
@@ -77,7 +93,7 @@ describe("useKinshipData", () => {
   });
 
   it("當 fetch 失敗時回傳錯誤並不建立 clusters", async () => {
-    mockFetchKinship.mockRejectedValue(new Error("boom"));
+    apiMocks.fetchKinship.mockRejectedValue(new Error("boom"));
     const { result } = renderHook(() =>
       useKinshipData({
         initialImg: "seed.png",
@@ -92,10 +108,10 @@ describe("useKinshipData", () => {
   });
 
   it("會使用注入的導覽工具安排自動播放並更新 imgId", async () => {
-    mockFetchKinship.mockResolvedValue(kinshipPayload);
-    const navigation = {
+    apiMocks.fetchKinship.mockResolvedValue(kinshipPayload);
+    const navigation: KinshipNavigation = {
       updateUrlParams: vi.fn(),
-      readVisitedImages: vi.fn(() => new Set(["seed.png"])),
+      readVisitedImages: vi.fn(() => new Set<string>(["seed.png"])),
       saveVisitedImages: vi.fn(),
       scheduleNavigation: vi.fn((nextImg, onNavigate) => {
         onNavigate(nextImg);

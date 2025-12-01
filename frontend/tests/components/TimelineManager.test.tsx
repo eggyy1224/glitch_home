@@ -1,12 +1,34 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import TimelineManager from "../../src/components/TimelineManager";
 import { AdminPanelContext, type AdminPanelContextValue } from "../../src/AdminPanelContext";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  listIframeTimelines: Mock;
+  fetchIframeTimeline: Mock;
+  createIframeTimeline: Mock;
+  updateIframeTimeline: Mock;
+  deleteIframeTimeline: Mock;
+  cloneIframeTimeline: Mock;
+  playIframeTimeline: Mock;
+  getIframeSnapshot: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<
     typeof api,
     | "listIframeTimelines"
@@ -27,13 +49,9 @@ const { mocks: apiMocks, createApi } = vi.hoisted(() => {
     "playIframeTimeline",
     "getIframeSnapshot",
   ]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 const timelineData = {
   id: "t1",
@@ -56,6 +74,7 @@ function renderWithContext(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listIframeTimelines.mockResolvedValue({ timelines: [{ id: "t1", client_id: "c1" }] });
   apiMocks.fetchIframeTimeline.mockResolvedValue(timelineData);

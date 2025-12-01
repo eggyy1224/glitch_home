@@ -1,11 +1,31 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CollageVersionMode from "../../src/CollageVersionMode";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  generateCollageVersionFromNames: Mock;
+  listOffspringImages: Mock;
+  createTextSearchRequest: Mock;
+  createImageUploadRequest: Mock;
+  createImageSearchRequest: Mock;
+  getCollageProgress: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<
     typeof api,
     | "generateCollageVersionFromNames"
@@ -22,13 +42,9 @@ const { mocks: apiMocks, createApi } = vi.hoisted(() => {
     "createImageSearchRequest",
     "getCollageProgress",
   ]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 const sampleImages = [
   { filename: "a.png", url: "/imgs/a.png" },
@@ -36,6 +52,7 @@ const sampleImages = [
 ];
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listOffspringImages.mockResolvedValue({ images: sampleImages });
   const resolvedRequest = <T,>(value: T) => ({
@@ -53,6 +70,7 @@ afterEach(() => {
 
 describe("CollageVersionMode", () => {
   it("缺少最少張數時顯示錯誤，再生成並顯示結果", async () => {
+    const apiMocks = getApiMocks();
     const clearIntervalMock = vi.spyOn(global, "clearInterval").mockImplementation(() => {});
     const setIntervalMock = vi.spyOn(global, "setInterval").mockImplementation((fn: Parameters<typeof setInterval>[0]) => {
       if (typeof fn === "function") {

@@ -2,11 +2,11 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSlidePlayback } from "../../../src/hooks/useSlidePlayback";
 
-const setSearch = (query) => {
+const setSearch = (query: string | null | undefined) => {
   window.history.replaceState(null, "", query ? `?${query}` : "");
 };
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("useSlidePlayback", () => {
   beforeEach(() => {

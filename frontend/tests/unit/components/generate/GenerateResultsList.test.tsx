@@ -7,7 +7,7 @@ const mockImages = [
   { filename: "two.png", url: "two.png" },
 ];
 
-const resolver = (image) => image.url;
+const resolver = (image) => image.url ?? image.filename;
 
 describe("GenerateResultsList", () => {
   it("會顯示搜尋模式切換並回呼返回按鈕", () => {

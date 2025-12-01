@@ -1,9 +1,8 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import TimelineEpisodeEditor from "../../src/components/TimelineEpisodeEditor";
 import { AdminPanelContext, type AdminPanelContextValue } from "../../src/AdminPanelContext";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 import type { IframeTimeline, EpisodeEntry } from "../../src/types/timeline";
 
@@ -15,7 +14,36 @@ const timelineData: IframeTimeline = {
 
 const episodePayload: EpisodeEntry = { id: "ep1", tracks: [{ timelineId: "t1", targetClientId: "desktop" }] };
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  listIframeTimelines: Mock;
+  listEpisodes: Mock;
+  listIframeSnapshots: Mock;
+  fetchIframeTimeline: Mock;
+  fetchEpisode: Mock;
+  updateIframeTimeline: Mock;
+  createIframeTimeline: Mock;
+  updateEpisode: Mock;
+  createEpisode: Mock;
+  playIframeTimeline: Mock;
+  playEpisode: Mock;
+  getIframeSnapshot: Mock;
+  saveIframeSnapshot: Mock;
+  restoreIframeSnapshot: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<
     typeof api,
     | "listIframeTimelines"
@@ -48,13 +76,9 @@ const { mocks: apiMocks, createApi } = vi.hoisted(() => {
     "saveIframeSnapshot",
     "restoreIframeSnapshot",
   ]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 const adminContextValue: AdminPanelContextValue = {
   defaultClientId: "desktop",
@@ -71,6 +95,7 @@ function renderWithContext(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listIframeTimelines.mockResolvedValue({ timelines: [{ id: "demo_tl", client_id: "desktop" }] });
   apiMocks.listEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", track_count: 1 }] });

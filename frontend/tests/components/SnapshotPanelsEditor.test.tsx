@@ -1,24 +1,36 @@
 import React, { useState } from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SnapshotPanelsEditor from "../../src/components/snapshot/SnapshotPanelsEditor";
-import { createMockApi } from "../testUtils";
 import type * as api from "../../src/api";
 import type { SnapshotPanel } from "../../src/types/admin";
 import type { IframePanelConfig } from "../../src/types/control";
 
-const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+type ApiMocks = {
+  listOffspringImages: Mock;
+  listVideoAssets: Mock;
+};
+
+const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
+let apiMocks: ApiMocks;
+
+const getApiMocks = () => {
+  const mocks = apiMocksRef.current;
+  if (!mocks) {
+    throw new Error("apiMocks not initialized");
+  }
+  return mocks;
+};
+
+vi.mock("../../src/api", async () => {
+  const { createMockApi } = await import("../testUtils");
   const { mocks, factory } = createMockApi<typeof api, "listOffspringImages" | "listVideoAssets">([
     "listOffspringImages",
     "listVideoAssets",
   ]);
-  return { mocks, createApi: factory };
+  apiMocksRef.current = mocks;
+  return { __esModule: true, ...factory() };
 });
-
-vi.mock("../../src/api", () => ({
-  __esModule: true,
-  ...createApi(),
-}));
 
 type PanelChangeHandler = (index: number, patch: Partial<SnapshotPanel & IframePanelConfig>) => void;
 
@@ -46,6 +58,7 @@ function ControlledEditor({ onPanelChange }: { onPanelChange: PanelChangeHandler
 }
 
 beforeEach(() => {
+  apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listOffspringImages.mockResolvedValue({ images: [{ filename: "img-a.png" }] });
   apiMocks.listVideoAssets.mockResolvedValue({ videos: [{ filename: "clipA.mp4" }] });

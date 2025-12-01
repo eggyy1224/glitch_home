@@ -29,17 +29,17 @@ describe("useControlSocketHandlers", () => {
     handlers.handleScreenshotLifecycle({ request_id: "req-1" });
     expect(props.markRequestDone).toHaveBeenCalledWith("req-1");
 
-    handlers.handleSubtitleMessage({ target_client_id: "client-b", subtitle: { text: "skip" } });
+    handlers.handleSubtitleMessage({ target_client_id: "client-b", subtitle: "skip" });
     expect(props.applySubtitle).not.toHaveBeenCalled();
 
-    handlers.handleSubtitleMessage({ target_client_id: "client-a", subtitle: { text: "ok" } });
-    expect(props.applySubtitle).toHaveBeenCalledWith({ text: "ok" });
+    handlers.handleSubtitleMessage({ target_client_id: "client-a", subtitle: "ok" });
+    expect(props.applySubtitle).toHaveBeenCalledWith("ok");
   });
 
   it("處理 caption 與 iframe / collage 配置", () => {
     const { handlers, props } = createHandlers();
-    handlers.handleCaptionMessage({ caption: { text: "描述" } });
-    expect(props.applyCaption).toHaveBeenCalledWith({ text: "描述" });
+    handlers.handleCaptionMessage({ caption: "描述" });
+    expect(props.applyCaption).toHaveBeenCalledWith("描述");
 
     handlers.handleIframeConfigMessage({
       target_client_id: "client-a",
