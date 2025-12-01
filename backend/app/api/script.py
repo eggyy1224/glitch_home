@@ -16,7 +16,7 @@ from ..services.script import (
     sanitize_script_id,
     stop_script,
 )
-from ..utils.permissions import require_metadata_write_enabled
+from ..utils.permissions import ensure_metadata_write_enabled, require_metadata_write_enabled
 
 router = APIRouter()
 
@@ -157,6 +157,8 @@ async def api_play_script(
     allow_draft: bool = Query(default=False),
     version: int | None = Query(default=None),
 ) -> dict:
+    if allow_draft:
+        ensure_metadata_write_enabled("script_play_draft")
     try:
         script = load_script_definition(script_id, version=version)
     except FileNotFoundError as exc:

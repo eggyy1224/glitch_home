@@ -21,6 +21,7 @@ export default function ScenesManager() {
   const [sceneMessage, setSceneMessage] = useState("");
   const [sceneCloneId, setSceneCloneId] = useState("");
   const [scenePlayStatus, setScenePlayStatus] = useState("");
+  const [allowDraftPlay, setAllowDraftPlay] = useState(false);
 
   const refreshScenes = useCallback(async () => {
     try {
@@ -105,12 +106,12 @@ export default function ScenesManager() {
     }
     try {
       setScenePlayStatus("發送中...");
-      await playScene(sceneId, {});
+      await playScene(sceneId, {}, { allowDraft: allowDraftPlay });
       setScenePlayStatus("已送出播放");
     } catch (err) {
       setScenePlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [sceneId]);
+  }, [allowDraftPlay, sceneId]);
 
   useEffect(() => {
     refreshScenes();
@@ -238,6 +239,15 @@ export default function ScenesManager() {
             <button type="button" onClick={handlePlayScene} data-ai-action="scene.play">
               播放
             </button>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <input
+                type="checkbox"
+                checked={allowDraftPlay}
+                onChange={(e) => setAllowDraftPlay(e.target.checked)}
+                data-ai-field="scene.allow-draft"
+              />
+              允許草稿
+            </label>
           </div>
           <div style={{ marginTop: 8, color: "#82dca5" }} data-ai-status="scene.message">
             {sceneMessage}

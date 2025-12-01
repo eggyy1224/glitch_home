@@ -22,6 +22,7 @@ export default function ScriptsManager() {
   const [scriptMessage, setScriptMessage] = useState("");
   const [scriptCloneId, setScriptCloneId] = useState("");
   const [scriptPlayStatus, setScriptPlayStatus] = useState("");
+  const [allowDraftPlay, setAllowDraftPlay] = useState(false);
 
   const refreshScripts = useCallback(async () => {
     try {
@@ -106,12 +107,12 @@ export default function ScriptsManager() {
     }
     try {
       setScriptPlayStatus("發送中...");
-      await playScript(scriptId, {});
+      await playScript(scriptId, {}, { allowDraft: allowDraftPlay });
       setScriptPlayStatus("已送出播放");
     } catch (err) {
       setScriptPlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [scriptId]);
+  }, [allowDraftPlay, scriptId]);
 
   const handleStopScript = useCallback(async () => {
     if (!scriptId) {
@@ -255,6 +256,15 @@ export default function ScriptsManager() {
             <button type="button" onClick={handleStopScript} data-ai-action="script.stop">
               停止
             </button>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <input
+                type="checkbox"
+                checked={allowDraftPlay}
+                onChange={(e) => setAllowDraftPlay(e.target.checked)}
+                data-ai-field="script.allow-draft"
+              />
+              允許草稿
+            </label>
           </div>
           <div style={{ marginTop: 8, color: "#82dca5" }} data-ai-status="script.message">
             {scriptMessage}

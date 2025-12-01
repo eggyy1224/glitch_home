@@ -14,7 +14,7 @@ from ..services.scene import (
     save_scene_definition,
     sanitize_scene_id,
 )
-from ..utils.permissions import require_metadata_write_enabled
+from ..utils.permissions import ensure_metadata_write_enabled, require_metadata_write_enabled
 
 router = APIRouter()
 
@@ -156,6 +156,8 @@ async def api_play_scene(
     allow_draft: bool = Query(default=False),
     version: int | None = Query(default=None),
 ) -> dict:
+    if allow_draft:
+        ensure_metadata_write_enabled("scene_play_draft")
     try:
         scene = load_scene_definition(scene_id, version=version)
     except FileNotFoundError as exc:
