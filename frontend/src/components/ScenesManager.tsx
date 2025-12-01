@@ -37,10 +37,14 @@ export default function ScenesManager() {
     }
   }, []);
 
-  const handleLoadScene = useCallback(async (id: string) => {
+  const handleLoadScene = useCallback(async (id: string, opts?: { ignoreVersion?: boolean }) => {
     try {
       const version = parseInt(loadVersion, 10);
-      const versionOpt = Number.isFinite(version) ? { version } : {};
+      const versionOpt = opts?.ignoreVersion
+        ? {}
+        : Number.isFinite(version)
+          ? { version }
+          : {};
       const data = await fetchScene(id, { resolve: false, ...versionOpt });
       setSceneId(id);
       setSceneJson(pretty((data as { scene?: unknown }).scene || data));
@@ -138,7 +142,8 @@ export default function ScenesManager() {
     try {
       await publishScene(sceneId, {}, { expectedVersion: expected ?? undefined });
       setSceneMessage("已發布 scene");
-      await handleLoadScene(sceneId);
+      await handleLoadScene(sceneId, { ignoreVersion: true });
+      setLoadVersion("");
       await refreshScenes();
     } catch (err) {
       setSceneMessage((err as Error)?.message || "發布失敗");
@@ -160,7 +165,8 @@ export default function ScenesManager() {
       await rollbackScene(sceneId, { version: targetVersion }, { expectedVersion: expected ?? undefined });
       setSceneMessage(`已回滾到版本 ${targetVersion}`);
       setRollbackVersion("");
-      await handleLoadScene(sceneId);
+      setLoadVersion("");
+      await handleLoadScene(sceneId, { ignoreVersion: true });
       await refreshScenes();
     } catch (err) {
       setSceneMessage((err as Error)?.message || "回滾失敗");

@@ -11,7 +11,7 @@
 - 權限（部分）：publish/rollback/play 草稿需 metadata_write；錯誤訊息區分版本衝突（409）與其他錯誤。
 
 ## 前端 Admin Panel
-- ScenesManager/ScriptsManager：列表加 version/status/updated_at；可載入指定版；新增草稿播放勾選、發布、回滾按鈕與回滾版本輸入。（尚未顯示 version/status/published_at 於表單、diff/preview、權限提示等）
+- ScenesManager/ScriptsManager：列表加 version/status/updated_at；可載入指定版；新增草稿播放勾選、發布、回滾按鈕與回滾版本輸入。發布/回滾後會強制載入最新（重置版本輸入）。（尚未顯示 version/status/published_at 於表單、diff/preview、權限提示等）
 - 草稿播放：播放草稿可勾選 allow draft。
 - 預覽/比較：提供與最新 published 的 diff/preview（若未實作 diff 先放按鈕占位與 TODO）。
 - 權限提示：發布/回滾按鈕標示需 metadata_write，訊息區分草稿/發布/回滾。

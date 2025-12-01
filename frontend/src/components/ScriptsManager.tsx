@@ -38,10 +38,14 @@ export default function ScriptsManager() {
     }
   }, []);
 
-  const handleLoadScript = useCallback(async (id: string) => {
+  const handleLoadScript = useCallback(async (id: string, opts?: { ignoreVersion?: boolean }) => {
     try {
       const version = parseInt(loadVersion, 10);
-      const versionOpt = Number.isFinite(version) ? { version } : {};
+      const versionOpt = opts?.ignoreVersion
+        ? {}
+        : Number.isFinite(version)
+          ? { version }
+          : {};
       const data = await fetchScript(id, { resolve: false, ...versionOpt });
       setScriptId(id);
       setScriptJson(pretty((data as { script?: unknown }).script || data));
@@ -139,7 +143,8 @@ export default function ScriptsManager() {
     try {
       await publishScript(scriptId, {}, { expectedVersion: expected ?? undefined });
       setScriptMessage("已發布 script");
-      await handleLoadScript(scriptId);
+      await handleLoadScript(scriptId, { ignoreVersion: true });
+      setLoadVersion("");
       await refreshScripts();
     } catch (err) {
       setScriptMessage((err as Error)?.message || "發布失敗");
@@ -161,7 +166,8 @@ export default function ScriptsManager() {
       await rollbackScript(scriptId, { version: targetVersion }, { expectedVersion: expected ?? undefined });
       setScriptMessage(`已回滾到版本 ${targetVersion}`);
       setRollbackVersion("");
-      await handleLoadScript(scriptId);
+      setLoadVersion("");
+      await handleLoadScript(scriptId, { ignoreVersion: true });
       await refreshScripts();
     } catch (err) {
       setScriptMessage((err as Error)?.message || "回滾失敗");
