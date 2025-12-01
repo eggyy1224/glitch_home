@@ -2,8 +2,9 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, columnsStyle, columnStyle, labelStyle } from "../AdminPanelStyles";
 import { useClientStateQueue } from "../hooks/useClientStateQueue";
-import { listEpisodes, listIframeSnapshots, listIframeTimelines } from "../api";
+import { listEpisodes, listIframeSnapshots, listIframeTimelines, listScenes, listScripts } from "../api";
 import type { ClientQueueItem, ClientState, EpisodeEntry, IframeTimeline, SnapshotEntry } from "../types/admin";
+import type { Scene, Script } from "../types/scene";
 
 function formatTime(value: unknown) {
   if (value === null || value === undefined) return "--";
@@ -235,7 +236,7 @@ export default function ClientStateQueuePanel() {
           );
           setTargetOptionsMessage(`已載入 ${list.length} 個 timeline`);
         }
-      } else {
+      } else if (resolvedType === "episode") {
         const data = await listEpisodes();
         const list = Array.isArray(data?.episodes) ? (data.episodes as EpisodeEntry[]) : [];
         if (requestId === targetRequestRef.current) {
@@ -246,6 +247,30 @@ export default function ClientStateQueuePanel() {
             })),
           );
           setTargetOptionsMessage(`已載入 ${list.length} 個 episode`);
+        }
+      } else if (resolvedType === "scene") {
+        const data = await listScenes();
+        const list = Array.isArray(data?.scenes) ? (data.scenes as Scene[]) : [];
+        if (requestId === targetRequestRef.current) {
+          setTargetOptions(
+            list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          );
+          setTargetOptionsMessage(`已載入 ${list.length} 個 scene`);
+        }
+      } else {
+        const data = await listScripts();
+        const list = Array.isArray(data?.scripts) ? (data.scripts as Script[]) : [];
+        if (requestId === targetRequestRef.current) {
+          setTargetOptions(
+            list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          );
+          setTargetOptionsMessage(`已載入 ${list.length} 個 script`);
         }
       }
     } catch (err) {
@@ -431,6 +456,8 @@ export default function ClientStateQueuePanel() {
                 <option value="snapshot">snapshot</option>
                 <option value="timeline">timeline</option>
                 <option value="episode">episode</option>
+                <option value="scene">scene</option>
+                <option value="script">script</option>
               </select>
             </div>
             <div style={{ flex: 1 }} data-ai-role="queue.target-selector">
@@ -444,7 +471,7 @@ export default function ClientStateQueuePanel() {
                   list="queue-target-options"
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  placeholder="snapshot/timeline/episode id"
+                  placeholder="snapshot/timeline/episode/scene/script id"
                   style={{ width: "100%" }}
                   data-ai-field="queue.target-id"
                   aria-describedby="queue-target-status"
