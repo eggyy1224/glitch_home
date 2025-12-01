@@ -10,6 +10,7 @@ export interface KinshipGraphNode {
   name: string;
   kind?: string;
   level?: number;
+  [key: string]: unknown;
 }
 
 export interface KinshipGraphEdge {
@@ -28,6 +29,9 @@ export interface KinshipClusterData {
   siblings?: string[];
   children?: string[];
   ancestors_by_level?: string[][];
+  ancestors?: string[];
+  related_images?: string[];
+  lineage_graph?: KinshipGraph | null;
 }
 
 export interface KinshipCluster {
@@ -61,7 +65,7 @@ export interface KinshipLayoutBounds {
 }
 
 export interface KinshipLayoutNode extends KinshipGraphNode {
-  position: THREE.Vector3;
+  position?: THREE.Vector3;
 }
 
 export interface KinshipLayoutEdge {

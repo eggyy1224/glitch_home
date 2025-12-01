@@ -72,7 +72,7 @@ function PhylogenyNode({ node, imagesBase, onPick }: PhylogenyNodeProps) {
   );
 }
 
-function PhylogenyAutoFrame({ width, height }: { width: number; height: number }) {
+function PhylogenyAutoFrame({ width, height }: { width: number; height: number }): null {
   const { camera, size, controls } = useThree((state) => ({
     camera: state.camera as THREE.PerspectiveCamera,
     size: state.size,

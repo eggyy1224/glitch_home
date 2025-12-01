@@ -4,7 +4,11 @@ import { useThree } from "@react-three/fiber";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { KinshipCameraPose } from "../../../../types/kinship";
 
-export default function CameraTracker({ onCameraUpdate }: { onCameraUpdate?: (payload: KinshipCameraPose) => void }) {
+export default function CameraTracker({
+  onCameraUpdate,
+}: {
+  onCameraUpdate?: (payload: KinshipCameraPose) => void;
+}): null {
   const controls = useThree((state) => state.controls as OrbitControlsImpl | undefined);
   const camera = useThree((state) => state.camera);
   const callbackRef = useRef(onCameraUpdate);

@@ -6,7 +6,7 @@ import ClusterFlower from "./ClusterFlower";
 interface SceneClustersProps {
   imagesBase: string;
   clusters?: KinshipCluster[];
-  onPick?: (name: string) => void;
+  onPick?: (name: string | number) => void;
 }
 
 export default function SceneClusters({ imagesBase, clusters = [], onPick }: SceneClustersProps) {

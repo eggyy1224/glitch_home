@@ -20,12 +20,12 @@ export interface KinshipModeConfig {
   directionalIntensity: number;
   orbitControls: { minDistance: number; maxDistance: number };
   pointLightProps?: Record<string, unknown>;
-  SceneComponent: ComponentType<Record<string, unknown>>;
+  SceneComponent: ComponentType<any>;
   buildSceneProps: (args: {
     imagesBase: string;
     clusters?: KinshipCluster[];
     data?: KinshipData | null;
-    onPick?: (name: string) => void;
+    onPick?: (name: string | number) => void;
   }) => Record<string, unknown>;
 }
 

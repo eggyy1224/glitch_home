@@ -15,22 +15,6 @@ import CameraTracker from "./scene/trackers/CameraTracker";
 import FpsTracker from "./scene/trackers/FpsTracker";
 import CameraPresetApplier from "./scene/trackers/CameraPresetApplier";
 
-interface KinshipModeConfig {
-  cameraProps: React.ComponentProps<typeof Canvas>["camera"];
-  fogDensity: number;
-  ambientIntensity: number;
-  directionalIntensity: number;
-  orbitControls: { minDistance: number; maxDistance: number };
-  pointLightProps?: ThreeElements["pointLight"];
-  SceneComponent: React.ComponentType<Record<string, unknown>>;
-  buildSceneProps: (args: {
-    imagesBase: string;
-    clusters?: KinshipCluster[];
-    data?: KinshipData | null;
-    onPick?: (name: string) => void;
-  }) => Record<string, unknown>;
-}
-
 interface KinshipSceneProps {
   imagesBase: string;
   clusters?: KinshipCluster[];

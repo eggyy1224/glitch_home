@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useSpring } from "@react-spring/three";
+import type { SpringRef } from "@react-spring/three";
 
 import type { SpringValue } from "@react-spring/three";
 import type { KinshipCluster } from "../../../../types/kinship";
@@ -61,25 +62,27 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
     return rings;
   }, [ancestorsByLevel, anchorVec]);
 
-  const [springs, api] = useSpring<{
+  type ClusterSpringKeys = {
     center: number;
     parents: number;
     siblings: number;
-    children: number;
+    kids: number;
     ancestors: number;
-  }>(() => ({
+  };
+
+  const [springs, api] = useSpring<ClusterSpringKeys>(() => ({
     center: 0,
     parents: 0,
     siblings: 0,
-    children: 0,
+    kids: 0,
     ancestors: 0,
   }));
 
   useEffect(() => {
     let cancelled = false;
     api.stop();
-    api.start({
-      from: { center: 0, parents: 0, siblings: 0, children: 0, ancestors: 0 },
+    (api as SpringRef<ClusterSpringKeys>).start({
+      from: { center: 0, parents: 0, siblings: 0, kids: 0, ancestors: 0 },
       config: { mass: 1.2, tension: 90, friction: 26 },
       to: async (next) => {
         await next({ center: 1, delay: 160 });
@@ -93,7 +96,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
           if (cancelled) return;
         }
         if (childrenRing.length) {
-          await next({ children: 1, delay: 220 });
+          await next({ kids: 1, delay: 220 });
           if (cancelled) return;
         }
         if (ancestorRings.length) {
@@ -105,7 +108,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
           await next({ ancestors: 0 });
         }
       },
-    } as Parameters<typeof api.start>[0]);
+    });
 
     return () => {
       cancelled = true;
@@ -122,7 +125,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
   const getCenterProgress = () => clamp01(readSpring(springs.center, 0));
   const getParentProgress = () => clamp01(readSpring(springs.parents, 0));
   const getSiblingProgress = () => clamp01(readSpring(springs.siblings, 0));
-  const getChildrenProgress = () => clamp01(readSpring(springs.children, 0));
+  const getChildrenProgress = () => clamp01(readSpring(springs.kids, 0));
   const getAncestorProgress = (ringIndex: number) => () => clamp01(readSpring(springs.ancestors, 0) - ringIndex);
 
   const parentRefs = useRef<RingEntry[]>([]);
@@ -132,7 +135,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
   parentRefs.current = [];
   siblingRefs.current = [];
   childRefs.current = [];
-  ancestorRefs.current = ancestorRings.map(() => []);
+  ancestorRefs.current = ancestorRings.map<RingEntry[]>(() => []);
 
   useEffect(() => {
     if (centerRef.current) {

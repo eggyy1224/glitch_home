@@ -46,3 +46,4 @@
 ## 進度更新
 - 第一包完成：`App.tsx`、`modes/createModeRenderMap.ts`、`useRemoteTimelineControl`/`useIframeTimelinePlayer` 型別收斂，lazy component props 不再為 `unknown`，iframe config handler 型別對齊 `IframeConfig`。其餘批次錯誤仍依原五包分派處理。
 - 第二包完成（Collage 堆疊）：`CollageMode`/`CollageVersionMode`/`useCollageConfig`/`useCollageControls` 與 `collageMath`/`collageConfig`/`collageStateUtils` 全數補型別，清除 implicit any/unknown。剩餘錯誤集中在 Kinship、ScriptEditor、影音/搜尋等後續包。
+- 第三包完成（Kinship 堆疊）：`components/kinship/**`、`useKinshipData`、`useKinshipNavigation` 等全面補型別（包含 KinshipData 欄位、graph/layout 型別對齊、onPick 簽章、react-spring 鍵名避免 `children` 保留字、trackers 回傳型別），現存錯誤已聚焦於 Script/Scene 編輯工具與影音/搜尋/截圖等其他包。

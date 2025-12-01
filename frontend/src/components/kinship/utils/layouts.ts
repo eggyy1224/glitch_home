@@ -10,26 +10,9 @@ import {
   PHYLO_NODE_SPACING,
 } from "./constants";
 import { seededRandom } from "./math";
+import type { KinshipGraph, KinshipGraphEdge, KinshipGraphNode } from "../../../types/kinship";
 
-export interface KinshipNode {
-  name: string;
-  kind?: string;
-  level?: number;
-  [key: string]: unknown;
-}
-
-export interface KinshipEdge {
-  source: string;
-  target: string;
-  [key: string]: unknown;
-}
-
-export interface KinshipGraph {
-  nodes: KinshipNode[];
-  edges: KinshipEdge[];
-}
-
-export interface LayoutNode extends KinshipNode {
+export interface LayoutNode extends KinshipGraphNode {
   angle?: number;
   radius?: number;
   baseY?: number;
@@ -183,7 +166,11 @@ export const createIncubatorEdges = (graph: KinshipGraph | null | undefined, lay
 
 export const computePhylogenyLayout = (
   graph: KinshipGraph | null | undefined,
-): { nodes: LayoutNode[]; edges: Array<KinshipEdge & { source: LayoutNode; target: LayoutNode }>; bounds: PhylogenyBounds | null } => {
+): {
+  nodes: LayoutNode[];
+  edges: Array<KinshipGraphEdge & { source: LayoutNode; target: LayoutNode }>;
+  bounds: PhylogenyBounds | null;
+} => {
   if (!graph || !graph.nodes?.length) {
     return { nodes: [], edges: [], bounds: null };
   }
@@ -198,7 +185,7 @@ export const computePhylogenyLayout = (
 
   const zeroIndex = levels.indexOf(0);
   const indexLookup = new Map(levels.map((level, index) => [level, index]));
-  const nodesByLevel = new Map<number, KinshipNode[]>();
+  const nodesByLevel = new Map<number, KinshipGraphNode[]>();
 
   graph.nodes.forEach((node) => {
     const level = Number.isFinite(node.level) ? (node.level as number) : 0;
@@ -210,7 +197,7 @@ export const computePhylogenyLayout = (
     list.sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  const tempEntries: Array<{ node: KinshipNode; x: number; y: number }> = [];
+  const tempEntries: Array<{ node: KinshipGraphNode; x: number; y: number }> = [];
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
@@ -255,7 +242,7 @@ export const computePhylogenyLayout = (
       if (!source || !target) return null;
       return { ...edge, source, target };
     })
-    .filter(Boolean) as Array<KinshipEdge & { source: LayoutNode; target: LayoutNode }>;
+    .filter(Boolean) as Array<KinshipGraphEdge & { source: LayoutNode; target: LayoutNode }>;
 
   const bounds: PhylogenyBounds = {
     minX: minX - offsetX,

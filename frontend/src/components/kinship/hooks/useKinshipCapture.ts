@@ -45,7 +45,7 @@ export function useKinshipCapture(onCaptureReady: CaptureReadyHandler) {
     rendererRef.current = gl;
     sceneRef.current = scene;
     cameraRef.current = camera;
-    gl.preserveDrawingBuffer = true;
+    (gl as WebGLRenderer & { preserveDrawingBuffer?: boolean }).preserveDrawingBuffer = true;
   }, []);
 
   return { handleCreated };

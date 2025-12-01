@@ -156,7 +156,7 @@ function FlowOverlay({ url, baseRef, getProgress, kind, flowRef, seed }: FlowOve
   );
 }
 
-type IncubatorSceneProps = { imagesBase: string; data: KinshipData | null; onPick?: (name: string) => void };
+type IncubatorSceneProps = { imagesBase: string; data: KinshipData | null; onPick?: (name: string | number) => void };
 
 type IncubatorLayoutNode = ReturnType<typeof createIncubatorLayout>[number];
 
