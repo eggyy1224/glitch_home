@@ -58,8 +58,13 @@ export default function SceneEditor() {
     } else if (field === "mode") {
       next.mode = typeof value === "string" ? value : "";
     } else {
-      const num = Number(value);
-      next[field] = Number.isNaN(num) ? undefined : num;
+      const text = typeof value === "string" ? value.trim() : "";
+      if (text === "") {
+        next[field] = undefined;
+      } else {
+        const num = Number(value);
+        next[field] = Number.isNaN(num) ? undefined : num;
+      }
     }
     setSceneField("audio_mix", next);
   };

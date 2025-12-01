@@ -115,9 +115,19 @@ function targetsFromRecord(record: Record<string, string> | undefined | null, fa
 function buildTargetsRecord(targets: SceneTargetRow[]): Record<string, string> {
   const record: Record<string, string> = {};
   targets.forEach((row) => {
-    const client = (row.client || "").trim();
     const snapshot = (row.snapshot || "").trim();
-    if (!client || !snapshot) return;
+    if (!snapshot) return;
+    let client = (row.client || "").trim();
+    if (!client && snapshot.includes("/")) {
+      try {
+        const parsed = parseSnapshotRef(snapshot, "");
+        client = parsed.client;
+      } catch (err) {
+        // skip malformed snapshot without client
+        client = "";
+      }
+    }
+    if (!client) return;
     record[client] = snapshot;
   });
   return record;
