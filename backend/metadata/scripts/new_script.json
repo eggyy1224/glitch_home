@@ -1,0 +1,34 @@
+{
+  "id": "new_script",
+  "title": "範例 Script",
+  "entries": [
+    {
+      "type": "scene",
+      "sceneId": "demo_dual_scene",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 5.0,
+      "audio_override": null,
+      "notes": null
+    },
+    {
+      "type": "scene",
+      "sceneId": "new_scene",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 5.0,
+      "audio_override": {
+        "left": 0.8,
+        "right": 0.8,
+        "mode": "balanced",
+        "muted": null
+      },
+      "notes": null
+    }
+  ],
+  "tags": [
+    "demo"
+  ],
+  "description": "",
+  "notes": ""
+}

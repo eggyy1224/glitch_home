@@ -1,6 +1,6 @@
 import type { IframeConfig, IframePanelConfig } from "../types/control";
 import type { SnapshotConfig, SnapshotPanel } from "../types/admin";
-import type { Scene } from "../types/scene";
+import type { Scene, Script, ScriptEntry } from "../types/scene";
 import type { EpisodeEntry, EpisodeTrack, IframeTimeline, TimelineStep } from "../types/timeline";
 
 export type EditorMode = "timeline" | "episode" | "snapshot";
@@ -86,6 +86,85 @@ export function validateScene(data: Partial<Scene> | null | undefined): EditorVa
   }
 
   validateAudioMix((data as { audio_mix?: Scene["audio_mix"] }).audio_mix, "audio_mix", errors);
+  return errors;
+}
+
+function validateScriptSnapshot(ref: string, path: string, errors: EditorValidationError[]) {
+  const value = (ref || "").trim();
+  if (!value) {
+    errors.push({ path, message: "snapshot 參考不可為空白" });
+    return;
+  }
+  if (!value.includes("/")) {
+    errors.push({ path, message: "snapshot 需要 client/name 格式" });
+    return;
+  }
+  const [clientPart, namePart] = value.split("/", 2);
+  if (!clientPart || !clientPart.trim()) {
+    errors.push({ path, message: "snapshot 需要 client/name 且 client 不可為空" });
+  }
+  if (!namePart || !namePart.trim()) {
+    errors.push({ path, message: "snapshot 名稱不可為空白" });
+  }
+}
+
+export function validateScript(data: Partial<Script> | null | undefined): EditorValidationError[] {
+  const errors: EditorValidationError[] = [];
+  if (!data || typeof data !== "object") {
+    return [{ path: "root", message: "script 需要是物件" }];
+  }
+  const id = (data as { id?: unknown }).id;
+  if (!id || String(id).trim().length === 0) {
+    errors.push({ path: "id", message: "缺少 script id" });
+  } else {
+    const cleaned = String(id).trim();
+    if (!/^[A-Za-z0-9_-]+$/.test(cleaned)) {
+      errors.push({ path: "id", message: "script id 僅允許英數、底線、連字號" });
+    }
+  }
+
+  const entries = (data as { entries?: unknown }).entries;
+  if (!Array.isArray(entries) || entries.length === 0) {
+    errors.push({ path: "entries", message: "需要至少一個 entry" });
+  } else {
+    (entries as Array<Partial<ScriptEntry>>).forEach((entry, index) => {
+      if (!entry || typeof entry !== "object") {
+        errors.push({ path: `entries[${index}]`, message: "entry 格式不正確" });
+        return;
+      }
+      const type = (entry as { type?: unknown }).type;
+      if (type !== "scene" && type !== "snapshot_pair") {
+        errors.push({ path: `entries[${index}].type`, message: "type 需為 scene 或 snapshot_pair" });
+      }
+      const duration = (entry as { duration?: unknown }).duration;
+      if (duration === undefined || duration === null || Number(duration) <= 0) {
+        errors.push({ path: `entries[${index}].duration`, message: "duration 必須大於 0" });
+      }
+      if (type === "scene") {
+        const sceneId = (entry as { scene_id?: unknown; sceneId?: unknown }).scene_id ?? (entry as { sceneId?: unknown }).sceneId;
+        if (!sceneId || String(sceneId).trim().length === 0) {
+          errors.push({ path: `entries[${index}].scene_id`, message: "scene entry 需要 scene_id" });
+        }
+      } else {
+        const left = (entry as { left_snapshot?: unknown; leftSnapshot?: unknown }).left_snapshot ?? (entry as { leftSnapshot?: unknown }).leftSnapshot;
+        const right =
+          (entry as { right_snapshot?: unknown; rightSnapshot?: unknown }).right_snapshot ??
+          (entry as { rightSnapshot?: unknown }).rightSnapshot;
+        if (!left && !right) {
+          errors.push({ path: `entries[${index}].snapshots`, message: "snapshot_pair 至少需要 left 或 right" });
+        }
+        if (left) validateScriptSnapshot(String(left), `entries[${index}].left_snapshot`, errors);
+        if (right) validateScriptSnapshot(String(right), `entries[${index}].right_snapshot`, errors);
+      }
+      validateAudioMix(
+        (entry as { audio_override?: Scene["audio_mix"]; audioOverride?: Scene["audio_mix"] }).audio_override ??
+          (entry as { audioOverride?: Scene["audio_mix"] }).audioOverride,
+        `entries[${index}].audio_override`,
+        errors,
+      );
+    });
+  }
+
   return errors;
 }
 

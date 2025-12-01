@@ -16,6 +16,7 @@ import EpisodeManager from "./components/EpisodeManager";
 import ScenesManager from "./components/ScenesManager";
 import ScriptsManager from "./components/ScriptsManager";
 import SceneEditor from "./components/scene/SceneEditor";
+import ScriptEditor from "./components/script/ScriptEditor";
 import ClientStateQueuePanel from "./components/ClientStateQueuePanel";
 import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor";
 
@@ -284,8 +285,19 @@ export default function AdminPanel({
               >
                 Scene
               </button>
+              <button
+                type="button"
+                onClick={() => setEditorTab("script")}
+                style={editorTab === "script" ? activeTabButtonStyle : tabButtonStyle}
+                role="tab"
+                aria-selected={editorTab === "script"}
+                aria-controls="admin-editor-panel"
+                id="admin-editor-tab-script"
+              >
+                Script
+              </button>
             </div>
-            {editorTab === "timeline" ? <TimelineEpisodeEditor /> : <SceneEditor />}
+            {editorTab === "timeline" ? <TimelineEpisodeEditor /> : editorTab === "scene" ? <SceneEditor /> : <ScriptEditor />}
           </div>
         )}
         {visitedTabs.includes("state") && (
