@@ -32,4 +32,17 @@ describe("useSlideScreenshot", () => {
     unmount();
     expect(onCaptureReady).toHaveBeenLastCalledWith(null);
   });
+
+  it("captures error when root ref is missing and avoids invoking html2canvas", async () => {
+    const onCaptureReady = vi.fn();
+    const loader = vi.fn();
+
+    renderHook(() => useSlideScreenshot({ onCaptureReady, html2canvasLoader: loader }));
+
+    await waitFor(() => expect(onCaptureReady).toHaveBeenCalledTimes(1));
+    const capture = onCaptureReady.mock.calls[0][0];
+
+    await expect(capture()).rejects.toThrow("Slide 模式尚未準備好");
+    expect(loader).not.toHaveBeenCalled();
+  });
 });

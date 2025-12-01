@@ -11,12 +11,21 @@ export interface MockFetchOptions<T> {
   statusText?: string;
   responseText?: string;
   data?: T;
+  contentType?: string;
+  headers?:
+    | {
+        get: (name: string) => string | null;
+      }
+    | undefined;
 }
 
 export interface MockFetchResult<T> {
   ok: boolean;
   status: number;
   statusText: string;
+  headers: {
+    get: (name: string) => string | null;
+  };
   json: () => Promise<T>;
   text: () => Promise<string>;
 }
@@ -26,11 +35,17 @@ export function createMockFetch<T>(data: T, options: MockFetchOptions<T> = {}) {
   const ok = options.ok ?? (status >= 200 && status < 300);
   const statusText = options.statusText ?? (ok ? "OK" : "Error");
   const responseText = options.responseText ?? JSON.stringify(options.data ?? data);
+  const headers =
+    options.headers ??
+    ({
+      get: () => options.contentType ?? "application/json",
+    } satisfies MockFetchResult<T>["headers"]);
 
   const response: MockFetchResult<T> = {
     ok,
     status,
     statusText,
+    headers,
     json: vi.fn(async () => data),
     text: vi.fn(async () => responseText),
   };
@@ -52,6 +67,28 @@ type FuncKeys<T> = { [K in keyof T]: T[K] extends AnyFunc ? K : never }[keyof T]
 type MockMap<T> = {
   [K in keyof T]: T[K] extends AnyFunc ? MockOf<T[K]> : never;
 };
+
+export function createMockFetchError<T>(
+  detail: string,
+  options: Omit<MockFetchOptions<T>, "ok" | "status" | "statusText" | "responseText" | "data"> & {
+    status?: number;
+    statusText?: string;
+    responseText?: string;
+    data?: T;
+  } = {},
+) {
+  const status = options.status ?? 500;
+  const payload = (options.data ?? ({ detail } as unknown as T)) as T;
+  const responseText = options.responseText ?? detail;
+
+  return createMockFetch<T>(payload, {
+    ...options,
+    status,
+    ok: false,
+    statusText: options.statusText ?? "Error",
+    responseText,
+  });
+}
 
 export function createMockApi<T extends Record<string, AnyFunc>, K extends FuncKeys<T>>(
   keys: readonly K[],

@@ -99,6 +99,58 @@ describe("useGenerateSearch", () => {
     });
   });
 
+  it("API 失敗時會回報錯誤訊息並結束搜尋狀態", async () => {
+    const onError = vi.fn();
+    const error = new Error("server down");
+    createTextSearchRequestMock.mockReturnValue({
+      controller: new AbortController(),
+      promise: Promise.reject(error),
+    });
+
+    const { result } = renderHook(() => useGenerateSearch({ onError }));
+
+    act(() => {
+      result.current.setTextQuery("fail request");
+    });
+
+    await act(async () => {
+      await result.current.handleTextSearch();
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("server down");
+      expect(result.current.searching).toBe(false);
+      expect(result.current.searchResults).toEqual([]);
+      expect(result.current.displayMode).toBe("all");
+    });
+  });
+
+  it("AbortError 會被忽略且不顯示錯誤訊息", async () => {
+    const onError = vi.fn();
+    const abortError = new DOMException("Aborted", "AbortError");
+    createTextSearchRequestMock.mockReturnValue({
+      controller: new AbortController(),
+      promise: Promise.reject(abortError),
+    });
+
+    const { result } = renderHook(() => useGenerateSearch({ onError }));
+
+    act(() => {
+      result.current.setTextQuery("horse");
+    });
+
+    await act(async () => {
+      onError.mockClear();
+      await result.current.handleTextSearch();
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith(null);
+      expect(result.current.searching).toBe(false);
+    });
+  });
+
   it("清除搜尋會重設檔案、結果與錯誤", async () => {
     const onError = vi.fn();
     const { result } = renderHook(() => useGenerateSearch({ onError }));
