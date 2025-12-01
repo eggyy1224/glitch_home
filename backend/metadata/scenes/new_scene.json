@@ -1,0 +1,19 @@
+{
+  "id": "new_scene",
+  "title": "範例 Scene",
+  "targets": {
+    "desktop": "desktop/desktop_slide_pair_custom",
+    "desktop2": "desktop2/single_offspring_20251006_203253_712"
+  },
+  "audio_mix": {
+    "left": 1.0,
+    "right": 0.3,
+    "mode": "left-dominant",
+    "muted": null
+  },
+  "tags": [
+    "demo"
+  ],
+  "description": "",
+  "notes": ""
+}
