@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchKinship } from "../api";
 import { useKinshipNavigation } from "./useKinshipNavigation";
+import type { KinshipCluster, KinshipData } from "../types/kinship";
 
 const DEFAULT_ANCHOR = { x: 0, y: 0, z: 0 };
 
@@ -12,12 +13,20 @@ export function useKinshipData({
   maxClusters = 3,
   navigationFactory = useKinshipNavigation,
   navigationOptions = {},
+}: {
+  initialImg: string | null;
+  shouldLoadKinshipData: boolean;
+  incubatorMode?: boolean;
+  phylogenyMode?: boolean;
+  maxClusters?: number;
+  navigationFactory?: typeof useKinshipNavigation;
+  navigationOptions?: Record<string, unknown>;
 }) {
-  const [imgId, setImgId] = useState(initialImg);
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
-  const [clusters, setClusters] = useState([]);
-  const kinshipCacheRef = useRef(new Map());
+  const [imgId, setImgId] = useState<string | null>(initialImg);
+  const [data, setData] = useState<KinshipData | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [clusters, setClusters] = useState<KinshipCluster[]>([]);
+  const kinshipCacheRef = useRef<Map<string, KinshipData>>(new Map());
 
   const {
     updateUrlParams,
@@ -28,10 +37,11 @@ export function useKinshipData({
   } = navigationFactory(navigationOptions);
 
   const navigateToImage = useCallback(
-    (nextImg) => {
+    (nextImg: string | number | null | undefined) => {
       if (!nextImg) return;
-      updateUrlParams(nextImg);
-      setImgId(nextImg);
+      const nextId = String(nextImg);
+      updateUrlParams(nextId);
+      setImgId(nextId);
     },
     [updateUrlParams],
   );
@@ -41,18 +51,18 @@ export function useKinshipData({
     const controller = new AbortController();
     setErr(null);
 
-    const applyKinshipData = (res) => {
+    const applyKinshipData = (res: KinshipData) => {
       setData(res);
       if (phylogenyMode || incubatorMode) {
         setClusters([]);
       } else {
         const originalImage = res?.original_image || imgId;
-        const cluster = {
-          id: `${originalImage}-${Date.now()}`,
-          original: originalImage,
-          anchor: { ...DEFAULT_ANCHOR },
-          data: res,
-        };
+          const cluster: KinshipCluster = {
+            id: `${originalImage}-${Date.now()}`,
+            original: originalImage,
+            anchor: { ...DEFAULT_ANCHOR },
+            data: res,
+          };
         setClusters((prev) => {
           const next = [...prev, cluster];
           if (next.length > maxClusters) next.splice(0, next.length - maxClusters);
@@ -61,7 +71,7 @@ export function useKinshipData({
       }
     };
 
-    const cached = kinshipCacheRef.current.get(imgId);
+    const cached = imgId ? kinshipCacheRef.current.get(imgId) : null;
     if (cached) {
       applyKinshipData(cached);
       return () => {
@@ -71,7 +81,7 @@ export function useKinshipData({
 
     fetchKinship(imgId, -1, { signal: controller.signal })
       .then((res) => {
-        kinshipCacheRef.current.set(imgId, res);
+        if (imgId) kinshipCacheRef.current.set(imgId, res);
         applyKinshipData(res);
       })
       .catch((e) => {
@@ -92,7 +102,7 @@ export function useKinshipData({
     const visited = readVisitedImages();
     visited.add(data.original_image);
 
-    const pickFirst = (arr) => arr.find((n) => n && !visited.has(n));
+    const pickFirst = (arr?: string[] | null) => (arr || []).find((n) => n && !visited.has(n));
     let next = pickFirst(data.children || []);
     if (!next) next = pickFirst(data.siblings || []);
     if (!next) next = pickFirst(data.parents || []);

@@ -1,28 +1,29 @@
 import { KIND_PRIORITY } from "./constants";
+import type { KinshipClusterData, KinshipGraph, KinshipGraphEdge, KinshipGraphNode } from "../../../types/kinship";
 
-const defaultGraph = { nodes: [], edges: [] };
+const defaultGraph: KinshipGraph = { nodes: [], edges: [] };
 
-export const sanitizeGraph = (graphInput, data) => {
-  const graph = graphInput || {};
+export const sanitizeGraph = (graphInput: unknown, data: KinshipClusterData | null | undefined): KinshipGraph => {
+  const graph = (graphInput || {}) as Partial<KinshipGraph>;
   const rawNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
   const rawEdges = Array.isArray(graph.edges) ? graph.edges : [];
 
-  const nodes = [];
-  const nodeLookup = new Map();
+  const nodes: KinshipGraphNode[] = [];
+  const nodeLookup = new Map<string, KinshipGraphNode>();
 
   rawNodes.forEach((node) => {
     if (!node || typeof node.name !== "string") return;
     const name = node.name;
-    const level = Number.isFinite(node.level) ? node.level : 0;
+    const level = Number.isFinite(node.level) ? (node.level as number) : 0;
     const kind = node.kind || (level === 0 ? "original" : level > 0 ? "child" : level === -1 ? "parent" : "ancestor");
-    const normalized = { name, level, kind };
+    const normalized: KinshipGraphNode = { name, level, kind };
     nodes.push(normalized);
     nodeLookup.set(name, normalized);
   });
 
-  if (!nodeLookup.has(data?.original_image)) {
-    const fallbackOriginal = {
-      name: data?.original_image,
+  if (!nodeLookup.has(data?.original_image || "")) {
+    const fallbackOriginal: KinshipGraphNode = {
+      name: data?.original_image || "unknown",
       level: 0,
       kind: "original",
     };
@@ -30,8 +31,8 @@ export const sanitizeGraph = (graphInput, data) => {
     nodeLookup.set(fallbackOriginal.name, fallbackOriginal);
   }
 
-  const edges = [];
-  const dedupe = new Set();
+  const edges: KinshipGraphEdge[] = [];
+  const dedupe = new Set<string>();
 
   rawEdges.forEach((edge) => {
     if (!edge) return;
@@ -48,27 +49,27 @@ export const sanitizeGraph = (graphInput, data) => {
   return { nodes, edges };
 };
 
-export const buildFallbackGraph = (data) => {
+export const buildFallbackGraph = (data: KinshipClusterData | null | undefined): KinshipGraph => {
   if (!data) return defaultGraph;
-  const nodes = [];
-  const edges = [];
-  const seen = new Map();
+  const nodes: KinshipGraphNode[] = [];
+  const edges: KinshipGraphEdge[] = [];
+  const seen = new Map<string, KinshipGraphNode>();
 
-  const upsert = (name, kind, level) => {
+  const upsert = (name: string | null | undefined, kind: string, level: number) => {
     if (!name) return;
     if (seen.has(name)) {
-      const node = seen.get(name);
-      if (level < node.level) node.level = level;
-      if (KIND_PRIORITY[kind] < KIND_PRIORITY[node.kind]) node.kind = kind;
+      const node = seen.get(name)!;
+      if (level < (node.level || 0)) node.level = level;
+      if (KIND_PRIORITY[kind] < KIND_PRIORITY[node.kind || "ancestor"]) node.kind = kind;
       return node;
     }
-    const node = { name, kind, level };
+    const node: KinshipGraphNode = { name, kind, level };
     nodes.push(node);
     seen.set(name, node);
     return node;
   };
 
-  const addEdge = (source, target) => {
+  const addEdge = (source: string | null | undefined, target: string | null | undefined) => {
     if (!source || !target) return;
     edges.push({ source, target });
   };
@@ -91,7 +92,7 @@ export const buildFallbackGraph = (data) => {
       upsert(name, index === 0 ? "parent" : "ancestor", level);
     });
     if (index > 0) {
-      const prevLevel = data.ancestors_by_level[index - 1] || [];
+      const prevLevel = data.ancestors_by_level?.[index - 1] || [];
       (levelNames || []).forEach((name) => {
         (prevLevel || []).forEach((prevName) => addEdge(name, prevName));
       });
@@ -101,7 +102,7 @@ export const buildFallbackGraph = (data) => {
   return { nodes, edges };
 };
 
-export const buildLineageGraph = (data) => {
+export const buildLineageGraph = (data: KinshipClusterData | null | undefined): KinshipGraph => {
   if (!data) return defaultGraph;
   const graph = sanitizeGraph(data.lineage_graph, data);
   if (graph.nodes.length > 0) return graph;

@@ -23,7 +23,7 @@ interface RingEntry {
 interface ClusterFlowerProps {
   imagesBase: string;
   cluster: KinshipCluster;
-  onPick?: (name: string) => void;
+  onPick?: (name: string | number) => void;
 }
 
 export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFlowerProps) {
@@ -61,20 +61,19 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
     return rings;
   }, [ancestorsByLevel, anchorVec]);
 
-  const [rawSprings, api] = useSpring(() => ({
+  const [springs, api] = useSpring<{
+    center: number;
+    parents: number;
+    siblings: number;
+    children: number;
+    ancestors: number;
+  }>(() => ({
     center: 0,
     parents: 0,
     siblings: 0,
     children: 0,
     ancestors: 0,
   }));
-  const springs = rawSprings as unknown as {
-    center: SpringValue<number>;
-    parents: SpringValue<number>;
-    siblings: SpringValue<number>;
-    children: SpringValue<number>;
-    ancestors: SpringValue<number>;
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +122,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
   const getCenterProgress = () => clamp01(readSpring(springs.center, 0));
   const getParentProgress = () => clamp01(readSpring(springs.parents, 0));
   const getSiblingProgress = () => clamp01(readSpring(springs.siblings, 0));
-  const getChildrenProgress = () => clamp01(readSpring(springs.children as SpringValue<number> | number, 0));
+  const getChildrenProgress = () => clamp01(readSpring(springs.children, 0));
   const getAncestorProgress = (ringIndex: number) => () => clamp01(readSpring(springs.ancestors, 0) - ringIndex);
 
   const parentRefs = useRef<RingEntry[]>([]);

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { Camera, Scene, WebGLRenderer } from "three";
 
-export function useKinshipCapture(onCaptureReady) {
-  const rendererRef = useRef(null);
-  const sceneRef = useRef(null);
-  const cameraRef = useRef(null);
+type CaptureReadyHandler = ((capture: (() => Promise<Blob>) | null) => void) | null | undefined;
+
+export function useKinshipCapture(onCaptureReady: CaptureReadyHandler) {
+  const rendererRef = useRef<WebGLRenderer | null>(null);
+  const sceneRef = useRef<Scene | null>(null);
+  const cameraRef = useRef<Camera | null>(null);
 
   const captureScreenshot = useCallback(() => {
     const renderer = rendererRef.current;
@@ -13,11 +16,11 @@ export function useKinshipCapture(onCaptureReady) {
       return Promise.reject(new Error("renderer not ready"));
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise<Blob>((resolve, reject) => {
       try {
         renderer.render(scene, camera);
         renderer.domElement.toBlob(
-          (blob) => {
+          (blob: Blob | null) => {
             if (!blob) {
               reject(new Error("無法產生截圖"));
               return;
@@ -38,7 +41,7 @@ export function useKinshipCapture(onCaptureReady) {
     return () => onCaptureReady(null);
   }, [captureScreenshot, onCaptureReady]);
 
-  const handleCreated = useCallback(({ gl, scene, camera }) => {
+  const handleCreated = useCallback(({ gl, scene, camera }: { gl: WebGLRenderer; scene: Scene; camera: Camera }) => {
     rendererRef.current = gl;
     sceneRef.current = scene;
     cameraRef.current = camera;

@@ -1,4 +1,4 @@
-export const KIND_PRIORITY = {
+export const KIND_PRIORITY: Record<string, number> = {
   original: 0,
   parent: 1,
   child: 1,
@@ -6,7 +6,7 @@ export const KIND_PRIORITY = {
   ancestor: 3,
 };
 
-export const KIND_COLORS = {
+export const KIND_COLORS: Record<string, string> = {
   original: "#88c0ff",
   parent: "#ffb347",
   child: "#a7ff83",
@@ -26,7 +26,7 @@ export const INCUBATOR_RADIUS_STEP = 3.3;
 export const INCUBATOR_PARTICLE_COUNT = 96;
 export const INCUBATOR_LONG_CYCLE = 120;
 
-export const FLOW_TINTS = {
+export const FLOW_TINTS: Record<string, string> = {
   original: "#8dc5ff",
   parent: "#ffc27a",
   child: "#a9ffb5",

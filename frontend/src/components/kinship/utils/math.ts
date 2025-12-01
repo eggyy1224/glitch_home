@@ -1,10 +1,12 @@
 import * as THREE from "three";
 
-export const clamp01 = (value) => THREE.MathUtils.clamp(value, 0, 1);
+import type { KinshipVector3 } from "../../../types/kinship";
 
-export const toVec3 = (anchor) => new THREE.Vector3(anchor?.x || 0, anchor?.y || 0, anchor?.z || 0);
+export const clamp01 = (value: number): number => THREE.MathUtils.clamp(value, 0, 1);
 
-export const makeRing = (names, radius, yOffset, jitter, center) => {
+export const toVec3 = (anchor?: KinshipVector3 | null) => new THREE.Vector3(anchor?.x || 0, anchor?.y || 0, anchor?.z || 0);
+
+export const makeRing = (names: string[], radius: number, yOffset: number, jitter: number, center: THREE.Vector3) => {
   const N = Math.max(names.length, 1);
   return names.map((name, index) => {
     const t = (index / N) * Math.PI * 2;
@@ -19,14 +21,14 @@ export const makeRing = (names, radius, yOffset, jitter, center) => {
   });
 };
 
-export const wobblePosition = (pos, t, speed = 0.2, amp = 0.4, phase = 0) =>
+export const wobblePosition = (pos: THREE.Vector3, t: number, speed = 0.2, amp = 0.4, phase = 0) =>
   new THREE.Vector3(
     pos.x + Math.sin(t * speed + phase + pos.z * 0.1) * amp,
     pos.y + Math.sin(t * (speed * 1.3) + phase + pos.x * 0.1) * amp * 0.4,
     pos.z + Math.cos(t * (speed * 0.9) + phase + pos.y * 0.1) * amp,
   );
 
-export const seededRandom = (key, salt = 0) => {
+export const seededRandom = (key: string | number, salt = 0) => {
   const str = `${key}:${salt}`;
   let hash = 0;
   for (let i = 0; i < str.length; i += 1) {
@@ -37,4 +39,4 @@ export const seededRandom = (key, salt = 0) => {
   return x - Math.floor(x);
 };
 
-export const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+export const easeOutCubic = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);

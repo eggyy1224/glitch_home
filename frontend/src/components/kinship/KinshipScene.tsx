@@ -10,7 +10,7 @@ import type {
   KinshipData,
 } from "../../types/kinship";
 import { useKinshipCapture } from "./hooks/useKinshipCapture";
-import { useKinshipModeSelection } from "./hooks/useKinshipModeSelection";
+import { useKinshipModeSelection, type KinshipModeConfig } from "./hooks/useKinshipModeSelection";
 import CameraTracker from "./scene/trackers/CameraTracker";
 import FpsTracker from "./scene/trackers/FpsTracker";
 import CameraPresetApplier from "./scene/trackers/CameraPresetApplier";
@@ -37,7 +37,7 @@ interface KinshipSceneProps {
   data?: KinshipData | null;
   phylogenyMode?: boolean;
   incubatorMode?: boolean;
-  onPick?: (name: string) => void;
+  onPick?: (name: string | number) => void;
   onFpsUpdate?: (fps: number) => void;
   onCameraUpdate?: (payload: KinshipCameraPose) => void;
   applyPreset?: KinshipCameraPreset | null;
@@ -57,9 +57,7 @@ export default function KinshipScene({
   onCaptureReady = null,
 }: KinshipSceneProps) {
   const { handleCreated } = useKinshipCapture(onCaptureReady);
-  const { modeConfig } = useKinshipModeSelection({ phylogenyMode, incubatorMode }) as unknown as {
-    modeConfig: KinshipModeConfig;
-  };
+  const { modeConfig } = useKinshipModeSelection({ phylogenyMode, incubatorMode });
   const {
     cameraProps: rawCameraProps,
     fogDensity,
