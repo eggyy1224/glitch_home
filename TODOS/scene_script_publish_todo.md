@@ -3,7 +3,7 @@
 - 目標：為 Scene/Script 建立版本、草稿與發布流程，並用嚴格型別與測試防護。
 
 ## 後端
-- 模型：Scene/Script 加欄位 version(int)、status(draft/published/deprecated)、created_at/updated_at、published_at、published_by、notes；讀舊檔時預設 version=1、status=published、時間可用檔案 mtime 或 now。
+- 模型（已完成）：Scene/Script 加欄位 version(int)、status(draft/published/deprecated)、created_at/updated_at、published_at、published_by、notes；讀舊檔時預設 version=1、status=published、時間可用檔案 mtime 或 now。
 - 儲存策略：`metadata/{scenes,scripts}/{id}.json` 覆寫最新，同步追加 `metadata/history/{scenes,scripts}/{id}/version-XXXX.json`；缺目錄自動建立，設計歷程上限（例保留 N 版或 TTL）與清理函式。
 - 競態：所有寫入（PUT/publish/rollback）需帶 expected_version；不符回 409，首次寫入補 version=1/status=published。
 - API：新增 `GET /api/{scenes,scripts}/{id}/versions`（列 version/status/時間戳）、`POST /api/{scenes,scripts}/{id}/publish`（可帶 version_note/publish_as）、`POST /api/{scenes,scripts}/{id}/rollback`（指定 version）；`GET /api/.../{id}?version=x` 讀特定版。

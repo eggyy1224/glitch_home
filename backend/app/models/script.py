@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -79,6 +80,12 @@ class Script(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(..., min_length=1, description="Script id")
+    version: int = Field(default=1, ge=1, description="版本號")
+    status: Literal["draft", "published", "deprecated"] = Field(default="published", description="狀態")
+    created_at: Optional[datetime] = Field(default=None, description="建立時間")
+    updated_at: Optional[datetime] = Field(default=None, description="更新時間")
+    published_at: Optional[datetime] = Field(default=None, description="發布時間")
+    published_by: Optional[str] = Field(default=None, description="發布者（若有）")
     title: str = Field(default="", description="顯示名稱")
     entries: List[ScriptEntry] = Field(default_factory=list, description="時間軸段落")
     tags: List[str] = Field(default_factory=list, description="分類標籤")
@@ -113,4 +120,25 @@ class Script(BaseModel):
     def _validate_entries(self) -> "Script":
         if not self.entries:
             raise ValueError("Script 需要至少一個 entry")
+        return self
+
+    @field_validator("published_by", mode="before")
+    @classmethod
+    def _trim_published_by(cls, value: Optional[str]):
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
+
+    @model_validator(mode="after")
+    def _apply_metadata_defaults(self) -> "Script":
+        now = datetime.now(timezone.utc)
+        if self.created_at is None:
+            self.created_at = now
+        if self.updated_at is None:
+            self.updated_at = self.created_at
+        if self.status is None:
+            self.status = "published"
+        if self.version is None or self.version < 1:
+            self.version = 1
         return self
