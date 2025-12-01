@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 _SCRIPT_DIR = Path(settings.metadata_dir) / "scripts"
 _SCRIPT_HISTORY_DIR = Path(settings.metadata_dir) / "history" / "scripts"
+_SCRIPT_HISTORY_LIMIT = 200
 _SCRIPT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 _running_scripts: Dict[str, asyncio.Task[None]] = {}
 
@@ -136,6 +137,14 @@ def _write_script_history(script: Script) -> None:
     version_path = _script_version_path(script.id, script.version)
     with version_path.open("w", encoding="utf-8") as fp:
         json.dump(script.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    versions = sorted(history_dir.glob("version-*.json"))
+    if _SCRIPT_HISTORY_LIMIT and len(versions) > _SCRIPT_HISTORY_LIMIT:
+        excess = len(versions) - _SCRIPT_HISTORY_LIMIT
+        for old_path in versions[:excess]:
+            try:
+                old_path.unlink()
+            except OSError:
+                logger.warning("清理舊 Script 版本失敗：%s", old_path)
 
 
 def save_script_definition(payload: dict, script_id: Optional[str] = None, expected_version: int | None = None) -> Script:
@@ -387,6 +396,8 @@ def publish_script(script_id: str, *, publish_as: str | None = None, expected_ve
     base = load_script_definition(script_id)
     if expected_version is not None and base.version != expected_version:
         raise ValueError("版本不符，請重新載入後再試")
+    # 發布前驗證引用
+    resolve_script(base)
     now = datetime.now(timezone.utc)
     payload = base.model_dump(mode="json", by_alias=True)
     payload["status"] = "published"
@@ -402,6 +413,7 @@ def rollback_script(script_id: str, target_version: int, *, publish_as: str | No
     if expected_version is not None and current.version != expected_version:
         raise ValueError("版本不符，請重新載入後再試")
     target = load_script_definition(script_id, version=target_version)
+    resolve_script(target)
     now = datetime.now(timezone.utc)
     payload = target.model_dump(mode="json", by_alias=True)
     payload["status"] = "published"

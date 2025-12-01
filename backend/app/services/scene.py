@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 _SCENE_DIR = Path(settings.metadata_dir) / "scenes"
 _SCENE_HISTORY_DIR = Path(settings.metadata_dir) / "history" / "scenes"
+_SCENE_HISTORY_LIMIT = 200
 _SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
@@ -104,6 +105,15 @@ def _write_scene_history(scene: Scene) -> None:
     version_path = _scene_version_path(scene.id, scene.version)
     with version_path.open("w", encoding="utf-8") as fp:
         json.dump(scene.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    # 清理舊版本，避免無限增長
+    versions = sorted(history_dir.glob("version-*.json"))
+    if _SCENE_HISTORY_LIMIT and len(versions) > _SCENE_HISTORY_LIMIT:
+        excess = len(versions) - _SCENE_HISTORY_LIMIT
+        for old_path in versions[:excess]:
+            try:
+                old_path.unlink()
+            except OSError:
+                logger.warning("清理舊 Scene 版本失敗：%s", old_path)
 
 
 def save_scene_definition(payload: dict, scene_id: Optional[str] = None, expected_version: int | None = None) -> Scene:
@@ -305,6 +315,8 @@ def publish_scene(scene_id: str, *, publish_as: str | None = None, expected_vers
     base = load_scene_definition(scene_id)
     if expected_version is not None and base.version != expected_version:
         raise ValueError("版本不符，請重新載入後再試")
+    # 發布前驗證引用
+    resolve_scene(base)
     now = datetime.now(timezone.utc)
     payload = base.model_dump(mode="json", by_alias=True)
     payload["status"] = "published"
@@ -320,6 +332,8 @@ def rollback_scene(scene_id: str, target_version: int, *, publish_as: str | None
     if expected_version is not None and current.version != expected_version:
         raise ValueError("版本不符，請重新載入後再試")
     target = load_scene_definition(scene_id, version=target_version)
+    # 回滾前驗證引用
+    resolve_scene(target)
     now = datetime.now(timezone.utc)
     payload = target.model_dump(mode="json", by_alias=True)
     payload["status"] = "published"

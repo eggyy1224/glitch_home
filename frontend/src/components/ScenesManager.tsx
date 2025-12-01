@@ -4,8 +4,10 @@ import {
   createScene,
   deleteScene,
   fetchScene,
+  publishScene,
   listScenes,
   playScene,
+  rollbackScene,
   updateScene,
 } from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
@@ -22,6 +24,8 @@ export default function ScenesManager() {
   const [sceneCloneId, setSceneCloneId] = useState("");
   const [scenePlayStatus, setScenePlayStatus] = useState("");
   const [allowDraftPlay, setAllowDraftPlay] = useState(false);
+  const [loadVersion, setLoadVersion] = useState("");
+  const [rollbackVersion, setRollbackVersion] = useState("");
 
   const refreshScenes = useCallback(async () => {
     try {
@@ -35,14 +39,16 @@ export default function ScenesManager() {
 
   const handleLoadScene = useCallback(async (id: string) => {
     try {
-      const data = await fetchScene(id, { resolve: false });
+      const version = parseInt(loadVersion, 10);
+      const versionOpt = Number.isFinite(version) ? { version } : {};
+      const data = await fetchScene(id, { resolve: false, ...versionOpt });
       setSceneId(id);
       setSceneJson(pretty((data as { scene?: unknown }).scene || data));
-      setSceneMessage(`已載入 scene ${id}`);
+      setSceneMessage(`已載入 scene ${id}${versionOpt.version ? ` (v${versionOpt.version})` : ""}`);
     } catch (err) {
       setSceneMessage((err as Error)?.message || "載入 scene 失敗");
     }
-  }, []);
+  }, [loadVersion]);
 
   const handleSaveScene = useCallback(
     async (mode: "create" | "update") => {
@@ -112,6 +118,54 @@ export default function ScenesManager() {
       setScenePlayStatus((err as Error)?.message || "播放指令失敗");
     }
   }, [allowDraftPlay, sceneId]);
+
+  const currentSceneVersion = useCallback((): number | null => {
+    try {
+      const parsed = JSON.parse(sceneJson);
+      const v = (parsed as { version?: unknown }).version;
+      return typeof v === "number" ? v : null;
+    } catch {
+      return null;
+    }
+  }, [sceneJson]);
+
+  const handlePublishScene = useCallback(async () => {
+    if (!sceneId) {
+      setSceneMessage("請先載入 scene");
+      return;
+    }
+    const expected = currentSceneVersion();
+    try {
+      await publishScene(sceneId, {}, { expectedVersion: expected ?? undefined });
+      setSceneMessage("已發布 scene");
+      await handleLoadScene(sceneId);
+      await refreshScenes();
+    } catch (err) {
+      setSceneMessage((err as Error)?.message || "發布失敗");
+    }
+  }, [currentSceneVersion, handleLoadScene, refreshScenes, sceneId]);
+
+  const handleRollbackScene = useCallback(async () => {
+    if (!sceneId) {
+      setSceneMessage("請先載入 scene");
+      return;
+    }
+    const targetVersion = parseInt(rollbackVersion, 10);
+    if (!Number.isFinite(targetVersion)) {
+      setSceneMessage("請輸入要回滾的版本號");
+      return;
+    }
+    const expected = currentSceneVersion();
+    try {
+      await rollbackScene(sceneId, { version: targetVersion }, { expectedVersion: expected ?? undefined });
+      setSceneMessage(`已回滾到版本 ${targetVersion}`);
+      setRollbackVersion("");
+      await handleLoadScene(sceneId);
+      await refreshScenes();
+    } catch (err) {
+      setSceneMessage((err as Error)?.message || "回滾失敗");
+    }
+  }, [currentSceneVersion, handleLoadScene, refreshScenes, rollbackVersion, sceneId]);
 
   useEffect(() => {
     refreshScenes();
@@ -204,6 +258,29 @@ export default function ScenesManager() {
               data-ai-field="scene.id"
               style={{ width: "100%" }}
             />
+            <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+              <input
+                type="text"
+                placeholder="版本號（可選）"
+                value={loadVersion}
+                onChange={(e) => setLoadVersion(e.target.value)}
+                style={{ width: "50%" }}
+                data-ai-field="scene.load-version"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (sceneId) {
+                    void handleLoadScene(sceneId);
+                  } else {
+                    setSceneMessage("請輸入 scene id 後再載入");
+                  }
+                }}
+                data-ai-action="scene.load-version"
+              >
+                載入指定版
+              </button>
+            </div>
           </div>
           <div style={{ marginBottom: 6 }}>
             <label style={labelStyle} htmlFor="scene-json">
@@ -224,6 +301,9 @@ export default function ScenesManager() {
             </button>
             <button type="button" onClick={() => handleSaveScene("update")} data-ai-action="scene.update">
               更新
+            </button>
+            <button type="button" onClick={handlePublishScene} data-ai-action="scene.publish">
+              發布
             </button>
             <button type="button" onClick={handleCloneScene} data-ai-action="scene.clone">
               複製
@@ -248,6 +328,17 @@ export default function ScenesManager() {
               />
               允許草稿
             </label>
+            <input
+              type="text"
+              placeholder="回滾版本號"
+              value={rollbackVersion}
+              onChange={(e) => setRollbackVersion(e.target.value)}
+              style={{ minWidth: 120 }}
+              data-ai-field="scene.rollback-version"
+            />
+            <button type="button" onClick={handleRollbackScene} data-ai-action="scene.rollback">
+              回滾
+            </button>
           </div>
           <div style={{ marginTop: 8, color: "#82dca5" }} data-ai-status="scene.message">
             {sceneMessage}

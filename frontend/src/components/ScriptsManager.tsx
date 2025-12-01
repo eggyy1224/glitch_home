@@ -6,6 +6,8 @@ import {
   fetchScript,
   listScripts,
   playScript,
+  publishScript,
+  rollbackScript,
   stopScript,
   updateScript,
 } from "../api";
@@ -23,6 +25,8 @@ export default function ScriptsManager() {
   const [scriptCloneId, setScriptCloneId] = useState("");
   const [scriptPlayStatus, setScriptPlayStatus] = useState("");
   const [allowDraftPlay, setAllowDraftPlay] = useState(false);
+  const [loadVersion, setLoadVersion] = useState("");
+  const [rollbackVersion, setRollbackVersion] = useState("");
 
   const refreshScripts = useCallback(async () => {
     try {
@@ -36,14 +40,16 @@ export default function ScriptsManager() {
 
   const handleLoadScript = useCallback(async (id: string) => {
     try {
-      const data = await fetchScript(id, { resolve: false });
+      const version = parseInt(loadVersion, 10);
+      const versionOpt = Number.isFinite(version) ? { version } : {};
+      const data = await fetchScript(id, { resolve: false, ...versionOpt });
       setScriptId(id);
       setScriptJson(pretty((data as { script?: unknown }).script || data));
-      setScriptMessage(`已載入 script ${id}`);
+      setScriptMessage(`已載入 script ${id}${versionOpt.version ? ` (v${versionOpt.version})` : ""}`);
     } catch (err) {
       setScriptMessage((err as Error)?.message || "載入 script 失敗");
     }
-  }, []);
+  }, [loadVersion]);
 
   const handleSaveScript = useCallback(
     async (mode: "create" | "update") => {
@@ -113,6 +119,54 @@ export default function ScriptsManager() {
       setScriptPlayStatus((err as Error)?.message || "播放指令失敗");
     }
   }, [allowDraftPlay, scriptId]);
+
+  const currentScriptVersion = useCallback((): number | null => {
+    try {
+      const parsed = JSON.parse(scriptJson);
+      const v = (parsed as { version?: unknown }).version;
+      return typeof v === "number" ? v : null;
+    } catch {
+      return null;
+    }
+  }, [scriptJson]);
+
+  const handlePublishScript = useCallback(async () => {
+    if (!scriptId) {
+      setScriptMessage("請先載入 script");
+      return;
+    }
+    const expected = currentScriptVersion();
+    try {
+      await publishScript(scriptId, {}, { expectedVersion: expected ?? undefined });
+      setScriptMessage("已發布 script");
+      await handleLoadScript(scriptId);
+      await refreshScripts();
+    } catch (err) {
+      setScriptMessage((err as Error)?.message || "發布失敗");
+    }
+  }, [currentScriptVersion, handleLoadScript, refreshScripts, scriptId]);
+
+  const handleRollbackScript = useCallback(async () => {
+    if (!scriptId) {
+      setScriptMessage("請先載入 script");
+      return;
+    }
+    const targetVersion = parseInt(rollbackVersion, 10);
+    if (!Number.isFinite(targetVersion)) {
+      setScriptMessage("請輸入要回滾的版本號");
+      return;
+    }
+    const expected = currentScriptVersion();
+    try {
+      await rollbackScript(scriptId, { version: targetVersion }, { expectedVersion: expected ?? undefined });
+      setScriptMessage(`已回滾到版本 ${targetVersion}`);
+      setRollbackVersion("");
+      await handleLoadScript(scriptId);
+      await refreshScripts();
+    } catch (err) {
+      setScriptMessage((err as Error)?.message || "回滾失敗");
+    }
+  }, [currentScriptVersion, handleLoadScript, refreshScripts, rollbackVersion, scriptId]);
 
   const handleStopScript = useCallback(async () => {
     if (!scriptId) {
@@ -218,6 +272,29 @@ export default function ScriptsManager() {
               data-ai-field="script.id"
               style={{ width: "100%" }}
             />
+            <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+              <input
+                type="text"
+                placeholder="版本號（可選）"
+                value={loadVersion}
+                onChange={(e) => setLoadVersion(e.target.value)}
+                style={{ width: "50%" }}
+                data-ai-field="script.load-version"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (scriptId) {
+                    void handleLoadScript(scriptId);
+                  } else {
+                    setScriptMessage("請輸入 script id 後再載入");
+                  }
+                }}
+                data-ai-action="script.load-version"
+              >
+                載入指定版
+              </button>
+            </div>
           </div>
           <div style={{ marginBottom: 6 }}>
             <label style={labelStyle} htmlFor="script-json">
@@ -238,6 +315,9 @@ export default function ScriptsManager() {
             </button>
             <button type="button" onClick={() => handleSaveScript("update")} data-ai-action="script.update">
               更新
+            </button>
+            <button type="button" onClick={handlePublishScript} data-ai-action="script.publish">
+              發布
             </button>
             <button type="button" onClick={handleCloneScript} data-ai-action="script.clone">
               複製
@@ -265,6 +345,17 @@ export default function ScriptsManager() {
               />
               允許草稿
             </label>
+            <input
+              type="text"
+              placeholder="回滾版本號"
+              value={rollbackVersion}
+              onChange={(e) => setRollbackVersion(e.target.value)}
+              style={{ minWidth: 120 }}
+              data-ai-field="script.rollback-version"
+            />
+            <button type="button" onClick={handleRollbackScript} data-ai-action="script.rollback">
+              回滾
+            </button>
           </div>
           <div style={{ marginTop: 8, color: "#82dca5" }} data-ai-status="script.message">
             {scriptMessage}
