@@ -8,6 +8,12 @@ export interface AudioMix {
 
 export interface Scene {
   id: string;
+  version?: number | undefined;
+  status?: "draft" | "published" | "deprecated" | string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
+  published_at?: string | undefined;
+  published_by?: string | undefined;
   title?: string | undefined;
   targets?: Record<string, string> | undefined;
   audio_mix?: AudioMix | undefined;
@@ -40,6 +46,12 @@ export interface ScriptEntry {
 
 export interface Script {
   id: string;
+  version?: number | undefined;
+  status?: "draft" | "published" | "deprecated" | string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
+  published_at?: string | undefined;
+  published_by?: string | undefined;
   title?: string | undefined;
   entries?: ScriptEntry[] | undefined;
   tags?: string[] | undefined;

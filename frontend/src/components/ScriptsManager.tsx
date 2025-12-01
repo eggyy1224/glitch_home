@@ -157,6 +157,9 @@ export default function ScriptsManager() {
             {scriptList.map((item) => {
               const itemId = item.id || "";
               const entryCount = (item as { entry_count?: number }).entry_count ?? (Array.isArray(item.entries) ? item.entries.length : 0);
+              const version = (item as { version?: number }).version;
+              const status = (item as { status?: string }).status;
+              const updatedAt = (item as { updated_at?: string }).updated_at;
               return (
                 <li
                   key={itemId || Math.random()}
@@ -173,7 +176,9 @@ export default function ScriptsManager() {
                 >
                   <span style={{ flex: 1 }}>
                     {itemId}
-                    {item.title ? `（${item.title}）` : ""} · {entryCount} entries
+                    {item.title ? `（${item.title}）` : ""} · {entryCount} entries · v{version ?? "?"}
+                    {status ? ` / ${status}` : ""}
+                    {updatedAt ? ` / ${updatedAt}` : ""}
                   </span>
                   <button
                     type="button"

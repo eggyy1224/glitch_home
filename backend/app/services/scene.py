@@ -5,6 +5,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -25,6 +26,7 @@ from .realtime_bus import realtime_broadcaster
 logger = logging.getLogger(__name__)
 
 _SCENE_DIR = Path(settings.metadata_dir) / "scenes"
+_SCENE_HISTORY_DIR = Path(settings.metadata_dir) / "history" / "scenes"
 _SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
@@ -79,12 +81,32 @@ def _scene_path_for(scene_id: str) -> Path:
     return _SCENE_DIR / f"{safe_id}.json"
 
 
+def _scene_history_dir_for(scene_id: str) -> Path:
+    safe_id = _sanitize_scene_id(scene_id)
+    return _SCENE_HISTORY_DIR / safe_id
+
+
+def _scene_version_path(scene_id: str, version: int) -> Path:
+    history_dir = _scene_history_dir_for(scene_id)
+    return history_dir / f"version-{version:04d}.json"
+
+
 def _ensure_scene_dir() -> None:
     if not _SCENE_DIR.exists():
         _SCENE_DIR.mkdir(parents=True, exist_ok=True)
+    if not _SCENE_HISTORY_DIR.exists():
+        _SCENE_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_scene_definition(payload: dict, scene_id: Optional[str] = None) -> Scene:
+def _write_scene_history(scene: Scene) -> None:
+    history_dir = _scene_history_dir_for(scene.id)
+    history_dir.mkdir(parents=True, exist_ok=True)
+    version_path = _scene_version_path(scene.id, scene.version)
+    with version_path.open("w", encoding="utf-8") as fp:
+        json.dump(scene.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+
+
+def save_scene_definition(payload: dict, scene_id: Optional[str] = None, expected_version: int | None = None) -> Scene:
     ensure_metadata_write_enabled("scene_definition")
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
@@ -94,16 +116,46 @@ def save_scene_definition(payload: dict, scene_id: Optional[str] = None) -> Scen
     safe_id = _sanitize_scene_id(candidate_id)
 
     payload = {**payload, "id": safe_id}
+
+    existing: Scene | None = None
+    path = _scene_path_for(safe_id)
+    if path.exists():
+        try:
+            existing = load_scene_definition(safe_id)
+        except Exception:  # noqa: BLE001
+            existing = None
+
+    if expected_version is not None and existing is not None and existing.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+
+    base_version = expected_version if expected_version is not None else (existing.version if existing else 0)
+    payload_version = payload.get("version")
+    next_version = max(int(payload_version) if payload_version else 0, base_version + 1)
+
+    now = datetime.now(timezone.utc)
+    payload.setdefault("created_at", existing.created_at if existing else now)
+    payload["updated_at"] = now
+    payload.setdefault("status", payload.get("status") or (existing.status if existing else "published"))
+    payload["version"] = next_version
+
     scene = Scene.model_validate(payload)
 
     _ensure_scene_dir()
-    path = _scene_path_for(safe_id)
     with path.open("w", encoding="utf-8") as fp:
         json.dump(scene.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    _write_scene_history(scene)
     return scene
 
 
-def load_scene_definition(scene_id: str) -> Scene:
+def load_scene_definition(scene_id: str, version: int | None = None) -> Scene:
+    if version is not None:
+        version_path = _scene_version_path(scene_id, int(version))
+        if version_path.exists():
+            with version_path.open("r", encoding="utf-8") as fp:
+                raw = json.load(fp)
+            raw.setdefault("id", scene_id)
+            raw["id"] = _sanitize_scene_id(raw["id"])
+            return Scene.model_validate(raw)
     path = _scene_path_for(scene_id)
     if not path.exists():
         raise FileNotFoundError("scene 不存在")
@@ -150,6 +202,9 @@ def list_scenes() -> List[Dict[str, object]]:
                 "title": scene.title,
                 "client_count": client_count,
                 "tags": scene.tags,
+                "version": scene.version,
+                "status": scene.status,
+                "updated_at": scene.updated_at.isoformat() if scene.updated_at else None,
             }
         )
     return entries
@@ -203,7 +258,9 @@ async def _apply_audio_mix(targets: List[ResolvedSceneTarget], mix: AudioMix) ->
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
-async def play_scene(scene: Scene, audio_override: Optional[AudioMix] = None) -> ResolvedScene:
+async def play_scene(scene: Scene, audio_override: Optional[AudioMix] = None, *, allow_draft: bool = False) -> ResolvedScene:
+    if not allow_draft and scene.status != "published":
+        raise ValueError("僅允許播放已發布的 scene")
     resolved = resolve_scene(scene)
     for target in resolved.targets:
         payload = config_payload_for_response(target.config, target.client_id)
@@ -213,3 +270,59 @@ async def play_scene(scene: Scene, audio_override: Optional[AudioMix] = None) ->
         await _apply_audio_mix(resolved.targets, mix)
     return resolved
 
+
+def list_scene_versions(scene_id: str) -> List[Dict[str, object]]:
+    versions: List[Dict[str, object]] = []
+    history_dir = _scene_history_dir_for(scene_id)
+    if not history_dir.exists():
+        return versions
+    for path in sorted(history_dir.glob("version-*.json")):
+        try:
+            with path.open("r", encoding="utf-8") as fp:
+                raw = json.load(fp)
+            raw.setdefault("id", scene_id)
+            raw["id"] = _sanitize_scene_id(raw["id"])
+            scene = Scene.model_validate(raw)
+        except (json.JSONDecodeError, ValidationError, ValueError) as exc:
+            logger.warning("略過 Scene 版本檔案 %s：%s", path.name, exc)
+            continue
+        versions.append(
+            {
+                "version": scene.version,
+                "status": scene.status,
+                "created_at": scene.created_at.isoformat() if scene.created_at else None,
+                "updated_at": scene.updated_at.isoformat() if scene.updated_at else None,
+                "published_at": scene.published_at.isoformat() if scene.published_at else None,
+                "published_by": scene.published_by,
+            }
+        )
+    return versions
+
+
+def publish_scene(scene_id: str, *, publish_as: str | None = None, expected_version: int | None = None) -> Scene:
+    ensure_metadata_write_enabled("scene_publish")
+    base = load_scene_definition(scene_id)
+    if expected_version is not None and base.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+    now = datetime.now(timezone.utc)
+    payload = base.model_dump(mode="json", by_alias=True)
+    payload["status"] = "published"
+    payload["published_at"] = now
+    payload["published_by"] = publish_as or base.published_by
+    payload["updated_at"] = now
+    return save_scene_definition(payload, scene_id=scene_id, expected_version=base.version)
+
+
+def rollback_scene(scene_id: str, target_version: int, *, publish_as: str | None = None, expected_version: int | None = None) -> Scene:
+    ensure_metadata_write_enabled("scene_rollback")
+    current = load_scene_definition(scene_id)
+    if expected_version is not None and current.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+    target = load_scene_definition(scene_id, version=target_version)
+    now = datetime.now(timezone.utc)
+    payload = target.model_dump(mode="json", by_alias=True)
+    payload["status"] = "published"
+    payload["published_at"] = now
+    payload["published_by"] = publish_as or target.published_by
+    payload["updated_at"] = now
+    return save_scene_definition(payload, scene_id=scene_id, expected_version=current.version)

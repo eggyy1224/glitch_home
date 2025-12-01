@@ -11,6 +11,7 @@ import type {
 
 interface ResolveOption extends RequestOptions {
   resolve?: boolean;
+  version?: number;
 }
 
 function withSignal(signal?: AbortSignal | null): Partial<RequestOptions> {
@@ -113,10 +114,13 @@ export async function listEpisodes({ signal }: RequestOptions = {}): Promise<{ e
   return request(url, withSignal(signal));
 }
 
-export async function fetchScene(sceneId: string, { signal, resolve = true }: ResolveOption = {}): Promise<Scene> {
+export async function fetchScene(sceneId: string, { signal, resolve = true, version }: ResolveOption = {}): Promise<Scene> {
   if (!sceneId) throw new Error("sceneId is required");
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scenes/${encodeURIComponent(sceneId)}${qs}`, withSignal(signal));
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  if (typeof version === "number") qs.set("version", `${version}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}${suffix}`, withSignal(signal));
 }
 
 export async function listScenes({ signal }: RequestOptions = {}): Promise<{ scenes?: Scene[] }> {
@@ -124,8 +128,10 @@ export async function listScenes({ signal }: RequestOptions = {}): Promise<{ sce
 }
 
 export async function createScene(payload: Partial<Scene>, { resolve = true, signal }: ResolveOption = {}): Promise<Scene> {
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scenes${qs}`, { method: "POST", body: payload, ...withSignal(signal) });
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes${suffix}`, { method: "POST", body: payload, ...withSignal(signal) });
 }
 
 export async function updateScene(
@@ -134,8 +140,10 @@ export async function updateScene(
   { resolve = true, signal }: ResolveOption = {},
 ): Promise<Scene> {
   if (!sceneId) throw new Error("sceneId is required");
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scenes/${encodeURIComponent(sceneId)}${qs}`, {
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}${suffix}`, {
     method: "PUT",
     body: payload,
     ...withSignal(signal),
@@ -153,8 +161,10 @@ export async function cloneScene(
   { resolve = true, signal }: ResolveOption = {},
 ): Promise<Scene> {
   if (!sceneId) throw new Error("sceneId is required");
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scenes/${encodeURIComponent(sceneId)}/clone${qs}`, {
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}/clone${suffix}`, {
     method: "POST",
     body: payload,
     ...withSignal(signal),
@@ -164,17 +174,64 @@ export async function cloneScene(
 export async function playScene(
   sceneId: string,
   payload: Record<string, unknown> | null = null,
-  { signal }: RequestOptions = {},
+  { signal, allowDraft = false, version }: RequestOptions & { allowDraft?: boolean; version?: number } = {},
 ): Promise<unknown> {
   if (!sceneId) throw new Error("sceneId is required");
   const body = payload && typeof payload === "object" ? payload : {};
-  return request(`/api/scenes/${encodeURIComponent(sceneId)}/play`, { method: "POST", body, ...withSignal(signal) });
+  const qs = new URLSearchParams();
+  if (allowDraft) qs.set("allow_draft", "true");
+  if (typeof version === "number") qs.set("version", `${version}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}/play${suffix}`, { method: "POST", body, ...withSignal(signal) });
 }
 
-export async function fetchScript(scriptId: string, { signal, resolve = true }: ResolveOption = {}): Promise<Script> {
+export async function listSceneVersions(sceneId: string, { signal }: RequestOptions = {}): Promise<{ versions?: unknown[] }> {
+  if (!sceneId) throw new Error("sceneId is required");
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}/versions`, withSignal(signal));
+}
+
+export async function publishScene(
+  sceneId: string,
+  payload: Record<string, unknown> | null = null,
+  { signal, expectedVersion }: RequestOptions & { expectedVersion?: number } = {},
+): Promise<Scene> {
+  if (!sceneId) throw new Error("sceneId is required");
+  const qs = new URLSearchParams();
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}/publish${suffix}`, {
+    method: "POST",
+    body: payload || {},
+    ...withSignal(signal),
+  });
+}
+
+export async function rollbackScene(
+  sceneId: string,
+  payload: Record<string, unknown>,
+  { signal, expectedVersion }: RequestOptions & { expectedVersion?: number } = {},
+): Promise<Scene> {
+  if (!sceneId) throw new Error("sceneId is required");
+  if (!payload || typeof payload.version === "undefined") {
+    throw new Error("rollback payload requires version");
+  }
+  const qs = new URLSearchParams();
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scenes/${encodeURIComponent(sceneId)}/rollback${suffix}`, {
+    method: "POST",
+    body: payload,
+    ...withSignal(signal),
+  });
+}
+
+export async function fetchScript(scriptId: string, { signal, resolve = true, version }: ResolveOption = {}): Promise<Script> {
   if (!scriptId) throw new Error("scriptId is required");
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scripts/${encodeURIComponent(scriptId)}${qs}`, withSignal(signal));
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  if (typeof version === "number") qs.set("version", `${version}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}${suffix}`, withSignal(signal));
 }
 
 export async function listScripts({ signal }: RequestOptions = {}): Promise<{ scripts?: Script[] }> {
@@ -185,8 +242,10 @@ export async function createScript(
   payload: Partial<Script>,
   { resolve = true, signal }: ResolveOption = {},
 ): Promise<Script> {
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scripts${qs}`, { method: "POST", body: payload, ...withSignal(signal) });
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts${suffix}`, { method: "POST", body: payload, ...withSignal(signal) });
 }
 
 export async function updateScript(
@@ -195,8 +254,10 @@ export async function updateScript(
   { resolve = true, signal }: ResolveOption = {},
 ): Promise<Script> {
   if (!scriptId) throw new Error("scriptId is required");
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scripts/${encodeURIComponent(scriptId)}${qs}`, {
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}${suffix}`, {
     method: "PUT",
     body: payload,
     ...withSignal(signal),
@@ -214,8 +275,10 @@ export async function cloneScript(
   { resolve = true, signal }: ResolveOption = {},
 ): Promise<Script> {
   if (!scriptId) throw new Error("scriptId is required");
-  const qs = resolve === false ? "?resolve=false" : "";
-  return request(`/api/scripts/${encodeURIComponent(scriptId)}/clone${qs}`, {
+  const qs = new URLSearchParams();
+  if (resolve === false) qs.set("resolve", "false");
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}/clone${suffix}`, {
     method: "POST",
     body: payload,
     ...withSignal(signal),
@@ -225,11 +288,59 @@ export async function cloneScript(
 export async function playScript(
   scriptId: string,
   payload: Record<string, unknown> | null = null,
-  { signal }: RequestOptions = {},
+  { signal, allowDraft = false, version }: RequestOptions & { allowDraft?: boolean; version?: number } = {},
 ): Promise<unknown> {
   if (!scriptId) throw new Error("scriptId is required");
   const body = payload && typeof payload === "object" ? payload : {};
-  return request(`/api/scripts/${encodeURIComponent(scriptId)}/play`, { method: "POST", body, ...withSignal(signal) });
+  const qs = new URLSearchParams();
+  if (allowDraft) qs.set("allow_draft", "true");
+  if (typeof version === "number") qs.set("version", `${version}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}/play${suffix}`, {
+    method: "POST",
+    body,
+    ...withSignal(signal),
+  });
+}
+
+export async function listScriptVersions(scriptId: string, { signal }: RequestOptions = {}): Promise<{ versions?: unknown[] }> {
+  if (!scriptId) throw new Error("scriptId is required");
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}/versions`, withSignal(signal));
+}
+
+export async function publishScript(
+  scriptId: string,
+  payload: Record<string, unknown> | null = null,
+  { signal, expectedVersion }: RequestOptions & { expectedVersion?: number } = {},
+): Promise<Script> {
+  if (!scriptId) throw new Error("scriptId is required");
+  const qs = new URLSearchParams();
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}/publish${suffix}`, {
+    method: "POST",
+    body: payload || {},
+    ...withSignal(signal),
+  });
+}
+
+export async function rollbackScript(
+  scriptId: string,
+  payload: Record<string, unknown>,
+  { signal, expectedVersion }: RequestOptions & { expectedVersion?: number } = {},
+): Promise<Script> {
+  if (!scriptId) throw new Error("scriptId is required");
+  if (!payload || typeof payload.version === "undefined") {
+    throw new Error("rollback payload requires version");
+  }
+  const qs = new URLSearchParams();
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/scripts/${encodeURIComponent(scriptId)}/rollback${suffix}`, {
+    method: "POST",
+    body: payload,
+    ...withSignal(signal),
+  });
 }
 
 export async function stopScript(scriptId: string, { signal }: RequestOptions = {}): Promise<unknown> {

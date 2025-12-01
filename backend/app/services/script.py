@@ -5,6 +5,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -28,6 +29,7 @@ from .realtime_bus import realtime_broadcaster
 logger = logging.getLogger(__name__)
 
 _SCRIPT_DIR = Path(settings.metadata_dir) / "scripts"
+_SCRIPT_HISTORY_DIR = Path(settings.metadata_dir) / "history" / "scripts"
 _SCRIPT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 _running_scripts: Dict[str, asyncio.Task[None]] = {}
 
@@ -112,12 +114,31 @@ def _script_path_for(script_id: str) -> Path:
     return _SCRIPT_DIR / f"{safe_id}.json"
 
 
+def _script_history_dir_for(script_id: str) -> Path:
+    safe_id = _sanitize_script_id(script_id)
+    return _SCRIPT_HISTORY_DIR / safe_id
+
+
+def _script_version_path(script_id: str, version: int) -> Path:
+    return _script_history_dir_for(script_id) / f"version-{version:04d}.json"
+
+
 def _ensure_script_dir() -> None:
     if not _SCRIPT_DIR.exists():
         _SCRIPT_DIR.mkdir(parents=True, exist_ok=True)
+    if not _SCRIPT_HISTORY_DIR.exists():
+        _SCRIPT_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_script_definition(payload: dict, script_id: Optional[str] = None) -> Script:
+def _write_script_history(script: Script) -> None:
+    history_dir = _script_history_dir_for(script.id)
+    history_dir.mkdir(parents=True, exist_ok=True)
+    version_path = _script_version_path(script.id, script.version)
+    with version_path.open("w", encoding="utf-8") as fp:
+        json.dump(script.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+
+
+def save_script_definition(payload: dict, script_id: Optional[str] = None, expected_version: int | None = None) -> Script:
     ensure_metadata_write_enabled("script_definition")
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
@@ -126,16 +147,46 @@ def save_script_definition(payload: dict, script_id: Optional[str] = None) -> Sc
         raise ValueError("script id 必填")
     safe_id = _sanitize_script_id(candidate_id)
     payload = {**payload, "id": safe_id}
+
+    existing: Script | None = None
+    path = _script_path_for(safe_id)
+    if path.exists():
+        try:
+            existing = load_script_definition(safe_id)
+        except Exception:  # noqa: BLE001
+            existing = None
+
+    if expected_version is not None and existing is not None and existing.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+
+    base_version = expected_version if expected_version is not None else (existing.version if existing else 0)
+    payload_version = payload.get("version")
+    next_version = max(int(payload_version) if payload_version else 0, base_version + 1)
+
+    now = datetime.now(timezone.utc)
+    payload.setdefault("created_at", existing.created_at if existing else now)
+    payload["updated_at"] = now
+    payload.setdefault("status", payload.get("status") or (existing.status if existing else "published"))
+    payload["version"] = next_version
+
     script = Script.model_validate(payload)
 
     _ensure_script_dir()
-    path = _script_path_for(safe_id)
     with path.open("w", encoding="utf-8") as fp:
         json.dump(script.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    _write_script_history(script)
     return script
 
 
-def load_script_definition(script_id: str) -> Script:
+def load_script_definition(script_id: str, version: int | None = None) -> Script:
+    if version is not None:
+        version_path = _script_version_path(script_id, int(version))
+        if version_path.exists():
+            with version_path.open("r", encoding="utf-8") as fp:
+                raw = json.load(fp)
+            raw.setdefault("id", script_id)
+            raw["id"] = _sanitize_script_id(raw["id"])
+            return Script.model_validate(raw)
     path = _script_path_for(script_id)
     if not path.exists():
         raise FileNotFoundError("script 不存在")
@@ -181,6 +232,9 @@ def list_scripts() -> List[Dict[str, object]]:
                 "title": script.title,
                 "entry_count": len(script.entries),
                 "tags": script.tags,
+                "version": script.version,
+                "status": script.status,
+                "updated_at": script.updated_at.isoformat() if script.updated_at else None,
             }
         )
     return entries
@@ -274,7 +328,9 @@ async def _run_script(resolved: ResolvedScript, audio_override: Optional[AudioMi
         logger.error("Script %s 執行失敗: %s", resolved.script.id, exc, exc_info=exc)
 
 
-async def play_script(script: Script, audio_override: Optional[AudioMix] = None) -> ResolvedScript:
+async def play_script(script: Script, audio_override: Optional[AudioMix] = None, *, allow_draft: bool = False) -> ResolvedScript:
+    if not allow_draft and script.status != "published":
+        raise ValueError("僅允許播放已發布的 script")
     resolved = resolve_script(script)
     existing = _running_scripts.get(script.id)
     if existing:
@@ -295,3 +351,60 @@ def stop_script(script_id: str) -> bool:
         return False
     task.cancel()
     return True
+
+
+def list_script_versions(script_id: str) -> List[Dict[str, object]]:
+    versions: List[Dict[str, object]] = []
+    history_dir = _script_history_dir_for(script_id)
+    if not history_dir.exists():
+        return versions
+    for path in sorted(history_dir.glob("version-*.json")):
+        try:
+            with path.open("r", encoding="utf-8") as fp:
+                raw = json.load(fp)
+            raw.setdefault("id", script_id)
+            raw["id"] = _sanitize_script_id(raw["id"])
+            script = Script.model_validate(raw)
+        except (json.JSONDecodeError, ValidationError, ValueError) as exc:
+            logger.warning("略過 Script 版本檔案 %s：%s", path.name, exc)
+            continue
+        versions.append(
+            {
+                "version": script.version,
+                "status": script.status,
+                "created_at": script.created_at.isoformat() if script.created_at else None,
+                "updated_at": script.updated_at.isoformat() if script.updated_at else None,
+                "published_at": script.published_at.isoformat() if script.published_at else None,
+                "published_by": script.published_by,
+            }
+        )
+    return versions
+
+
+def publish_script(script_id: str, *, publish_as: str | None = None, expected_version: int | None = None) -> Script:
+    ensure_metadata_write_enabled("script_publish")
+    base = load_script_definition(script_id)
+    if expected_version is not None and base.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+    now = datetime.now(timezone.utc)
+    payload = base.model_dump(mode="json", by_alias=True)
+    payload["status"] = "published"
+    payload["published_at"] = now
+    payload["published_by"] = publish_as or base.published_by
+    payload["updated_at"] = now
+    return save_script_definition(payload, script_id=script_id, expected_version=base.version)
+
+
+def rollback_script(script_id: str, target_version: int, *, publish_as: str | None = None, expected_version: int | None = None) -> Script:
+    ensure_metadata_write_enabled("script_rollback")
+    current = load_script_definition(script_id)
+    if expected_version is not None and current.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+    target = load_script_definition(script_id, version=target_version)
+    now = datetime.now(timezone.utc)
+    payload = target.model_dump(mode="json", by_alias=True)
+    payload["status"] = "published"
+    payload["published_at"] = now
+    payload["published_by"] = publish_as or target.published_by
+    payload["updated_at"] = now
+    return save_script_definition(payload, script_id=script_id, expected_version=current.version)

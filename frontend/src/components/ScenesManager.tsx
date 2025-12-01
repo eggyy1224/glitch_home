@@ -143,6 +143,9 @@ export default function ScenesManager() {
             {sceneList.map((item) => {
               const itemId = item.id || "";
               const clientCount = (item as { client_count?: number }).client_count ?? 0;
+              const version = (item as { version?: number }).version;
+              const status = (item as { status?: string }).status;
+              const updatedAt = (item as { updated_at?: string }).updated_at;
               return (
                 <li
                   key={itemId || Math.random()}
@@ -159,7 +162,9 @@ export default function ScenesManager() {
                 >
                   <span style={{ flex: 1 }}>
                     {itemId}
-                    {item.title ? `（${item.title}）` : ""} · {clientCount} targets
+                    {item.title ? `（${item.title}）` : ""} · {clientCount} targets · v{version ?? "?"}
+                    {status ? ` / ${status}` : ""}
+                    {updatedAt ? ` / ${updatedAt}` : ""}
                   </span>
                   <button
                     type="button"
