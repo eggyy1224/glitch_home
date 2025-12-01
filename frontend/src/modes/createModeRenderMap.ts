@@ -1,8 +1,11 @@
-import { lazy, type ComponentType, type ReactNode } from "react";
+import { lazy, type ComponentType, type MutableRefObject, type ReactNode } from "react";
 import { DisplayModes } from "../hooks/useDisplayMode";
+import type { OverlayContent } from "../types/overlay";
+import type { IframeConfig, VideoController } from "../types/control";
+import type { KinshipCameraPose, KinshipCameraPreset, KinshipCluster, KinshipData } from "../types/kinship";
 
 export type ModeRenderEntry = {
-  component: ComponentType<unknown>;
+  component: ComponentType<any>;
   componentProps?: Record<string, unknown>;
   withCaptureReady?: boolean;
   beforeContent?: ReactNode;
@@ -10,7 +13,7 @@ export type ModeRenderEntry = {
 };
 
 type ModeBaseConfig = {
-  component: ComponentType<unknown>;
+  component: ComponentType<any>;
   withCaptureReady?: boolean;
 };
 
@@ -18,6 +21,40 @@ type ModeEntryOverrides = {
   componentProps?: Record<string, unknown>;
   beforeContent?: ReactNode;
   afterContent?: ReactNode;
+};
+
+type ModeRenderMapOptions = {
+  iframeActiveConfig: IframeConfig | Partial<IframeConfig> | null;
+  iframeControlsEnabled: boolean;
+  handleLocalIframeConfigApply: (config: Partial<IframeConfig> | null) => void;
+  iframeTimelineOverlay?: ReactNode | null;
+  imagesBase: string;
+  imgId?: string | null;
+  slideIntervalMs?: number;
+  navigateToImage: (imageId: string) => void;
+  showInfo?: boolean;
+  collageRemoteConfig?: unknown;
+  collageControlsEnabled?: boolean;
+  collageRemoteSource?: string | null;
+  caption?: OverlayContent | null;
+  videoControllerRef?: MutableRefObject<VideoController | null> | null;
+  clusters?: KinshipCluster[];
+  data?: KinshipData | null;
+  phylogenyMode?: boolean;
+  incubatorMode?: boolean;
+  handleFpsUpdate?: (fps: number | null) => void;
+  handleCameraUpdate?: (payload: KinshipCameraPose) => void;
+  pendingPreset?: KinshipCameraPreset | null;
+  topbarContent?: ReactNode;
+  screenshotContent?: ReactNode;
+  clientId?: string;
+  canGenerate?: boolean;
+  canWriteMetadata?: boolean;
+  canWriteAssets?: boolean;
+  appMode?: string;
+  forbidMessage?: string;
+  canAnalyze?: boolean;
+  canRebuildIndex?: boolean;
 };
 
 const IframeMode = lazy(() => import("../IframeMode"));
@@ -109,7 +146,7 @@ export function createModeRenderMap({
   forbidMessage,
   canAnalyze,
   canRebuildIndex,
-}): ModeRenderMap {
+}: ModeRenderMapOptions): ModeRenderMap {
   return {
     [DisplayModes.IFRAME]: buildModeEntry(modeBaseConfigs[DisplayModes.IFRAME], {
       componentProps: {

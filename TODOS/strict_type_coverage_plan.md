@@ -42,3 +42,6 @@
 5) 影音/場景模式與播放輔助
    - 檔案：`src/IframeMode.tsx`、`src/OrganicRoomScene.tsx`、`src/SlideMode.tsx`、`src/VideoMode.tsx`、`src/SoundPlayer.tsx`、`src/hooks/useSlidePlayback.ts`、`src/hooks/useSubtitleCaption.ts`、`src/hooks/useSoundQueue.ts`
    - 重點：事件/raf/observer 參數 implicit `any`，`ImageBitmap.close` 誤用，音檔型別不符 `SoundFile`，回傳型別缺失與 enum 值不對。
+
+## 進度更新
+- 第一包完成：`App.tsx`、`modes/createModeRenderMap.ts`、`useRemoteTimelineControl`/`useIframeTimelinePlayer` 型別收斂，lazy component props 不再為 `unknown`，iframe config handler 型別對齊 `IframeConfig`。其餘批次錯誤仍依原五包分派處理。

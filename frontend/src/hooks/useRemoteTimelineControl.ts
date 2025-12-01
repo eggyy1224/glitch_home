@@ -4,14 +4,14 @@ import { DisplayModes, type DisplayModeType } from "./useDisplayMode";
 import { useIframeTimelinePlayer } from "./useIframeTimelinePlayer";
 import { useTimelineStepActions } from "./useTimelineStepActions";
 import type { AppModeCapabilities } from "../types/mode";
-import type { IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
+import type { IframeConfig, IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
 import type { TimelineControlPayload, TimelineStep } from "../types/timeline";
 
 interface UseRemoteTimelineControlOptions {
   activeMode: DisplayModeType;
   iframeTimelineId: string | null;
   clientId: string;
-  applyRemoteIframeConfig: (config: unknown) => void;
+  applyRemoteIframeConfig: (config: Partial<IframeConfig> | null) => void;
   releaseRemoteIframeConfig: () => void;
   setActiveModeOverride?: (mode: DisplayModeType | null) => void;
   capabilities?: Partial<AppModeCapabilities> & { forbidMessage?: string };

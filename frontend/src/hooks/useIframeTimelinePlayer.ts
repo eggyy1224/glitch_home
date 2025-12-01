@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchIframeTimeline } from "../api";
-import type { IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
+import type { IframeConfig, IframeTimelineResolved, TimelineStepWithConfig } from "../types/control";
 
 const clampIndex = (index: number, max: number) => {
   if (max <= 0) return 0;
@@ -12,7 +12,7 @@ const clampIndex = (index: number, max: number) => {
 interface UseIframeTimelinePlayerOptions {
   timelineId: string | null;
   isActive: boolean;
-  applyRemoteConfig?: (config: unknown) => void;
+  applyRemoteConfig?: (config: Partial<IframeConfig> | null) => void;
   releaseRemoteConfig?: () => void;
   onStepStart?: (payload: { step: TimelineStepWithConfig; stepIndex: number; runId: number }) => void;
   initialStep?: number | null;
@@ -136,7 +136,7 @@ export function useIframeTimelinePlayer({
   const applyStepConfig = useCallback(
     (step: TimelineStepWithConfig | null) => {
       if (!step?.config) return;
-      applyRemoteConfig?.(step.config);
+      applyRemoteConfig?.(step.config ?? null);
     },
     [applyRemoteConfig],
   );
