@@ -219,12 +219,12 @@ export function useControlSocketHandlers({
       if (!action) {
         return;
       }
-      const clampVolume = (value: unknown) => {
+      const clampVolume = (value: unknown): number | undefined => {
         if (typeof value !== "number") return undefined;
         return Math.max(0, Math.min(1, value));
       };
 
-      const applyToDocumentMedia = (doc: Document, fn: (media: HTMLMediaElement) => void, depth = 0) => {
+      const applyToDocumentMedia = (doc: Document, fn: (media: HTMLMediaElement) => void, depth = 0): void => {
         if (!doc || depth > 4) return; // avoid deep loops
         const elements = Array.from(doc.querySelectorAll("video, audio"));
         elements.forEach((media) => {
@@ -247,29 +247,29 @@ export function useControlSocketHandlers({
         });
       };
 
-      const applyToMediaElements = (fn: (media: HTMLMediaElement) => void) => {
+      const applyToMediaElements = (fn: (media: HTMLMediaElement) => void): void => {
         applyToDocumentMedia(document, fn);
       };
 
-      const rememberControlState = (volume: number | null, muted: boolean | null, enableInterval: boolean) => {
+      const rememberControlState = (volume: number | null, muted: boolean | null, enableInterval: boolean): void => {
         mediaControlStateRef.current = { volume, muted };
         if (!enableInterval) return;
         if (!mediaControlIntervalRef.current) {
-            mediaControlIntervalRef.current = setInterval(() => {
-              const state = mediaControlStateRef.current;
-              if (!state) return;
-              applyToMediaElements((media) => {
-                if (state.volume !== null && state.volume !== undefined) {
-                  media.volume = state.volume;
-                  if (state.volume > 0 && media.muted && state.muted !== true) {
-                    media.muted = false;
-                  }
+          mediaControlIntervalRef.current = setInterval(() => {
+            const state = mediaControlStateRef.current;
+            if (!state) return;
+            applyToMediaElements((media) => {
+              if (state.volume !== null && state.volume !== undefined) {
+                media.volume = state.volume;
+                if (state.volume > 0 && media.muted && state.muted !== true) {
+                  media.muted = false;
                 }
-                if (state.muted !== null && state.muted !== undefined) {
-                  media.muted = state.muted;
-                }
-              });
-            }, 1000);
+              }
+              if (state.muted !== null && state.muted !== undefined) {
+                media.muted = state.muted;
+              }
+            });
+          }, 1000);
         }
       };
 

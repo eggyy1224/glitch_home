@@ -276,24 +276,30 @@ export default function SceneEditor() {
                   </label>
                   <label style={{ display: "flex", flexDirection: "column" }}>
                     選擇 snapshot
-                    <select
-                      value={snapshotValue || ""}
-                      onChange={(e) =>
-                        setTargetField(
-                          index,
-                          "snapshot",
-                          row.client ? `${row.client}/${e.target.value}` : e.target.value,
-                        )
-                      }
-                      data-ai-field={`scene-editor.target-${index}.snapshot-select`}
-                    >
-                      <option value="">-- 選擇 --</option>
-                      {options.map((opt) => (
-                        <option key={`${opt.client}/${opt.name || opt.id}`} value={opt.name || opt.id}>
-                          {opt.client || row.client}/{opt.name || opt.id}
-                        </option>
-                      ))}
-                    </select>
+                      <select
+                        value={snapshotValue || ""}
+                        onChange={(e) =>
+                          setTargetField(
+                            index,
+                            "snapshot",
+                            row.client ? `${row.client}/${e.target.value}` : e.target.value,
+                          )
+                        }
+                        data-ai-field={`scene-editor.target-${index}.snapshot-select`}
+                      >
+                        <option value="">-- 選擇 --</option>
+                        {options.map((opt) => {
+                          const name = typeof opt.name === "string" ? opt.name : "";
+                          const id = typeof (opt as { id?: unknown }).id === "string" ? (opt as { id: string }).id : "";
+                          const value = name || id;
+                          const label = `${opt.client || row.client}/${value}`;
+                          return (
+                            <option key={`${opt.client || row.client}/${value}`} value={value}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
                   </label>
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     <button type="button" onClick={() => refreshSnapshotsForClient(row.client)} data-ai-action="scene-editor.refresh-snapshot">

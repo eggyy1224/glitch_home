@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteCameraPreset, fetchCameraPresets, saveCameraPreset } from "../api";
+import type { CameraInfo, CameraPreset } from "../types/control";
 
 export function useCameraPresets() {
-  const [cameraInfo, setCameraInfo] = useState(null);
-  const [cameraPresets, setCameraPresets] = useState([]);
+  const [cameraInfo, setCameraInfo] = useState<CameraInfo | null>(null);
+  const [cameraPresets, setCameraPresets] = useState<CameraPreset[]>([]);
   const [selectedPresetName, setSelectedPresetName] = useState("");
-  const [pendingPreset, setPendingPreset] = useState(null);
-  const [presetMessage, setPresetMessage] = useState(null);
-  const messageTimerRef = useRef(null);
+  const [pendingPreset, setPendingPreset] = useState<(CameraPreset & { key?: number }) | null>(null);
+  const [presetMessage, setPresetMessage] = useState<string | null>(null);
+  const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetchCameraPresets()
@@ -23,7 +24,7 @@ export function useCameraPresets() {
       .catch(() => setCameraPresets([]));
   }, []);
 
-  const pushPresetMessage = useCallback((text, ttl = 2500) => {
+  const pushPresetMessage = useCallback((text: string, ttl = 2500) => {
     setPresetMessage(text);
     if (messageTimerRef.current) {
       clearTimeout(messageTimerRef.current);
@@ -42,7 +43,7 @@ export function useCameraPresets() {
     };
   }, []);
 
-  const upsertPresetInState = useCallback((preset) => {
+  const upsertPresetInState = useCallback((preset: CameraPreset) => {
     setCameraPresets((prev) => {
       const next = [...prev];
       const idx = next.findIndex((p) => p.name === preset.name);
@@ -55,7 +56,7 @@ export function useCameraPresets() {
     });
   }, []);
 
-  const removePresetInState = useCallback((name) => {
+  const removePresetInState = useCallback((name: string) => {
     setCameraPresets((prev) => prev.filter((p) => p.name !== name));
   }, []);
 
@@ -105,7 +106,7 @@ export function useCameraPresets() {
     }
   }, [selectedPresetName, pushPresetMessage, removePresetInState]);
 
-  const handleCameraUpdate = useCallback((info) => {
+  const handleCameraUpdate = useCallback((info: CameraInfo | null) => {
     setCameraInfo(info);
   }, []);
 

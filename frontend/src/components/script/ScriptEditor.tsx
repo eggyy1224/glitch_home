@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from "react";
 import { AdminPanelContext } from "../../AdminPanelContext";
 import { activeTabButtonStyle, boxStyle, columnsStyle, columnStyle, labelStyle, previewContainerStyle, previewTitleStyle, tabButtonStyle } from "../../AdminPanelStyles";
-import useScriptEditor from "../../hooks/useScriptEditor";
+import useScriptEditor, { type ScriptEntryRow } from "../../hooks/useScriptEditor";
 
 export default function ScriptEditor() {
   const { canWriteMetadata, forbidMessage, defaultClientId } = useContext(AdminPanelContext);
@@ -46,7 +46,10 @@ export default function ScriptEditor() {
     },
   ] = useScriptEditor();
 
-  const entryRows = useMemo(() => (entries.length ? entries : [{ type: "scene", scene_id: "", duration: 5 }]), [entries]);
+  const entryRows = useMemo<ScriptEntryRow[]>(
+    () => (entries.length ? entries : [{ type: "scene", scene_id: "", duration: 5 }]),
+    [entries],
+  );
 
   return (
     <div style={boxStyle} data-ai-id="admin.script.editor" data-ai-section="admin.script.editor">
