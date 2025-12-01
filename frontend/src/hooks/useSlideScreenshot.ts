@@ -5,7 +5,7 @@ import { canvasToBlob } from "../utils/slideMode";
 
 interface UseSlideScreenshotOptions {
   rootRef?: React.RefObject<HTMLElement>;
-  onCaptureReady?: (capture: (() => Promise<Blob>) | null) => void;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | undefined;
   html2canvasLoader?: () => Promise<typeof import("html2canvas").default>;
 }
 

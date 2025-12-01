@@ -23,9 +23,9 @@ export interface KinshipModeConfig {
   SceneComponent: ComponentType<any>;
   buildSceneProps: (args: {
     imagesBase: string;
-    clusters?: KinshipCluster[];
+    clusters?: KinshipCluster[] | undefined;
     data?: KinshipData | null;
-    onPick?: (name: string | number) => void;
+    onPick?: ((name: string | number) => void) | undefined;
   }) => Record<string, unknown>;
 }
 

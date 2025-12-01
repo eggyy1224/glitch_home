@@ -16,8 +16,8 @@ interface ControlPanelProps {
   fps: number | null;
   cameraInfo: CameraInfo | null;
   presetMessage?: string | null;
-  subtitle?: string | null;
-  caption?: string | null;
+  subtitle?: string | null | undefined;
+  caption?: string | null | undefined;
   presets: CameraPreset[];
   selectedPresetName: string;
   onSelectPreset: (name: string) => void;

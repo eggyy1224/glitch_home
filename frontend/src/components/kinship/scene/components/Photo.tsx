@@ -9,8 +9,8 @@ interface PhotoProps {
   url: string;
   size?: number;
   name: string | number;
-  onPick?: (name: string | number) => void;
-  externalRef?: React.MutableRefObject<THREE.Mesh | null> | React.RefObject<THREE.Mesh> | null;
+  onPick?: ((name: string | number) => void) | undefined;
+  externalRef?: React.MutableRefObject<THREE.Mesh | null> | null;
   getProgress?: (() => number) | number | null;
 }
 
@@ -23,7 +23,7 @@ export default function Photo({
   getProgress = null,
 }: PhotoProps) {
   const tex = useTexture(url);
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Mesh | null>(null);
   const scaleRef = useRef<[number, number, number]>([size, size, 1]);
   const phaseRef = useRef(Math.random() * Math.PI * 2);
   const speedRef = useRef(0.25 + Math.random() * 0.15);
@@ -65,8 +65,8 @@ export default function Photo({
       <mesh
         ref={(node) => {
           meshRef.current = node;
-          if (externalRef && "current" in externalRef) {
-            (externalRef as React.MutableRefObject<THREE.Mesh | null>).current = node;
+          if (externalRef) {
+            (externalRef as any).current = node;
           }
         }}
         onClick={() => onPick?.(name)}

@@ -260,6 +260,9 @@ export default function App() {
   const ancestors = data?.ancestors || [];
   const modeLabel = incubatorMode ? "孵化室 3D" : phylogenyMode ? "親緣圖 2D" : "3D 景觀";
 
+  const subtitleText = subtitle?.text ?? null;
+  const captionText = caption?.text ?? null;
+
   const topbarContent = (
     <ControlPanel
       visible={showInfo}
@@ -280,8 +283,8 @@ export default function App() {
       onApplyPreset={handleApplyPreset}
       onDeletePreset={handleDeletePreset}
       presetMessage={presetMessage}
-      subtitle={subtitle}
-      caption={caption}
+      subtitle={subtitleText}
+      caption={captionText}
     />
   );
 
@@ -353,7 +356,7 @@ export default function App() {
       <ModeLayout
         component={activeModeEntry.component}
         componentProps={activeModeEntry.componentProps}
-        withCaptureReady={activeModeEntry.withCaptureReady}
+        withCaptureReady={Boolean(activeModeEntry.withCaptureReady)}
         beforeContent={activeModeEntry.beforeContent}
         afterContent={activeModeEntry.afterContent}
         soundPlayerEnabled={soundPlayerEnabled}

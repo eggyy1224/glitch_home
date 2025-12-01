@@ -184,30 +184,34 @@ export default function CollageMode({ anchorImage = null, ...rest }: CollageMode
               {mixedPieces.map((piece) => {
                 const widthPercent = 100 / mixBoard.cols;
                 const heightPercent = 100 / mixBoard.rows;
-                const leftPercent = (piece.col / mixBoard.cols) * 100;
-                const topPercent = (piece.row / mixBoard.rows) * 100;
-                const backgroundX = cols <= 1 ? 50 : (piece.sourceCol / (cols - 1)) * 100;
-              const backgroundY = rows <= 1 ? 50 : (piece.sourceRow / (rows - 1)) * 100;
-              const imageUrl = buildImageUrl(imagesBase, piece.imageId);
+                const col = piece.col ?? 0;
+                const row = piece.row ?? 0;
+                const srcCol = piece.sourceCol ?? 0;
+                const srcRow = piece.sourceRow ?? 0;
+                const leftPercent = (col / mixBoard.cols) * 100;
+                const topPercent = (row / mixBoard.rows) * 100;
+                const backgroundX = cols <= 1 ? 50 : (srcCol / Math.max(1, cols - 1)) * 100;
+                const backgroundY = rows <= 1 ? 50 : (srcRow / Math.max(1, rows - 1)) * 100;
+                const imageUrl = buildImageUrl(imagesBase, piece.imageId);
 
-              const delay = piece.delay ?? 0;
-              const fromX = piece.fromX ?? 0;
-              const fromY = piece.fromY ?? 0;
-              const fromRot = piece.fromRot ?? 0;
+                const delay = piece.delay ?? 0;
+                const fromX = piece.fromX ?? 0;
+                const fromY = piece.fromY ?? 0;
+                const fromRot = piece.fromRot ?? 0;
 
-              const style = {
-                width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
-                height: `calc(${heightPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
-                left: `calc(${leftPercent}% - ${PIECE_OVERLAP_PX}px)`,
-                top: `calc(${topPercent}% - ${PIECE_OVERLAP_PX}px)`,
-                backgroundImage: `url("${imageUrl}")`,
-                backgroundSize: `${cols * 100}% ${rows * 100}%`,
-                backgroundPosition: `${backgroundX}% ${backgroundY}%`,
-                animationDelay: `${delay.toFixed(2)}s`,
-                "--from-x": `${fromX.toFixed(1)}px`,
-                "--from-y": `${fromY.toFixed(1)}px`,
-                "--from-rot": `${fromRot.toFixed(1)}deg`,
-              };
+                const style = {
+                  width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                  height: `calc(${heightPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                  left: `calc(${leftPercent}% - ${PIECE_OVERLAP_PX}px)`,
+                  top: `calc(${topPercent}% - ${PIECE_OVERLAP_PX}px)`,
+                  backgroundImage: `url("${imageUrl}")`,
+                  backgroundSize: `${cols * 100}% ${rows * 100}%`,
+                  backgroundPosition: `${backgroundX}% ${backgroundY}%`,
+                  animationDelay: `${delay.toFixed(2)}s`,
+                  "--from-x": `${fromX.toFixed(1)}px`,
+                  "--from-y": `${fromY.toFixed(1)}px`,
+                  "--from-rot": `${fromRot.toFixed(1)}deg`,
+                };
 
                 return <div key={piece.key} className="collage-piece collage-piece--mixed" style={style} />;
               })}
@@ -236,10 +240,14 @@ export default function CollageMode({ anchorImage = null, ...rest }: CollageMode
                 {tilePieces.map((piece: CollagePiece) => {
                   const widthPercent = 100 / cols;
                   const heightPercent = 100 / rows;
-                  const leftPercent = (piece.col / cols) * 100;
-                  const topPercent = (piece.row / rows) * 100;
-                  const backgroundX = cols <= 1 ? 50 : (piece.sourceCol / (cols - 1)) * 100;
-                  const backgroundY = rows <= 1 ? 50 : (piece.sourceRow / (rows - 1)) * 100;
+                  const col = piece.col ?? 0;
+                  const row = piece.row ?? 0;
+                  const srcCol = piece.sourceCol ?? 0;
+                  const srcRow = piece.sourceRow ?? 0;
+                  const leftPercent = (col / cols) * 100;
+                  const topPercent = (row / rows) * 100;
+                  const backgroundX = cols <= 1 ? 50 : (srcCol / Math.max(1, cols - 1)) * 100;
+                  const backgroundY = rows <= 1 ? 50 : (srcRow / Math.max(1, rows - 1)) * 100;
 
                   const style = {
                     width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
@@ -249,10 +257,10 @@ export default function CollageMode({ anchorImage = null, ...rest }: CollageMode
                     backgroundImage: `url("${imageUrl}")`,
                     backgroundSize: `${cols * 100}% ${rows * 100}%`,
                     backgroundPosition: `${backgroundX}% ${backgroundY}%`,
-                    animationDelay: `${piece.delay.toFixed(2)}s`,
-                    "--from-x": `${piece.fromX.toFixed(1)}px`,
-                    "--from-y": `${piece.fromY.toFixed(1)}px`,
-                    "--from-rot": `${piece.fromRot.toFixed(1)}deg`,
+                    animationDelay: `${(piece.delay ?? 0).toFixed(2)}s`,
+                    "--from-x": `${(piece.fromX ?? 0).toFixed(1)}px`,
+                    "--from-y": `${(piece.fromY ?? 0).toFixed(1)}px`,
+                    "--from-rot": `${(piece.fromRot ?? 0).toFixed(1)}deg`,
                   };
 
                   return <div key={piece.key} className="collage-piece" style={style} />;

@@ -341,6 +341,7 @@ export const createImageProcessing = ({
 
       for (let i = 0; i < available.length; i += 1) {
         const candidate = available[i].piece;
+        if (!candidate) continue;
         const candidateEdges = edgeLookup.get(edgeKeyForPiece(candidate));
         if (!candidateEdges) continue;
 
@@ -349,6 +350,7 @@ export const createImageProcessing = ({
 
         if (col > 0 && placedMatrix[row][col - 1]) {
           const neighbor = placedMatrix[row][col - 1];
+          if (!neighbor) continue;
           const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
           if (neighborEdges) {
             score += colorDistance(neighborEdges.right, candidateEdges.left);
@@ -358,6 +360,7 @@ export const createImageProcessing = ({
 
         if (row > 0 && placedMatrix[row - 1][col]) {
           const neighbor = placedMatrix[row - 1][col];
+          if (!neighbor) continue;
           const neighborEdges = edgeLookup.get(edgeKeyForPiece(neighbor));
           if (neighborEdges) {
             score += colorDistance(neighborEdges.bottom, candidateEdges.top);

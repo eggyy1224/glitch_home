@@ -32,7 +32,7 @@ interface CollageGenerationResult {
 interface CollageVersionModeProps {
   canGenerate?: boolean;
   appMode?: string;
-  forbidMessage?: string;
+  forbidMessage?: string | undefined;
 }
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
@@ -282,7 +282,10 @@ export default function CollageVersionMode({
           setProgressMessage(progressData.message || "");
           
           if (progressData.completed) {
-            clearInterval(progressIntervalRef.current);
+            const timer = progressIntervalRef.current;
+            if (timer) {
+              clearInterval(timer);
+            }
             progressIntervalRef.current = null;
             
             if (progressData.error) {

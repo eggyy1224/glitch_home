@@ -132,7 +132,8 @@ export default function useSearch({ limit = DEFAULT_LIMIT }: { limit?: number } 
       try {
         return await execute(primaryPath);
       } catch (primaryError) {
-        if (primaryError.name === "AbortError") {
+        const abortName = (primaryError as { name?: string })?.name;
+        if (abortName === "AbortError") {
           throw primaryError;
         }
         if (fallbackPath && fallbackPath !== primaryPath) {
@@ -171,11 +172,13 @@ export default function useSearch({ limit = DEFAULT_LIMIT }: { limit?: number } 
       const { searchPath, fallbackPath } = await uploadImage();
       await runImageSearch(searchPath, fallbackPath);
     } catch (err) {
-      if (err.name === "AbortError") {
+      const abortName = (err as { name?: string })?.name;
+      if (abortName === "AbortError") {
         return;
       }
+      const message = err instanceof Error ? err.message : "搜尋出錯，請檢查瀏覽器控制台";
       console.error("搜尋出錯:", err);
-      setError(err.message || "搜尋出錯，請檢查瀏覽器控制台");
+      setError(message);
     } finally {
       setSearching(false);
     }
@@ -201,11 +204,13 @@ export default function useSearch({ limit = DEFAULT_LIMIT }: { limit?: number } 
       const normalized = normalizeResults(searchResults);
       updateResults(normalized, normalized.length ? null : `未找到與「${query}」相關的圖像`);
     } catch (err) {
-      if (err.name === "AbortError") {
+      const abortName = (err as { name?: string })?.name;
+      if (abortName === "AbortError") {
         return;
       }
+      const message = err instanceof Error ? err.message : "搜尋出錯";
       console.error("搜尋出錯:", err);
-      setError(err.message || "搜尋出錯");
+      setError(message);
     } finally {
       setSearching(false);
     }
@@ -220,11 +225,13 @@ export default function useSearch({ limit = DEFAULT_LIMIT }: { limit?: number } 
       try {
         await runImageSearch(`backend/offspring_images/${imageId}`);
       } catch (err) {
-        if (err.name === "AbortError") {
+        const abortName = (err as { name?: string })?.name;
+        if (abortName === "AbortError") {
           return;
         }
+        const message = err instanceof Error ? err.message : "搜尋出錯，請重試";
         console.error("搜尋出錯:", err);
-        setError(err.message || "搜尋出錯，請重試");
+        setError(message);
       } finally {
         setSearching(false);
       }

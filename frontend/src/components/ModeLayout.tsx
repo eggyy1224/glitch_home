@@ -2,19 +2,20 @@ import React from "react";
 import SoundPlayer from "../SoundPlayer";
 import SubtitleOverlay from "../SubtitleOverlay";
 import type { OverlayContent } from "../types/overlay";
+import type { PlayRequest } from "../SoundPlayer";
 
 interface ModeLayoutProps {
   component?: React.ComponentType<Record<string, unknown>>;
-  componentProps?: Record<string, unknown>;
+  componentProps?: Record<string, unknown> | undefined;
   withCaptureReady?: boolean;
   onCaptureReady?: (...args: unknown[]) => void;
   beforeContent?: React.ReactNode;
   afterContent?: React.ReactNode;
   soundPlayerEnabled?: boolean;
-  soundPlayRequest?: unknown;
+  soundPlayRequest?: PlayRequest | null | undefined;
   onSoundHandled?: () => void;
   showInfo?: boolean;
-  subtitle?: OverlayContent | null;
+  subtitle?: OverlayContent | null | undefined;
 }
 
 export default function ModeLayout({
@@ -47,8 +48,8 @@ export default function ModeLayout({
       {soundPlayerEnabled && (
         <SoundPlayer
           playRequest={soundPlayerEnabled ? soundPlayRequest : null}
-          onPlayHandled={onSoundHandled}
-          visible={showInfo}
+          visible={Boolean(showInfo)}
+          {...(onSoundHandled ? { onPlayHandled: onSoundHandled } : {})}
         />
       )}
       <SubtitleOverlay subtitle={subtitle} />

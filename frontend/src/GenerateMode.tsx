@@ -18,7 +18,7 @@ import type { GenerateMixTwoResponse, OffspringImage } from "./types/generate";
 type GenerateModeContentProps = {
   canGenerate: boolean;
   appMode?: string;
-  forbidMessage?: string;
+  forbidMessage?: string | undefined;
 };
 
 type GenerateResult = GenerateMixTwoResponse & { imageUrl: string };

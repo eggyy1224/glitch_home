@@ -45,7 +45,7 @@ export function useModeParams(): ModeParamsResult {
   const slideIntervalMs = useMemo(() => {
     const slideIntervalParam = initialParams.get("slide_interval") || initialParams.get("slide_interval_ms");
     return slideIntervalParam
-      ? clampInt(slideIntervalParam, DEFAULT_SLIDE_INTERVAL, { min: MIN_SLIDE_INTERVAL })
+      ? clampInt(slideIntervalParam, DEFAULT_SLIDE_INTERVAL, { min: MIN_SLIDE_INTERVAL }) ?? DEFAULT_SLIDE_INTERVAL
       : DEFAULT_SLIDE_INTERVAL;
   }, [initialParams]);
 

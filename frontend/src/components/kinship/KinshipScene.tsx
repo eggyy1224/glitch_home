@@ -25,7 +25,7 @@ interface KinshipSceneProps {
   onFpsUpdate?: (fps: number) => void;
   onCameraUpdate?: (payload: KinshipCameraPose) => void;
   applyPreset?: KinshipCameraPreset | null;
-  onCaptureReady?: (capture: ((options?: unknown) => Promise<Blob>) | null) => void;
+  onCaptureReady?: ((capture: ((options?: unknown) => Promise<Blob>) | null) => void) | null;
 }
 
 export default function KinshipScene({
@@ -52,9 +52,9 @@ export default function KinshipScene({
     SceneComponent,
     buildSceneProps,
   } = modeConfig;
-  const cameraProps = rawCameraProps as React.ComponentProps<typeof Canvas>["camera"];
+  const cameraProps = (rawCameraProps as React.ComponentProps<typeof Canvas>["camera"]) || { position: [0, 0, 8] };
   const pointLightProps = rawPointLightProps as ThreeElements["pointLight"] | undefined;
-  const sceneProps = buildSceneProps({ imagesBase, clusters, data, onPick });
+  const sceneProps = buildSceneProps({ imagesBase, clusters: clusters ?? [], data, onPick });
 
   return (
     <Canvas

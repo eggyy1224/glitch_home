@@ -2,7 +2,7 @@ import React from "react";
 import type { OverlayContent } from "./types/overlay";
 
 export interface SubtitleOverlayProps {
-  subtitle?: OverlayContent | null;
+  subtitle?: OverlayContent | null | undefined;
 }
 
 export default function SubtitleOverlay({ subtitle = null }: SubtitleOverlayProps) {

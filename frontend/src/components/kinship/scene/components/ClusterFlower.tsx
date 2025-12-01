@@ -24,7 +24,7 @@ interface RingEntry {
 interface ClusterFlowerProps {
   imagesBase: string;
   cluster: KinshipCluster;
-  onPick?: (name: string | number) => void;
+  onPick?: ((name: string | number) => void) | undefined;
 }
 
 export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFlowerProps) {
@@ -187,7 +187,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         getProgress={getCenterProgress}
       />
       {parentsRing.map((node) => {
-        const meshRef = React.createRef<THREE.Mesh>();
+        const meshRef = { current: null } as React.MutableRefObject<THREE.Mesh | null>;
         parentRefs.current.push({
           name: node.name,
           meshRef,
@@ -211,7 +211,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         );
       })}
       {siblingsRing.map((node) => {
-        const meshRef = React.createRef<THREE.Mesh>();
+        const meshRef = { current: null } as React.MutableRefObject<THREE.Mesh | null>;
         siblingRefs.current.push({
           name: node.name,
           meshRef,
@@ -239,7 +239,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         return (
           <group key={`a-ring-${cluster.id}-${index}`}>
             {ringNodes.map((node) => {
-              const meshRef = React.createRef<THREE.Mesh>();
+              const meshRef = { current: null } as React.MutableRefObject<THREE.Mesh | null>;
               if (!ancestorRefs.current[index]) ancestorRefs.current[index] = [];
               ancestorRefs.current[index].push({
                 name: node.name,
@@ -267,7 +267,7 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         );
       })}
       {childrenRing.map((node) => {
-        const meshRef = React.createRef<THREE.Mesh>();
+        const meshRef = { current: null } as React.MutableRefObject<THREE.Mesh | null>;
         childRefs.current.push({
           name: node.name,
           meshRef,

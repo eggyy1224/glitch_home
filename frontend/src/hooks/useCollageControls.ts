@@ -338,7 +338,7 @@ export function useCollageControls({
       try {
         const data = await fetchKinship(cleanAnchor, -1);
         if (cancelled) return;
-        const pool = buildImagePool(data, cleanAnchor);
+        const pool = buildImagePool(data as Parameters<typeof buildImagePool>[0], cleanAnchor);
         const nextPool = pool.length ? pool : [cleanAnchor];
         fetchedPoolRef.current = nextPool;
         if (!remoteOverrideRef.current) {
@@ -356,7 +356,8 @@ export function useCollageControls({
         if (!remoteOverrideRef.current) {
           setImagePool(fallbackPool);
         }
-        setError(err?.message || "載入圖像清單失敗");
+        const message = err instanceof Error ? err.message : "載入圖像清單失敗";
+        setError(message);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -529,10 +530,12 @@ export function useCollageControls({
   const piecesByImage = useMemo<Map<string, CollagePiece[]>>(() => {
     const map = new Map<string, CollagePiece[]>();
     pieces.forEach((piece) => {
-      if (!map.has(piece.imageId)) {
-        map.set(piece.imageId, []);
+      const list = map.get(piece.imageId);
+      if (list) {
+        list.push(piece);
+      } else {
+        map.set(piece.imageId, [piece]);
       }
-      map.get(piece.imageId).push(piece);
     });
     return map;
   }, [pieces]);

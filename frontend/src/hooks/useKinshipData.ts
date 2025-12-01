@@ -81,12 +81,14 @@ export function useKinshipData({
 
     fetchKinship(imgId, -1, { signal: controller.signal })
       .then((res) => {
-        if (imgId) kinshipCacheRef.current.set(imgId, res);
-        applyKinshipData(res);
+        const payload = res as KinshipData;
+        if (imgId) kinshipCacheRef.current.set(imgId, payload);
+        applyKinshipData(payload);
       })
       .catch((e) => {
-        if (e.name === "AbortError") return;
-        setErr(e.message);
+        if ((e as { name?: string }).name === "AbortError") return;
+        const message = e instanceof Error ? e.message : String(e);
+        setErr(message);
       });
 
     return () => {
@@ -100,7 +102,9 @@ export function useKinshipData({
     if (continuous || !autoplay) return;
 
     const visited = readVisitedImages();
-    visited.add(data.original_image);
+    if (data.original_image) {
+      visited.add(data.original_image);
+    }
 
     const pickFirst = (arr?: string[] | null) => (arr || []).find((n) => n && !visited.has(n));
     let next = pickFirst(data.children || []);

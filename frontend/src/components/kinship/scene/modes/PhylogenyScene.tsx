@@ -17,7 +17,7 @@ import { computePhylogenyLayout } from "../../utils/layouts";
 interface PhylogenyNodeProps {
   node: KinshipLayoutNode;
   imagesBase: string;
-  onPick?: (name: string) => void;
+  onPick?: ((name: string) => void) | undefined;
 }
 
 function PhylogenyNode({ node, imagesBase, onPick }: PhylogenyNodeProps) {
@@ -26,7 +26,7 @@ function PhylogenyNode({ node, imagesBase, onPick }: PhylogenyNodeProps) {
   const sizeMultiplier = node.kind === "original" ? 1.2 : 1;
   const size = PHYLO_NODE_BASE_SIZE * sizeMultiplier;
   const frameSize = size * 1.1;
-  const color = KIND_COLORS[node.kind] || "#d0d0d0";
+  const color = KIND_COLORS[node.kind || ""] || "#d0d0d0";
   const frameRef = useRef<THREE.Mesh>(null);
   const imageRef = useRef<THREE.Mesh>(null);
   const [scales, setScales] = useState<{ frame: [number, number, number]; image: [number, number, number] }>(
@@ -48,8 +48,10 @@ function PhylogenyNode({ node, imagesBase, onPick }: PhylogenyNodeProps) {
     if (imageRef.current) imageRef.current.scale.set(...imageScale);
   }, [tex.image, size, frameSize]);
 
+  const position = node.position ?? new THREE.Vector3();
+
   return (
-    <group position={node.position.toArray() as [number, number, number]}>
+    <group position={position.toArray() as [number, number, number]}>
       <Billboard follow>
         <group>
             <mesh ref={frameRef} position={[0, 0, -0.02]} scale={scales.frame}>
@@ -150,20 +152,21 @@ export default function PhylogenyScene({
         <planeGeometry args={[width, height]} />
         <meshStandardMaterial color="#090909" transparent opacity={0.55} />
       </mesh>
-      {layout.edges.map((edge) => (
-        <Line
-          key={`${edge.source.name}->${edge.target.name}`}
-          points={[
-            edge.source.position.toArray() as [number, number, number],
-            edge.target.position.toArray() as [number, number, number],
-          ]}
-          color="#9aa0a6"
-          lineWidth={2}
-          depthTest={false}
-          opacity={0.45}
-          transparent
-        />
-      ))}
+      {layout.edges.map((edge) => {
+        const sourcePos = edge.source.position ?? new THREE.Vector3();
+        const targetPos = edge.target.position ?? new THREE.Vector3();
+        return (
+          <Line
+            key={`${edge.source.name}->${edge.target.name}`}
+            points={[sourcePos.toArray() as [number, number, number], targetPos.toArray() as [number, number, number]]}
+            color="#9aa0a6"
+            lineWidth={2}
+            depthTest={false}
+            opacity={0.45}
+            transparent
+          />
+        );
+      })}
       {layout.nodes.map((node) => (
         <PhylogenyNode key={node.name} node={node} imagesBase={imagesBase} onPick={onPick} />
       ))}

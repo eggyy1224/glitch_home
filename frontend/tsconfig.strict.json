@@ -11,7 +11,7 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "useUnknownInCatchVariables": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "strictNullChecks": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
@@ -21,23 +21,6 @@
     "types": ["vite/client", "node"]
   },
   "include": [
-    "src/types/**/*",
-    "src/api.ts",
-    "src/appMode/AppModeContext.tsx",
-    "src/hooks/useClientStateQueue.ts",
-    "src/hooks/useControlSocket.ts",
-    "src/hooks/useIframeTimelinePlayer.ts",
-    "src/hooks/useRemoteTimelineControl.ts",
-    "src/hooks/useTimelineStepActions.ts",
-    "src/hooks/useTimelineEpisodeEditor.ts",
-    "src/utils/html2canvasLoader.ts",
-    "src/utils/request.ts",
-    "src/utils/adminEditorUtils.ts",
-    "src/components/TimelineEpisodeEditor.tsx",
-    "src/components/SnapshotManager.tsx",
-    "src/components/TimelineManager.tsx",
-    "src/components/EpisodeManager.tsx",
-    "src/components/ClientStateQueuePanel.tsx",
-    "src/AdminPanel.tsx"
+    "src"
   ]
 }

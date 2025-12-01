@@ -66,15 +66,15 @@ export default function StaticMode({ imagesBase, imgId, onCaptureReady = null }:
 
   return (
     <div ref={rootRef} className="static-mode-container">
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={imgId}
-          className="static-mode-image"
-          style={{
-            objectFit: objectFit,
-            objectPosition: objectPosition,
-          }}
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={imgId ?? undefined}
+              className="static-mode-image"
+              style={{
+                objectFit: objectFit,
+                objectPosition: objectPosition,
+              }}
         />
       ) : (
         <div className="static-mode-placeholder">請在網址加上 ?img=檔名</div>

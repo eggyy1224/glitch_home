@@ -60,13 +60,17 @@ function IncubatorMist({ fieldRef }: IncubatorMistProps) {
       dummy.rotation.y = angle;
       dummy.rotation.z = angle * 0.18;
       dummy.updateMatrix();
-      instancedRef.current.setMatrixAt(index, dummy.matrix);
+      const instanced = instancedRef.current;
+      if (!instanced) return;
+      instanced.setMatrixAt(index, dummy.matrix);
     });
-    instancedRef.current.instanceMatrix.needsUpdate = true;
+    if (instancedRef.current) {
+      instancedRef.current.instanceMatrix.needsUpdate = true;
+    }
   });
 
   return (
-    <instancedMesh ref={instancedRef} args={[null, null, configs.length]}>
+    <instancedMesh ref={instancedRef} args={[undefined, undefined, configs.length]}>
       <sphereGeometry args={[1, 6, 6]} />
       <meshStandardMaterial
         color="#1a5e7a"
@@ -191,7 +195,7 @@ export default function IncubatorScene({ imagesBase, data, onPick }: IncubatorSc
   edgeEntriesRef.current = [];
 
   const nodeElements = nodes.map((node) => {
-    const meshRef = React.createRef<THREE.Mesh>();
+    const meshRef = { current: null } as React.MutableRefObject<THREE.Mesh | null>;
     const progressRef = { current: 0 };
     const entry: IncubatorNodeEntry = { node, meshRef, progressRef };
     nodeEntriesRef.current.push(entry);
@@ -225,7 +229,7 @@ export default function IncubatorScene({ imagesBase, data, onPick }: IncubatorSc
           url={`${imagesBase}${node.name}`}
           baseRef={meshRef}
           getProgress={progressFn}
-          kind={node.kind}
+          kind={node.kind || "node"}
           flowRef={quantumFieldIntensityRef}
           seed={flowSeed}
         />
@@ -276,23 +280,35 @@ export default function IncubatorScene({ imagesBase, data, onPick }: IncubatorSc
       const { node, meshRef, progressRef } = entry;
       const mesh = meshRef.current;
       if (!mesh) return;
-      const local = elapsed - node.spawnDelay;
-      const progress = local > 0 ? Math.min(local / node.growthDuration, 1) : 0;
+      const spawnDelay = node.spawnDelay ?? 0;
+      const growthDuration = node.growthDuration ?? 1;
+      const radius = node.radius ?? 0;
+      const angle = node.angle ?? 0;
+      const orbitSpeed = node.orbitSpeed ?? 0;
+      const wobbleAmp = node.wobbleAmp ?? 0;
+      const wobbleSpeed = node.wobbleSpeed ?? 0;
+      const floatPhase = node.floatPhase ?? 0;
+      const floatSpeed = node.floatSpeed ?? 0;
+      const floatAmp = node.floatAmp ?? 0;
+      const baseY = node.baseY ?? 0;
+
+      const local = elapsed - spawnDelay;
+      const progress = local > 0 ? Math.min(local / growthDuration, 1) : 0;
       const eased = easeOutCubic(progress);
       progressRef.current = eased;
-      const radial = node.radius * eased;
-      const spin = node.angle + node.orbitSpeed * t * (0.8 + eased * 0.6);
-      const wobble = node.wobbleAmp * eased * Math.sin(t * node.wobbleSpeed + node.floatPhase);
+      const radial = radius * eased;
+      const spin = angle + orbitSpeed * t * (0.8 + eased * 0.6);
+      const wobble = wobbleAmp * eased * Math.sin(t * wobbleSpeed + floatPhase);
       const x =
         Math.cos(spin) * radial +
-        Math.cos(t * node.floatSpeed * 0.6 + node.floatPhase) * wobble * 0.32;
+        Math.cos(t * floatSpeed * 0.6 + floatPhase) * wobble * 0.32;
       const z =
         Math.sin(spin) * radial +
-        Math.sin(t * node.floatSpeed * 0.6 + node.floatPhase) * wobble * 0.32;
+        Math.sin(t * floatSpeed * 0.6 + floatPhase) * wobble * 0.32;
       const y =
-        THREE.MathUtils.lerp(0, node.baseY, eased) +
-        Math.sin(t * node.floatSpeed + node.floatPhase) *
-          node.floatAmp *
+        THREE.MathUtils.lerp(0, baseY, eased) +
+        Math.sin(t * floatSpeed + floatPhase) *
+          floatAmp *
           0.35 *
           (0.6 + eased * 0.5);
       mesh.position.set(x, y, z);

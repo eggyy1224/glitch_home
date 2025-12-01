@@ -19,13 +19,13 @@ interface SoundFileEntry {
   [key: string]: unknown;
 }
 
-interface PlayRequest {
+export interface PlayRequest {
   filename?: string;
-  url?: string;
+  url?: string | undefined;
 }
 
 export interface SoundPlayerProps {
-  playRequest?: PlayRequest | null;
+  playRequest?: PlayRequest | null | undefined;
   onPlayHandled?: () => void;
   visible?: boolean;
 }

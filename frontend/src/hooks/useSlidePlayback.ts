@@ -94,7 +94,7 @@ export function useSlidePlayback({
   searchByImage = searchImagesByImage,
   fetchKinshipData = fetchKinship,
 }: {
-  anchorImage?: string | null;
+  anchorImage?: string | null | undefined;
   intervalMs?: number;
   searchByImage?: typeof searchImagesByImage;
   fetchKinshipData?: typeof fetchKinship;

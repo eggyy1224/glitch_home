@@ -1,8 +1,8 @@
 import React from "react";
 
 interface SubtitleCaptionStatusProps {
-  subtitle?: string | null;
-  caption?: string | null;
+  subtitle?: string | null | undefined;
+  caption?: string | null | undefined;
 }
 
 export default function SubtitleCaptionStatus({ subtitle, caption }: SubtitleCaptionStatusProps) {

@@ -17,7 +17,7 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, 
   const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]) as Record<string, React.CSSProperties>;
 
   const { current, items, index, loading, error, showCaption, playbackSpeed, isPaused, setPlaybackSpeed, togglePause } =
-    useSlidePlayback({ anchorImage, intervalMs });
+    useSlidePlayback({ anchorImage: anchorImage ?? null, intervalMs });
 
   useSlideScreenshot({ rootRef, onCaptureReady: onCaptureReady ?? undefined });
 

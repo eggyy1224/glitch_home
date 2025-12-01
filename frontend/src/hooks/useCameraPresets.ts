@@ -98,7 +98,8 @@ export function useCameraPresets() {
       setSelectedPresetName(normalized.name);
       pushPresetMessage(`視角 "${normalized.name}" 已儲存。`);
     } catch (err) {
-      window.alert(`儲存失敗：${err.message || err}`);
+      const message = err instanceof Error ? err.message : String(err);
+      window.alert(`儲存失敗：${message}`);
     }
   }, [cameraInfo, pushPresetMessage, upsertPresetInState]);
 
@@ -120,7 +121,8 @@ export function useCameraPresets() {
       pushPresetMessage(`視角 "${selectedPresetName}" 已刪除。`, 2000);
       setSelectedPresetName("");
     } catch (err) {
-      window.alert(`刪除失敗：${err.message || err}`);
+      const message = err instanceof Error ? err.message : String(err);
+      window.alert(`刪除失敗：${message}`);
     }
   }, [selectedPresetName, pushPresetMessage, removePresetInState]);
 
