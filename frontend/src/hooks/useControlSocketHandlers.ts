@@ -204,7 +204,7 @@ export function useControlSocketHandlers({
   );
 
   const handleVideoControlMessage = useCallback(
-    (payload: Record<string, unknown>) => {
+    (payload: Record<string, unknown>): void => {
       const targetId = payload?.target_client_id as string | undefined;
       if (targetId && targetId !== clientId) {
         return;
@@ -227,7 +227,7 @@ export function useControlSocketHandlers({
       const applyToDocumentMedia = (doc: Document, fn: (media: HTMLMediaElement) => void, depth = 0): void => {
         if (!doc || depth > 4) return; // avoid deep loops
         const elements = Array.from(doc.querySelectorAll("video, audio"));
-        elements.forEach((media) => {
+        elements.forEach((media: Element): void => {
           try {
             fn(media as HTMLMediaElement);
           } catch (err) {
@@ -235,7 +235,7 @@ export function useControlSocketHandlers({
           }
         });
         const frames = Array.from(doc.querySelectorAll("iframe"));
-        frames.forEach((frame) => {
+        frames.forEach((frame: HTMLIFrameElement): void => {
           try {
             const childDoc = frame.contentDocument;
             if (childDoc) {
@@ -255,10 +255,10 @@ export function useControlSocketHandlers({
         mediaControlStateRef.current = { volume, muted };
         if (!enableInterval) return;
         if (!mediaControlIntervalRef.current) {
-          mediaControlIntervalRef.current = setInterval(() => {
+          mediaControlIntervalRef.current = setInterval((): void => {
             const state = mediaControlStateRef.current;
             if (!state) return;
-            applyToMediaElements((media) => {
+            applyToMediaElements((media: HTMLMediaElement): void => {
               if (state.volume !== null && state.volume !== undefined) {
                 media.volume = state.volume;
                 if (state.volume > 0 && media.muted && state.muted !== true) {
@@ -315,14 +315,17 @@ export function useControlSocketHandlers({
       // Fallback: apply to all media elements in the page (iframe/collage panels)
 
       if (action === "play") {
-        applyToMediaElements((media) => {
-          void media.play().catch(() => undefined);
+        applyToMediaElements((media: HTMLMediaElement): void => {
+          const playPromise = media.play();
+          if (playPromise && typeof playPromise.catch === "function") {
+            void playPromise.catch(() => undefined);
+          }
         });
         rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
         return;
       }
       if (action === "pause") {
-        applyToMediaElements((media) => {
+        applyToMediaElements((media: HTMLMediaElement): void => {
           media.pause();
         });
         rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
@@ -331,7 +334,7 @@ export function useControlSocketHandlers({
       if (action === "seek" && timeValue != null) {
         const parsed = Number(timeValue);
         if (!Number.isFinite(parsed) || parsed < 0) return;
-        applyToMediaElements((media) => {
+        applyToMediaElements((media: HTMLMediaElement): void => {
           try {
             media.currentTime = parsed;
           } catch (err) {

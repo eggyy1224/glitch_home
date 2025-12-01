@@ -1,6 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteCameraPreset, fetchCameraPresets, saveCameraPreset } from "../api";
-import type { CameraInfo, CameraPreset } from "../types/control";
+import type { CameraInfo, CameraPreset, CameraVector } from "../types/control";
+import type { CameraPreset as ApiCameraPreset } from "../api";
+
+const toVector = (value: unknown): CameraVector => {
+  const obj = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  const x = typeof obj.x === "number" ? obj.x : 0;
+  const y = typeof obj.y === "number" ? obj.y : 0;
+  const z = typeof obj.z === "number" ? obj.z : 0;
+  return { x, y, z };
+};
+
+const normalizePreset = (preset: ApiCameraPreset): CameraPreset => ({
+  name: preset.name,
+  position: toVector(preset.position),
+  target: toVector(preset.target),
+});
 
 export function useCameraPresets() {
   const [cameraInfo, setCameraInfo] = useState<CameraInfo | null>(null);
@@ -13,7 +28,9 @@ export function useCameraPresets() {
   useEffect(() => {
     fetchCameraPresets()
       .then((list) => {
-        const arr = Array.isArray(list) ? [...list].sort((a, b) => a.name.localeCompare(b.name)) : [];
+        const arr = Array.isArray(list)
+          ? [...list].map((item) => normalizePreset(item)).sort((a, b) => a.name.localeCompare(b.name))
+          : [];
         setCameraPresets(arr);
         const defaultPreset = arr.find((p) => p.name === "center");
         if (defaultPreset) {
@@ -76,9 +93,10 @@ export function useCameraPresets() {
     };
     try {
       const saved = await saveCameraPreset(payload);
-      upsertPresetInState(saved);
-      setSelectedPresetName(saved.name);
-      pushPresetMessage(`視角 "${saved.name}" 已儲存。`);
+      const normalized = normalizePreset(saved);
+      upsertPresetInState(normalized);
+      setSelectedPresetName(normalized.name);
+      pushPresetMessage(`視角 "${normalized.name}" 已儲存。`);
     } catch (err) {
       window.alert(`儲存失敗：${err.message || err}`);
     }

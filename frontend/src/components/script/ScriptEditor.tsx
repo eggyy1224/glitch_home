@@ -270,11 +270,17 @@ export default function ScriptEditor() {
                           data-ai-field={`script-editor.entry-${index}.left-select`}
                         >
                           <option value="">-- 選擇 --</option>
-                          {leftOptions.map((opt) => (
-                            <option key={`${opt.client}/${opt.name || opt.id}`} value={opt.name || opt.id}>
-                              {opt.client}/{opt.name || opt.id}
-                            </option>
-                          ))}
+                          {leftOptions.map((opt) => {
+                            const name = typeof opt.name === "string" ? opt.name : "";
+                            const id = typeof (opt as { id?: unknown }).id === "string" ? (opt as { id: string }).id : "";
+                            const value = name || id;
+                            const label = `${opt.client || leftClient}/${value}`;
+                            return (
+                              <option key={`${opt.client || leftClient}/${value}`} value={value}>
+                                {label}
+                              </option>
+                            );
+                          })}
                         </select>
                         <button type="button" onClick={() => refreshSnapshotsForClient(leftClient)} data-ai-action="script-editor.refresh-left">
                           重新載入 snapshot（left）
@@ -297,11 +303,17 @@ export default function ScriptEditor() {
                           data-ai-field={`script-editor.entry-${index}.right-select`}
                         >
                           <option value="">-- 選擇 --</option>
-                          {rightOptions.map((opt) => (
-                            <option key={`${opt.client}/${opt.name || opt.id}`} value={opt.name || opt.id}>
-                              {opt.client}/{opt.name || opt.id}
-                            </option>
-                          ))}
+                          {rightOptions.map((opt) => {
+                            const name = typeof opt.name === "string" ? opt.name : "";
+                            const id = typeof (opt as { id?: unknown }).id === "string" ? (opt as { id: string }).id : "";
+                            const value = name || id;
+                            const label = `${opt.client || rightClient}/${value}`;
+                            return (
+                              <option key={`${opt.client || rightClient}/${value}`} value={value}>
+                                {label}
+                              </option>
+                            );
+                          })}
                         </select>
                         <button type="button" onClick={() => refreshSnapshotsForClient(rightClient)} data-ai-action="script-editor.refresh-right">
                           重新載入 snapshot（right）

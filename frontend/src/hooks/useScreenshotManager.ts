@@ -1,23 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { reportScreenshotFailure, uploadScreenshot } from "../api";
 
+type UploadResult = {
+  relative_path?: string;
+  filename?: string;
+  [key: string]: unknown;
+};
+
+type ScreenshotRequest = { request_id?: string | null; target_client_id?: string | null; metadata?: Record<string, unknown> };
+type CaptureFn = () => Promise<Blob>;
+
 declare global {
   interface Window {
     __APP_CAPTURE_SCENE?: (() => Promise<Blob>) | null;
   }
 }
 
-export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMessage = "" } = {}) {
+export function useScreenshotManager(
+  clientId: string,
+  { canWriteAssets = true, forbidMessage = "" }: { canWriteAssets?: boolean; forbidMessage?: string } = {},
+): {
+  isCapturing: boolean;
+  screenshotMessage: string | null;
+  handleCaptureReady: (fn: CaptureFn | null) => void;
+  enqueueScreenshotRequest: (payload: ScreenshotRequest) => void;
+  markRequestDone: (requestId: string | null | undefined) => void;
+  requestCapture: () => Promise<UploadResult | null>;
+} {
   const [isCapturing, setIsCapturing] = useState(false);
-  const [screenshotMessage, setScreenshotMessage] = useState(null);
+  const [screenshotMessage, setScreenshotMessage] = useState<string | null>(null);
 
-  const captureFnRef = useRef(null);
-  const requestQueueRef = useRef([]);
-  const pendingRequestIdsRef = useRef(new Set());
+  const captureFnRef = useRef<CaptureFn | null>(null);
+  const requestQueueRef = useRef<ScreenshotRequest[]>([]);
+  const pendingRequestIdsRef = useRef<Set<string>>(new Set());
   const isProcessingRef = useRef(false);
   const isCapturingRef = useRef(false);
-  const queueTimerRef = useRef(null);
-  const screenshotTimerRef = useRef(null);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const screenshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
 
   const clearScreenshotTimer = useCallback(() => {
@@ -34,7 +53,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
     }
   }, []);
 
-  const pushScreenshotMessage = useCallback((text, ttl = 2500) => {
+  const pushScreenshotMessage = useCallback((text: string, ttl = 2500) => {
     setScreenshotMessage(text);
     clearScreenshotTimer();
     screenshotTimerRef.current = setTimeout(() => {
@@ -46,7 +65,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
   const forbidReason = forbidMessage || "目前模式禁止截圖上傳";
 
   const reportForbidden = useCallback(
-    async (requestId = null) => {
+    async (requestId: string | null = null): Promise<null> => {
       pushScreenshotMessage(forbidReason);
       if (!requestId) return null;
       pendingRequestIdsRef.current.delete(requestId);
@@ -61,7 +80,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
   );
 
   const runCaptureInternal = useCallback(
-    async (requestId = null, isAuto = false) => {
+    async (requestId: string | null = null, isAuto = false): Promise<UploadResult | null> => {
       if (!canWriteAssets) {
         return reportForbidden(requestId);
       }
@@ -70,7 +89,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
         throw new Error("場景尚未準備好");
       }
       const blob = await captureFn();
-      const result = await uploadScreenshot(blob, requestId, clientId);
+      const result = (await uploadScreenshot(blob, requestId, clientId)) as UploadResult;
       const label =
         result?.relative_path || result?.filename || (requestId ? `request ${requestId}` : "已上傳");
       const prefix = isAuto ? "自動截圖完成" : "截圖完成";
@@ -108,11 +127,11 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
     const request = next;
     (async () => {
       try {
-        await runCaptureInternal(request.request_id, true);
+        await runCaptureInternal(request?.request_id ?? null, true);
       } catch (err) {
         const message = err?.message || String(err);
         pushScreenshotMessage(`自動截圖失敗：${message}`);
-        if (request.request_id) {
+        if (request?.request_id) {
           try {
             await reportScreenshotFailure(request.request_id, message, clientId);
           } catch (reportErr) {
@@ -120,7 +139,9 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
           }
         }
       } finally {
-        pendingRequestIdsRef.current.delete(request.request_id);
+        if (request?.request_id) {
+          pendingRequestIdsRef.current.delete(request.request_id);
+        }
         isCapturingRef.current = false;
         if (isMountedRef.current) {
           setIsCapturing(false);
@@ -134,9 +155,9 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
   }, [clientId, pushScreenshotMessage, runCaptureInternal, clearQueueTimer]);
 
   const enqueueScreenshotRequest = useCallback(
-    (payload) => {
+    (payload: ScreenshotRequest) => {
       if (!payload || !payload.request_id) return;
-      const targetClientId = payload?.target_client_id ?? payload?.metadata?.client_id ?? null;
+      const targetClientId = payload?.target_client_id ?? (payload?.metadata?.client_id as string | undefined) ?? null;
       if (targetClientId && targetClientId !== clientId) {
         return;
       }
@@ -170,7 +191,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
   );
 
   const handleCaptureReady = useCallback(
-    (fn) => {
+    (fn: CaptureFn | null) => {
       captureFnRef.current = fn;
       if (fn) {
         processQueue();
@@ -179,7 +200,7 @@ export function useScreenshotManager(clientId, { canWriteAssets = true, forbidMe
     [processQueue],
   );
 
-  const markRequestDone = useCallback((requestId) => {
+  const markRequestDone = useCallback((requestId: string | null | undefined) => {
     if (!requestId) return;
     pendingRequestIdsRef.current.delete(requestId);
   }, []);

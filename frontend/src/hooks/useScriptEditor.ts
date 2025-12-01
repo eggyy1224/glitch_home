@@ -21,25 +21,25 @@ import { validateScript } from "../utils/adminEditorUtils";
 
 export interface ScriptEntryRow {
   type: "scene" | "snapshot_pair";
-  scene_id?: string;
-  left_snapshot?: string;
-  right_snapshot?: string;
+  scene_id?: string | undefined;
+  left_snapshot?: string | undefined;
+  right_snapshot?: string | undefined;
   duration: number;
   audio_override?: {
-    left?: number;
-    right?: number;
-    mode?: string;
-    muted?: boolean;
+    left?: number | undefined;
+    right?: number | undefined;
+    mode?: string | undefined;
+    muted?: boolean | undefined;
   };
-  notes?: string;
+  notes?: string | undefined;
 }
 
 export interface ScriptEntryPreview {
   label: string;
-  left?: { snapshot: string; client: string; previewSrc: string | null; error?: string };
-  right?: { snapshot: string; client: string; previewSrc: string | null; error?: string };
-  sceneTargets?: Array<{ client: string; snapshot: string; previewSrc: string | null; error?: string }>;
-  duration?: number;
+  left?: { snapshot: string; client: string; previewSrc: string | null; error?: string } | undefined;
+  right?: { snapshot: string; client: string; previewSrc: string | null; error?: string } | undefined;
+  sceneTargets?: Array<{ client: string; snapshot: string; previewSrc: string | null; error?: string }> | undefined;
+  duration?: number | undefined;
 }
 
 export interface ScriptEditorState {
@@ -119,15 +119,32 @@ function entriesFromPayload(entries: ScriptEntry[] | undefined, defaultDuration 
       },
     ];
   }
-  return entries.map((entry) => ({
-    type: entry.type as "scene" | "snapshot_pair",
-    scene_id: entry.scene_id || (entry as { sceneId?: string }).sceneId,
-    left_snapshot: entry.left_snapshot || (entry as { leftSnapshot?: string }).leftSnapshot,
-    right_snapshot: entry.right_snapshot || (entry as { rightSnapshot?: string }).rightSnapshot,
-    duration: entry.duration ?? defaultDuration,
-    audio_override: entry.audio_override || (entry as { audioOverride?: ScriptEntryRow["audio_override"] }).audioOverride,
-    notes: entry.notes,
-  }));
+  return entries.map((entry) => {
+    const normalizedType = entry.type as "scene" | "snapshot_pair";
+    const audioOverride = entry.audio_override || (entry as { audioOverride?: ScriptEntryRow["audio_override"] }).audioOverride;
+
+    const row: ScriptEntryRow = {
+      type: normalizedType,
+      duration: entry.duration ?? defaultDuration,
+    };
+
+    if (normalizedType === "scene") {
+      row.scene_id = entry.scene_id || (entry as { sceneId?: string }).sceneId || "";
+    } else {
+      const left = entry.left_snapshot || (entry as { leftSnapshot?: string }).leftSnapshot;
+      const right = entry.right_snapshot || (entry as { rightSnapshot?: string }).rightSnapshot;
+      row.left_snapshot = left || "";
+      row.right_snapshot = right || "";
+    }
+
+    if (audioOverride) {
+      row.audio_override = audioOverride;
+    }
+    if (entry.notes !== undefined) {
+      row.notes = entry.notes;
+    }
+    return row;
+  });
 }
 
 function buildEntriesPayload(entries: ScriptEntryRow[]): ScriptEntry[] {
@@ -138,22 +155,39 @@ function buildEntriesPayload(entries: ScriptEntryRow[]): ScriptEntry[] {
       notes: entry.notes,
     };
     if (entry.type === "scene") {
-      base.scene_id = (entry.scene_id || "").trim();
-      base.left_snapshot = undefined;
-      base.right_snapshot = undefined;
+      const sceneId = (entry.scene_id || "").trim();
+      if (sceneId) {
+        base.scene_id = sceneId;
+      }
     } else {
-      base.scene_id = undefined;
-      base.left_snapshot = (entry.left_snapshot || "").trim() || undefined;
-      base.right_snapshot = (entry.right_snapshot || "").trim() || undefined;
+      const left = (entry.left_snapshot || "").trim();
+      const right = (entry.right_snapshot || "").trim();
+      if (left) {
+        base.left_snapshot = left;
+      }
+      if (right) {
+        base.right_snapshot = right;
+      }
     }
     if (entry.audio_override) {
       const mix = entry.audio_override;
-      base.audio_override = {
-        left: mix.left ?? undefined,
-        right: mix.right ?? undefined,
-        mode: mix.mode?.trim() || undefined,
-        muted: mix.muted ?? undefined,
-      };
+      const audio: ScriptEntry["audio_override"] = {};
+      if (typeof mix.left === "number") {
+        audio.left = mix.left;
+      }
+      if (typeof mix.right === "number") {
+        audio.right = mix.right;
+      }
+      const mode = mix.mode?.trim();
+      if (mode) {
+        audio.mode = mode;
+      }
+      if (typeof mix.muted === "boolean") {
+        audio.muted = mix.muted;
+      }
+      if (Object.keys(audio).length) {
+        base.audio_override = audio;
+      }
     }
     return base;
   });
@@ -170,7 +204,10 @@ export default function useScriptEditor(): [ScriptEditorState, ScriptEditorHandl
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [scripts, setScripts] = useState<Script[]>([]);
   const [snapshotOptions, setSnapshotOptions] = useState<Record<string, SnapshotEntry[]>>({});
-  const [tagsText, setTagsText] = useState<string>(() => Array.isArray((defaultPayload as Script).tags) ? (defaultPayload as Script).tags.join(", ") : "");
+  const [tagsText, setTagsText] = useState<string>(() => {
+    const tags = (defaultPayload as Script).tags;
+    return Array.isArray(tags) ? tags.join(", ") : "";
+  });
   const [message, setMessage] = useState("");
   const [jsonText, setJsonText] = useState(() => pretty(defaultPayload));
   const [totalDuration, setTotalDuration] = useState<number>(() => entries.reduce((sum, e) => sum + (Number(e.duration) || 0), 0));
@@ -384,7 +421,8 @@ export default function useScriptEditor(): [ScriptEditorState, ScriptEditorHandl
     setIsPreviewing(true);
     try {
       const previewList: ScriptEntryPreview[] = [];
-      for (const [index, entry] of payload.entries.entries()) {
+      const payloadEntries = payload.entries ?? [];
+      for (const [index, entry] of payloadEntries.entries()) {
         const preview: ScriptEntryPreview = { label: `Entry ${index + 1} (${entry.type})`, duration: entry.duration };
         if (entry.type === "scene" && entry.scene_id) {
           try {
@@ -410,7 +448,9 @@ export default function useScriptEditor(): [ScriptEditorState, ScriptEditorHandl
         } else {
           const left = entry.left_snapshot;
           const right = entry.right_snapshot;
-          const handleSide = async (ref?: string | null) => {
+          const handleSide = async (
+            ref?: string | null,
+          ): Promise<ScriptEntryPreview["left"] | undefined> => {
             if (!ref) return undefined;
             try {
               const { client, name } = parseSnapshotRef(ref);

@@ -10,11 +10,7 @@
 - 嚴格檢查覆蓋 tsconfig.strict.json 列出的檔案皆綠燈。
 
 ## 尚未涵蓋/待修（全域 include 後約 200+ 錯誤）
-- **入口/模式映射**：`App.tsx`、`modes/createModeRenderMap.ts`（lazy component props 為 unknown、ModeLayout props mismatch、never 推斷）。
-- **Collage 系列**：`CollageMode.tsx`、`CollageVersionMode.tsx`、`utils/collage*`（implicit any/unknown、payload spread、型別缺口）。
-- **Kinship/3D**：`components/kinship/**`（KinshipScene、SceneClusters、ClusterFlower、Photo、IncubatorScene、PhylogenyScene、hooks/useKinship*、utils/data.ts/graph.ts），多處 implicit any、可為 undefined 的屬性存取、onPick/onCapture/camera 等 props 不匹配。
-- **其他模式/元件**：`OrganicRoomScene.tsx`、`SlideMode.tsx`、`StaticMode.tsx`、`SoundPlayer.tsx`、`VideoMode.tsx`、`IframeMode.tsx` 等仍有 implicit any/null/props mismatch。
-- **共用 utils**：`collageConfig.ts`、`collageMath.ts`、`collageImageProcessing.ts`、`collageStateUtils.ts` 等多處 implicit any/未知回傳型別。
+- **影音/場景模式**：`OrganicRoomScene.tsx`、`SlideMode.tsx`、`StaticMode.tsx`、`SoundPlayer.tsx`、`VideoMode.tsx`、`IframeMode.tsx` + 播放相關 hooks 仍有 implicit any/null/props mismatch，待第五包收尾。
 
 ## 建議修正順序
 1) 調整 tsconfig.strict.json 的 include 為整個 `src`（可用臨時檔觀察錯誤清單）。
@@ -27,16 +23,16 @@
 - admin_mode 已達嚴格型別標準且 typecheck 綠燈。
 
 ## 待派工（分 5 包）
-1) 入口與模式映射
+1) 入口與模式映射（已完成）
    - 檔案：`src/App.tsx`、`src/modes/createModeRenderMap.ts`
    - 重點：lazy component props 被推成 `unknown`，mode map 需要明確的 ModeProps；`onApplyConfig`/iframe config handler 型別不匹配。
-2) Collage 堆疊
+2) Collage 堆疊（已完成）
    - 檔案：`src/CollageMode.tsx`、`src/CollageVersionMode.tsx`、`src/hooks/useCollageConfig.ts`、`src/hooks/useCollageControls.ts`、`src/utils/collageMath.ts`、`src/utils/collageConfig.ts`、`src/utils/collageStateUtils.ts`
    - 重點：大量 implicit `any`/`unknown`，remote config payload/結果缺型別，`Promise<unknown>`、索引 `{}` 導致 TS7053；需定義 Collage API payload/state/interface。
-3) Kinship 堆疊
+3) Kinship 堆疊（已完成）
    - 檔案：`src/components/kinship/**`（含 hooks/utils/scene/components/trackers）、`src/hooks/useKinshipData.ts`、`src/hooks/useKinshipNavigation.ts`
    - 重點：callback 簽章 `string | number` 不一致、implicit `any`、layout 型別不符、索引缺 signature；需整理 node/edge/cluster/layout/pick 型別並套用。
-4) 編輯/搜尋/截圖工具
+4) 編輯/搜尋/截圖工具（已完成）
    - 檔案：`src/components/script/ScriptEditor.tsx`、`src/components/scene/SceneEditor.tsx`、`src/hooks/useScriptEditor.ts`、`src/hooks/useSearch.ts`、`src/hooks/useScreenshotManager.ts`、`src/hooks/useCameraPresets.ts`、`src/hooks/useControlSocketHandlers.ts`
    - 重點：`ScriptEntryRow` discriminated union 未涵蓋 `left_snapshot/right_snapshot/notes/audio_override`，select value/label 型別是 `unknown`，多個 payload/回傳值 implicit `any`。
 5) 影音/場景模式與播放輔助
@@ -47,3 +43,4 @@
 - 第一包完成：`App.tsx`、`modes/createModeRenderMap.ts`、`useRemoteTimelineControl`/`useIframeTimelinePlayer` 型別收斂，lazy component props 不再為 `unknown`，iframe config handler 型別對齊 `IframeConfig`。其餘批次錯誤仍依原五包分派處理。
 - 第二包完成（Collage 堆疊）：`CollageMode`/`CollageVersionMode`/`useCollageConfig`/`useCollageControls` 與 `collageMath`/`collageConfig`/`collageStateUtils` 全數補型別，清除 implicit any/unknown。剩餘錯誤集中在 Kinship、ScriptEditor、影音/搜尋等後續包。
 - 第三包完成（Kinship 堆疊）：`components/kinship/**`、`useKinshipData`、`useKinshipNavigation` 等全面補型別（包含 KinshipData 欄位、graph/layout 型別對齊、onPick 簽章、react-spring 鍵名避免 `children` 保留字、trackers 回傳型別），現存錯誤已聚焦於 Script/Scene 編輯工具與影音/搜尋/截圖等其他包。
+- 第四包完成（編輯/搜尋/截圖工具）：`ScriptEditor`/`SceneEditor`、`useScriptEditor`/`useSearch`/`useCameraPresets`/`useControlSocketHandlers`/`useScreenshotManager` 全數補型別，精簡 select options、promise 回傳型別與 screenshot/camera helpers；`types/scene.ts` 顯式允許 `undefined` 以符合 `exactOptionalPropertyTypes`。剩餘待處理集中在第五包影音/場景模式。

@@ -222,6 +222,8 @@ export default function App() {
     onTimelineControl: handleTimelineControlMessage,
   });
 
+  const captureReadyHandler = handleCaptureReady as (...args: unknown[]) => void;
+
   if (activeMode === DisplayModes.KINSHIP && !imgId) {
     return (
       <ModeLayout
@@ -231,7 +233,7 @@ export default function App() {
         onSoundHandled={handleSoundHandled}
         showInfo={showInfo}
         subtitle={subtitle}
-        onCaptureReady={handleCaptureReady}
+        onCaptureReady={captureReadyHandler}
       />
     );
   }
@@ -245,7 +247,7 @@ export default function App() {
         onSoundHandled={handleSoundHandled}
         showInfo={showInfo}
         subtitle={subtitle}
-        onCaptureReady={handleCaptureReady}
+        onCaptureReady={captureReadyHandler}
       />
     );
   }
@@ -359,7 +361,7 @@ export default function App() {
         onSoundHandled={handleSoundHandled}
         showInfo={showInfo}
         subtitle={subtitle}
-        onCaptureReady={handleCaptureReady}
+        onCaptureReady={captureReadyHandler}
       />
     </Suspense>
   );
