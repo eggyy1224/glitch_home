@@ -120,4 +120,44 @@ describe("useControlSocketHandlers", () => {
     expect(controller.setMuted).toHaveBeenCalledWith(true);
     expect(controller.setMuted).toHaveBeenCalledWith(false);
   });
+
+  it("在沒有 controller 時會對所有媒體套用音量/靜音", () => {
+    const videoA = document.createElement("video");
+    const videoB = document.createElement("video");
+    document.body.appendChild(videoA);
+    document.body.appendChild(videoB);
+    const { handlers } = createHandlers();
+
+    handlers.handleVideoControlMessage({ action: "set_volume", volume: 0 });
+    expect(videoA.volume).toBe(0);
+    expect(videoB.volume).toBe(0);
+
+    handlers.handleVideoControlMessage({ action: "set_muted", muted: true });
+    expect(videoA.muted).toBe(true);
+    expect(videoB.muted).toBe(true);
+  });
+
+  it("有 controller 時不會覆寫其他媒體音量", () => {
+    const video = document.createElement("video");
+    video.volume = 0.7;
+    document.body.appendChild(video);
+    const controller = {
+      play: vi.fn(),
+      pause: vi.fn(),
+      seek: vi.fn(),
+      setVolume: vi.fn(),
+      setMuted: vi.fn(),
+    };
+    const { handlers } = createHandlers({
+      videoControllerRef: { current: controller },
+    });
+
+    handlers.handleVideoControlMessage({ action: "set_volume", volume: 0.1 });
+    expect(controller.setVolume).toHaveBeenCalledWith(0.1);
+    expect(video.volume).toBeCloseTo(0.7); // 未被全域覆寫
+
+    handlers.handleVideoControlMessage({ action: "mute" });
+    expect(controller.setMuted).toHaveBeenCalledWith(true);
+    expect(video.muted).toBe(false); // 未被全域覆寫
+  });
 });
