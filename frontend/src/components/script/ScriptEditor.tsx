@@ -315,6 +315,15 @@ export default function ScriptEditor() {
                           data-ai-field={`script-editor.entry-${index}.duration`}
                         />
                       </label>
+                      <label style={{ display: "flex", flexDirection: "column" }}>
+                        notes
+                        <input
+                          type="text"
+                          value={row.notes || ""}
+                          onChange={(e) => setEntryField(index, "notes", e.target.value)}
+                          data-ai-field={`script-editor.entry-${index}.notes`}
+                        />
+                      </label>
                     </div>
                   )}
 
@@ -461,7 +470,7 @@ export default function ScriptEditor() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
                       {entry.left && (
                         <div>
-                          <div style={{ fontSize: 12, color: "#82dca5" }}>{entry.left.client}/{entry.left.snapshot}</div>
+                          <div style={{ fontSize: 12, color: "#82dca5" }}>{entry.left.snapshot}</div>
                           {entry.left.previewSrc ? (
                             <iframe
                               title={`left-${idx}`}
@@ -476,7 +485,7 @@ export default function ScriptEditor() {
                       )}
                       {entry.right && (
                         <div>
-                          <div style={{ fontSize: 12, color: "#82dca5" }}>{entry.right.client}/{entry.right.snapshot}</div>
+                          <div style={{ fontSize: 12, color: "#82dca5" }}>{entry.right.snapshot}</div>
                           {entry.right.previewSrc ? (
                             <iframe
                               title={`right-${idx}`}
