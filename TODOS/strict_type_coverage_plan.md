@@ -25,3 +25,20 @@
 ## 目前狀態
 - tsconfig.strict.json 維持針對已修範圍；若擴大 include 至全 src 會出現上述約 200+ 錯誤。
 - admin_mode 已達嚴格型別標準且 typecheck 綠燈。
+
+## 待派工（分 5 包）
+1) 入口與模式映射
+   - 檔案：`src/App.tsx`、`src/modes/createModeRenderMap.ts`
+   - 重點：lazy component props 被推成 `unknown`，mode map 需要明確的 ModeProps；`onApplyConfig`/iframe config handler 型別不匹配。
+2) Collage 堆疊
+   - 檔案：`src/CollageMode.tsx`、`src/CollageVersionMode.tsx`、`src/hooks/useCollageConfig.ts`、`src/hooks/useCollageControls.ts`、`src/utils/collageMath.ts`、`src/utils/collageConfig.ts`、`src/utils/collageStateUtils.ts`
+   - 重點：大量 implicit `any`/`unknown`，remote config payload/結果缺型別，`Promise<unknown>`、索引 `{}` 導致 TS7053；需定義 Collage API payload/state/interface。
+3) Kinship 堆疊
+   - 檔案：`src/components/kinship/**`（含 hooks/utils/scene/components/trackers）、`src/hooks/useKinshipData.ts`、`src/hooks/useKinshipNavigation.ts`
+   - 重點：callback 簽章 `string | number` 不一致、implicit `any`、layout 型別不符、索引缺 signature；需整理 node/edge/cluster/layout/pick 型別並套用。
+4) 編輯/搜尋/截圖工具
+   - 檔案：`src/components/script/ScriptEditor.tsx`、`src/components/scene/SceneEditor.tsx`、`src/hooks/useScriptEditor.ts`、`src/hooks/useSearch.ts`、`src/hooks/useScreenshotManager.ts`、`src/hooks/useCameraPresets.ts`、`src/hooks/useControlSocketHandlers.ts`
+   - 重點：`ScriptEntryRow` discriminated union 未涵蓋 `left_snapshot/right_snapshot/notes/audio_override`，select value/label 型別是 `unknown`，多個 payload/回傳值 implicit `any`。
+5) 影音/場景模式與播放輔助
+   - 檔案：`src/IframeMode.tsx`、`src/OrganicRoomScene.tsx`、`src/SlideMode.tsx`、`src/VideoMode.tsx`、`src/SoundPlayer.tsx`、`src/hooks/useSlidePlayback.ts`、`src/hooks/useSubtitleCaption.ts`、`src/hooks/useSoundQueue.ts`
+   - 重點：事件/raf/observer 參數 implicit `any`，`ImageBitmap.close` 誤用，音檔型別不符 `SoundFile`，回傳型別缺失與 enum 值不對。
