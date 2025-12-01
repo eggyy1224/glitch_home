@@ -1,0 +1,19 @@
+{
+  "id": "demo_dual_scene_2",
+  "title": "Desktop2/desktop 第二段",
+  "targets": {
+    "desktop2": "desktop2/opening_stage2",
+    "desktop": "desktop/closing_focus"
+  },
+  "audio_mix": {
+    "left": 0.0,
+    "right": 1.0,
+    "mode": "balanced",
+    "muted": null
+  },
+  "tags": [
+    "demo"
+  ],
+  "description": null,
+  "notes": "第二段：desktop2 opening_stage2 + desktop closing_focus"
+}

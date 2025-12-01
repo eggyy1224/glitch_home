@@ -1,0 +1,29 @@
+{
+  "id": "demo_dual_script",
+  "title": "Scene 播放示範：兩段",
+  "entries": [
+    {
+      "type": "scene",
+      "sceneId": "demo_dual_scene",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 6.0,
+      "audio_override": null,
+      "notes": "第一段：opening_stage1 + birds_quad"
+    },
+    {
+      "type": "scene",
+      "sceneId": "demo_dual_scene_2",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 6.0,
+      "audio_override": null,
+      "notes": "第二段：opening_stage2 + closing_focus"
+    }
+  ],
+  "tags": [
+    "demo"
+  ],
+  "description": null,
+  "notes": "示範 script 連播兩段 scene"
+}

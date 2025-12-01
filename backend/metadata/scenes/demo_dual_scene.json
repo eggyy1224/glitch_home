@@ -1,0 +1,19 @@
+{
+  "id": "demo_dual_scene",
+  "title": "Desktop2/desktop 示範",
+  "targets": {
+    "desktop2": "desktop2/opening_stage1",
+    "desktop": "desktop/birds_quad_video_grid_20251117174500"
+  },
+  "audio_mix": {
+    "left": 1.0,
+    "right": 0.0,
+    "mode": "balanced",
+    "muted": null
+  },
+  "tags": [
+    "demo"
+  ],
+  "description": null,
+  "notes": "左 desktop2 opening_stage1，右 desktop birds_quad"
+}

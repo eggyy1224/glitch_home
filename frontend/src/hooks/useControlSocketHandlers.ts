@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type {
   CaptionPayload,
@@ -28,6 +28,8 @@ export function useControlSocketHandlers({
   unlockAudioElementRef,
   videoControllerRef,
 }: ControlSocketHandlerOptions) {
+  const mediaControlStateRef = useRef<{ volume: number | null; muted: boolean | null } | null>(null);
+  const mediaControlIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const handleScreenshotLifecycle = useCallback(
     (payload: ScreenshotLifecyclePayload) => {
       if (payload?.request_id) {
@@ -207,8 +209,7 @@ export function useControlSocketHandlers({
       if (targetId && targetId !== clientId) {
         return;
       }
-      const controller = videoControllerRef.current;
-      if (!controller || typeof payload !== "object" || !payload) {
+      if (!payload || typeof payload !== "object") {
         return;
       }
       const action = typeof payload.action === "string" ? payload.action.trim().toLowerCase() : "";
@@ -218,35 +219,164 @@ export function useControlSocketHandlers({
       if (!action) {
         return;
       }
+      const clampVolume = (value: unknown) => {
+        if (typeof value !== "number") return undefined;
+        return Math.max(0, Math.min(1, value));
+      };
+
+      const applyToDocumentMedia = (doc: Document, fn: (media: HTMLMediaElement) => void, depth = 0) => {
+        if (!doc || depth > 4) return; // avoid deep loops
+        const elements = Array.from(doc.querySelectorAll("video, audio"));
+        elements.forEach((media) => {
+          try {
+            fn(media as HTMLMediaElement);
+          } catch (err) {
+            // ignore per-element errors
+          }
+        });
+        const frames = Array.from(doc.querySelectorAll("iframe"));
+        frames.forEach((frame) => {
+          try {
+            const childDoc = frame.contentDocument;
+            if (childDoc) {
+              applyToDocumentMedia(childDoc, fn, depth + 1);
+            }
+          } catch (err) {
+            // cross-origin or inaccessible; skip
+          }
+        });
+      };
+
+      const applyToMediaElements = (fn: (media: HTMLMediaElement) => void) => {
+        applyToDocumentMedia(document, fn);
+      };
+
+      const rememberControlState = (volume: number | null, muted: boolean | null, enableInterval: boolean) => {
+        mediaControlStateRef.current = { volume, muted };
+        if (!enableInterval) return;
+        if (!mediaControlIntervalRef.current) {
+            mediaControlIntervalRef.current = setInterval(() => {
+              const state = mediaControlStateRef.current;
+              if (!state) return;
+              applyToMediaElements((media) => {
+                if (state.volume !== null && state.volume !== undefined) {
+                  media.volume = state.volume;
+                  if (state.volume > 0 && media.muted && state.muted !== true) {
+                    media.muted = false;
+                  }
+                }
+                if (state.muted !== null && state.muted !== undefined) {
+                  media.muted = state.muted;
+                }
+              });
+            }, 1000);
+        }
+      };
+
+      // Primary: dedicated controller (VideoMode)
+      const controller = videoControllerRef.current;
+      if (controller) {
+        if (action === "play") {
+          controller.play?.();
+          return;
+        }
+        if (action === "pause") {
+          controller.pause?.();
+          return;
+        }
+        if (action === "seek" && timeValue != null) {
+          controller.seek?.(Number(timeValue));
+          return;
+        }
+        if (action === "set_volume" || action === "volume") {
+          const vol = typeof volumeValue === "number" ? volumeValue : undefined;
+          controller.setVolume?.(vol);
+          return;
+        }
+        if (action === "set_muted") {
+          const muted = Boolean(mutedValue);
+          controller.setMuted?.(muted);
+          return;
+        }
+        if (action === "mute") {
+          controller.setMuted?.(true);
+          return;
+        }
+        if (action === "unmute") {
+          controller.setMuted?.(false);
+          if (typeof volumeValue === "number") {
+            controller.setVolume?.(volumeValue);
+          }
+          return;
+        }
+        return;
+      }
+
+      // Fallback: apply to all media elements in the page (iframe/collage panels)
+
       if (action === "play") {
-        controller.play?.();
+        applyToMediaElements((media) => {
+          void media.play().catch(() => undefined);
+        });
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
         return;
       }
       if (action === "pause") {
-        controller.pause?.();
+        applyToMediaElements((media) => {
+          media.pause();
+        });
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
         return;
       }
       if (action === "seek" && timeValue != null) {
-        controller.seek?.(Number(timeValue));
+        const parsed = Number(timeValue);
+        if (!Number.isFinite(parsed) || parsed < 0) return;
+        applyToMediaElements((media) => {
+          try {
+            media.currentTime = parsed;
+          } catch (err) {
+            // ignore seek errors
+          }
+        });
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
         return;
       }
       if (action === "set_volume" || action === "volume") {
-        controller.setVolume?.(typeof volumeValue === "number" ? volumeValue : undefined);
+        const vol = clampVolume(volumeValue);
+        if (vol == null) return;
+        applyToMediaElements((media) => {
+          media.volume = vol;
+          if (vol > 0 && media.muted) {
+            media.muted = false;
+          }
+        });
+        rememberControlState(vol, mediaControlStateRef.current?.muted ?? null, true);
         return;
       }
       if (action === "set_muted") {
-        controller.setMuted?.(Boolean(mutedValue));
+        const muted = Boolean(mutedValue);
+        applyToMediaElements((media) => {
+          media.muted = muted;
+        });
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, muted, true);
         return;
       }
       if (action === "mute") {
-        controller.setMuted?.(true);
+        applyToMediaElements((media) => {
+          media.muted = true;
+        });
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, true, true);
         return;
       }
       if (action === "unmute") {
-        controller.setMuted?.(false);
-        if (typeof volumeValue === "number") {
-          controller.setVolume?.(volumeValue);
-        }
+        const vol = clampVolume(volumeValue);
+        applyToMediaElements((media) => {
+          media.muted = false;
+          if (vol != null) {
+            media.volume = vol;
+          }
+        });
+        rememberControlState(vol ?? mediaControlStateRef.current?.volume ?? null, false, true);
       }
     },
     [clientId, videoControllerRef],
@@ -273,6 +403,16 @@ export function useControlSocketHandlers({
       handleRemoteClickMessage,
       handleVideoControlMessage,
     ],
+  );
+
+  useEffect(
+    () => () => {
+      if (mediaControlIntervalRef.current) {
+        clearInterval(mediaControlIntervalRef.current);
+        mediaControlIntervalRef.current = null;
+      }
+    },
+    [],
   );
 
   return handlers;
