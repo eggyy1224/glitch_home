@@ -1,9 +1,9 @@
-import type { MockInstance } from "vitest";
+import type { Mock } from "vitest";
 import { vi } from "vitest";
 
 type AnyFunc = (...args: any[]) => any;
 
-export type MockOf<T extends AnyFunc> = MockInstance<ReturnType<T>, Parameters<T>>;
+export type MockOf<T extends AnyFunc> = Mock<Parameters<T>, ReturnType<T>>;
 
 export interface MockFetchOptions<T> {
   status?: number;
@@ -35,7 +35,9 @@ export function createMockFetch<T>(data: T, options: MockFetchOptions<T> = {}) {
     text: vi.fn(async () => responseText),
   };
 
-  const mockFetch = vi.fn(async () => response) as MockInstance<Promise<MockFetchResult<T>>, Parameters<typeof fetch>>;
+  const mockFetch = vi.fn<Parameters<typeof fetch>, Promise<MockFetchResult<T>>>((..._args) =>
+    Promise.resolve(response),
+  );
 
   const install = () => {
     vi.stubGlobal("fetch", mockFetch as unknown as typeof fetch);
@@ -61,7 +63,9 @@ export function createMockApi<T extends Record<string, AnyFunc>, K extends FuncK
     const impl = implementation?.[key];
     const typedMock =
       impl != null
-        ? vi.fn<Parameters<T[K]>, ReturnType<T[K]>>(impl as (...args: Parameters<T[K]>) => ReturnType<T[K]>)
+        ? vi.fn<Parameters<T[K]>, ReturnType<T[K]>>((...args: Parameters<T[K]>) =>
+            (impl as AnyFunc)(...args),
+          )
         : vi.fn<Parameters<T[K]>, ReturnType<T[K]>>();
     (mocks as Record<K, MockOf<T[K]>>)[key] = typedMock as MockOf<T[K]>;
   });

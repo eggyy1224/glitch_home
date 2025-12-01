@@ -2,115 +2,125 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import TimelineEpisodeEditor from "../../src/components/TimelineEpisodeEditor";
-import { AdminPanelContext } from "../../src/AdminPanelContext";
+import { AdminPanelContext, type AdminPanelContextValue } from "../../src/AdminPanelContext";
+import { createMockApi } from "../testUtils";
+import type * as api from "../../src/api";
+import type { IframeTimeline, EpisodeEntry } from "../../src/types/timeline";
 
-const {
-  mockListIframeTimelines,
-  mockListEpisodes,
-  mockListIframeSnapshots,
-  mockFetchIframeTimeline,
-  mockFetchEpisode,
-  mockUpdateIframeTimeline,
-  mockCreateIframeTimeline,
-  mockUpdateEpisode,
-  mockCreateEpisode,
-  mockPlayIframeTimeline,
-  mockPlayEpisode,
-  mockGetIframeSnapshot,
-  mockSaveIframeSnapshot,
-  mockRestoreIframeSnapshot,
-} = vi.hoisted(() => ({
-  mockListIframeTimelines: vi.fn(),
-  mockListEpisodes: vi.fn(),
-  mockListIframeSnapshots: vi.fn(),
-  mockFetchIframeTimeline: vi.fn(),
-  mockFetchEpisode: vi.fn(),
-  mockUpdateIframeTimeline: vi.fn(),
-  mockCreateIframeTimeline: vi.fn(),
-  mockUpdateEpisode: vi.fn(),
-  mockCreateEpisode: vi.fn(),
-  mockPlayIframeTimeline: vi.fn(),
-  mockPlayEpisode: vi.fn(),
-  mockGetIframeSnapshot: vi.fn(),
-  mockSaveIframeSnapshot: vi.fn(),
-  mockRestoreIframeSnapshot: vi.fn(),
-}));
+const timelineData: IframeTimeline = {
+  id: "demo_tl",
+  clientId: "wall",
+  steps: [{ snapshot: "wall/snap1", duration: 5 }],
+};
+
+const episodePayload: EpisodeEntry = { id: "ep1", tracks: [{ timelineId: "t1", targetClientId: "desktop" }] };
+
+const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+  const { mocks, factory } = createMockApi<
+    typeof api,
+    | "listIframeTimelines"
+    | "listEpisodes"
+    | "listIframeSnapshots"
+    | "fetchIframeTimeline"
+    | "fetchEpisode"
+    | "updateIframeTimeline"
+    | "createIframeTimeline"
+    | "updateEpisode"
+    | "createEpisode"
+    | "playIframeTimeline"
+    | "playEpisode"
+    | "getIframeSnapshot"
+    | "saveIframeSnapshot"
+    | "restoreIframeSnapshot"
+  >([
+    "listIframeTimelines",
+    "listEpisodes",
+    "listIframeSnapshots",
+    "fetchIframeTimeline",
+    "fetchEpisode",
+    "updateIframeTimeline",
+    "createIframeTimeline",
+    "updateEpisode",
+    "createEpisode",
+    "playIframeTimeline",
+    "playEpisode",
+    "getIframeSnapshot",
+    "saveIframeSnapshot",
+    "restoreIframeSnapshot",
+  ]);
+  return { mocks, createApi: factory };
+});
 
 vi.mock("../../src/api", () => ({
   __esModule: true,
-  listIframeTimelines: (...args) => mockListIframeTimelines(...args),
-  listEpisodes: (...args) => mockListEpisodes(...args),
-  listIframeSnapshots: (...args) => mockListIframeSnapshots(...args),
-  fetchIframeTimeline: (...args) => mockFetchIframeTimeline(...args),
-  fetchEpisode: (...args) => mockFetchEpisode(...args),
-  updateIframeTimeline: (...args) => mockUpdateIframeTimeline(...args),
-  createIframeTimeline: (...args) => mockCreateIframeTimeline(...args),
-  updateEpisode: (...args) => mockUpdateEpisode(...args),
-  createEpisode: (...args) => mockCreateEpisode(...args),
-  playIframeTimeline: (...args) => mockPlayIframeTimeline(...args),
-  playEpisode: (...args) => mockPlayEpisode(...args),
-  getIframeSnapshot: (...args) => mockGetIframeSnapshot(...args),
-  saveIframeSnapshot: (...args) => mockSaveIframeSnapshot(...args),
-  restoreIframeSnapshot: (...args) => mockRestoreIframeSnapshot(...args),
+  ...createApi(),
 }));
 
-function renderWithContext(ui) {
-  return render(<AdminPanelContext.Provider value={{ defaultClientId: "desktop" }}>{ui}</AdminPanelContext.Provider>);
+const adminContextValue: AdminPanelContextValue = {
+  defaultClientId: "desktop",
+  appMode: "STUDIO",
+  canWriteMetadata: true,
+  canWriteAssets: true,
+  canAnalyze: true,
+  canRebuildIndex: true,
+  forbidMessage: "",
+};
+
+function renderWithContext(ui: React.ReactElement) {
+  return render(<AdminPanelContext.Provider value={adminContextValue}>{ui}</AdminPanelContext.Provider>);
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListIframeTimelines.mockResolvedValue({ timelines: [{ id: "demo_tl", client_id: "desktop" }] });
-  mockListEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", track_count: 1 }] });
-  mockListIframeSnapshots.mockResolvedValue({
+  apiMocks.listIframeTimelines.mockResolvedValue({ timelines: [{ id: "demo_tl", client_id: "desktop" }] });
+  apiMocks.listEpisodes.mockResolvedValue({ episodes: [{ id: "ep1", track_count: 1 }] });
+  apiMocks.listIframeSnapshots.mockResolvedValue({
     snapshots: [
       { id: "snapA", client: "desktop" },
       { id: "snapB", client: "desktop" },
     ],
   });
-  mockFetchIframeTimeline.mockResolvedValue({
-    timeline: { id: "demo_tl", clientId: "wall", steps: [{ snapshot: "wall/snap1", duration: 5 }] },
+  apiMocks.fetchIframeTimeline.mockResolvedValue(timelineData);
+  apiMocks.fetchEpisode.mockResolvedValue(episodePayload);
+  apiMocks.updateIframeTimeline.mockResolvedValue(timelineData);
+  apiMocks.createIframeTimeline.mockResolvedValue(timelineData);
+  apiMocks.updateEpisode.mockResolvedValue(episodePayload);
+  apiMocks.createEpisode.mockResolvedValue(episodePayload);
+  apiMocks.playIframeTimeline.mockResolvedValue({});
+  apiMocks.playEpisode.mockResolvedValue({});
+  apiMocks.getIframeSnapshot.mockResolvedValue({
+    raw: { layout: "grid", gap: 0, columns: 1, panels: [{ id: "p1", url: "/preview" }] },
   });
-  mockFetchEpisode.mockResolvedValue({ episode: { id: "ep1", tracks: [{ timelineId: "t1", targetClientId: "desktop" }] } });
-  mockUpdateIframeTimeline.mockResolvedValue({});
-  mockCreateIframeTimeline.mockResolvedValue({});
-  mockUpdateEpisode.mockResolvedValue({});
-  mockCreateEpisode.mockResolvedValue({});
-  mockPlayIframeTimeline.mockResolvedValue({});
-  mockPlayEpisode.mockResolvedValue({});
-  mockGetIframeSnapshot.mockResolvedValue({
-    raw: { layout: "grid", gap: 0, columns: 1, panels: [{ url: "/preview" }] },
-  });
-  mockSaveIframeSnapshot.mockResolvedValue({});
-  mockRestoreIframeSnapshot.mockResolvedValue({});
+  apiMocks.saveIframeSnapshot.mockResolvedValue({});
+  apiMocks.restoreIframeSnapshot.mockResolvedValue({});
 });
 
 describe("TimelineEpisodeEditor", () => {
   it("載入 timeline 時會同步 snapshot client 並刷新清單", async () => {
     renderWithContext(<TimelineEpisodeEditor />);
 
-    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
+    await waitFor(() => expect(apiMocks.listIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
     const loadButton = await screen.findByRole("button", { name: /載入 timeline demo_tl/ });
     fireEvent.click(loadButton);
 
-    await waitFor(() => expect(mockFetchIframeTimeline).toHaveBeenCalledWith("demo_tl", { resolve: false }));
-    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenLastCalledWith("wall"));
+    await waitFor(() => expect(apiMocks.fetchIframeTimeline).toHaveBeenCalledWith("demo_tl", { resolve: false }));
+    await waitFor(() => expect(apiMocks.listIframeSnapshots).toHaveBeenLastCalledWith("wall"));
   });
 
   it("儲存 timeline 時遇到 404 會改用 create 並重新載入列表", async () => {
-    mockUpdateIframeTimeline.mockRejectedValueOnce(new Error("404 not found"));
+    apiMocks.updateIframeTimeline.mockRejectedValueOnce(new Error("404 not found"));
     renderWithContext(<TimelineEpisodeEditor />);
 
-    await waitFor(() => expect(mockListIframeTimelines).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listIframeTimelines).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText("Timeline ID"), { target: { value: "tl-new" } });
     fireEvent.click(screen.getByRole("button", { name: "儲存" }));
 
     await waitFor(() =>
-      expect(mockCreateIframeTimeline).toHaveBeenCalledWith(expect.objectContaining({ id: "tl-new" }), { resolve: false }),
+      expect(apiMocks.createIframeTimeline).toHaveBeenCalledWith(expect.objectContaining({ id: "tl-new" }), { resolve: false }),
     );
-    await waitFor(() => expect(mockListIframeTimelines).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(apiMocks.listIframeTimelines).toHaveBeenCalledTimes(2));
   });
 
   it("dirty 狀態下 iframe 預覽會先觸發儲存並顯示播放 iframe", async () => {
@@ -120,7 +130,7 @@ describe("TimelineEpisodeEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "以 iframe 預覽 timeline" }));
 
     await waitFor(() =>
-      expect(mockUpdateIframeTimeline).toHaveBeenCalledWith(
+      expect(apiMocks.updateIframeTimeline).toHaveBeenCalledWith(
         "tl-preview",
         expect.objectContaining({ id: "tl-preview" }),
         { resolve: false },
@@ -138,13 +148,13 @@ describe("TimelineEpisodeEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "播放 Episode（含覆寫）" }));
 
     await waitFor(() =>
-      expect(mockPlayEpisode).toHaveBeenCalledWith("ep-demo", { target_client_map: { t1: "desktop2", t2: "mobile" } }),
+      expect(apiMocks.playEpisode).toHaveBeenCalledWith("ep-demo", { target_client_map: { t1: "desktop2", t2: "mobile" } }),
     );
   });
 
   it("鎖定 JSON 時不會同步，解除後可手動覆寫", async () => {
     renderWithContext(<TimelineEpisodeEditor />);
-    const jsonArea = screen.getByLabelText(/JSON（雙向同步）/);
+    const jsonArea = screen.getByLabelText(/JSON（雙向同步）/) as HTMLTextAreaElement;
     expect(jsonArea.value).toContain("new_timeline");
 
     const lockCheckbox = screen.getByLabelText("鎖定 JSON");
@@ -201,18 +211,20 @@ describe("TimelineEpisodeEditor", () => {
       fireEvent.change(screen.getByLabelText("批次 duration"), { target: { value: "9" } });
       fireEvent.click(screen.getByRole("button", { name: "套用" }));
     });
-    expect(screen.getAllByLabelText(/duration（秒）/)[0].value).toBe("9");
+    const durationInputs = screen.getAllByLabelText(/duration（秒）/) as HTMLInputElement[];
+    expect(durationInputs[0].value).toBe("9");
 
     await act(async () => {
       fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
     });
-    const trackSelects = await screen.findAllByLabelText(/選取 track/);
+    const trackSelects = (await screen.findAllByLabelText(/選取 track/)) as HTMLSelectElement[];
     await act(async () => {
       fireEvent.click(trackSelects[0]);
       fireEvent.change(screen.getByLabelText("批次 target"), { target: { value: "client-x" } });
       fireEvent.click(screen.getByRole("button", { name: "套用" }));
     });
-    expect(screen.getAllByLabelText(/targetClientId/)[0].value).toBe("client-x");
+    const targetInputs = screen.getAllByLabelText(/targetClientId/) as HTMLInputElement[];
+    expect(targetInputs[0].value).toBe("client-x");
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "複製選取" }));
@@ -230,7 +242,7 @@ describe("TimelineEpisodeEditor", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("tab", { name: "Episode 模式" }));
     });
-    const episodeIdInput = await screen.findByLabelText("Episode ID");
+    const episodeIdInput = (await screen.findByLabelText("Episode ID")) as HTMLInputElement;
     fireEvent.change(episodeIdInput, { target: { value: "" } });
     await waitFor(() => expect(episodeIdInput.value).toBe(""));
     const episodePlayButton = await screen.findByRole("button", { name: "播放 Episode（含覆寫）" });
@@ -261,12 +273,16 @@ describe("TimelineEpisodeEditor", () => {
     const previewBars = await screen.findAllByTestId(/timeline-preview-/);
     expect(previewBars).toHaveLength(2);
 
-    const snapshotSelects = screen.getAllByLabelText("snapshot");
+    const snapshotSelects = screen.getAllByLabelText("snapshot") as HTMLSelectElement[];
     fireEvent.change(snapshotSelects[0], { target: { value: "desktop/snapA" } });
     fireEvent.change(snapshotSelects[1], { target: { value: "desktop/snapB" } });
     const before = snapshotSelects.map((s) => s.value);
 
-    const dataTransfer = {
+    const dataTransfer: {
+      data: Record<string, string>;
+      setData: (type: string, value: string) => void;
+      getData: (type: string) => string;
+    } = {
       data: {},
       setData(type, value) {
         this.data[type] = value;
@@ -285,7 +301,7 @@ describe("TimelineEpisodeEditor", () => {
     expect(selects).toHaveLength(2);
     // 確認順序已交換
     await waitFor(() => {
-      const updated = screen.getAllByLabelText("snapshot");
+      const updated = screen.getAllByLabelText("snapshot") as HTMLSelectElement[];
       expect(updated[0].value).toBe(before[1]);
       expect(updated[1].value).toBe(before[0]);
     });
@@ -314,7 +330,7 @@ describe("TimelineEpisodeEditor", () => {
   it("Snapshot 模式可儲存並播放 snapshot", async () => {
     renderWithContext(<TimelineEpisodeEditor />);
 
-    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listIframeSnapshots).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole("tab", { name: "Snapshot 模式" }));
     const nameInput = await screen.findByLabelText("名稱");
@@ -325,7 +341,7 @@ describe("TimelineEpisodeEditor", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "儲存" }));
     await waitFor(() =>
-      expect(mockSaveIframeSnapshot).toHaveBeenCalledWith(
+      expect(apiMocks.saveIframeSnapshot).toHaveBeenCalledWith(
         "desktop",
         "snap-demo",
         expect.objectContaining({
@@ -335,6 +351,6 @@ describe("TimelineEpisodeEditor", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "播放 snapshot" }));
-    await waitFor(() => expect(mockRestoreIframeSnapshot).toHaveBeenCalledWith("desktop", "snap-demo"));
+    await waitFor(() => expect(apiMocks.restoreIframeSnapshot).toHaveBeenCalledWith("desktop", "snap-demo"));
   });
 });

@@ -81,6 +81,10 @@ describe("CollageMode", () => {
     expect(baseHook.handleShuffle).toHaveBeenCalledTimes(1);
 
     const handle = document.querySelector(".collage-resize-handle");
+    expect(handle).not.toBeNull();
+    if (!handle) {
+      throw new Error("missing resize handle");
+    }
     fireEvent.pointerDown(handle);
     expect(baseHook.handleResizePointerDown).toHaveBeenCalledTimes(1);
   });

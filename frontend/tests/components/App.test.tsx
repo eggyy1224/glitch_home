@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import type { ReactElement } from "react";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, type SpyInstance } from "vitest";
 import { render, screen } from "@testing-library/react";
 import App from "../../src/App";
 import { DisplayModes } from "../../src/hooks/useDisplayMode";
+import type { CollageConfig } from "../../src/utils/collageConfig";
 
 const {
   mockUseModeParams,
@@ -22,7 +24,7 @@ const {
   IframeTimelineControlsMock,
   KINSHIP_DATA_EXCLUDED,
 } = vi.hoisted(() => {
-  const makeDiv = (testId) =>
+  const makeDiv = (testId: string) =>
     vi.fn(() => (
       <div data-testid={testId} />
     ));
@@ -124,8 +126,8 @@ vi.mock("../../src/modes/createModeRenderMap", () => ({
 }));
 
 const noop = () => {};
-let playSpy;
-let pauseSpy;
+let playSpy: SpyInstance | undefined;
+let pauseSpy: SpyInstance | undefined;
 
 beforeAll(() => {
   const proto = window.HTMLMediaElement?.prototype;
@@ -322,8 +324,14 @@ describe("App", () => {
     const handlerMap = { ...baseHandlerMap };
     mockUseControlSocketHandlers.mockReturnValue(handlerMap);
 
-    const createArgs: { current?: unknown } = {};
-    mockCreateModeRenderMap.mockImplementation((args) => {
+    type CapturedCreateArgs = {
+      iframeTimelineOverlay?: ReactElement | null;
+      collageRemoteConfig?: CollageConfig | null;
+      topbarContent?: ReactElement | null;
+      screenshotContent?: ReactElement | null;
+    };
+    const createArgs: { current?: CapturedCreateArgs } = {};
+    mockCreateModeRenderMap.mockImplementation((args: CapturedCreateArgs) => {
       createArgs.current = args;
       return {
         [DisplayModes.IFRAME]: {
@@ -339,9 +347,11 @@ describe("App", () => {
     render(<App />);
 
     expect(createArgs.current).toBeDefined();
-    expect(createArgs.current.iframeTimelineOverlay).not.toBeNull();
-    expect(createArgs.current.collageRemoteConfig).toBeNull();
-    expect(createArgs.current.topbarContent.props).toEqual(
+    const captured = createArgs.current!;
+
+    expect(captured.iframeTimelineOverlay).not.toBeNull();
+    expect(captured.collageRemoteConfig).toBeNull();
+    expect(captured.topbarContent?.props).toEqual(
       expect.objectContaining({
         relatedCount: 2,
         parentsCount: 1,
@@ -350,7 +360,7 @@ describe("App", () => {
         originalImage: "main.png",
       }),
     );
-    expect(createArgs.current.screenshotContent.props).toEqual(
+    expect(captured.screenshotContent?.props).toEqual(
       expect.objectContaining({ message: "ready" }),
     );
 

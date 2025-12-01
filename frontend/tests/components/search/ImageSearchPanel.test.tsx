@@ -1,16 +1,18 @@
-import React, { createRef } from "react";
+import React, { createRef, type ComponentProps } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import ImageSearchPanel from "../../../src/components/search/ImageSearchPanel";
 
-const makeProps = (override = {}) => ({
+type ImageSearchPanelProps = ComponentProps<typeof ImageSearchPanel>;
+
+const makeProps = (override: Partial<ImageSearchPanelProps> = {}): ImageSearchPanelProps => ({
   preview: null,
   selectedFile: null,
   onFileChange: vi.fn(),
   onSearch: vi.fn(),
   onClear: vi.fn(),
   searching: false,
-  fileInputRef: createRef(),
+  fileInputRef: createRef<HTMLInputElement>(),
   ...override,
 });
 
@@ -21,8 +23,11 @@ describe("ImageSearchPanel", () => {
 
     const uploadPrompt = screen.getByRole("button", { name: /點擊上傳圖片或拖放/ });
 
-    const input = document.querySelector("input[type='file']");
+    const input = document.querySelector("input[type='file']") as HTMLInputElement | null;
     expect(input).not.toBeNull();
+    if (!input) {
+      throw new Error("file input not found");
+    }
     const clickSpy = vi.spyOn(input, "click");
 
     fireEvent.keyDown(uploadPrompt, { key: "Enter" });

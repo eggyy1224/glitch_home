@@ -2,6 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import IframeMode from "../../src/IframeMode";
+import { createIframeConfig } from "../testUtils";
 
 const ensureHtml2CanvasMock = vi.fn();
 
@@ -17,7 +18,14 @@ describe("IframeMode", () => {
 
   it("沒有面板時顯示提示並提供截圖回呼", () => {
     const onCaptureReady = vi.fn();
-    render(<IframeMode config={{ panels: [] }} controlsEnabled={false} onApplyConfig={vi.fn()} onCaptureReady={onCaptureReady} />);
+    render(
+      <IframeMode
+        config={createIframeConfig({ panels: [] })}
+        controlsEnabled={false}
+        onApplyConfig={vi.fn()}
+        onCaptureReady={onCaptureReady}
+      />,
+    );
 
     expect(screen.getByText("尚未設定任何 iframe 來源。")).toBeInTheDocument();
     expect(onCaptureReady).toHaveBeenCalledWith(expect.anything());
@@ -29,7 +37,11 @@ describe("IframeMode", () => {
       <IframeMode
         controlsEnabled
         onApplyConfig={onApplyConfig}
-        config={{ layout: "grid", columns: 2, panels: [{ id: "p1", src: "https://example.com", label: "範例" }] }}
+        config={createIframeConfig({
+          layout: "grid",
+          columns: 2,
+          panels: [{ id: "p1", src: "https://example.com", label: "範例" }],
+        })}
       />,
     );
 
@@ -54,7 +66,11 @@ describe("IframeMode", () => {
       <IframeMode
         controlsEnabled
         onApplyConfig={onApplyConfig}
-        config={{ layout: "grid", columns: 1, panels: [{ id: "p1", src: "" }, { id: "p2", src: "https://ok" }] }}
+        config={createIframeConfig({
+          layout: "grid",
+          columns: 1,
+          panels: [{ id: "p1", src: "" }, { id: "p2", src: "https://ok" }],
+        })}
       />,
     );
 
@@ -75,7 +91,11 @@ describe("IframeMode", () => {
       <IframeMode
         controlsEnabled
         onApplyConfig={vi.fn()}
-        config={{ layout: "grid", columns: 1, panels: [{ id: "p1", src: "https://a" }] }}
+        config={createIframeConfig({
+          layout: "grid",
+          columns: 1,
+          panels: [{ id: "p1", src: "https://a" }],
+        })}
       />,
     );
 
@@ -88,7 +108,14 @@ describe("IframeMode", () => {
       <IframeMode
         controlsEnabled
         onApplyConfig={vi.fn()}
-        config={{ layout: "grid", columns: 2, panels: [{ id: "p1", src: "https://a" }, { id: "p2", src: "https://b" }] }}
+        config={createIframeConfig({
+          layout: "grid",
+          columns: 2,
+          panels: [
+            { id: "p1", src: "https://a" },
+            { id: "p2", src: "https://b" },
+          ],
+        })}
       />,
     );
 

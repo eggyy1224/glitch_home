@@ -2,21 +2,29 @@ import React, { useState } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SnapshotPanelsEditor from "../../src/components/snapshot/SnapshotPanelsEditor";
+import { createMockApi } from "../testUtils";
+import type * as api from "../../src/api";
+import type { SnapshotPanel } from "../../src/types/admin";
+import type { IframePanelConfig } from "../../src/types/control";
 
-const { mockListOffspringImages, mockListVideoAssets } = vi.hoisted(() => ({
-  mockListOffspringImages: vi.fn(),
-  mockListVideoAssets: vi.fn(),
-}));
+const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+  const { mocks, factory } = createMockApi<typeof api, "listOffspringImages" | "listVideoAssets">([
+    "listOffspringImages",
+    "listVideoAssets",
+  ]);
+  return { mocks, createApi: factory };
+});
 
 vi.mock("../../src/api", () => ({
   __esModule: true,
-  listOffspringImages: (...args) => mockListOffspringImages(...args),
-  listVideoAssets: (...args) => mockListVideoAssets(...args),
+  ...createApi(),
 }));
 
-function ControlledEditor({ onPanelChange }) {
-  const [panels, setPanels] = useState([{ id: "p1", url: "", image: "" }]);
-  const handleChange = (index, patch) => {
+type PanelChangeHandler = (index: number, patch: Partial<SnapshotPanel & IframePanelConfig>) => void;
+
+function ControlledEditor({ onPanelChange }: { onPanelChange: PanelChangeHandler }) {
+  const [panels, setPanels] = useState<SnapshotPanel[]>([{ id: "p1", url: "", image: "" }]);
+  const handleChange: PanelChangeHandler = (index, patch) => {
     setPanels((prev) => prev.map((panel, i) => (i === index ? { ...panel, ...patch } : panel)));
     onPanelChange(index, patch);
   };
@@ -39,18 +47,18 @@ function ControlledEditor({ onPanelChange }) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListOffspringImages.mockResolvedValue({ images: [{ filename: "img-a.png" }] });
-  mockListVideoAssets.mockResolvedValue({ videos: [{ filename: "clipA.mp4" }] });
+  apiMocks.listOffspringImages.mockResolvedValue({ images: [{ filename: "img-a.png" }] });
+  apiMocks.listVideoAssets.mockResolvedValue({ videos: [{ filename: "clipA.mp4" }] });
 });
 
 describe("SnapshotPanelsEditor", () => {
   const createDataTransfer = () => {
-    const data = {};
+    const data: Record<string, string> = {};
     return {
-      setData: (type, value) => {
+      setData: (type: string, value: string) => {
         data[type] = value;
       },
-      getData: (type) => data[type] || "",
+      getData: (type: string) => data[type] || "",
     };
   };
 
@@ -58,7 +66,7 @@ describe("SnapshotPanelsEditor", () => {
     const onPanelChange = vi.fn();
     render(<ControlledEditor onPanelChange={onPanelChange} />);
 
-    await waitFor(() => expect(mockListOffspringImages).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listOffspringImages).toHaveBeenCalled());
     expect(screen.getByText(/資產：圖片 1 \/ 影片 1/)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("模式"), { target: { value: "video_mode" } });
@@ -78,7 +86,7 @@ describe("SnapshotPanelsEditor", () => {
   it("拖放數字檔名資產時不會被當成面板索引，會生成 static_mode 網址", async () => {
     const onPanelChange = vi.fn();
     render(<ControlledEditor onPanelChange={onPanelChange} />);
-    await waitFor(() => expect(mockListOffspringImages).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listOffspringImages).toHaveBeenCalled());
 
     const panelButton = screen.getByRole("button", { name: /p1/i });
     const dataTransfer = createDataTransfer();
@@ -110,7 +118,7 @@ describe("SnapshotPanelsEditor", () => {
       />
     );
     render(<Wrapper />);
-    await waitFor(() => expect(mockListOffspringImages).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listOffspringImages).toHaveBeenCalled());
 
     const assetInput = screen.getByLabelText("資產（依模式）");
     fireEvent.change(assetInput, { target: { value: "bar.png" } });
@@ -124,7 +132,7 @@ describe("SnapshotPanelsEditor", () => {
   it("拖放影片資產會強制使用 video_mode 並更新 url", async () => {
     const onPanelChange = vi.fn();
     render(<ControlledEditor onPanelChange={onPanelChange} />);
-    await waitFor(() => expect(mockListVideoAssets).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listVideoAssets).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole("button", { name: "Videos" }));
     const panelButton = screen.getByRole("button", { name: /p1/i });

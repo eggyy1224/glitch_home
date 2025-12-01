@@ -1,11 +1,18 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type SpyInstance } from "vitest";
 import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SoundPlayer from "../../src/SoundPlayer";
-import { fetchSoundFiles } from "../../src/api";
+import { createMockApi } from "../testUtils";
+import type * as api from "../../src/api";
+
+const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+  const { mocks, factory } = createMockApi<typeof api, "fetchSoundFiles">(["fetchSoundFiles"]);
+  return { mocks, createApi: factory };
+});
 
 vi.mock("../../src/api", () => ({
-  fetchSoundFiles: vi.fn(),
+  __esModule: true,
+  ...createApi(),
 }));
 
 const mockFiles = [
@@ -24,12 +31,12 @@ const mockFiles = [
 ];
 
 describe("SoundPlayer", () => {
-  let playSpy;
-  let pauseSpy;
+  let playSpy: SpyInstance | undefined;
+  let pauseSpy: SpyInstance | undefined;
 
   beforeEach(() => {
-    fetchSoundFiles.mockReset();
-    fetchSoundFiles.mockResolvedValue({ files: mockFiles });
+    apiMocks.fetchSoundFiles.mockReset();
+    apiMocks.fetchSoundFiles.mockResolvedValue({ files: mockFiles });
     playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
     pauseSpy = vi.spyOn(window.HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   });
@@ -64,7 +71,7 @@ describe("SoundPlayer", () => {
     });
 
     await waitFor(() => {
-      expect(fetchSoundFiles).toHaveBeenCalledTimes(2);
+      expect(apiMocks.fetchSoundFiles).toHaveBeenCalledTimes(2);
     });
     await waitFor(() => {
       expect(reloadButton).not.toBeDisabled();
@@ -72,7 +79,7 @@ describe("SoundPlayer", () => {
   });
 
   it("當 API 回傳空清單時顯示提示錯誤", async () => {
-    fetchSoundFiles.mockImplementation(() => Promise.resolve({ files: [] }));
+    apiMocks.fetchSoundFiles.mockImplementation(() => Promise.resolve({ files: [] }));
     render(<SoundPlayer />);
 
     await waitFor(() => {
@@ -81,7 +88,7 @@ describe("SoundPlayer", () => {
   });
 
   it("API 拋錯時顯示錯誤訊息", async () => {
-    fetchSoundFiles.mockImplementation(() => Promise.reject(new Error("無法取得音效")));
+    apiMocks.fetchSoundFiles.mockImplementation(() => Promise.reject(new Error("無法取得音效")));
     render(<SoundPlayer />);
 
     await waitFor(() => {
@@ -104,8 +111,12 @@ describe("SoundPlayer", () => {
   });
 
   it("找不到檔案但帶有 URL 時會新增到清單並播放", async () => {
-    fetchSoundFiles.mockImplementation(() => Promise.resolve({ files: [] }));
+    apiMocks.fetchSoundFiles.mockImplementation(() => Promise.resolve({ files: [] }));
     render(<SoundPlayer playRequest={{ filename: "ghost.mp3", url: "https://example.com/ghost.mp3" }} />);
+
+    if (!playSpy) {
+      throw new Error("playSpy not initialized");
+    }
 
     await waitFor(() => {
       expect(screen.getByRole("combobox")).toHaveValue("ghost.mp3");
@@ -116,6 +127,9 @@ describe("SoundPlayer", () => {
   });
 
   it("當自動播放被阻擋時顯示提示訊息", async () => {
+    if (!playSpy) {
+      throw new Error("playSpy not initialized");
+    }
     playSpy.mockImplementation(() => Promise.reject(new Error("blocked")));
     render(<SoundPlayer playRequest={{ filename: "test1.mp3" }} />);
 

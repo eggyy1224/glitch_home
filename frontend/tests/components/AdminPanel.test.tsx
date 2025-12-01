@@ -2,42 +2,39 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AdminPanel from "../../src/AdminPanel";
+import { createMockApi } from "../testUtils";
+import type * as api from "../../src/api";
 
-const {
-  mockListIframeSnapshots,
-  mockListIframeTimelines,
-  mockListEpisodes,
-} = vi.hoisted(() => ({
-  mockListIframeSnapshots: vi.fn(),
-  mockListIframeTimelines: vi.fn(),
-  mockListEpisodes: vi.fn(),
-}));
+const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+  const { mocks, factory } = createMockApi<typeof api, "listIframeSnapshots" | "listIframeTimelines" | "listEpisodes">(
+    ["listIframeSnapshots", "listIframeTimelines", "listEpisodes"],
+  );
+  return { mocks, createApi: factory };
+});
 
 vi.mock("../../src/api", () => ({
   __esModule: true,
-  listIframeSnapshots: (...args) => mockListIframeSnapshots(...args),
-  listIframeTimelines: (...args) => mockListIframeTimelines(...args),
-  listEpisodes: (...args) => mockListEpisodes(...args),
+  ...createApi(),
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListIframeSnapshots.mockResolvedValue({ snapshots: [] });
-  mockListIframeTimelines.mockResolvedValue({ timelines: [] });
-  mockListEpisodes.mockResolvedValue({ episodes: [] });
+  apiMocks.listIframeSnapshots.mockResolvedValue({ snapshots: [] });
+  apiMocks.listIframeTimelines.mockResolvedValue({ timelines: [] });
+  apiMocks.listEpisodes.mockResolvedValue({ episodes: [] });
 });
 
 describe("AdminPanel", () => {
   it("切換標籤時載入對應列表並套用預設 client", async () => {
     render(<AdminPanel clientId="admin" />);
 
-    await waitFor(() => expect(mockListIframeSnapshots).toHaveBeenCalledWith("desktop"));
+    await waitFor(() => expect(apiMocks.listIframeSnapshots).toHaveBeenCalledWith("desktop"));
 
     fireEvent.click(screen.getByRole("tab", { name: "Timeline 管理" }));
-    await waitFor(() => expect(mockListIframeTimelines).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listIframeTimelines).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole("tab", { name: "Episode 管理" }));
-    await waitFor(() => expect(mockListEpisodes).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.listEpisodes).toHaveBeenCalled());
   });
 
   it("切換標籤後不會重置已輸入資料", async () => {

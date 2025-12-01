@@ -2,20 +2,24 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import GenerateMode from "../../src/GenerateMode";
+import { createMockApi } from "../testUtils";
+import type * as api from "../../src/api";
 
-const mockGenerateMixTwo = vi.fn();
-const mockListOffspringImages = vi.fn();
-const mockCreateTextSearchRequest = vi.fn();
-const mockCreateImageUploadRequest = vi.fn();
-const mockCreateImageSearchRequest = vi.fn();
+const { mocks: apiMocks, createApi } = vi.hoisted(() => {
+  const { mocks, factory } = createMockApi<
+    typeof api,
+    | "generateMixTwo"
+    | "listOffspringImages"
+    | "createTextSearchRequest"
+    | "createImageUploadRequest"
+    | "createImageSearchRequest"
+  >(["generateMixTwo", "listOffspringImages", "createTextSearchRequest", "createImageUploadRequest", "createImageSearchRequest"]);
+  return { mocks, createApi: factory };
+});
 
 vi.mock("../../src/api", () => ({
   __esModule: true,
-  generateMixTwo: (...args) => mockGenerateMixTwo(...args),
-  listOffspringImages: (...args) => mockListOffspringImages(...args),
-  createTextSearchRequest: (...args) => mockCreateTextSearchRequest(...args),
-  createImageUploadRequest: (...args) => mockCreateImageUploadRequest(...args),
-  createImageSearchRequest: (...args) => mockCreateImageSearchRequest(...args),
+  ...createApi(),
 }));
 
 const sampleImages = [
@@ -25,11 +29,11 @@ const sampleImages = [
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListOffspringImages.mockResolvedValue({ images: sampleImages });
-  const resolvedRequest = (value) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
-  mockCreateTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
-  mockCreateImageUploadRequest.mockReturnValue(resolvedRequest({ searchPath: "", fallbackPath: "" }));
-  mockCreateImageSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
+  apiMocks.listOffspringImages.mockResolvedValue({ images: sampleImages });
+  const resolvedRequest = <T,>(value: T) => ({ controller: new AbortController(), promise: Promise.resolve(value) });
+  apiMocks.createTextSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
+  apiMocks.createImageUploadRequest.mockReturnValue(resolvedRequest({ searchPath: "", fallbackPath: "" }));
+  apiMocks.createImageSearchRequest.mockReturnValue(resolvedRequest({ results: [] }));
 });
 
 describe("GenerateMode", () => {
@@ -42,7 +46,7 @@ describe("GenerateMode", () => {
   };
 
   it("載入圖片後可選擇並生成，顯示結果", async () => {
-    mockGenerateMixTwo.mockResolvedValue({
+    apiMocks.generateMixTwo.mockResolvedValue({
       output_image: "/gen/out.png",
       width: 256,
       height: 128,
@@ -63,7 +67,7 @@ describe("GenerateMode", () => {
 
     fireEvent.click(scoped.getByRole("button", { name: "生成圖像" }));
     await waitFor(() =>
-      expect(mockGenerateMixTwo).toHaveBeenCalledWith({
+      expect(apiMocks.generateMixTwo).toHaveBeenCalledWith({
         parents: ["a.png", "b.png"],
         output_format: "png",
         resize_mode: "cover",
@@ -82,7 +86,7 @@ describe("GenerateMode", () => {
       controller: new AbortController(),
       promise: Promise.resolve({ results: [{ id: "found-img", distance: 0.1 }] }),
     };
-    mockCreateTextSearchRequest.mockReturnValue(resolvedRequest);
+    apiMocks.createTextSearchRequest.mockReturnValue(resolvedRequest);
 
     const { container } = await renderGeneratePanel();
     const scoped = within(container);
@@ -91,7 +95,7 @@ describe("GenerateMode", () => {
     fireEvent.change(input, { target: { value: "horse" } });
     fireEvent.click(scoped.getByRole("button", { name: "搜尋" }));
 
-    await waitFor(() => expect(mockCreateTextSearchRequest).toHaveBeenCalledWith("horse", 50));
+    await waitFor(() => expect(apiMocks.createTextSearchRequest).toHaveBeenCalledWith("horse", 50));
 
     await waitFor(() => {
       expect(scoped.getByText("顯示：搜尋結果 (1 張)")).toBeInTheDocument();
@@ -106,7 +110,7 @@ describe("GenerateMode", () => {
 
   it("搜尋失敗會顯示錯誤並重置狀態", async () => {
     const error = new Error("boom");
-    mockCreateTextSearchRequest.mockImplementation(() => {
+    apiMocks.createTextSearchRequest.mockImplementation(() => {
       throw error;
     });
 
