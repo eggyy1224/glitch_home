@@ -220,11 +220,13 @@ async def _apply_snapshot_target(target: ResolvedSnapshotTarget) -> None:
     await realtime_broadcaster.broadcast_iframe_config(payload, target_client_id=target.client_id)
 
 
-async def _apply_audio_mix(targets: List[ResolvedSnapshotTarget], mix: AudioMix) -> None:
-    if not targets or mix is None:
+async def _apply_audio_mix(
+    left_target: ResolvedSnapshotTarget | None,
+    right_target: ResolvedSnapshotTarget | None,
+    mix: AudioMix,
+) -> None:
+    if mix is None:
         return
-    left_target = targets[0] if len(targets) >= 1 else None
-    right_target = targets[1] if len(targets) >= 2 else None
 
     async def _send_volume(target: ResolvedSnapshotTarget, volume: Optional[float]) -> None:
         if volume is None:
@@ -258,7 +260,7 @@ async def _apply_script_entry(entry: ResolvedScriptEntry, global_audio_override:
     for target in targets:
         await _apply_snapshot_target(target)
     if audio_mix:
-        await _apply_audio_mix(targets, audio_mix)
+        await _apply_audio_mix(entry.left, entry.right, audio_mix)
 
 
 async def _run_script(resolved: ResolvedScript, audio_override: Optional[AudioMix]) -> None:
