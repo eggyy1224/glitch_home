@@ -8,35 +8,35 @@ export interface SlideModeProps {
   imagesBase: string;
   anchorImage?: string | null;
   intervalMs?: number;
-  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
+  onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null | undefined;
 }
 
-export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, onCaptureReady = null }: SlideModeProps) {
+export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, onCaptureReady }: SlideModeProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [sizeClass, setSizeClass] = useState("large");
+  const [sizeClass, setSizeClass] = useState<"large" | "medium" | "small" | "xsmall">("large");
   const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]) as Record<string, React.CSSProperties>;
 
   const { current, items, index, loading, error, showCaption, playbackSpeed, isPaused, setPlaybackSpeed, togglePause } =
     useSlidePlayback({ anchorImage, intervalMs });
 
-  useSlideScreenshot({ rootRef, onCaptureReady });
+  useSlideScreenshot({ rootRef, onCaptureReady: onCaptureReady ?? undefined });
 
   useEffect(() => {
     const element = rootRef.current;
     if (!element) return undefined;
 
-    const updateSize = () => {
+    const updateSize = (): void => {
       const rect = element.getBoundingClientRect();
       const next = getSizeClass(rect.width, rect.height);
       setSizeClass((prev) => (prev === next ? prev : next));
     };
 
-    let observer;
+    let observer: ResizeObserver | undefined;
     if (typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(() => updateSize());
       observer.observe(element);
       updateSize();
-      return () => observer.disconnect();
+      return () => observer?.disconnect();
     }
 
     updateSize();
@@ -55,7 +55,7 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, 
       {current ? (
         <>
           <div style={styles.stage}>
-            <img key={current.cleanId} src={imageUrl} alt={current.cleanId} style={styles.image} />
+            <img key={current.cleanId} src={imageUrl || undefined} alt={current.cleanId} style={styles.image} />
           </div>
           {showCaption && (
             <div style={styles.caption}>

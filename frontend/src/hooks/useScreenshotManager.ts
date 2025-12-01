@@ -129,7 +129,7 @@ export function useScreenshotManager(
       try {
         await runCaptureInternal(request?.request_id ?? null, true);
       } catch (err) {
-        const message = err?.message || String(err);
+        const message = err instanceof Error ? err.message : String(err);
         pushScreenshotMessage(`自動截圖失敗：${message}`);
         if (request?.request_id) {
           try {

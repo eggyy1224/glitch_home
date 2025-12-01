@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
 import { DEFAULT_IFRAME_CONFIG, clampInt, sanitizeIframeConfig } from "./utils/iframeConfig";
-import type { IframeConfig } from "./types/control";
+import type { IframeConfig, IframePanelConfig } from "./types/control";
 
 const DEFAULT_CONFIG = DEFAULT_IFRAME_CONFIG;
 
@@ -108,6 +108,9 @@ export default function IframeMode({
           correctedCanvas.width = containerWidth;
           correctedCanvas.height = containerHeight;
           const correctedCtx = correctedCanvas.getContext("2d");
+          if (!correctedCtx) {
+            throw new Error("無法取得校正用 canvas context");
+          }
           
           // 將原 canvas 的內容縮放到正確尺寸
           correctedCtx.drawImage(canvas, 0, 0, containerWidth, containerHeight);
@@ -117,6 +120,9 @@ export default function IframeMode({
         }
 
         const finalCtx = finalCanvas.getContext("2d");
+        if (!finalCtx) {
+          throw new Error("無法取得最終 canvas context");
+        }
         const scaleX = containerWidth > 0 ? finalCanvas.width / containerWidth : 1;
         const scaleY = containerHeight > 0 ? finalCanvas.height / containerHeight : 1;
 
@@ -135,11 +141,11 @@ export default function IframeMode({
 
           // 為每個 iframe 創建一個異步任務
           const captureTask = (async () => {
-            let drawable = null;
+            let drawable: Drawable | null = null;
 
             // 優先使用 3D 場景的截圖功能
             try {
-              const captureScene = iframe.contentWindow.__APP_CAPTURE_SCENE;
+              const captureScene = iframe.contentWindow?.__APP_CAPTURE_SCENE;
               if (typeof captureScene === "function") {
                 const blob = await captureScene();
                 drawable = await blobToDrawable(blob);
@@ -152,8 +158,8 @@ export default function IframeMode({
             if (!drawable) {
               try {
                 const innerHtml2canvas =
-                  iframe.contentWindow.html2canvas ||
-                  (iframe.contentWindow.window && iframe.contentWindow.window.html2canvas) ||
+                  iframe.contentWindow?.html2canvas ||
+                  (iframe.contentWindow?.window && iframe.contentWindow?.window.html2canvas) ||
                   null;
                 if (innerHtml2canvas && iframe.contentDocument) {
                   const innerCanvas = await innerHtml2canvas(iframe.contentDocument.body, {
@@ -193,10 +199,9 @@ export default function IframeMode({
             if (drawable) {
               try {
                 if (drawable.kind === "bitmap") {
-                  finalCtx.drawImage(drawable.value, offsetX, offsetY, width, height);
-                  if (typeof drawable.value.close === "function") {
-                    drawable.value.close();
-                  }
+                  const bitmap = drawable.value;
+                  finalCtx.drawImage(bitmap, offsetX, offsetY, width, height);
+                  (bitmap as ImageBitmap).close?.();
                 } else if (drawable.kind === "image") {
                   finalCtx.drawImage(drawable.value, offsetX, offsetY, width, height);
                 }
@@ -246,7 +251,7 @@ export default function IframeMode({
       setControlOpen(false);
       return undefined;
     }
-    const handler = (event) => {
+    const handler = (event: KeyboardEvent) => {
       if (event.ctrlKey && !event.metaKey && (event.key === "r" || event.key === "R")) {
         event.preventDefault();
         setControlOpen((prev) => !prev);
@@ -403,12 +408,12 @@ export default function IframeMode({
     [],
   );
 
-  const handlePanelCountChange = useCallback((event) => {
-    const next = clampInt(event.target.value, panelCount, { min: 1, max: 12 });
+  const handlePanelCountChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = clampInt(event.target.value, panelCount, { min: 1, max: 12 }) ?? panelCount;
     setPanelCount(next);
   }, [panelCount]);
 
-  const handlePanelUrlChange = useCallback((index, value) => {
+  const handlePanelUrlChange = useCallback((index: number, value: string) => {
     setPanelInputs((prev) => {
       const next = [...prev];
       next[index] = value;
@@ -425,10 +430,18 @@ export default function IframeMode({
     }
 
     const nextPanels = trimmed.map((src, index) => {
-      const base = panels[index] || {};
+      const base = panels[index];
+      const panelBase: IframePanelConfig =
+        base && typeof base === "object"
+          ? { ...base }
+          : {
+              id: `panel_${index + 1}`,
+              src,
+              ratio: 1,
+            };
       return {
-        ...base,
-        id: base.id || `panel_${index + 1}`,
+        ...panelBase,
+        id: panelBase.id || `panel_${index + 1}`,
         src,
       };
     });
@@ -443,7 +456,7 @@ export default function IframeMode({
     }
   }, [controlsEnabled, panelInputs, panelCount, panels, sanitizedConfig, onApplyConfig]);
 
-  const handleSubmit = useCallback((event) => {
+  const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     handleApply();
   }, [handleApply]);

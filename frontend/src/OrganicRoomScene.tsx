@@ -115,7 +115,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const cleanId = (value) => (value ? value.replace(/:(en|zh)$/, "") : value);
+const cleanId = (value: string | null | undefined): string | null | undefined =>
+  value ? value.replace(/:(en|zh)$/, "") : value;
 
 const HALF_ROOM_SIZE = 6;
 const FACE_NORMALS = [
@@ -136,9 +137,9 @@ const TMP_VEC_F = new THREE.Vector3();
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 
-const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-function CubeRoom({ faceUrls }) {
+function CubeRoom({ faceUrls }: { faceUrls: string[] }) {
   const textures = useTexture(faceUrls) as THREE.Texture[];
 
   useEffect(() => {
@@ -172,7 +173,7 @@ function CubeRoom({ faceUrls }) {
   );
 }
 
-function OrganicCube({ faceUrls, enabled }) {
+function OrganicCube({ faceUrls, enabled }: { faceUrls: string[]; enabled: boolean }) {
   const groupRef = useRef<THREE.Group | null>(null);
   const phaseRef = useRef(0);
   useFrame((_, delta) => {
@@ -192,7 +193,14 @@ function OrganicCube({ faceUrls, enabled }) {
   );
 }
 
-function OrganicCruise({ enabled, controlsRef, faceIds, onEnterFace }) {
+interface OrganicCruiseProps {
+  enabled: boolean;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+  faceIds: string[];
+  onEnterFace?: (faceId: string) => void;
+}
+
+function OrganicCruise({ enabled, controlsRef, faceIds, onEnterFace }: OrganicCruiseProps): null {
   const { camera } = useThree();
   const cycleRef = useRef({
     time: 0,
@@ -282,7 +290,7 @@ interface ScreenshotCaptureProps {
   onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
 }
 
-function ScreenshotCapture({ onCaptureReady }: ScreenshotCaptureProps) {
+function ScreenshotCapture({ onCaptureReady }: ScreenshotCaptureProps): null {
   const { gl, scene, camera } = useThree();
 
   useEffect(() => {
@@ -328,7 +336,7 @@ export default function OrganicRoomScene({
   showInfo = false,
   onCaptureReady = null,
 }: OrganicRoomSceneProps) {
-  const anchorClean = cleanId(anchorImage);
+  const anchorClean = cleanId(anchorImage) || null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -353,18 +361,23 @@ export default function OrganicRoomScene({
         if (cancelled) return;
         const list = Array.isArray(data?.results) ? data.results : [];
         const prepared = list
-          .map((item) => ({
-            id: item?.id || "",
-            cleanId: cleanId(item?.id || ""),
-            distance: typeof item?.distance === "number" ? item.distance : null,
-            metadata: item?.metadata ?? null,
-          }))
-          .filter((item) => item.cleanId);
+          .map((item) => {
+            const cleaned = cleanId(item?.id || "") || "";
+            if (!cleaned) return null;
+            return {
+              id: item?.id || "",
+              cleanId: cleaned,
+              distance: typeof item?.distance === "number" ? item.distance : null,
+              metadata: item?.metadata ?? null,
+            } as SearchResultItem;
+          })
+          .filter(Boolean) as SearchResultItem[];
         setResults(prepared.slice(0, 6));
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err?.message || "搜尋失敗，請確認後端服務狀態。");
+        const message = err instanceof Error ? err.message : "搜尋失敗，請確認後端服務狀態。";
+        setError(message);
         setResults([]);
       })
       .finally(() => {
@@ -378,8 +391,8 @@ export default function OrganicRoomScene({
     };
   }, [anchorClean]);
 
-  const faceIds = useMemo(() => {
-    const ordered = [];
+  const faceIds = useMemo<string[]>(() => {
+    const ordered: string[] = [];
     if (anchorClean) ordered.push(anchorClean);
     results.forEach((item) => {
       if (item.cleanId && !ordered.includes(item.cleanId)) {
@@ -403,10 +416,10 @@ export default function OrganicRoomScene({
   const motionActive = motionEnabled && ready;
 
   const handleEnterFace = useCallback(
-    (faceId) => {
+    (faceId: string) => {
       if (!faceId || !onSelectImage) return;
       const clean = cleanId(faceId);
-      if (clean === anchorClean) return;
+      if (!clean || clean === anchorClean) return;
       onSelectImage(clean);
     },
     [anchorClean, onSelectImage]

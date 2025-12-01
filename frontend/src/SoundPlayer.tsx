@@ -10,6 +10,15 @@ interface SoundFile {
   [key: string]: unknown;
 }
 
+interface SoundFileEntry {
+  filename?: string;
+  cleanId?: string;
+  url?: string;
+  size?: number | null;
+  modified_at?: string | null;
+  [key: string]: unknown;
+}
+
 interface PlayRequest {
   filename?: string;
   url?: string;
@@ -89,7 +98,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number | null | undefined) {
   if (!bytes || Number.isNaN(bytes)) return "";
   const units = ["B", "KB", "MB", "GB"];
   let size = bytes;
@@ -101,7 +110,7 @@ function formatBytes(bytes) {
   return `${size.toFixed(unit === 0 ? 0 : 1)}${units[unit]}`;
 }
 
-function formatDate(iso) {
+function formatDate(iso: string | null | undefined) {
   if (!iso) return "";
   try {
     const date = new Date(iso);
@@ -110,6 +119,23 @@ function formatDate(iso) {
   } catch (err) {
     return "";
   }
+}
+
+function normalizeFiles(files: unknown): SoundFile[] {
+  if (!Array.isArray(files)) return [];
+  return files
+    .map((item) => {
+      const entry = item as SoundFileEntry;
+      if (!entry?.filename) return null;
+      return {
+        filename: entry.filename,
+        cleanId: entry.cleanId ?? entry.filename,
+        url: entry.url,
+        size: typeof entry.size === "number" ? entry.size : null,
+        modified_at: typeof entry.modified_at === "string" ? entry.modified_at : null,
+      } as SoundFile;
+    })
+    .filter(Boolean) as SoundFile[];
 }
 
 export default function SoundPlayer({ playRequest = null, onPlayHandled, visible = true }: SoundPlayerProps) {
@@ -122,13 +148,13 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
   const [pendingAutoPlay, setPendingAutoPlay] = useState<PlayRequest | null>(null);
   const [needsUserAction, setNeedsUserAction] = useState(false);
 
-  const loadFiles = useCallback(async () => {
+  const loadFiles = useCallback(async (): Promise<SoundFile[]> => {
     setLoading(true);
     setError(null);
-    let list = [];
+    let list: SoundFile[] = [];
     try {
       const data = await fetchSoundFiles();
-      list = Array.isArray(data?.files) ? data.files : [];
+      list = normalizeFiles((data as { files?: unknown })?.files);
       setFiles(list);
       setSelectedIndex((prev) => {
         if (!list.length) return 0;
@@ -139,7 +165,7 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
       }
       return list;
     } catch (err) {
-      setError(err?.message || "音效清單載入失敗");
+      setError(err instanceof Error ? err.message : "音效清單載入失敗");
       setFiles([]);
       setSelectedIndex(0);
       return [];
@@ -163,34 +189,36 @@ export default function SoundPlayer({ playRequest = null, onPlayHandled, visible
 
   useEffect(() => {
     if (!playRequest || !playRequest.filename) return;
+    const filename = playRequest.filename;
 
     const trigger = async () => {
       let list = filesRef.current;
       if (!list.length) {
         list = await loadFiles();
       }
-      let target = list.find((item) => item.filename === playRequest.filename);
+      let target = list.find((item) => item.filename === filename);
       if (!target) {
         const refreshed = await loadFiles();
         list = refreshed.length ? refreshed : list;
-        target = list.find((item) => item.filename === playRequest.filename);
+        target = list.find((item) => item.filename === filename);
       }
       if (!target && playRequest.url) {
-        target = {
-          filename: playRequest.filename,
-          cleanId: playRequest.filename,
+        const newTarget: SoundFile = {
+          filename,
+          cleanId: filename,
           url: playRequest.url,
           size: null,
           modified_at: null,
         };
+        target = newTarget;
         setFiles((prev) => {
-          if (prev.some((item) => item.filename === target.filename)) return prev;
-          return [...prev, target];
+          if (prev.some((item) => item.filename === newTarget.filename)) return prev;
+          return [...prev, newTarget];
         });
-        list = [...list, target];
+        list = [...list, newTarget];
       }
       if (!target) {
-        setError(`找不到音效檔：${playRequest.filename}`);
+        setError(`找不到音效檔：${filename}`);
         onPlayHandled?.();
         return;
       }

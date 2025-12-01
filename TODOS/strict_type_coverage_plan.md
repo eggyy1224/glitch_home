@@ -10,7 +10,7 @@
 - 嚴格檢查覆蓋 tsconfig.strict.json 列出的檔案皆綠燈。
 
 ## 尚未涵蓋/待修（全域 include 後約 200+ 錯誤）
-- **影音/場景模式**：`OrganicRoomScene.tsx`、`SlideMode.tsx`、`StaticMode.tsx`、`SoundPlayer.tsx`、`VideoMode.tsx`、`IframeMode.tsx` + 播放相關 hooks 仍有 implicit any/null/props mismatch，待第五包收尾。
+- （暫無新增）後續若擴大 include 到全 `src`，留意是否還有漏網的 implicit any。
 
 ## 建議修正順序
 1) 調整 tsconfig.strict.json 的 include 為整個 `src`（可用臨時檔觀察錯誤清單）。
@@ -35,12 +35,13 @@
 4) 編輯/搜尋/截圖工具（已完成）
    - 檔案：`src/components/script/ScriptEditor.tsx`、`src/components/scene/SceneEditor.tsx`、`src/hooks/useScriptEditor.ts`、`src/hooks/useSearch.ts`、`src/hooks/useScreenshotManager.ts`、`src/hooks/useCameraPresets.ts`、`src/hooks/useControlSocketHandlers.ts`
    - 重點：`ScriptEntryRow` discriminated union 未涵蓋 `left_snapshot/right_snapshot/notes/audio_override`，select value/label 型別是 `unknown`，多個 payload/回傳值 implicit `any`。
-5) 影音/場景模式與播放輔助
+5) 影音/場景模式與播放輔助（已完成）
    - 檔案：`src/IframeMode.tsx`、`src/OrganicRoomScene.tsx`、`src/SlideMode.tsx`、`src/VideoMode.tsx`、`src/SoundPlayer.tsx`、`src/hooks/useSlidePlayback.ts`、`src/hooks/useSubtitleCaption.ts`、`src/hooks/useSoundQueue.ts`
-   - 重點：事件/raf/observer 參數 implicit `any`，`ImageBitmap.close` 誤用，音檔型別不符 `SoundFile`，回傳型別缺失與 enum 值不對。
+   - 重點：補齊事件/raf/observer 參數型別、處理 `ImageBitmap.close` 誤用與 canvas context null、音檔/播放 payload 型別對齊、字幕/截圖/影音播放 hook 回傳值明確。
 
 ## 進度更新
 - 第一包完成：`App.tsx`、`modes/createModeRenderMap.ts`、`useRemoteTimelineControl`/`useIframeTimelinePlayer` 型別收斂，lazy component props 不再為 `unknown`，iframe config handler 型別對齊 `IframeConfig`。其餘批次錯誤仍依原五包分派處理。
 - 第二包完成（Collage 堆疊）：`CollageMode`/`CollageVersionMode`/`useCollageConfig`/`useCollageControls` 與 `collageMath`/`collageConfig`/`collageStateUtils` 全數補型別，清除 implicit any/unknown。剩餘錯誤集中在 Kinship、ScriptEditor、影音/搜尋等後續包。
 - 第三包完成（Kinship 堆疊）：`components/kinship/**`、`useKinshipData`、`useKinshipNavigation` 等全面補型別（包含 KinshipData 欄位、graph/layout 型別對齊、onPick 簽章、react-spring 鍵名避免 `children` 保留字、trackers 回傳型別），現存錯誤已聚焦於 Script/Scene 編輯工具與影音/搜尋/截圖等其他包。
 - 第四包完成（編輯/搜尋/截圖工具）：`ScriptEditor`/`SceneEditor`、`useScriptEditor`/`useSearch`/`useCameraPresets`/`useControlSocketHandlers`/`useScreenshotManager` 全數補型別，精簡 select options、promise 回傳型別與 screenshot/camera helpers；`types/scene.ts` 顯式允許 `undefined` 以符合 `exactOptionalPropertyTypes`。剩餘待處理集中在第五包影音/場景模式。
+- 第五包完成（影音/場景模式與播放輔助）：`IframeMode`/`OrganicRoomScene`/`SlideMode`/`VideoMode`/`SoundPlayer` 與播放 hooks（`useSlidePlayback`/`useSoundQueue`/`useSubtitleCaption`）補完型別；處理 iframe 截圖 canvas null/close、防範 cross-window、尺寸/observer/事件型別、音檔/字幕/播放 payload 正規化。臨時嚴格編譯（手動 `tsc --strict` 指定檔案）全數通過。

@@ -347,7 +347,7 @@ export function useControlSocketHandlers({
       if (action === "set_volume" || action === "volume") {
         const vol = clampVolume(volumeValue);
         if (vol == null) return;
-        applyToMediaElements((media) => {
+        applyToMediaElements((media: HTMLMediaElement): void => {
           media.volume = vol;
           if (vol > 0 && media.muted) {
             media.muted = false;
@@ -358,14 +358,14 @@ export function useControlSocketHandlers({
       }
       if (action === "set_muted") {
         const muted = Boolean(mutedValue);
-        applyToMediaElements((media) => {
+        applyToMediaElements((media: HTMLMediaElement): void => {
           media.muted = muted;
         });
         rememberControlState(mediaControlStateRef.current?.volume ?? null, muted, true);
         return;
       }
       if (action === "mute") {
-        applyToMediaElements((media) => {
+        applyToMediaElements((media: HTMLMediaElement): void => {
           media.muted = true;
         });
         rememberControlState(mediaControlStateRef.current?.volume ?? null, true, true);
@@ -373,7 +373,7 @@ export function useControlSocketHandlers({
       }
       if (action === "unmute") {
         const vol = clampVolume(volumeValue);
-        applyToMediaElements((media) => {
+        applyToMediaElements((media: HTMLMediaElement): void => {
           media.muted = false;
           if (vol != null) {
             media.volume = vol;

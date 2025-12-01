@@ -11,7 +11,7 @@ export const getSlideSourceMode = (params: URLSearchParams | null | undefined) =
   return mode === SlideSourceMode.KINSHIP ? SlideSourceMode.KINSHIP : SlideSourceMode.VECTOR;
 };
 
-export const getSizeClass = (width?: number | null, height?: number | null) => {
+export const getSizeClass = (width?: number | null, height?: number | null): "large" | "medium" | "small" | "xsmall" => {
   if (!width || !height) return "large";
   if (width <= 420 || height <= 360) return "xsmall";
   if (width <= 720 || height <= 520) return "small";

@@ -1,14 +1,26 @@
 import { useCallback, useState } from "react";
 
-export function useSoundQueue() {
-  const [soundPlayRequest, setSoundPlayRequest] = useState(null);
+export interface SoundPlayRequest {
+  filename: string;
+  url?: string | undefined;
+}
 
-  const handleSoundPlayMessage = useCallback((payload) => {
-    if (!payload?.filename) return;
-    setSoundPlayRequest({ filename: payload.filename, url: payload.url });
+export function useSoundQueue(): {
+  soundPlayRequest: SoundPlayRequest | null;
+  handleSoundPlayMessage: (payload: unknown) => void;
+  handleSoundHandled: () => void;
+} {
+  const [soundPlayRequest, setSoundPlayRequest] = useState<SoundPlayRequest | null>(null);
+
+  const handleSoundPlayMessage = useCallback((payload: unknown): void => {
+    const filename = (payload as { filename?: unknown })?.filename;
+    if (typeof filename !== "string" || !filename) return;
+    const urlValue = (payload as { url?: unknown })?.url;
+    const url = typeof urlValue === "string" ? urlValue : undefined;
+    setSoundPlayRequest({ filename, url });
   }, []);
 
-  const handleSoundHandled = useCallback(() => {
+  const handleSoundHandled = useCallback((): void => {
     setSoundPlayRequest(null);
   }, []);
 

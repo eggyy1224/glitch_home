@@ -19,7 +19,7 @@ const canvasToBlob = (canvas: HTMLCanvasElement) =>
 
 const DEFAULT_VOLUME = 0.7;
 
-const clampVolume = (value: number | string | null, fallback = DEFAULT_VOLUME) => {
+const clampVolume = (value: number | string | null | undefined, fallback = DEFAULT_VOLUME) => {
   if (value == null) return fallback;
   const numberValue = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numberValue)) return fallback;
@@ -89,7 +89,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
   }, []);
 
   const setMutedState = useCallback(
-    (nextMuted) => {
+    (nextMuted: boolean) => {
       const video = videoRef.current;
       if (!video) return;
       const finalMuted = Boolean(nextMuted);
@@ -103,7 +103,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
   );
 
   const setVolumeState = useCallback(
-    (value) => {
+    (value: number | string | null | undefined) => {
       const video = videoRef.current;
       if (!video) return;
       const clamped = clampVolume(value, volumeLevel);
@@ -117,7 +117,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     [volumeLevel],
   );
 
-  const seekVideo = useCallback((timeInSeconds) => {
+  const seekVideo = useCallback((timeInSeconds: number | string | null | undefined) => {
     const video = videoRef.current;
     if (!video) return;
     const parsed = typeof timeInSeconds === "number" ? timeInSeconds : Number(timeInSeconds);
@@ -134,9 +134,9 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     controlRef.current = {
       play: () => playVideo(),
       pause: () => pauseVideo(),
-      setVolume: (value) => setVolumeState(value),
-      setMuted: (muted) => setMutedState(muted),
-      seek: (timeInSeconds) => seekVideo(timeInSeconds),
+      setVolume: (value?: number | string | null) => setVolumeState(value ?? null),
+      setMuted: (muted?: boolean) => setMutedState(Boolean(muted)),
+      seek: (timeInSeconds?: number | string | null) => seekVideo(timeInSeconds ?? null),
     };
     return () => {
       controlRef.current = null;
@@ -157,7 +157,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
   }, [isMuted]);
 
   const handleKeyToggle = useCallback(
-    (event) => {
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== "Enter" && event.key !== " ") {
         return;
       }
@@ -175,8 +175,8 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     if (!autoUnmuteEnabled) return undefined;
     if (autoUnmuteAttemptedRef.current) return undefined;
     let cancelled = false;
-    let cleanupListener = null;
-    let rafId = null;
+    let cleanupListener: (() => void) | null = null;
+    let rafId: number | null = null;
 
     const attemptAutoUnlock = () => {
       if (cancelled) return;

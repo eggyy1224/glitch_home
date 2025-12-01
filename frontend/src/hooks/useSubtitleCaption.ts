@@ -1,31 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchCaptionState, fetchSubtitleState } from "../api";
 
-const normalizeOverlayPayload = (payload) => {
+interface OverlayPayload {
+  text: string;
+  language: string | null;
+  durationSeconds: number | null;
+  expiresAt: string | null;
+  updatedAt: string | null;
+}
+
+const normalizeOverlayPayload = (payload: unknown): OverlayPayload | null => {
   if (!payload || typeof payload !== "object") {
     return null;
   }
-  const textValue = "text" in payload ? String(payload.text ?? "") : "";
+  const textValue = "text" in payload ? String((payload as { text?: unknown }).text ?? "") : "";
   if (!textValue.trim()) {
     return null;
   }
+  const languageRaw =
+    typeof (payload as { language?: unknown }).language === "string" ? (payload as { language?: string }).language?.trim() : null;
+  const durationRaw = (payload as { duration_seconds?: unknown }).duration_seconds;
+  const expiresRaw = (payload as { expires_at?: unknown }).expires_at;
+  const updatedRaw = (payload as { updated_at?: unknown }).updated_at;
+
   return {
     text: textValue,
-    language: typeof payload.language === "string" && payload.language.trim() ? payload.language.trim() : null,
+    language: languageRaw && languageRaw.trim() ? languageRaw.trim() : null,
     durationSeconds:
-      typeof payload.duration_seconds === "number" &&
-      Number.isFinite(payload.duration_seconds) &&
-      payload.duration_seconds > 0
-        ? payload.duration_seconds
+      typeof durationRaw === "number" && Number.isFinite(durationRaw) && durationRaw > 0
+        ? durationRaw
         : null,
-    expiresAt: typeof payload.expires_at === "string" ? payload.expires_at : null,
-    updatedAt: typeof payload.updated_at === "string" ? payload.updated_at : null,
+    expiresAt: typeof expiresRaw === "string" ? expiresRaw : null,
+    updatedAt: typeof updatedRaw === "string" ? updatedRaw : null,
   };
 };
 
-const createApplyOverlay = (setState, timerRef, clearTimer) =>
+const createApplyOverlay = (
+  setState: React.Dispatch<React.SetStateAction<OverlayPayload | null>>,
+  timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+  clearTimer: () => void,
+) =>
   useCallback(
-    (payload) => {
+    (payload: unknown) => {
       clearTimer();
       const normalized = normalizeOverlayPayload(payload);
       if (!normalized) {
@@ -35,7 +51,7 @@ const createApplyOverlay = (setState, timerRef, clearTimer) =>
 
       setState(normalized);
 
-      let delayMs = null;
+      let delayMs: number | null = null;
       if (normalized.expiresAt) {
         const expiresTs = Date.parse(normalized.expiresAt);
         if (!Number.isNaN(expiresTs)) {
@@ -63,21 +79,28 @@ const createApplyOverlay = (setState, timerRef, clearTimer) =>
     [clearTimer, setState, timerRef],
   );
 
-export function useSubtitleCaption(clientId) {
-  const [subtitle, setSubtitle] = useState(null);
-  const [caption, setCaption] = useState(null);
+export interface SubtitleCaptionState {
+  subtitle: OverlayPayload | null;
+  caption: OverlayPayload | null;
+  applySubtitle: (payload: unknown) => void;
+  applyCaption: (payload: unknown) => void;
+}
 
-  const subtitleTimerRef = useRef(null);
-  const captionTimerRef = useRef(null);
+export function useSubtitleCaption(clientId: string | null): SubtitleCaptionState {
+  const [subtitle, setSubtitle] = useState<OverlayPayload | null>(null);
+  const [caption, setCaption] = useState<OverlayPayload | null>(null);
 
-  const clearSubtitleTimer = useCallback(() => {
+  const subtitleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const captionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSubtitleTimer = useCallback((): void => {
     if (subtitleTimerRef.current) {
       clearTimeout(subtitleTimerRef.current);
       subtitleTimerRef.current = null;
     }
   }, []);
 
-  const clearCaptionTimer = useCallback(() => {
+  const clearCaptionTimer = useCallback((): void => {
     if (captionTimerRef.current) {
       clearTimeout(captionTimerRef.current);
       captionTimerRef.current = null;
@@ -89,6 +112,7 @@ export function useSubtitleCaption(clientId) {
 
   useEffect(() => {
     let active = true;
+    if (!clientId) return undefined;
     fetchSubtitleState(clientId)
       .then(({ subtitle: initialSubtitle }) => {
         if (!active) return;
@@ -102,6 +126,7 @@ export function useSubtitleCaption(clientId) {
 
   useEffect(() => {
     let active = true;
+    if (!clientId) return undefined;
     fetchCaptionState(clientId)
       .then(({ caption: initialCaption }) => {
         if (!active) return;
