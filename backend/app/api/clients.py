@@ -13,7 +13,7 @@ router = APIRouter()
 
 class QueueCreateRequest(BaseModel):
     client_id: str = Field(..., description="目標 client id")
-    type: str = Field(..., description="佇列類型 snapshot|timeline|episode")
+    type: str = Field(..., description="佇列類型 snapshot|timeline|episode|scene|script")
     target_id: str = Field(..., description="要播放/執行的目標 id")
     eta: float | int | str | datetime | None = Field(default=None, description="預定時間（ISO 或秒數）")
     priority: int | None = Field(default=None, description="整數優先權，越高越早執行")

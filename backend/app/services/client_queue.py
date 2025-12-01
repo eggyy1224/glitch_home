@@ -8,7 +8,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional
 
 from ..models.episode import Episode
+from ..models.scene import AudioMix
 from .episode import load_episode_definition, play_episode
+from .scene import load_scene_definition, play_scene
+from .script import load_script_definition, play_script
 from .iframe_config import (
     config_payload_for_response as iframe_config_payload_for_response,
     restore_iframe_config_snapshot,
@@ -241,7 +244,7 @@ class ClientStateStore:
 class ClientQueueManager:
     """In-memory queue per client with simple worker coroutine."""
 
-    SUPPORTED_TYPES = {"snapshot", "timeline", "episode"}
+    SUPPORTED_TYPES = {"snapshot", "timeline", "episode", "scene", "script"}
 
     def __init__(
         self,
@@ -688,6 +691,10 @@ class ClientQueueManager:
             await self._execute_timeline(item)
         elif item.item_type == "episode":
             await self._execute_episode(item)
+        elif item.item_type == "scene":
+            await self._execute_scene(item)
+        elif item.item_type == "script":
+            await self._execute_script(item)
         else:
             raise ValueError(f"未知的佇列類型：{item.item_type}")
 
@@ -756,6 +763,23 @@ class ClientQueueManager:
             episode.id,
             len(resolved.tracks),
         )
+
+    async def _execute_scene(self, item: QueueItem) -> None:
+        scene = load_scene_definition(item.target_id)
+        payload = item.payload if isinstance(item.payload, dict) else {}
+        audio_override = None
+        if payload.get("audio_override") is not None:
+            audio_override = AudioMix.model_validate(payload.get("audio_override"))
+        await play_scene(scene, audio_override=audio_override)
+
+    async def _execute_script(self, item: QueueItem) -> None:
+        script = load_script_definition(item.target_id)
+        payload = item.payload if isinstance(item.payload, dict) else {}
+        audio_override = None
+        if payload.get("audio_override") is not None:
+            audio_override = AudioMix.model_validate(payload.get("audio_override"))
+        resolved = await play_script(script, audio_override=audio_override)
+        logger.info("Script %s 已啟動，共 %s entries", script.id, len(resolved.entries))
 
 
 client_state_store = ClientStateStore()

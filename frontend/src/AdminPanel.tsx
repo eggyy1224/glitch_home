@@ -13,6 +13,8 @@ import {
 import SnapshotManager from "./components/SnapshotManager";
 import TimelineManager from "./components/TimelineManager";
 import EpisodeManager from "./components/EpisodeManager";
+import ScenesManager from "./components/ScenesManager";
+import ScriptsManager from "./components/ScriptsManager";
 import ClientStateQueuePanel from "./components/ClientStateQueuePanel";
 import TimelineEpisodeEditor from "./components/TimelineEpisodeEditor";
 
@@ -160,6 +162,30 @@ export default function AdminPanel({
               >
                 Episode 管理
               </button>
+              <button
+                type="button"
+                style={manageTab === "scene" ? activeTabButtonStyle : tabButtonStyle}
+                onClick={() => handleManageTabChange("scene")}
+                role="tab"
+                aria-selected={manageTab === "scene"}
+                aria-controls="admin-manage-tabpanel-scene"
+                id="admin-manage-tab-scene"
+                data-ai-id="admin.manage.tab.scene"
+              >
+                Scene 管理
+              </button>
+              <button
+                type="button"
+                style={manageTab === "script" ? activeTabButtonStyle : tabButtonStyle}
+                onClick={() => handleManageTabChange("script")}
+                role="tab"
+                aria-selected={manageTab === "script"}
+                aria-controls="admin-manage-tabpanel-script"
+                id="admin-manage-tab-script"
+                data-ai-id="admin.manage.tab.script"
+              >
+                Script 管理
+              </button>
             </div>
 
             {visitedManageTabs.includes("snapshot") && (
@@ -196,6 +222,30 @@ export default function AdminPanel({
                 data-ai-section="admin.manage.tabpanel.episode"
               >
                 <EpisodeManager />
+              </div>
+            )}
+            {visitedManageTabs.includes("scene") && (
+              <div
+                role="tabpanel"
+                aria-hidden={manageTab !== "scene"}
+                style={manageTab === "scene" ? tabPanelStyle : hiddenTabPanelStyle}
+                aria-labelledby="admin-manage-tab-scene"
+                id="admin-manage-tabpanel-scene"
+                data-ai-section="admin.manage.tabpanel.scene"
+              >
+                <ScenesManager />
+              </div>
+            )}
+            {visitedManageTabs.includes("script") && (
+              <div
+                role="tabpanel"
+                aria-hidden={manageTab !== "script"}
+                style={manageTab === "script" ? tabPanelStyle : hiddenTabPanelStyle}
+                aria-labelledby="admin-manage-tab-script"
+                id="admin-manage-tabpanel-script"
+                data-ai-section="admin.manage.tabpanel.script"
+              >
+                <ScriptsManager />
               </div>
             )}
           </div>

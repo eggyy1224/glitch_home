@@ -178,3 +178,42 @@ export function firstSnapshotRef(timeline?: Partial<IframeTimeline> | null): Sna
   if (!defaultClient) return null;
   return { client: defaultClient, name: snapshotRef };
 }
+
+export function defaultScenePayload(targetClient?: string | null): Record<string, unknown> {
+  const clientA = targetClient || "left";
+  const clientB = clientA === "left" ? "right" : `${clientA}_b`;
+  return {
+    id: "new_scene",
+    title: "範例 Scene",
+    targets: {
+      [clientA]: `${clientA}/snapshot_left`,
+      [clientB]: `${clientB}/snapshot_right`,
+    },
+    audio_mix: { left: 1, right: 0.3, mode: "left-dominant" },
+    tags: ["demo"],
+  };
+}
+
+export function defaultScriptPayload(targetClient?: string | null): Record<string, unknown> {
+  const clientA = targetClient || "left";
+  const clientB = clientA === "left" ? "right" : `${clientA}_b`;
+  return {
+    id: "new_script",
+    title: "範例 Script",
+    entries: [
+      {
+        type: "scene",
+        scene_id: "new_scene",
+        duration: 5,
+      },
+      {
+        type: "snapshot_pair",
+        left_snapshot: `${clientA}/snapshot_left`,
+        right_snapshot: `${clientB}/snapshot_right`,
+        duration: 5,
+        audio_override: { left: 0.8, right: 0.8, mode: "balanced" },
+      },
+    ],
+    tags: ["demo"],
+  };
+}
