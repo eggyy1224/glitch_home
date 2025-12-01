@@ -47,6 +47,32 @@ def test_asset_guard_blocks_tts(monkeypatch, client: TestClient):
 
 
 @pytest.mark.api
+def test_scene_play_draft_requires_metadata_write(monkeypatch, client: TestClient):
+    monkeypatch.setattr(settings, "enable_metadata_write", False)
+    monkeypatch.setattr(settings, "app_mode", "DISPLAY")
+
+    response = client.post("/api/scenes/demo_scene/play?allow_draft=true")
+
+    assert response.status_code == 403
+    payload = response.json()["detail"]
+    assert payload["feature"] == "metadata_write"
+    assert payload["app_mode"] == "DISPLAY"
+
+
+@pytest.mark.api
+def test_script_play_draft_requires_metadata_write(monkeypatch, client: TestClient):
+    monkeypatch.setattr(settings, "enable_metadata_write", False)
+    monkeypatch.setattr(settings, "app_mode", "DISPLAY")
+
+    response = client.post("/api/scripts/demo_script/play?allow_draft=true")
+
+    assert response.status_code == 403
+    payload = response.json()["detail"]
+    assert payload["feature"] == "metadata_write"
+    assert payload["app_mode"] == "DISPLAY"
+
+
+@pytest.mark.api
 def test_index_rebuild_guard(monkeypatch, client: TestClient):
     monkeypatch.setattr(settings, "enable_index_rebuild", False)
     monkeypatch.setattr(settings, "app_mode", "CONSOLE")

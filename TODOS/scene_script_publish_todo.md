@@ -24,6 +24,7 @@
 ## 測試
 - 後端 pytest：CRUD + publish/rollback/versions 列表、草稿播放阻擋、引用驗證失敗、歷程寫入與回滾、版本衝突 409。
 - 前端 Vitest/RTL：Admin Panel 版本列表、載入版、發布、回滾、草稿播放警告；mock API 回應含版本欄位。
+- 已補：草稿播放需 metadata_write 權限（API 層測試覆蓋）。
 
 ## 實作順序
 1) 後端模型＋儲存/歷史策略＋競態檢查。  
