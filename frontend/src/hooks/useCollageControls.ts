@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
 import { fetchKinship } from "../api";
 import { ensureHtml2Canvas } from "../utils/html2canvasLoader";
 import {
@@ -13,9 +14,14 @@ import {
 } from "../utils/collageMath";
 import {
   defaultImageProcessing,
+  type CollageImageProcessing,
+  type CollagePiece,
+  type EdgeSample,
+  type ImageDimensions,
   edgeKeyForPiece,
 } from "../utils/collageImageProcessing";
 import { defaultCollageStateUtils } from "../utils/collageStateUtils";
+import type { CollageConfig } from "../utils/collageConfig";
 import {
   COLLAGE_DEFAULT_COLS as DEFAULT_COLS,
   COLLAGE_DEFAULT_IMAGE_COUNT as DEFAULT_IMAGE_COUNT,
@@ -41,11 +47,19 @@ export interface CollageControlsOptions {
   imagesBase?: string;
   anchorImage?: string | null;
   onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
-  remoteConfig?: unknown;
+  remoteConfig?: CollageConfig | null;
   controlsEnabled?: boolean;
   remoteSource?: string | null;
-  imageProcessing?: typeof defaultImageProcessing;
+  imageProcessing?: CollageImageProcessing;
   stateUtils?: typeof defaultCollageStateUtils;
+}
+
+type CollageStateUtils = typeof defaultCollageStateUtils;
+
+type CollageEdgeStatus = "idle" | "loading" | "ready" | "failed";
+
+interface CollageImageMetric extends ImageDimensions {
+  base: string;
 }
 
 export function useCollageControls({
@@ -58,9 +72,9 @@ export function useCollageControls({
   imageProcessing = defaultImageProcessing,
   stateUtils = defaultCollageStateUtils,
 }: CollageControlsOptions) {
-  const rootRef = useRef(null);
-  const resizeHandleRef = useRef(null);
-  const html2canvasPromiseRef = useRef(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const resizeHandleRef = useRef<HTMLDivElement | null>(null);
+  const html2canvasPromiseRef = useRef<ReturnType<typeof ensureHtml2Canvas> | null>(null);
   const ensureHtml2canvasReady = useCallback(() => {
     if (!html2canvasPromiseRef.current) {
       html2canvasPromiseRef.current = ensureHtml2Canvas();
@@ -85,25 +99,29 @@ export function useCollageControls({
     [initialStageHeight, initialStageWidth, stateUtils],
   );
 
-  const [imagePool, setImagePool] = useState([]);
+  const [imagePool, setImagePool] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [seed, setSeed] = useState(() => stateUtils.nextSeed());
-  const [imageCount, setImageCount] = useState(() =>
+  const [error, setError] = useState<string | null>(null);
+  const [seed, setSeed] = useState<number>(() => stateUtils.nextSeed());
+  const [imageCount, setImageCount] = useState<number>(() =>
     stateUtils.readInitialParam("collage_images", DEFAULT_IMAGE_COUNT, 1, MAX_IMAGES),
   );
-  const [rows, setRows] = useState(() => stateUtils.readInitialParam("collage_rows", DEFAULT_ROWS, 1, MAX_ROWS));
-  const [cols, setCols] = useState(() => stateUtils.readInitialParam("collage_cols", DEFAULT_COLS, 1, MAX_COLS));
-  const [mixPieces, setMixPieces] = useState(() => stateUtils.readInitialBooleanParam("collage_mix", false));
-  const [edgeLookup, setEdgeLookup] = useState(() => new Map());
-  const [edgeStatus, setEdgeStatus] = useState("idle");
-  const [stageWidth, setStageWidth] = useState(() => initialStageWidth);
-  const [stageHeight, setStageHeight] = useState(() => initialStageHeight);
-  const [desiredRatio, setDesiredRatio] = useState(() => initialDesiredRatio);
+  const [rows, setRows] = useState<number>(() =>
+    stateUtils.readInitialParam("collage_rows", DEFAULT_ROWS, 1, MAX_ROWS),
+  );
+  const [cols, setCols] = useState<number>(() =>
+    stateUtils.readInitialParam("collage_cols", DEFAULT_COLS, 1, MAX_COLS),
+  );
+  const [mixPieces, setMixPieces] = useState<boolean>(() => stateUtils.readInitialBooleanParam("collage_mix", false));
+  const [edgeLookup, setEdgeLookup] = useState<EdgeSample>(() => new Map());
+  const [edgeStatus, setEdgeStatus] = useState<CollageEdgeStatus>("idle");
+  const [stageWidth, setStageWidth] = useState<number>(() => initialStageWidth);
+  const [stageHeight, setStageHeight] = useState<number>(() => initialStageHeight);
+  const [desiredRatio, setDesiredRatio] = useState<number>(() => initialDesiredRatio);
   const [remoteStageHeightSet, setRemoteStageHeightSet] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
-  const [imageMetrics, setImageMetrics] = useState(() => ({}));
-  const fetchedPoolRef = useRef([]);
+  const [imageMetrics, setImageMetrics] = useState<Record<string, CollageImageMetric>>(() => ({}));
+  const fetchedPoolRef = useRef<string[]>([]);
   const remoteOverrideRef = useRef(false);
   const [remoteOverrideActive, setRemoteOverrideActive] = useState(false);
 
@@ -125,7 +143,7 @@ export function useCollageControls({
       const maxWaitTime = 3000;
       const checkInterval = 100;
       let waited = 0;
-      let piecesElements = root.querySelectorAll(".collage-piece");
+      let piecesElements = root.querySelectorAll<HTMLElement>(".collage-piece");
 
       while (piecesElements.length === 0 && waited < maxWaitTime) {
         await new Promise((resolve) => setTimeout(resolve, checkInterval));
@@ -151,7 +169,7 @@ export function useCollageControls({
       }
 
       let loadedCount = 0;
-      piecesElements.forEach((el) => {
+      piecesElements.forEach((el: HTMLElement) => {
         const bgImage = window.getComputedStyle(el).backgroundImage;
         if (bgImage && bgImage !== "none" && !bgImage.includes("data:")) {
           loadedCount += 1;
@@ -160,9 +178,9 @@ export function useCollageControls({
 
       if (loadedCount === 0) {
         await new Promise((resolve) => setTimeout(resolve, 500));
-        piecesElements = root.querySelectorAll(".collage-piece");
+        piecesElements = root.querySelectorAll<HTMLElement>(".collage-piece");
         loadedCount = 0;
-        piecesElements.forEach((el) => {
+        piecesElements.forEach((el: HTMLElement) => {
           const bgImage = window.getComputedStyle(el).backgroundImage;
           if (bgImage && bgImage !== "none" && !bgImage.includes("data:")) {
             loadedCount += 1;
@@ -170,9 +188,9 @@ export function useCollageControls({
         });
       }
 
-      const mixSurface = root.querySelector(".collage-mix-surface");
+      const mixSurface = root.querySelector<HTMLElement>(".collage-mix-surface");
       const tiles = root.querySelectorAll(".collage-tile");
-      let targetElement = root;
+      let targetElement: HTMLElement = root;
       let rootWidth = root.clientWidth;
       let rootHeight = root.clientHeight;
       const rootRect = root.getBoundingClientRect();
@@ -247,35 +265,39 @@ export function useCollageControls({
 
       console.log(`[CollageMode] 截圖尺寸: ${rootWidth}×${rootHeight} (scale: ${scale})`);
 
-      const canvas = await html2canvas(targetElement, {
-        backgroundColor: "#050508",
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-        scale,
-        timeout,
-        removeContainer: false,
-        foreignObjectRendering: false,
-        onclone: (doc) => {
-          doc.querySelectorAll(".collage-piece").forEach((el) => {
-            el.style.animation = "none";
-            el.style.opacity = "1";
-            el.style.transform = "none";
-            el.style.visibility = "visible";
-            el.style.display = "";
-          });
-          const clonedMixSurface = doc.querySelector(".collage-mix-surface");
-          if (clonedMixSurface) {
-            clonedMixSurface.style.overflow = "visible";
-            clonedMixSurface.style.position = "relative";
-            clonedMixSurface.style.width = `${rootWidth}px`;
-            clonedMixSurface.style.height = `${rootHeight}px`;
-            clonedMixSurface.style.maxWidth = "none";
-            clonedMixSurface.style.maxHeight = "none";
-          }
-        },
-      });
-      return new Promise((resolve, reject) => {
+      const canvas = await html2canvas(
+        targetElement,
+        {
+          backgroundColor: "#050508",
+          logging: false,
+          useCORS: true,
+          allowTaint: false,
+          scale,
+          // timeout 非官方型別，轉型以符合實際呼叫參數
+          timeout,
+          removeContainer: false,
+          foreignObjectRendering: false,
+          onclone: (doc: Document) => {
+            doc.querySelectorAll<HTMLElement>(".collage-piece").forEach((el) => {
+              el.style.animation = "none";
+              el.style.opacity = "1";
+              el.style.transform = "none";
+              el.style.visibility = "visible";
+              el.style.display = "";
+            });
+            const clonedMixSurface = doc.querySelector<HTMLElement>(".collage-mix-surface");
+            if (clonedMixSurface) {
+              clonedMixSurface.style.overflow = "visible";
+              clonedMixSurface.style.position = "relative";
+              clonedMixSurface.style.width = `${rootWidth}px`;
+              clonedMixSurface.style.height = `${rootHeight}px`;
+              clonedMixSurface.style.maxWidth = "none";
+              clonedMixSurface.style.maxHeight = "none";
+            }
+          },
+        } as any,
+      );
+      return new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (!blob) {
             reject(new Error("無法產生拼貼截圖"));
@@ -435,7 +457,7 @@ export function useCollageControls({
     return imagePool.slice(0, limit);
   }, [imagePool, imageCount]);
 
-  const pieces = useMemo(() => buildPieces(selectedImages, rows, cols, seed), [selectedImages, rows, cols, seed]);
+  const pieces = useMemo<CollagePiece[]>(() => buildPieces(selectedImages, rows, cols, seed), [selectedImages, rows, cols, seed]);
   const totalPieces = pieces.length;
 
   const mixBoard = useMemo(() => {
@@ -475,7 +497,7 @@ export function useCollageControls({
       return;
     }
 
-    const applyParam = (key, value, defaultValue) => {
+    const applyParam = (key: string, value: string | number | boolean, defaultValue: string | number | boolean) => {
       if (value === undefined || value === null || String(value) === String(defaultValue)) {
         if (params.has(key)) {
           params.delete(key);
@@ -504,8 +526,8 @@ export function useCollageControls({
     }
   }, [imageCount, rows, cols, mixPieces, stageWidth, finalStageHeight]);
 
-  const piecesByImage = useMemo(() => {
-    const map = new Map();
+  const piecesByImage = useMemo<Map<string, CollagePiece[]>>(() => {
+    const map = new Map<string, CollagePiece[]>();
     pieces.forEach((piece) => {
       if (!map.has(piece.imageId)) {
         map.set(piece.imageId, []);
@@ -605,7 +627,7 @@ export function useCollageControls({
   }, [stageWidthBounds]);
 
   useEffect(() => {
-    const onKeyDown = (event) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && (event.key === "r" || event.key === "R")) {
         event.preventDefault();
         setControlsVisible((prev) => !prev);
@@ -627,7 +649,7 @@ export function useCollageControls({
     setEdgeStatus("loading");
     const run = async () => {
       try {
-        const aggregate = new Map();
+        const aggregate: EdgeSample = new Map();
         await Promise.all(
           selectedImages.map(async (imageId) => {
             const imageUrl = buildImageUrl(imagesBase, imageId);
@@ -655,11 +677,17 @@ export function useCollageControls({
     };
   }, [mixPieces, selectedImages, rows, cols, imagesBase, imageProcessing]);
 
+  type NumberInputEvent = React.ChangeEvent<HTMLInputElement | HTMLSelectElement>;
+  const extractNumeric = (eventOrValue: number | string | NumberInputEvent | null | undefined): number => {
+    if (typeof eventOrValue === "number") return eventOrValue;
+    const raw = typeof eventOrValue === "string" ? eventOrValue : eventOrValue?.target?.value;
+    return Number.parseInt(raw ?? "", 10);
+  };
+
   const handleImageCountChange = useCallback(
-    (eventOrValue) => {
+    (eventOrValue: number | NumberInputEvent) => {
       if (!controlsEnabled) return;
-      const raw = typeof eventOrValue === "number" ? eventOrValue : eventOrValue?.target?.value;
-      const parsed = Number.parseInt(raw, 10);
+      const parsed = extractNumeric(eventOrValue);
       if (Number.isNaN(parsed)) return;
       setImageCount(clamp(parsed, 1, maxSelectableImages));
       setSeed(stateUtils.nextSeed());
@@ -668,10 +696,9 @@ export function useCollageControls({
   );
 
   const handleRowsChange = useCallback(
-    (eventOrValue) => {
+    (eventOrValue: number | NumberInputEvent) => {
       if (!controlsEnabled) return;
-      const raw = typeof eventOrValue === "number" ? eventOrValue : eventOrValue?.target?.value;
-      const parsed = Number.parseInt(raw, 10);
+      const parsed = extractNumeric(eventOrValue);
       if (Number.isNaN(parsed)) return;
       setRows(clamp(parsed, 1, MAX_ROWS));
       setSeed(stateUtils.nextSeed());
@@ -680,10 +707,9 @@ export function useCollageControls({
   );
 
   const handleColsChange = useCallback(
-    (eventOrValue) => {
+    (eventOrValue: number | NumberInputEvent) => {
       if (!controlsEnabled) return;
-      const raw = typeof eventOrValue === "number" ? eventOrValue : eventOrValue?.target?.value;
-      const parsed = Number.parseInt(raw, 10);
+      const parsed = extractNumeric(eventOrValue);
       if (Number.isNaN(parsed)) return;
       setCols(clamp(parsed, 1, MAX_COLS));
       setSeed(stateUtils.nextSeed());
@@ -708,7 +734,7 @@ export function useCollageControls({
   }, [stageWidthBounds]);
 
   const handleResizePointerDown = useCallback(
-    (event) => {
+    (event: React.PointerEvent<HTMLDivElement>) => {
       if (!controlsEnabled) return;
       if (event.button !== 0) return;
       event.preventDefault();
@@ -718,7 +744,7 @@ export function useCollageControls({
       const startWidth = stageWidth;
       const startHeight = finalStageHeight;
 
-      const onPointerMove = (moveEvent) => {
+      const onPointerMove = (moveEvent: PointerEvent) => {
         const deltaX = moveEvent.clientX - startX;
         const deltaY = moveEvent.clientY - startY;
         const currentBounds = latestBoundsRef.current || bounds;

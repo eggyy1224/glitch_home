@@ -36,8 +36,8 @@ const clampInt = (value: unknown, min: number, max: number, fallback: number): n
 
 const sanitizeImages = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
-  const seen = new Set();
-  const result = [];
+  const seen = new Set<string>();
+  const result: string[] = [];
   value.forEach((item) => {
     if (typeof item !== "string") return;
     const trimmed = item.trim();

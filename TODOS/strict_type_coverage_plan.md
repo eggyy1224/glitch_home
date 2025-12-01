@@ -45,3 +45,4 @@
 
 ## 進度更新
 - 第一包完成：`App.tsx`、`modes/createModeRenderMap.ts`、`useRemoteTimelineControl`/`useIframeTimelinePlayer` 型別收斂，lazy component props 不再為 `unknown`，iframe config handler 型別對齊 `IframeConfig`。其餘批次錯誤仍依原五包分派處理。
+- 第二包完成（Collage 堆疊）：`CollageMode`/`CollageVersionMode`/`useCollageConfig`/`useCollageControls` 與 `collageMath`/`collageConfig`/`collageStateUtils` 全數補型別，清除 implicit any/unknown。剩餘錯誤集中在 Kinship、ScriptEditor、影音/搜尋等後續包。

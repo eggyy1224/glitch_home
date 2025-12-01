@@ -7,16 +7,20 @@ import {
   COLLAGE_PIECE_OVERLAP_PX as PIECE_OVERLAP_PX,
 } from "./constants/collage";
 import { useCollageControls } from "./hooks/useCollageControls";
+import type { CollageConfig } from "./utils/collageConfig";
+import type { CollageImageProcessing } from "./utils/collageImageProcessing";
+import type { CollageStateUtils } from "./utils/collageStateUtils";
+import type { CollagePiece } from "./utils/collageImageProcessing";
 
 export interface CollageModeProps {
   imagesBase: string;
   anchorImage?: string | null;
   onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null;
-  remoteConfig?: unknown;
+  remoteConfig?: CollageConfig | null;
   controlsEnabled?: boolean;
   remoteSource?: string | null;
-  imageProcessing?: unknown;
-  stateUtils?: unknown;
+  imageProcessing?: CollageImageProcessing;
+  stateUtils?: CollageStateUtils;
 }
 
 export default function CollageMode({ anchorImage = null, ...rest }: CollageModeProps) {
@@ -183,22 +187,27 @@ export default function CollageMode({ anchorImage = null, ...rest }: CollageMode
                 const leftPercent = (piece.col / mixBoard.cols) * 100;
                 const topPercent = (piece.row / mixBoard.rows) * 100;
                 const backgroundX = cols <= 1 ? 50 : (piece.sourceCol / (cols - 1)) * 100;
-                const backgroundY = rows <= 1 ? 50 : (piece.sourceRow / (rows - 1)) * 100;
-                const imageUrl = buildImageUrl(imagesBase, piece.imageId);
+              const backgroundY = rows <= 1 ? 50 : (piece.sourceRow / (rows - 1)) * 100;
+              const imageUrl = buildImageUrl(imagesBase, piece.imageId);
 
-                const style = {
-                  width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
-                  height: `calc(${heightPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
-                  left: `calc(${leftPercent}% - ${PIECE_OVERLAP_PX}px)`,
-                  top: `calc(${topPercent}% - ${PIECE_OVERLAP_PX}px)`,
-                  backgroundImage: `url("${imageUrl}")`,
-                  backgroundSize: `${cols * 100}% ${rows * 100}%`,
-                  backgroundPosition: `${backgroundX}% ${backgroundY}%`,
-                  animationDelay: `${piece.delay.toFixed(2)}s`,
-                  "--from-x": `${piece.fromX.toFixed(1)}px`,
-                  "--from-y": `${piece.fromY.toFixed(1)}px`,
-                  "--from-rot": `${piece.fromRot.toFixed(1)}deg`,
-                };
+              const delay = piece.delay ?? 0;
+              const fromX = piece.fromX ?? 0;
+              const fromY = piece.fromY ?? 0;
+              const fromRot = piece.fromRot ?? 0;
+
+              const style = {
+                width: `calc(${widthPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                height: `calc(${heightPercent}% + ${PIECE_OVERLAP_PX * 2}px)`,
+                left: `calc(${leftPercent}% - ${PIECE_OVERLAP_PX}px)`,
+                top: `calc(${topPercent}% - ${PIECE_OVERLAP_PX}px)`,
+                backgroundImage: `url("${imageUrl}")`,
+                backgroundSize: `${cols * 100}% ${rows * 100}%`,
+                backgroundPosition: `${backgroundX}% ${backgroundY}%`,
+                animationDelay: `${delay.toFixed(2)}s`,
+                "--from-x": `${fromX.toFixed(1)}px`,
+                "--from-y": `${fromY.toFixed(1)}px`,
+                "--from-rot": `${fromRot.toFixed(1)}deg`,
+              };
 
                 return <div key={piece.key} className="collage-piece collage-piece--mixed" style={style} />;
               })}
@@ -224,7 +233,7 @@ export default function CollageMode({ anchorImage = null, ...rest }: CollageMode
             const tileStyle = tileRatio ? { aspectRatio: tileRatio } : undefined;
             return (
               <div key={imageId} className="collage-tile" style={tileStyle}>
-                {tilePieces.map((piece) => {
+                {tilePieces.map((piece: CollagePiece) => {
                   const widthPercent = 100 / cols;
                   const heightPercent = 100 / rows;
                   const leftPercent = (piece.col / cols) * 100;

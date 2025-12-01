@@ -1,21 +1,29 @@
 import { useCallback, useEffect, useState } from "react";
-import { isRemoteCollageSource, sanitizeCollageConfig } from "../utils/collageConfig";
+import { isRemoteCollageSource, sanitizeCollageConfig, type CollageConfig } from "../utils/collageConfig";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
-const deriveRemoteState = (payload) => {
+type CollageRemoteSource = "client" | "global";
+
+type CollageRemoteState = {
+  config: CollageConfig;
+  source: CollageRemoteSource;
+};
+
+const deriveRemoteState = (payload: unknown): CollageRemoteState | null => {
   if (!payload || typeof payload !== "object") {
     return null;
   }
-  const configPayload = payload.config ?? payload;
+  // biome-ignore lint/suspicious/noExplicitAny: 從遠端取得的 payload，逐步清洗
+  const configPayload = (payload as any).config ?? payload;
   const sanitized = sanitizeCollageConfig(configPayload);
   if (!sanitized) {
     return null;
   }
   const hasOwner =
-    Boolean(payload.owner_client_id) ||
-    Boolean(payload.target_client_id);
-  const source = payload.source ?? (hasOwner ? "client" : "global");
+    Boolean((payload as { owner_client_id?: unknown }).owner_client_id) ||
+    Boolean((payload as { target_client_id?: unknown }).target_client_id);
+  const source = (payload as { source?: CollageRemoteSource | null | undefined }).source ?? (hasOwner ? "client" : "global");
   if (!isRemoteCollageSource(source)) {
     return null;
   }
@@ -25,11 +33,16 @@ const deriveRemoteState = (payload) => {
   };
 };
 
-export function useCollageConfig({ collageMode, clientId }) {
-  const [remoteState, setRemoteState] = useState(null);
-  const [error, setError] = useState(null);
+interface UseCollageConfigOptions {
+  collageMode: boolean;
+  clientId?: string;
+}
 
-  const applyRemoteConfig = useCallback((payload) => {
+export function useCollageConfig({ collageMode, clientId }: UseCollageConfigOptions) {
+  const [remoteState, setRemoteState] = useState<CollageRemoteState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const applyRemoteConfig = useCallback((payload: unknown) => {
     const nextState = deriveRemoteState(payload);
     if (nextState) {
       setRemoteState(nextState);
@@ -68,7 +81,8 @@ export function useCollageConfig({ collageMode, clientId }) {
         if (cancelled) return;
         console.error("取得 collage 配置失敗", err);
         setRemoteState(null);
-        setError(err?.message || String(err));
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
       }
     };
 

@@ -3,6 +3,7 @@ import { DisplayModes } from "../hooks/useDisplayMode";
 import type { OverlayContent } from "../types/overlay";
 import type { IframeConfig, VideoController } from "../types/control";
 import type { KinshipCameraPose, KinshipCameraPreset, KinshipCluster, KinshipData } from "../types/kinship";
+import type { CollageConfig } from "../utils/collageConfig";
 
 export type ModeRenderEntry = {
   component: ComponentType<any>;
@@ -33,7 +34,7 @@ type ModeRenderMapOptions = {
   slideIntervalMs?: number;
   navigateToImage: (imageId: string) => void;
   showInfo?: boolean;
-  collageRemoteConfig?: unknown;
+  collageRemoteConfig?: CollageConfig | null;
   collageControlsEnabled?: boolean;
   collageRemoteSource?: string | null;
   caption?: OverlayContent | null;

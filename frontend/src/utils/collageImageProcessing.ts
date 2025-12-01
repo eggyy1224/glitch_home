@@ -8,7 +8,7 @@ type EdgeColors = {
   center: number[];
 };
 
-type EdgeSample = Map<string, EdgeColors>;
+export type EdgeSample = Map<string, EdgeColors>;
 type EdgeCache = Map<string, EdgeSample>;
 
 export interface CollagePiece {
@@ -18,10 +18,14 @@ export interface CollagePiece {
   key?: string;
   row?: number;
   col?: number;
-  [key: string]: unknown;
+  imageIndex?: number;
+  fromX?: number;
+  fromY?: number;
+  fromRot?: number;
+  delay?: number;
 }
 
-interface ImageDimensions {
+export interface ImageDimensions {
   width: number;
   height: number;
   ratio: number;
@@ -413,3 +417,5 @@ export const createImageProcessing = ({
 };
 
 export const defaultImageProcessing = createImageProcessing();
+
+export type CollageImageProcessing = ReturnType<typeof createImageProcessing>;

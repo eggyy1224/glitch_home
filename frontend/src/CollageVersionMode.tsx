@@ -25,6 +25,7 @@ interface CollageGenerationResult {
   height?: number;
   output_format?: string;
   parents?: string[];
+  task_id?: string;
   [key: string]: unknown;
 }
 
@@ -37,7 +38,15 @@ interface CollageVersionModeProps {
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
-export default function CollageVersionMode({ canGenerate = true, appMode = "STUDIO", forbidMessage }: CollageVersionModeProps) {
+type SearchResultPayload = {
+  id: string;
+};
+
+export default function CollageVersionMode({
+  canGenerate = true,
+  appMode = "STUDIO",
+  forbidMessage,
+}: CollageVersionModeProps) {
   const generationDisabled = !canGenerate;
   const blockedMessage = forbidMessage || `目前 APP_MODE=${appMode || "未知"} 禁止生成`;
   const [availableImages, setAvailableImages] = useState<OffspringImageInfo[]>([]);
@@ -84,7 +93,8 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
         const data = await listOffspringImages();
         setAvailableImages(data.images || []);
       } catch (err) {
-        setError(`載入圖片列表失敗: ${err.message}`);
+        const message = err instanceof Error ? err.message : String(err);
+        setError(`載入圖片列表失敗: ${message}`);
       } finally {
         setLoadingImages(false);
       }
@@ -107,7 +117,7 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
     }
   }, [blockedMessage, generationDisabled, error]);
   
-  const handleImageToggle = (imageName) => {
+  const handleImageToggle = (imageName: string) => {
     setSelectedImages((prev) => {
       if (prev.includes(imageName)) {
         return prev.filter((name) => name !== imageName);
@@ -125,7 +135,7 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
     }
   };
 
-  const handleSearchResults = (resultList, emptyMessage) => {
+  const handleSearchResults = (resultList: SearchResultPayload[], emptyMessage: string) => {
     if (!resultList?.length) {
       setError(emptyMessage);
       setDisplayMode("all");
@@ -143,7 +153,7 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
     setDisplayMode("search");
   };
 
-  const resolveImagePath = (query) => {
+  const resolveImagePath = (query: string) => {
     const trimmed = query.trim();
     if (!trimmed) return null;
     const lower = trimmed.toLowerCase();
@@ -171,16 +181,17 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
         : createTextSearchRequest(textQuery, 50);
       textSearchControllerRef.current = controller;
 
-      const searchResultsData = await promise;
+      const searchResultsData: { results?: SearchResultPayload[] } = await promise;
       textSearchControllerRef.current = null;
 
       const resultList = searchResultsData.results || [];
       handleSearchResults(resultList, `未找到與「${textQuery}」相關的圖像`);
     } catch (err) {
-      if (err.name === "AbortError") {
+      if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
-      setError(err.message || "搜尋出錯");
+      const message = err instanceof Error ? err.message : "搜尋出錯";
+      setError(message);
     } finally {
       setSearching(false);
     }
@@ -195,7 +206,7 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
     setSearching(false);
   };
   
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleTextSearch();
     }
@@ -250,14 +261,22 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
         return_map: false,
       };
       
-      const response = await generateCollageVersionFromNames(selectedImages, params);
-      const newTaskId = response.task_id;
+      const response = (await generateCollageVersionFromNames(
+        selectedImages,
+        params,
+      )) as CollageGenerationResult & { task_id?: string };
+      const newTaskId = response.task_id || null;
+      if (!newTaskId) {
+        setError("取得任務 ID 失敗");
+        setLoading(false);
+        return;
+      }
       setTaskId(newTaskId);
       
       // Start polling for progress
       progressIntervalRef.current = setInterval(async () => {
         try {
-          const progressData = await getCollageProgress(newTaskId);
+          const progressData = (await getCollageProgress(newTaskId)) as CollageGenerationResult;
           setProgress(progressData.progress || 0);
           setProgressStage(progressData.stage || "");
           setProgressMessage(progressData.message || "");
@@ -287,7 +306,8 @@ export default function CollageVersionMode({ canGenerate = true, appMode = "STUD
       }, 500); // Poll every 500ms
       
     } catch (err) {
-      setError(err.message || "生成失敗");
+      const message = err instanceof Error ? err.message : "生成失敗";
+      setError(message);
       setLoading(false);
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);

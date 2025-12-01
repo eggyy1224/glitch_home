@@ -4,7 +4,7 @@ import {
   COLLAGE_RATIO_MIN as RATIO_MIN,
 } from "../constants/collage";
 
-const buildSearchParams = (search?: string | URLSearchParams) => {
+const buildSearchParams = (search?: string | URLSearchParams): URLSearchParams => {
   if (search instanceof URLSearchParams) return search;
   if (typeof search === "string") return new URLSearchParams(search);
   if (typeof window !== "undefined" && window.location?.search) {
@@ -42,7 +42,7 @@ export const readInitialBooleanParam = (
   return fallback;
 };
 
-export const calculateDesiredRatio = (stageWidth, stageHeight) =>
+export const calculateDesiredRatio = (stageWidth: number, stageHeight: number) =>
   clamp(stageHeight / Math.max(stageWidth, 1), RATIO_MIN, RATIO_MAX);
 
 export const defaultCollageStateUtils = {
@@ -51,3 +51,5 @@ export const defaultCollageStateUtils = {
   calculateDesiredRatio,
   nextSeed: () => Date.now(),
 };
+
+export type CollageStateUtils = typeof defaultCollageStateUtils;
