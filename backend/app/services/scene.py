@@ -150,12 +150,13 @@ def save_scene_definition(payload: dict, scene_id: Optional[str] = None, expecte
 def load_scene_definition(scene_id: str, version: int | None = None) -> Scene:
     if version is not None:
         version_path = _scene_version_path(scene_id, int(version))
-        if version_path.exists():
-            with version_path.open("r", encoding="utf-8") as fp:
-                raw = json.load(fp)
-            raw.setdefault("id", scene_id)
-            raw["id"] = _sanitize_scene_id(raw["id"])
-            return Scene.model_validate(raw)
+        if not version_path.exists():
+            raise FileNotFoundError("scene 指定版本不存在")
+        with version_path.open("r", encoding="utf-8") as fp:
+            raw = json.load(fp)
+        raw.setdefault("id", scene_id)
+        raw["id"] = _sanitize_scene_id(raw["id"])
+        return Scene.model_validate(raw)
     path = _scene_path_for(scene_id)
     if not path.exists():
         raise FileNotFoundError("scene 不存在")

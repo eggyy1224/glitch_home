@@ -181,12 +181,13 @@ def save_script_definition(payload: dict, script_id: Optional[str] = None, expec
 def load_script_definition(script_id: str, version: int | None = None) -> Script:
     if version is not None:
         version_path = _script_version_path(script_id, int(version))
-        if version_path.exists():
-            with version_path.open("r", encoding="utf-8") as fp:
-                raw = json.load(fp)
-            raw.setdefault("id", script_id)
-            raw["id"] = _sanitize_script_id(raw["id"])
-            return Script.model_validate(raw)
+        if not version_path.exists():
+            raise FileNotFoundError("script 指定版本不存在")
+        with version_path.open("r", encoding="utf-8") as fp:
+            raw = json.load(fp)
+        raw.setdefault("id", script_id)
+        raw["id"] = _sanitize_script_id(raw["id"])
+        return Script.model_validate(raw)
     path = _script_path_for(script_id)
     if not path.exists():
         raise FileNotFoundError("script 不存在")
