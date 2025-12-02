@@ -9,6 +9,7 @@
     "preview": "vite preview --port 5173",
     "typecheck": "tsc --noEmit -p tsconfig.strict.json",
     "typecheck:strict": "tsc --noEmit -p tsconfig.strict.json",
+    "typecheck:all": "tsc --noEmit -p tsconfig.strict.all.json",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

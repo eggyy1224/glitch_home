@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   cloneScene,
   createScene,
@@ -26,6 +26,13 @@ export default function ScenesManager() {
   const [allowDraftPlay, setAllowDraftPlay] = useState(false);
   const [loadVersion, setLoadVersion] = useState("");
   const [rollbackVersion, setRollbackVersion] = useState("");
+  const parsedScene = useMemo(() => {
+    try {
+      return JSON.parse(sceneJson) as Partial<Scene>;
+    } catch {
+      return null;
+    }
+  }, [sceneJson]);
 
   const refreshScenes = useCallback(async () => {
     try {
@@ -287,6 +294,12 @@ export default function ScenesManager() {
                 載入指定版
               </button>
             </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: "#9be7ff" }}>
+              目前版本：{parsedScene?.version ?? "?"} / 狀態：{parsedScene?.status ?? "?"} / published_at：
+              {(parsedScene as { published_at?: string; publishedAt?: string })?.published_at ||
+                (parsedScene as { publishedAt?: string })?.publishedAt ||
+                "n/a"}
+            </div>
           </div>
           <div style={{ marginBottom: 6 }}>
             <label style={labelStyle} htmlFor="scene-json">
@@ -345,7 +358,15 @@ export default function ScenesManager() {
             <button type="button" onClick={handleRollbackScene} data-ai-action="scene.rollback">
               回滾
             </button>
+            <button
+              type="button"
+              onClick={() => setSceneMessage("TODO: diff/preview 尚未實作")}
+              data-ai-action="scene.diff-preview"
+            >
+              與最新版 diff/預覽
+            </button>
           </div>
+          <div style={{ marginTop: 4, fontSize: 12, color: "#ffed86" }}>發布/回滾需 metadata_write 權限</div>
           <div style={{ marginTop: 8, color: "#82dca5" }} data-ai-status="scene.message">
             {sceneMessage}
           </div>

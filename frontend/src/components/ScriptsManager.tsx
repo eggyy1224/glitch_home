@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   cloneScript,
   createScript,
@@ -27,6 +27,13 @@ export default function ScriptsManager() {
   const [allowDraftPlay, setAllowDraftPlay] = useState(false);
   const [loadVersion, setLoadVersion] = useState("");
   const [rollbackVersion, setRollbackVersion] = useState("");
+  const parsedScript = useMemo(() => {
+    try {
+      return JSON.parse(scriptJson) as Partial<Script>;
+    } catch {
+      return null;
+    }
+  }, [scriptJson]);
 
   const refreshScripts = useCallback(async () => {
     try {
@@ -301,6 +308,12 @@ export default function ScriptsManager() {
                 載入指定版
               </button>
             </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: "#9be7ff" }}>
+              目前版本：{parsedScript?.version ?? "?"} / 狀態：{parsedScript?.status ?? "?"} / published_at：
+              {(parsedScript as { published_at?: string; publishedAt?: string })?.published_at ||
+                (parsedScript as { publishedAt?: string })?.publishedAt ||
+                "n/a"}
+            </div>
           </div>
           <div style={{ marginBottom: 6 }}>
             <label style={labelStyle} htmlFor="script-json">
@@ -362,7 +375,15 @@ export default function ScriptsManager() {
             <button type="button" onClick={handleRollbackScript} data-ai-action="script.rollback">
               回滾
             </button>
+            <button
+              type="button"
+              onClick={() => setScriptMessage("TODO: diff/preview 尚未實作")}
+              data-ai-action="script.diff-preview"
+            >
+              與最新版 diff/預覽
+            </button>
           </div>
+          <div style={{ marginTop: 4, fontSize: 12, color: "#ffed86" }}>發布/回滾需 metadata_write 權限</div>
           <div style={{ marginTop: 8, color: "#82dca5" }} data-ai-status="script.message">
             {scriptMessage}
           </div>

@@ -1,29 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowJs": false,
-    "checkJs": false,
-    "jsx": "react-jsx",
-    "strict": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
-    "exactOptionalPropertyTypes": true,
-    "strictNullChecks": true,
-    "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "types": [
-      "vite/client",
-      "node"
-    ]
-  },
-  "include": [
-    "src"
-  ]
+  "extends": "./tsconfig.strict.json",
+  "include": ["src", "tests"]
 }
