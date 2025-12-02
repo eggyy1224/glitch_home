@@ -1,6 +1,8 @@
 const API_BASE: string = import.meta.env.VITE_API_BASE || "";
 const IMAGES_BASE: string = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
 
+export type QueryValue = string | number | boolean | null | undefined;
+
 function isAbsoluteUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
@@ -35,6 +37,23 @@ function extractDetail(payload: unknown): string {
   return "";
 }
 
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+  payload: unknown;
+  url: string;
+
+  constructor(status: number, detail: string, payload: unknown, url: string) {
+    super(formatError(status, detail));
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+    this.payload = payload;
+    this.url = url;
+  }
+}
+
 export function buildImageUrl(filename: string | null, base: string = IMAGES_BASE): string | null {
   if (!filename) return null;
   const normalizedBase = base.endsWith("/") ? base : `${base}/`;
@@ -53,6 +72,30 @@ export interface RequestOptions {
 export interface RequestWithResponse<T = unknown> {
   data: T;
   response: Response;
+}
+
+export function withSignal(signal?: AbortSignal | null): Partial<RequestOptions> {
+  return signal ? { signal } : {};
+}
+
+export function buildQuery(params: Record<string, QueryValue> | undefined | null): string {
+  if (!params) return "";
+  const parts: string[] = [];
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined) return;
+    let normalized: string;
+    if (value === false) {
+      normalized = "false";
+    } else if (value === true) {
+      normalized = "true";
+    } else {
+      normalized = String(value);
+    }
+    const encodedKey = encodeURIComponent(key);
+    const encodedValue = encodeURIComponent(normalized);
+    parts.push(`${encodedKey}=${encodedValue}`);
+  });
+  return parts.length ? `?${parts.join("&")}` : "";
 }
 
 export async function request<T = unknown>(
@@ -99,7 +142,7 @@ export async function request<T = unknown>(path: string, options: RequestOptions
 
   if (!res.ok) {
     const detail = extractDetail(payload);
-    throw new Error(formatError(res.status, detail));
+    throw new ApiError(res.status, detail, payload, url);
   }
 
   if (returnResponse) {
