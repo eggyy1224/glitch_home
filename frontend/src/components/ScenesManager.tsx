@@ -148,12 +148,14 @@ export default function ScenesManager() {
     }
     try {
       setScenePlayStatus("發送中...");
-      await playScene(sceneId, {}, { allowDraft: allowDraftPlay });
+      const version = parseInt(loadVersion, 10);
+      const versionOpt = Number.isFinite(version) ? { version } : {};
+      await playScene(sceneId, {}, { allowDraft: allowDraftPlay, ...versionOpt });
       setScenePlayStatus("已送出播放");
     } catch (err) {
       setScenePlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [allowDraftPlay, sceneId]);
+  }, [allowDraftPlay, loadVersion, sceneId]);
 
   const currentSceneVersion = useCallback((): number | null => {
     try {

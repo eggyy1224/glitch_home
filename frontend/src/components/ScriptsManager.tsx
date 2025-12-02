@@ -149,12 +149,14 @@ export default function ScriptsManager() {
     }
     try {
       setScriptPlayStatus("發送中...");
-      await playScript(scriptId, {}, { allowDraft: allowDraftPlay });
+      const version = parseInt(loadVersion, 10);
+      const versionOpt = Number.isFinite(version) ? { version } : {};
+      await playScript(scriptId, {}, { allowDraft: allowDraftPlay, ...versionOpt });
       setScriptPlayStatus("已送出播放");
     } catch (err) {
       setScriptPlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [allowDraftPlay, scriptId]);
+  }, [allowDraftPlay, loadVersion, scriptId]);
 
   const currentScriptVersion = useCallback((): number | null => {
     try {
