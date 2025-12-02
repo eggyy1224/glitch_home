@@ -97,10 +97,12 @@ export default function ScenesManager() {
           throw new Error("scene id 必須提供在 JSON 內或輸入框");
         }
         const payload = { ...parsed, id: targetId };
+        const expectedVersion =
+          mode === "update" && typeof parsedScene?.version === "number" ? parsedScene.version : undefined;
         const saved =
           mode === "update"
-            ? await updateScene(targetId, payload, { resolve: false })
-            : await createScene(payload, { resolve: false });
+            ? await updateScene(targetId, payload, { resolve: false, expectedVersion })
+            : await createScene(payload, { resolve: false, expectedVersion });
         const savedScene = (saved as { scene?: unknown }).scene || saved;
         setSceneId(targetId);
         setSceneJson(pretty(savedScene));
@@ -111,7 +113,7 @@ export default function ScenesManager() {
         setSceneMessage((err as Error)?.message || "儲存失敗");
       }
     },
-    [fetchSceneVersions, refreshScenes, sceneId, sceneJson],
+    [fetchSceneVersions, parsedScene?.version, refreshScenes, sceneId, sceneJson],
   );
 
   const handleDeleteScene = useCallback(

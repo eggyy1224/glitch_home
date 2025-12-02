@@ -12,6 +12,7 @@ import type {
 interface ResolveOption extends RequestOptions {
   resolve?: boolean;
   version?: number;
+  expectedVersion?: number;
 }
 
 function withSignal(signal?: AbortSignal | null): Partial<RequestOptions> {
@@ -127,9 +128,13 @@ export async function listScenes({ signal }: RequestOptions = {}): Promise<{ sce
   return request(`/api/scenes`, withSignal(signal));
 }
 
-export async function createScene(payload: Partial<Scene>, { resolve = true, signal }: ResolveOption = {}): Promise<Scene> {
+export async function createScene(
+  payload: Partial<Scene>,
+  { resolve = true, signal, expectedVersion }: ResolveOption = {},
+): Promise<Scene> {
   const qs = new URLSearchParams();
   if (resolve === false) qs.set("resolve", "false");
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return request(`/api/scenes${suffix}`, { method: "POST", body: payload, ...withSignal(signal) });
 }
@@ -137,11 +142,12 @@ export async function createScene(payload: Partial<Scene>, { resolve = true, sig
 export async function updateScene(
   sceneId: string,
   payload: Partial<Scene>,
-  { resolve = true, signal }: ResolveOption = {},
+  { resolve = true, signal, expectedVersion }: ResolveOption = {},
 ): Promise<Scene> {
   if (!sceneId) throw new Error("sceneId is required");
   const qs = new URLSearchParams();
   if (resolve === false) qs.set("resolve", "false");
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return request(`/api/scenes/${encodeURIComponent(sceneId)}${suffix}`, {
     method: "PUT",
@@ -240,10 +246,11 @@ export async function listScripts({ signal }: RequestOptions = {}): Promise<{ sc
 
 export async function createScript(
   payload: Partial<Script>,
-  { resolve = true, signal }: ResolveOption = {},
+  { resolve = true, signal, expectedVersion }: ResolveOption = {},
 ): Promise<Script> {
   const qs = new URLSearchParams();
   if (resolve === false) qs.set("resolve", "false");
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return request(`/api/scripts${suffix}`, { method: "POST", body: payload, ...withSignal(signal) });
 }
@@ -251,11 +258,12 @@ export async function createScript(
 export async function updateScript(
   scriptId: string,
   payload: Partial<Script>,
-  { resolve = true, signal }: ResolveOption = {},
+  { resolve = true, signal, expectedVersion }: ResolveOption = {},
 ): Promise<Script> {
   if (!scriptId) throw new Error("scriptId is required");
   const qs = new URLSearchParams();
   if (resolve === false) qs.set("resolve", "false");
+  if (typeof expectedVersion === "number") qs.set("expected_version", `${expectedVersion}`);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return request(`/api/scripts/${encodeURIComponent(scriptId)}${suffix}`, {
     method: "PUT",
