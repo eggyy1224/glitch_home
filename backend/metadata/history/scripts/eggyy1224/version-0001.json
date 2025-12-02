@@ -1,0 +1,49 @@
+{
+  "id": "eggyy1224",
+  "version": 1,
+  "status": "published",
+  "created_at": "2025-12-02T11:51:47.440582Z",
+  "updated_at": "2025-12-02T11:51:47.442475Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "範例 Script",
+  "entries": [
+    {
+      "type": "scene",
+      "sceneId": "stormy_split",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 10.8,
+      "audio_override": null,
+      "notes": null
+    },
+    {
+      "type": "scene",
+      "sceneId": "stormy_kiss",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 12.6,
+      "audio_override": {
+        "left": 0.8,
+        "right": 0.8,
+        "mode": "balanced",
+        "muted": null
+      },
+      "notes": null
+    },
+    {
+      "type": "scene",
+      "sceneId": "new_scene",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 10.4,
+      "audio_override": null,
+      "notes": null
+    }
+  ],
+  "tags": [
+    "demo"
+  ],
+  "description": "",
+  "notes": ""
+}

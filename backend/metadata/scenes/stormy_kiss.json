@@ -1,14 +1,14 @@
 {
-  "id": "new_scene",
-  "version": 3,
+  "id": "stormy_kiss",
+  "version": 1,
   "status": "published",
-  "created_at": "2025-12-02T11:46:34.534581Z",
-  "updated_at": "2025-12-02T11:46:34.535198Z",
+  "created_at": "2025-12-02T11:47:21.483532Z",
+  "updated_at": "2025-12-02T11:47:21.483922Z",
   "published_at": null,
   "published_by": null,
   "title": "範例 Scene",
   "targets": {
-    "desktop": "desktop/video_slide_split",
+    "desktop": "desktop/drive_in_stormy_quad",
     "desktop2": "desktop2/kiss"
   },
   "audio_mix": {

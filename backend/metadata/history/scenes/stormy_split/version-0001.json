@@ -1,15 +1,15 @@
 {
-  "id": "new_scene",
-  "version": 3,
+  "id": "stormy_split",
+  "version": 1,
   "status": "published",
-  "created_at": "2025-12-02T11:46:34.534581Z",
-  "updated_at": "2025-12-02T11:46:34.535198Z",
+  "created_at": "2025-12-02T11:48:33.164879Z",
+  "updated_at": "2025-12-02T11:48:33.165260Z",
   "published_at": null,
   "published_by": null,
   "title": "範例 Scene",
   "targets": {
-    "desktop": "desktop/video_slide_split",
-    "desktop2": "desktop2/kiss"
+    "desktop": "desktop/drive_in_stormy_quad",
+    "desktop2": "desktop2/video_dual_birdman"
   },
   "audio_mix": {
     "left": 1.0,
