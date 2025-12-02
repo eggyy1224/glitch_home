@@ -74,6 +74,9 @@ export default function ScenesManager() {
         : Number.isFinite(version)
           ? { version }
           : {};
+      if (opts?.ignoreVersion) {
+        setLoadVersion("");
+      }
       const data = await fetchScene(id, { resolve: false, ...versionOpt });
       setSceneId(id);
       setSceneJson(pretty((data as { scene?: unknown }).scene || data));
@@ -148,14 +151,19 @@ export default function ScenesManager() {
     }
     try {
       setScenePlayStatus("發送中...");
-      const version = parseInt(loadVersion, 10);
-      const versionOpt = Number.isFinite(version) ? { version } : {};
+      const versionFromInput = parseInt(loadVersion, 10);
+      const versionFromJson =
+        parsedScene && typeof (parsedScene as { version?: unknown }).version === "number"
+          ? (parsedScene as { version?: number }).version
+          : undefined;
+      const pickedVersion = Number.isFinite(versionFromInput) ? versionFromInput : versionFromJson;
+      const versionOpt = Number.isFinite(pickedVersion || NaN) ? { version: pickedVersion } : {};
       await playScene(sceneId, {}, { allowDraft: allowDraftPlay, ...versionOpt });
       setScenePlayStatus("已送出播放");
     } catch (err) {
       setScenePlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [allowDraftPlay, loadVersion, sceneId]);
+  }, [allowDraftPlay, loadVersion, parsedScene, sceneId]);
 
   const currentSceneVersion = useCallback((): number | null => {
     try {

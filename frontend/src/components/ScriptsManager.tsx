@@ -75,6 +75,9 @@ export default function ScriptsManager() {
         : Number.isFinite(version)
           ? { version }
           : {};
+      if (opts?.ignoreVersion) {
+        setLoadVersion("");
+      }
       const data = await fetchScript(id, { resolve: false, ...versionOpt });
       setScriptId(id);
       setScriptJson(pretty((data as { script?: unknown }).script || data));
@@ -149,14 +152,19 @@ export default function ScriptsManager() {
     }
     try {
       setScriptPlayStatus("發送中...");
-      const version = parseInt(loadVersion, 10);
-      const versionOpt = Number.isFinite(version) ? { version } : {};
+      const versionFromInput = parseInt(loadVersion, 10);
+      const versionFromJson =
+        parsedScript && typeof (parsedScript as { version?: unknown }).version === "number"
+          ? (parsedScript as { version?: number }).version
+          : undefined;
+      const pickedVersion = Number.isFinite(versionFromInput) ? versionFromInput : versionFromJson;
+      const versionOpt = Number.isFinite(pickedVersion || NaN) ? { version: pickedVersion } : {};
       await playScript(scriptId, {}, { allowDraft: allowDraftPlay, ...versionOpt });
       setScriptPlayStatus("已送出播放");
     } catch (err) {
       setScriptPlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [allowDraftPlay, loadVersion, scriptId]);
+  }, [allowDraftPlay, loadVersion, parsedScript, scriptId]);
 
   const currentScriptVersion = useCallback((): number | null => {
     try {
