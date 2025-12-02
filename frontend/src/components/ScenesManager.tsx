@@ -261,12 +261,12 @@ export default function ScenesManager() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleLoadScene(itemId)}
-                    style={{ marginRight: 4 }}
-                    data-ai-action="scene.load"
-                    aria-label={`載入 scene ${itemId}`}
-                  >
-                    載入
+                  onClick={() => handleLoadScene(itemId, { ignoreVersion: true })}
+                  style={{ marginRight: 4 }}
+                  data-ai-action="scene.load"
+                  aria-label={`載入 scene ${itemId}`}
+                >
+                  載入
                   </button>
                   <button
                     type="button"

@@ -275,7 +275,7 @@ export default function ScriptsManager() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleLoadScript(itemId)}
+                  onClick={() => handleLoadScript(itemId, { ignoreVersion: true })}
                     style={{ marginRight: 4 }}
                     data-ai-action="script.load"
                     aria-label={`載入 script ${itemId}`}
