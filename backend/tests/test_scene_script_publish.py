@@ -97,6 +97,32 @@ def test_rollback_scene_creates_new_version(tmp_path: Path, monkeypatch):
 
 
 @pytest.mark.api
+def test_rollback_scene_backfills_missing_history(tmp_path: Path, monkeypatch):
+    metadata_dir = tmp_path / "metadata"
+    _patch_metadata(monkeypatch, metadata_dir)
+    payload = _basic_snapshot_payload()
+    _write_snapshot(metadata_dir, "left", "snap_l", payload)
+
+    # 手動寫入舊資料（缺少歷史檔）
+    scenes_dir = metadata_dir / "scenes"
+    scenes_dir.mkdir(parents=True, exist_ok=True)
+    scene_payload = {
+      "id": "legacy_scene",
+      "version": 1,
+      "status": "published",
+      "targets": {"left": "left/snap_l"},
+    }
+    (scenes_dir / "legacy_scene.json").write_text(json.dumps(scene_payload), encoding="utf-8")
+
+    rolled = rollback_scene("legacy_scene", target_version=1, expected_version=1)
+    assert rolled.version == 2
+    history_v1 = metadata_dir / "history" / "scenes" / "legacy_scene" / "version-0001.json"
+    history_v2 = metadata_dir / "history" / "scenes" / "legacy_scene" / "version-0002.json"
+    assert history_v1.exists()
+    assert history_v2.exists()
+
+
+@pytest.mark.api
 def test_publish_script_validates_and_increments(tmp_path: Path, monkeypatch):
     metadata_dir = tmp_path / "metadata"
     _patch_metadata(monkeypatch, metadata_dir)
@@ -152,3 +178,28 @@ def test_rollback_script_creates_new_version(tmp_path: Path, monkeypatch):
     entries = load_script_definition("roll_script", version=rolled.version).entries
     assert entries[0].left_snapshot == "left/v1"
     assert rolled.status == "published"
+
+
+@pytest.mark.api
+def test_rollback_script_backfills_missing_history(tmp_path: Path, monkeypatch):
+    metadata_dir = tmp_path / "metadata"
+    _patch_metadata(monkeypatch, metadata_dir)
+    payload = _basic_snapshot_payload()
+    _write_snapshot(metadata_dir, "left", "snap_l", payload)
+
+    scripts_dir = metadata_dir / "scripts"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    script_payload = {
+      "id": "legacy_script",
+      "version": 1,
+      "status": "published",
+      "entries": [{"type": "snapshot_pair", "left_snapshot": "left/snap_l", "duration": 1.0}],
+    }
+    (scripts_dir / "legacy_script.json").write_text(json.dumps(script_payload), encoding="utf-8")
+
+    rolled = rollback_script("legacy_script", target_version=1, expected_version=1)
+    assert rolled.version == 2
+    history_v1 = metadata_dir / "history" / "scripts" / "legacy_script" / "version-0001.json"
+    history_v2 = metadata_dir / "history" / "scripts" / "legacy_script" / "version-0002.json"
+    assert history_v1.exists()
+    assert history_v2.exists()

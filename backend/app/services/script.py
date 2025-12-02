@@ -147,6 +147,16 @@ def _write_script_history(script: Script) -> None:
                 logger.warning("清理舊 Script 版本失敗：%s", old_path)
 
 
+def _maybe_backfill_script_history(script: Script) -> None:
+    version_path = _script_version_path(script.id, script.version)
+    if version_path.exists():
+        return
+    try:
+        _write_script_history(script)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("補寫 Script 版本歷史失敗 %s v%s：%s", script.id, script.version, exc)
+
+
 def save_script_definition(payload: dict, script_id: Optional[str] = None, expected_version: int | None = None) -> Script:
     ensure_metadata_write_enabled("script_definition")
     if not isinstance(payload, dict):
@@ -204,7 +214,9 @@ def load_script_definition(script_id: str, version: int | None = None) -> Script
         raw = json.load(fp)
     raw.setdefault("id", script_id)
     raw["id"] = _sanitize_script_id(raw["id"])
-    return Script.model_validate(raw)
+    script = Script.model_validate(raw)
+    _maybe_backfill_script_history(script)
+    return script
 
 
 def delete_script_definition(script_id: str) -> None:

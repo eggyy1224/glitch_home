@@ -1,10 +1,10 @@
 {
   "id": "demo_dual_scene",
-  "version": 2,
+  "version": 1,
   "status": "published",
   "created_at": "2025-12-02T03:36:49.443161Z",
-  "updated_at": "2025-12-02T03:36:52.538145Z",
-  "published_at": "2025-12-02T03:36:52.537838Z",
+  "updated_at": "2025-12-02T03:36:49.443161Z",
+  "published_at": null,
   "published_by": null,
   "title": "Desktop2/desktop 示範",
   "targets": {

@@ -116,6 +116,18 @@ def _write_scene_history(scene: Scene) -> None:
                 logger.warning("清理舊 Scene 版本失敗：%s", old_path)
 
 
+def _maybe_backfill_scene_history(scene: Scene) -> None:
+    """若歷史檔缺少當前版本，補寫基礎版本檔，避免舊資料無法回滾。"""
+
+    version_path = _scene_version_path(scene.id, scene.version)
+    if version_path.exists():
+        return
+    try:
+        _write_scene_history(scene)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("補寫 Scene 版本歷史失敗 %s v%s：%s", scene.id, scene.version, exc)
+
+
 def save_scene_definition(payload: dict, scene_id: Optional[str] = None, expected_version: int | None = None) -> Scene:
     ensure_metadata_write_enabled("scene_definition")
     if not isinstance(payload, dict):
@@ -174,7 +186,9 @@ def load_scene_definition(scene_id: str, version: int | None = None) -> Scene:
         raw = json.load(fp)
     raw.setdefault("id", scene_id)
     raw["id"] = _sanitize_scene_id(raw["id"])
-    return Scene.model_validate(raw)
+    scene = Scene.model_validate(raw)
+    _maybe_backfill_scene_history(scene)
+    return scene
 
 
 def delete_scene_definition(scene_id: str) -> None:

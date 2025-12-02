@@ -1,10 +1,10 @@
 {
   "id": "demo_dual_script",
-  "version": 2,
+  "version": 1,
   "status": "published",
   "created_at": "2025-12-02T03:36:59.680145Z",
-  "updated_at": "2025-12-02T03:37:08.243510Z",
-  "published_at": "2025-12-02T03:37:08.243333Z",
+  "updated_at": "2025-12-02T03:36:59.680145Z",
+  "published_at": null,
   "published_by": null,
   "title": "Scene 播放示範：兩段",
   "entries": [
