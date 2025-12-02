@@ -95,19 +95,21 @@ export default function ScriptsManager() {
           throw new Error("script id 必須提供在 JSON 內或輸入框");
         }
         const payload = { ...parsed, id: targetId };
-        if (mode === "update") {
-          await updateScript(targetId, payload, { resolve: false });
-        } else {
-          await createScript(payload, { resolve: false });
-        }
+        const saved =
+          mode === "update"
+            ? await updateScript(targetId, payload, { resolve: false })
+            : await createScript(payload, { resolve: false });
+        const savedScript = (saved as { script?: unknown }).script || saved;
         setScriptId(targetId);
+        setScriptJson(pretty(savedScript));
         setScriptMessage(`${mode === "update" ? "已更新" : "已建立"} script ${targetId}`);
+        await fetchScriptVersions(targetId);
         await refreshScripts();
       } catch (err) {
         setScriptMessage((err as Error)?.message || "儲存失敗");
       }
     },
-    [refreshScripts, scriptId, scriptJson],
+    [fetchScriptVersions, refreshScripts, scriptId, scriptJson],
   );
 
   const handleDeleteScript = useCallback(
