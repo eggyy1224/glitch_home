@@ -1,0 +1,25 @@
+{
+  "id": "new_scene",
+  "version": 1,
+  "status": "published",
+  "created_at": "2025-12-02T05:05:40.729596Z",
+  "updated_at": "2025-12-02T05:05:40.729596Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "範例 Scene",
+  "targets": {
+    "desktop": "desktop/desktop_slide_pair_custom",
+    "desktop2": "desktop2/single_offspring_20251006_203253_712"
+  },
+  "audio_mix": {
+    "left": 1.0,
+    "right": 0.3,
+    "mode": "left-dominant",
+    "muted": null
+  },
+  "tags": [
+    "demo"
+  ],
+  "description": "",
+  "notes": ""
+}

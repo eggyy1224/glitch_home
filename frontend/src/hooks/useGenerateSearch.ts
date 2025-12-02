@@ -119,6 +119,8 @@ export default function useGenerateSearch({ imagesBase = IMAGES_BASE, onError, a
       if ((err as Error)?.name === "AbortError") {
         return;
       }
+      setSearchResults([]);
+      setDisplayMode("all");
       notifyError((err as Error)?.message || "搜尋出錯");
     } finally {
       setSearching(false);
