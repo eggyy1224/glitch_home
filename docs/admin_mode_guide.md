@@ -1,12 +1,17 @@
 # Admin 模式操作指南（Snapshot / Timeline / Episode / 排程）
 
-> 本指南給後續 agent 迅速上手 Admin Panel。介面位於前端 `AdminPanel.jsx`，分頁包含 Snapshot 管理、Timeline 管理、Episode 管理、Timeline/Episode Editor、狀態/排程。後端 API 走 `frontend/src/api.js`。
+> 本指南給後續 agent 迅速上手 Admin Panel。介面位於前端 `AdminPanel.jsx`，頂部有三個分頁：
+> - **管理**：Snapshot / Timeline / Episode / Scene / Script 五個子分頁。
+> - **Editor**：Timeline / Episode 雙向同步編輯器。
+> - **狀態 / 排程**：client 心跳＋ queue 管理。
+> 後端 API 走 `frontend/src/api.js`。
 
 ## 0. 進入條件與通用行為
 - Base URL：`http://localhost:5173?admin_mode=true`，Admin 模式會顯示頂部五個分頁。
 - `defaultClientId`：若 URL 帶 `client` 則沿用，否則預設 `desktop`，會套用到預設 JSON 與某些篩選。
 - tab 切換僅影響顯示；已載入的分頁會保留狀態（visitedTabs）。
 - 所有 JSON 區塊皆為即時編輯；送出時由對應 API 驗證。錯誤訊息會顯示在分頁下方的 status 行。
+- 讀寫權限：APP_MODE 禁寫時頂部會顯示唯讀警告，Scene/Script 播放若勾選 `allowDraft` 也會額外檢查寫入權限。
 
 ## 1. Snapshot 管理（單一 client 的 iframe 配置）
 - 主要操作：
@@ -43,7 +48,26 @@
   - Episode track 至少一條；每條要有 `timelineId`，`targetClientId` 可空（沿用 timeline 預設 client）。
   - 播放時會為每條 track 發出獨立的 `timeline_control`。
 
-## 4. Timeline/Episode Editor（表單 + JSON 雙向同步）
+## 4. Scene 管理（多 client snapshot 播放）
+- 主要操作：
+  - 「重新載入列表」抓取所有 scene；`載入` 可帶版本號（輸入框 `版本`）。
+  - 建立/更新：JSON 區與輸入框的 id/版本會一起送出，未填 id 會報錯；更新時可帶 `expectedVersion` 做樂觀鎖。
+  - 複製：載入後填 new id 按「複製 scene」。
+  - 刪除：列表上的 `刪除` 直接移除檔案（無二次確認）。
+  - 播放：按「播放 scene」可選 `allow draft`、指定版本，播放會逐 client 廣播 snapshot，若 JSON 帶 `audio_mix` 會同步發出左右聲道/靜音設定。
+  - 版本：右側版本列表可點按自動填入 `版本` 欄；「回滾」需填版本並可帶 publish_as；「發布」會將當前 JSON 視為下一版並寫入 `published_at/by`。
+- JSON 預設：`defaultScenePayload(defaultClient)` 會為預設 client 產生一組 targets 映射，編輯時可用 prettify 按鈕重新縮排。
+
+## 5. Script 管理（複合事件腳本）
+- 主要操作：
+  - 列表：`重新載入列表` 會抓取所有腳本；`載入` 可帶版本（輸入框 `版本`），`resolve=false` 會停用引用展開以便手動調整。
+  - 建立/更新：與 Scene 類似，id 必填，更新可帶 `expectedVersion`。JSON 內 entries 可混用 snapshot/timeline/episode/scene 事件。
+  - 複製/刪除：同 Scene；複製需先載入 source 並填 new id。
+  - 播放：按「播放 script」會排程 entries，勾選 `allow draft` 可測試草稿；可帶版本號播放舊版。播放中可按「停止 script」強制中止 queue。
+  - 版本：列表左側會顯示歷史版本，`回滾` 支援 publish_as 與 expectedVersion；`發布` 將當前 JSON 標記為 published 並寫入時間戳。
+- JSON 模板：`defaultScriptPayload(defaultClient)` 會放入示範 entries（播放 snapshot/timeline/episode），方便快速修改。
+
+## 6. Timeline/Episode Editor（表單 + JSON 雙向同步）
 - 模式切換：上方 `Timeline 模式` / `Episode 模式` 按鈕會改變左側表單與右側驗證。選中時按鈕用 activeTabButtonStyle。
 - 列表區：依模式顯示 timeline 或 episode 列表，`重新載入` 會走 API；點「載入」將資料帶入表單並同步 JSON。
 - 表單/JSON 同步：
@@ -63,7 +87,7 @@
   - Episode ID 輸入框位於共用區；`播放 Episode（含覆寫）` 會附上覆寫 map。
 - 驗證：右側顯示 Timeline/Episode 的驗證錯誤（必填 id、step/timeline/track 條件）；通過時顯示「未發現錯誤」。
 
-## 5. 狀態 / 排程（client 線上狀態與 queue 操作）
+## 7. 狀態 / 排程（client 線上狀態與 queue 操作）
 - 客戶端列表：顯示 heartbeats、queue_size、執行中項目、錯誤；可切換「只看在線」。
 - 選取 client 後右側顯示 queue 表格，列上可「取消 / 插隊 / 延後 / +30s」；類型為 timeline/episode 的列可強制「停止播放」。
 - 新增佇列任務：
@@ -73,13 +97,13 @@
   - `clientOverride` 可覆寫目標 client，預設使用當前選取或 defaultClient。
 - 手動刷新：客戶端區域有「刷新狀態」，佇列表有「刷新佇列」。
 
-## 6. 常見作業流程
+## 8. 常見作業流程
 - 建 Timeline：先在 Snapshot 分頁為目標 client 建立/播放快照 → Timeline 分頁填模板、替換 step 的 snapshot 名稱 → 儲存 → 以 iframe 預覽確認。
 - 建 Episode：確定各 Timeline 已存在 → Episode 分頁載入模板，填入 timelineId/targetClientId → 儲存後可用 target map 測試播放。
 - 快速播放現有檔：Timeline/Episode Editor 載入 → 若只想播，直接按播放（不必改 JSON）。
 - queue 播放：在狀態/排程選 client，Type 選 timeline/episode 填 target id 後加入佇列，worker 會依順序執行。
 
-## 7. Debug / 注意事項
+## 9. Debug / 注意事項
 - resolve 失敗通常是 snapshot 或 timeline id 拼錯、client 不符，後端會回 404 或驗證錯；前端訊息列會顯示。
 - 播放沒反應時確認：WS 連線、client 是否 offline、queue 是否被佔、command_id_prefix 是否需要避免去重。
 - JSON 模板位置：`frontend/src/adminPanelUtils.js`（defaultTimelinePayload/defaultEpisodePayload/minimalConfigPayload）。

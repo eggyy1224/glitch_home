@@ -1,7 +1,7 @@
 # 圖像系譜學系統 - API 快速上手指南（For AI Agents）
 
-> **版本**: 1.1  
-> **最後更新**: 2025-11-27  
+> **版本**: 1.2
+> **最後更新**: 2025-12-02
 > **目標讀者**: AI Assistant / Agent
 
 ---
@@ -1055,6 +1055,64 @@ curl -X POST http://localhost:8000/api/episodes/ep_opening/play \
 
 回傳的 `tracks[]` 會列出實際發送的 target_client_id 與 options（autoPlay/loop/forceIframeMode/startStep/startAt/commandId），以便調試。
 
+### Scene：一次廣播多個 snapshot 到指定 client
+
+Scene 是 client → snapshotRef 的映射，內建版本歷史，可快速把多台機器切換到指定畫面：
+
+```bash
+# 建立或覆寫 scene（resolve=false 可略過引用展開）
+curl -X POST http://localhost:8000/api/scenes?resolve=false \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "dual_screen_demo",
+    "title": "雙螢幕開場",
+    "targets": {
+      "desktop": "desktop/opening_stage1",
+      "mobile": "mobile/opening_stage1"
+    },
+    "audio_mix": {"left": 0.8, "right": 0.2}
+  }'
+
+# 播放指定版本（未發布需帶 allow_draft=true）
+curl -X POST "http://localhost:8000/api/scenes/dual_screen_demo/play?version=2" \
+  -H "Content-Type: application/json"
+
+# 發布 / 回滾
+curl -X POST "http://localhost:8000/api/scenes/dual_screen_demo/publish"
+curl -X POST "http://localhost:8000/api/scenes/dual_screen_demo/rollback" \
+  -H "Content-Type: application/json" -d '{"version":1}'
+```
+
+檔案會寫在 `backend/metadata/scenes/*.json`，同時保留 `backend/metadata/history/scenes/<id>/version-xxxx.json` 便於回滾。【F:backend/app/services/scene.py†L28-L192】
+
+### Script：排程 snapshot / timeline / episode / scene
+
+Script 允許把多種事件串成腳本並可隨時停止：
+
+```bash
+curl -X POST http://localhost:8000/api/scripts?resolve=false \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "floor_show",
+    "entries": [
+      {"type": "snapshot", "target_id": "desktop/opening", "target_client_id": "desktop"},
+      {"type": "timeline", "target_id": "desktop2_opening_demo"},
+      {"type": "scene", "target_id": "dual_screen_demo", "delay": 10}
+    ]
+  }'
+
+# 播放 / 停止（可指定版本、帶 allow_draft）
+curl -X POST "http://localhost:8000/api/scripts/floor_show/play?allow_draft=true"
+curl -X POST "http://localhost:8000/api/scripts/floor_show/stop"
+
+# 發布 / 回滾
+curl -X POST "http://localhost:8000/api/scripts/floor_show/publish"
+curl -X POST "http://localhost:8000/api/scripts/floor_show/rollback" \
+  -H "Content-Type: application/json" -d '{"version":2}'
+```
+
+Script 也有版本歷史（`backend/metadata/history/scripts/`），播放 API 會先解析引用並回報排入 queue 的 entry 數。【F:backend/app/api/script.py†L52-L192】
+
 ### Admin Panel：Timeline/Episode Editor
 
 - 位置：前端 Admin Panel 新分頁「Timeline/Episode Editor」，支援同時編輯 timeline 與 episode。
@@ -1204,4 +1262,4 @@ Timeline player 會依序排程這些動作，呼叫新的 `/api/video-control`�
 
 ---
 
-**本指南版本**: v1.0 (2025-10-24)
+**本指南版本**: v1.2 (2025-02-10)

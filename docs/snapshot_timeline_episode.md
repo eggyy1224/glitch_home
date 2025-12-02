@@ -58,12 +58,15 @@
 3) **播放**  
    - 播放 Timeline：後端廣播 `timeline_control` WS 事件給目標 client，前端 `useIframeTimelinePlayer` 依 step.duration 依序套用 Snapshot。  
    - 播放 Episode：後端對每條 track 各發一條 `timeline_control`，client 依自己的指令播放；若提供 target map，會在這次播放改送指定 client。  
-4) **停止與佇列**  
-   - `POST /api/iframe-timelines/stop` 可結束 client 端 timeline 播放。  
+4) **停止與佇列**
+   - `POST /api/iframe-timelines/stop` 可結束 client 端 timeline 播放。
    - 也可用 `/api/clients/queue` 把 snapshot/timeline/episode 任務排進特定 client 的 queue（在 `client_queue` 服務裡執行）。
-5) **校驗與除錯小抄**  
-   - `resolve=true` 回傳會補上 Snapshot 內容，若找不到檔案或 client 對不上會得到 404 / 驗證錯；Admin Editor 右側會同步顯示驗證錯誤。  
-   - 首段 Snapshot 預覽：前端會抓 timeline 的第一個有 snapshot 的 step，呼叫 `/api/iframe-config/snapshots/{client}/{name}`；失敗訊息會顯示在預覽區。  
+5) **Scene / Script 補充**
+   - Scene：更簡化的「client → snapshot」映射，儲存在 `metadata/scenes/` 並保留歷史版本；播放時逐 client 廣播還原 snapshot，可選擇 `audio_mix` 控制左右聲道。【F:backend/app/services/scene.py†L28-L192】【F:backend/app/services/scene.py†L286-L315】
+   - Script：以 entries 串接 snapshot/timeline/episode/scene，並可停止執行中的腳本；版本檔與歷史保存在 `metadata/scripts/` 下。【F:backend/app/api/script.py†L52-L192】
+6) **校驗與除錯小抄**
+   - `resolve=true` 回傳會補上 Snapshot 內容，若找不到檔案或 client 對不上會得到 404 / 驗證錯；Admin Editor 右側會同步顯示驗證錯誤。
+   - 首段 Snapshot 預覽：前端會抓 timeline 的第一個有 snapshot 的 step，呼叫 `/api/iframe-config/snapshots/{client}/{name}`；失敗訊息會顯示在預覽區。
    - 播放沒反應：確認 WS 是否連線、client queue 是否被佔用、指令是否被去重（可在 Episode 播放時提供 command_id_prefix）。
 
 ## 5. 小抄：常見欄位與預設
