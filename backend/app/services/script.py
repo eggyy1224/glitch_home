@@ -325,11 +325,11 @@ async def _apply_audio_mix(
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
-async def _apply_script_entry(entry: ResolvedScriptEntry, global_audio_override: Optional[AudioMix]) -> None:
+async def _apply_script_entry(entry: ResolvedScriptEntry, global_audio_override: Optional[AudioMix], *, allow_draft: bool) -> None:
     audio_mix = entry.entry.audio_override or global_audio_override
     if entry.scene:
         scene_model = entry.scene.scene
-        await play_scene(scene_model, audio_override=audio_mix)
+        await play_scene(scene_model, audio_override=audio_mix, allow_draft=allow_draft)
         return
 
     targets = [target for target in (entry.left, entry.right) if target is not None]
@@ -339,10 +339,10 @@ async def _apply_script_entry(entry: ResolvedScriptEntry, global_audio_override:
         await _apply_audio_mix(entry.left, entry.right, audio_mix)
 
 
-async def _run_script(resolved: ResolvedScript, audio_override: Optional[AudioMix]) -> None:
+async def _run_script(resolved: ResolvedScript, audio_override: Optional[AudioMix], *, allow_draft: bool) -> None:
     try:
         for entry in resolved.entries:
-            await _apply_script_entry(entry, audio_override)
+            await _apply_script_entry(entry, audio_override, allow_draft=allow_draft)
             await asyncio.sleep(entry.duration)
     except asyncio.CancelledError:
         raise
@@ -357,7 +357,7 @@ async def play_script(script: Script, audio_override: Optional[AudioMix] = None,
     existing = _running_scripts.get(script.id)
     if existing:
         existing.cancel()
-    task = asyncio.create_task(_run_script(resolved, audio_override))
+    task = asyncio.create_task(_run_script(resolved, audio_override, allow_draft=allow_draft))
     _running_scripts[script.id] = task
 
     def _cleanup(_):

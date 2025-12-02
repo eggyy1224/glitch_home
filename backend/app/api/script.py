@@ -82,7 +82,9 @@ def api_create_script(
     try:
         saved = save_script_definition(script.model_dump(mode="json", by_alias=True), expected_version=expected_version)
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        message = str(exc)
+        status_code = 409 if "版本不符" in message else 400
+        raise HTTPException(status_code=status_code, detail=message) from exc
     if not resolve:
         return {"script": _raw_script_payload(saved)}
     return {"script": _resolve_script_or_error(saved).to_payload()}
@@ -107,7 +109,9 @@ def api_update_script(
             expected_version=expected_version,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        message = str(exc)
+        status_code = 409 if "版本不符" in message else 400
+        raise HTTPException(status_code=status_code, detail=message) from exc
     if not resolve:
         return {"script": _raw_script_payload(saved)}
     return {"script": _resolve_script_or_error(saved).to_payload()}

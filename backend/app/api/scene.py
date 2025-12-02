@@ -81,7 +81,9 @@ def api_create_scene(
     try:
         saved = save_scene_definition(scene.model_dump(mode="json", by_alias=True), expected_version=expected_version)
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        message = str(exc)
+        status_code = 409 if "版本不符" in message else 400
+        raise HTTPException(status_code=status_code, detail=message) from exc
     if not resolve:
         return {"scene": _raw_scene_payload(saved)}
     return {"scene": _resolve_scene_or_error(saved).to_payload()}
@@ -106,7 +108,9 @@ def api_update_scene(
             expected_version=expected_version,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        message = str(exc)
+        status_code = 409 if "版本不符" in message else 400
+        raise HTTPException(status_code=status_code, detail=message) from exc
     if not resolve:
         return {"scene": _raw_scene_payload(saved)}
     return {"scene": _resolve_scene_or_error(saved).to_payload()}
