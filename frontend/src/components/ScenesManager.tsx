@@ -9,6 +9,7 @@ import {
   playScene,
   rollbackScene,
   updateScene,
+  listSceneVersions,
 } from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, labelStyle } from "../AdminPanelStyles";
@@ -26,6 +27,9 @@ export default function ScenesManager() {
   const [allowDraftPlay, setAllowDraftPlay] = useState(false);
   const [loadVersion, setLoadVersion] = useState("");
   const [rollbackVersion, setRollbackVersion] = useState("");
+  const [sceneVersions, setSceneVersions] = useState<
+    Array<{ version?: number; status?: string; updated_at?: string; published_at?: string; published_by?: string }>
+  >([]);
   const parsedScene = useMemo(() => {
     try {
       return JSON.parse(sceneJson) as Partial<Scene>;
@@ -44,6 +48,24 @@ export default function ScenesManager() {
     }
   }, []);
 
+  const fetchSceneVersions = useCallback(async (id: string) => {
+    try {
+      const data = await listSceneVersions(id);
+      const versions = Array.isArray((data as { versions?: unknown }).versions)
+        ? ((data as { versions?: unknown[] }).versions as Array<{
+            version?: number;
+            status?: string;
+            updated_at?: string;
+            published_at?: string;
+            published_by?: string;
+          }>)
+        : [];
+      setSceneVersions(versions);
+    } catch (err) {
+      setSceneMessage((err as Error)?.message || "載入版本列表失敗");
+    }
+  }, []);
+
   const handleLoadScene = useCallback(async (id: string, opts?: { ignoreVersion?: boolean }) => {
     try {
       const version = parseInt(loadVersion, 10);
@@ -56,10 +78,11 @@ export default function ScenesManager() {
       setSceneId(id);
       setSceneJson(pretty((data as { scene?: unknown }).scene || data));
       setSceneMessage(`已載入 scene ${id}${versionOpt.version ? ` (v${versionOpt.version})` : ""}`);
+      await fetchSceneVersions(id);
     } catch (err) {
       setSceneMessage((err as Error)?.message || "載入 scene 失敗");
     }
-  }, [loadVersion]);
+  }, [fetchSceneVersions, loadVersion]);
 
   const handleSaveScene = useCallback(
     async (mode: "create" | "update") => {
@@ -294,10 +317,42 @@ export default function ScenesManager() {
                 載入指定版
               </button>
             </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+              <select
+                value={loadVersion}
+                onChange={(e) => setLoadVersion(e.target.value)}
+                data-ai-field="scene.version-select"
+                style={{ minWidth: 140 }}
+              >
+                <option value="">最新</option>
+                {sceneVersions
+                  .filter((v) => typeof v.version === "number")
+                  .map((v) => (
+                    <option key={`v-${v.version}`} value={String(v.version ?? "")}>
+                      v{v.version} {v.status ? `(${v.status})` : ""}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  if (sceneId) {
+                    void fetchSceneVersions(sceneId);
+                  }
+                }}
+                data-ai-action="scene.reload-versions"
+              >
+                重新載入版本列表
+              </button>
+            </div>
             <div style={{ marginTop: 6, fontSize: 12, color: "#9be7ff" }}>
               目前版本：{parsedScene?.version ?? "?"} / 狀態：{parsedScene?.status ?? "?"} / published_at：
               {(parsedScene as { published_at?: string; publishedAt?: string })?.published_at ||
                 (parsedScene as { publishedAt?: string })?.publishedAt ||
+                "n/a"}
+              {" / published_by："}
+              {(parsedScene as { published_by?: string; publishedBy?: string })?.published_by ||
+                (parsedScene as { publishedBy?: string })?.publishedBy ||
                 "n/a"}
             </div>
           </div>

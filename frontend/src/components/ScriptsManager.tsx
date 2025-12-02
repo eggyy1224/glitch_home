@@ -10,6 +10,7 @@ import {
   rollbackScript,
   stopScript,
   updateScript,
+  listScriptVersions,
 } from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
 import { boxStyle, labelStyle } from "../AdminPanelStyles";
@@ -27,6 +28,9 @@ export default function ScriptsManager() {
   const [allowDraftPlay, setAllowDraftPlay] = useState(false);
   const [loadVersion, setLoadVersion] = useState("");
   const [rollbackVersion, setRollbackVersion] = useState("");
+  const [scriptVersions, setScriptVersions] = useState<
+    Array<{ version?: number; status?: string; updated_at?: string; published_at?: string; published_by?: string }>
+  >([]);
   const parsedScript = useMemo(() => {
     try {
       return JSON.parse(scriptJson) as Partial<Script>;
@@ -45,6 +49,24 @@ export default function ScriptsManager() {
     }
   }, []);
 
+  const fetchScriptVersions = useCallback(async (id: string) => {
+    try {
+      const data = await listScriptVersions(id);
+      const versions = Array.isArray((data as { versions?: unknown }).versions)
+        ? ((data as { versions?: unknown[] }).versions as Array<{
+            version?: number;
+            status?: string;
+            updated_at?: string;
+            published_at?: string;
+            published_by?: string;
+          }>)
+        : [];
+      setScriptVersions(versions);
+    } catch (err) {
+      setScriptMessage((err as Error)?.message || "載入版本列表失敗");
+    }
+  }, []);
+
   const handleLoadScript = useCallback(async (id: string, opts?: { ignoreVersion?: boolean }) => {
     try {
       const version = parseInt(loadVersion, 10);
@@ -57,10 +79,11 @@ export default function ScriptsManager() {
       setScriptId(id);
       setScriptJson(pretty((data as { script?: unknown }).script || data));
       setScriptMessage(`已載入 script ${id}${versionOpt.version ? ` (v${versionOpt.version})` : ""}`);
+      await fetchScriptVersions(id);
     } catch (err) {
       setScriptMessage((err as Error)?.message || "載入 script 失敗");
     }
-  }, [loadVersion]);
+  }, [fetchScriptVersions, loadVersion]);
 
   const handleSaveScript = useCallback(
     async (mode: "create" | "update") => {
@@ -308,10 +331,42 @@ export default function ScriptsManager() {
                 載入指定版
               </button>
             </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+              <select
+                value={loadVersion}
+                onChange={(e) => setLoadVersion(e.target.value)}
+                data-ai-field="script.version-select"
+                style={{ minWidth: 140 }}
+              >
+                <option value="">最新</option>
+                {scriptVersions
+                  .filter((v) => typeof v.version === "number")
+                  .map((v) => (
+                    <option key={`v-${v.version}`} value={String(v.version ?? "")}>
+                      v{v.version} {v.status ? `(${v.status})` : ""}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  if (scriptId) {
+                    void fetchScriptVersions(scriptId);
+                  }
+                }}
+                data-ai-action="script.reload-versions"
+              >
+                重新載入版本列表
+              </button>
+            </div>
             <div style={{ marginTop: 6, fontSize: 12, color: "#9be7ff" }}>
               目前版本：{parsedScript?.version ?? "?"} / 狀態：{parsedScript?.status ?? "?"} / published_at：
               {(parsedScript as { published_at?: string; publishedAt?: string })?.published_at ||
                 (parsedScript as { publishedAt?: string })?.publishedAt ||
+                "n/a"}
+              {" / published_by："}
+              {(parsedScript as { published_by?: string; publishedBy?: string })?.published_by ||
+                (parsedScript as { publishedBy?: string })?.publishedBy ||
                 "n/a"}
             </div>
           </div>
@@ -374,13 +429,6 @@ export default function ScriptsManager() {
             />
             <button type="button" onClick={handleRollbackScript} data-ai-action="script.rollback">
               回滾
-            </button>
-            <button
-              type="button"
-              onClick={() => setScriptMessage("TODO: diff/preview 尚未實作")}
-              data-ai-action="script.diff-preview"
-            >
-              與最新版 diff/預覽
             </button>
           </div>
           <div style={{ marginTop: 4, fontSize: 12, color: "#ffed86" }}>發布/回滾需 metadata_write 權限</div>
