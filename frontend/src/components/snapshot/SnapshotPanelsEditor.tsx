@@ -250,14 +250,18 @@ export default function SnapshotPanelsEditor({
     onPanelChange(index, { url: fallbackUrl, image: assetValue || "" });
   };
 
-  const handleImageChange = (index: number, value: string, panel?: PanelConfig) => {
+  const handleImageChange = (index: number, value: string, panel?: PanelConfig, modeOverride?: PanelMode | "") => {
     const { mode } = getPanelModeAndAsset(panel);
-    const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
+    const resolvedMode = modeOverride || mode;
+    const preset = resolvedMode ? MODE_PRESETS[resolvedMode as PanelMode] : undefined;
     const isImageMode = preset?.assetKey === "img";
-    const resolvedMode = isImageMode ? mode : value ? "static_mode" : null;
-    const patch: Partial<PanelConfig> = { image: value || "", params: mergePresetMode(panel?.params, mode) };
+    const resolvedUrlMode = isImageMode ? resolvedMode : value ? "static_mode" : null;
+    const patch: Partial<PanelConfig> = { image: value || "" };
     if (resolvedMode) {
-      patch.url = buildUrlFromPreset(resolvedMode as PanelMode, value);
+      patch.params = mergePresetMode(panel?.params, resolvedMode);
+    }
+    if (resolvedUrlMode) {
+      patch.url = buildUrlFromPreset(resolvedUrlMode as PanelMode, value);
     }
     onPanelChange(index, patch);
   };
@@ -280,7 +284,7 @@ export default function SnapshotPanelsEditor({
         : "static_mode";
     handleModeSelect(index, nextMode as PanelMode, asset, panel);
     if (!forceVideo) {
-      handleImageChange(index, asset, panel);
+      handleImageChange(index, asset, panel, nextMode as PanelMode);
     }
     if (typeof onSelectPanel === "function") {
       onSelectPanel(index);

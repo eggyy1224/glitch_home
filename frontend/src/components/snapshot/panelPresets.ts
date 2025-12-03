@@ -41,22 +41,23 @@ export const mergePresetMode = (params: Record<string, unknown> | undefined, mod
 
 export const getPanelModeAndAsset = (panel?: SnapshotPanel | null) => {
   const presetModeHint = normalizeMode(panel?.params ? (panel.params as Record<string, unknown>)[PRESET_MODE_KEY] : undefined);
-  let mode: PanelMode | "" = presetModeHint;
+  let mode: PanelMode | "" = "";
   let asset = panel?.image || "";
   const base = typeof window !== "undefined" ? window.location.origin : "http://localhost";
   const presetEntries = Object.entries(MODE_PRESETS) as Array<[PanelMode, ModePreset]>;
   const defaultModeKey = presetEntries.find(([, preset]) => preset.flagKey === null)?.[0];
+  let urlParams: URLSearchParams | null = null;
   if (panel?.url) {
     try {
       const parsed = new URL(panel.url, base);
-      const params = parsed.searchParams;
-      const flagged = presetEntries.find(([, preset]) => preset.flagKey && truthy(params.get(preset.flagKey)));
+      urlParams = parsed.searchParams;
+      const flagged = presetEntries.find(([, preset]) => preset.flagKey && truthy(urlParams.get(preset.flagKey)));
       if (flagged) {
         const [matchedMode, preset] = flagged;
         mode = matchedMode;
-        asset = params.get(preset.assetKey) || asset || params.get("img") || "";
+        asset = urlParams.get(preset.assetKey) || asset || urlParams.get("img") || "";
       } else {
-        const imgParam = params.get("img");
+        const imgParam = urlParams.get("img");
         if (imgParam) {
           asset = imgParam;
           if (defaultModeKey) {
@@ -66,6 +67,15 @@ export const getPanelModeAndAsset = (panel?: SnapshotPanel | null) => {
       }
     } catch (err) {
       // ignore parse errors and fall back to manual inputs
+    }
+  }
+  if (!mode && presetModeHint) {
+    const hintPreset = MODE_PRESETS[presetModeHint];
+    const flagKey = hintPreset?.flagKey;
+    const urlIsEmpty = !panel?.url || panel.url === "/" || panel.url === "";
+    const urlHasHintFlag = flagKey && urlParams ? truthy(urlParams.get(flagKey)) : false;
+    if (urlIsEmpty || urlHasHintFlag || (presetModeHint === defaultModeKey && urlParams && urlParams.has("img"))) {
+      mode = presetModeHint;
     }
   }
   if (!mode && panel?.image) {
