@@ -1,0 +1,17 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "offspring_20250923_172041_821.png",
+      "url": "/?img=offspring_20250923_172041_821.png",
+      "params": {},
+      "ratio": 1.0,
+      "label": "single offspring",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
