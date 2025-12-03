@@ -16,8 +16,19 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, 
   const [sizeClass, setSizeClass] = useState<"large" | "medium" | "small" | "xsmall">("large");
   const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]) as Record<string, React.CSSProperties>;
 
-  const { current, items, index, loading, error, showCaption, playbackSpeed, isPaused, setPlaybackSpeed, togglePause } =
-    useSlidePlayback({ anchorImage: anchorImage ?? null, intervalMs, imagesBase });
+  const {
+    current,
+    items,
+    index,
+    loading,
+    error,
+    showCaption,
+    playbackSpeed,
+    isPaused,
+    setPlaybackSpeed,
+    togglePause,
+    handleImageError,
+  } = useSlidePlayback({ anchorImage: anchorImage ?? null, intervalMs, imagesBase });
 
   useSlideScreenshot({ rootRef, onCaptureReady: onCaptureReady ?? undefined });
 
@@ -55,7 +66,13 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, 
       {current ? (
         <>
           <div style={styles.stage}>
-            <img key={current.cleanId} src={imageUrl || undefined} alt={current.cleanId} style={styles.image} />
+            <img
+              key={current.cleanId}
+              src={imageUrl || undefined}
+              alt={current.cleanId}
+              style={styles.image}
+              onError={() => handleImageError(current.cleanId)}
+            />
           </div>
           {showCaption && (
             <div style={styles.caption}>

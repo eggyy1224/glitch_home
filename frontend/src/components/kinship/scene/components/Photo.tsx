@@ -1,9 +1,62 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { Float, useTexture } from "@react-three/drei";
+import { Float } from "@react-three/drei";
 
 import { clamp01 } from "../../utils/math";
+
+const MAX_CONCURRENT_TEXTURES = 6;
+const TEXTURE_CACHE = new Map<string, THREE.Texture>();
+const FAILED_TEXTURES = new Set<string>();
+const LOAD_QUEUE: Array<{
+  url: string;
+  resolve: (tex: THREE.Texture | null) => void;
+  crossOrigin: string | null;
+}> = [];
+let activeLoads = 0;
+
+const dequeueLoad = () => {
+  if (activeLoads >= MAX_CONCURRENT_TEXTURES) return;
+  const next = LOAD_QUEUE.shift();
+  if (!next) return;
+  activeLoads += 1;
+
+  const loader = new THREE.TextureLoader();
+  if (next.crossOrigin) {
+    loader.setCrossOrigin(next.crossOrigin);
+  }
+
+  loader.load(
+    next.url,
+    (tex) => {
+      activeLoads = Math.max(0, activeLoads - 1);
+      TEXTURE_CACHE.set(next.url, tex);
+      next.resolve(tex);
+      dequeueLoad();
+    },
+    undefined,
+    () => {
+      activeLoads = Math.max(0, activeLoads - 1);
+      FAILED_TEXTURES.add(next.url);
+      next.resolve(null);
+      dequeueLoad();
+    },
+  );
+};
+
+const loadTextureSafely = (url: string, crossOrigin: string | null): Promise<THREE.Texture | null> => {
+  if (TEXTURE_CACHE.has(url)) {
+    return Promise.resolve(TEXTURE_CACHE.get(url) || null);
+  }
+  if (FAILED_TEXTURES.has(url)) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise<THREE.Texture | null>((resolve) => {
+    LOAD_QUEUE.push({ url, resolve, crossOrigin });
+    dequeueLoad();
+  });
+};
 
 interface PhotoProps {
   url: string;
@@ -22,7 +75,7 @@ export default function Photo({
   externalRef = null,
   getProgress = null,
 }: PhotoProps) {
-  const tex = useTexture(url);
+  const [tex, setTex] = useState<THREE.Texture | null>(TEXTURE_CACHE.get(url) || null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const scaleRef = useRef<[number, number, number]>([size, size, 1]);
   const phaseRef = useRef(Math.random() * Math.PI * 2);
@@ -31,12 +84,28 @@ export default function Photo({
   const progressFnRef = useRef<() => number>(() => 1);
 
   useEffect(() => {
-    if (tex.image) {
-      const aspect = (tex.image.width || 1) / (tex.image.height || 1);
+    const cached = TEXTURE_CACHE.get(url) || null;
+    setTex(cached);
+    if (cached) return;
+
+    let cancelled = false;
+    loadTextureSafely(url, "anonymous").then((texture) => {
+      if (cancelled) return;
+      setTex(texture);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  useEffect(() => {
+    const image = tex?.image as { width?: number; height?: number } | undefined;
+    if (image && image.width && image.height) {
+      const aspect = (image.width || 1) / (image.height || 1);
       scaleRef.current = [size, size / aspect, 1];
       if (meshRef.current) meshRef.current.scale.set(...scaleRef.current);
     }
-  }, [tex.image, size]);
+  }, [tex, size]);
 
   useEffect(() => {
     if (typeof getProgress === "function") {
@@ -50,7 +119,7 @@ export default function Photo({
 
   useFrame(({ clock }) => {
     const node = meshRef.current;
-    if (!node) return;
+    if (!node || !tex) return;
     const progress = clamp01(progressFnRef.current?.() ?? 1);
     const t = clock.getElapsedTime();
     const [baseX, baseY, baseZ] = scaleRef.current;
@@ -59,6 +128,8 @@ export default function Photo({
     node.scale.set(baseX * scaled, baseY * scaled, baseZ * scaled);
     node.visible = progress > 0.001;
   });
+
+  if (!tex) return null;
 
   return (
     <Float speed={1} rotationIntensity={0.25} floatIntensity={0.6}>

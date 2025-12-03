@@ -47,9 +47,17 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
   const [playbackRate, setPlaybackRate] = useState(DEFAULT_SPEED);
   const [needsUserAction, setNeedsUserAction] = useState(false);
   const autoUnmuteAttemptedRef = useRef(false);
+  const retryAttemptedRef = useRef(false);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const videoFileName = params.get("video");
+  const videoBase = useMemo(() => {
+    const envBase = import.meta?.env?.VITE_VIDEO_BASE as string | undefined;
+    const fromQuery = params.get("video_base") || envBase || "/videos/圖像系譜學Video/";
+    const trimmed = (fromQuery || "").trim();
+    if (!trimmed) return "/videos/圖像系譜學Video/";
+    return trimmed.endsWith("/") ? trimmed : `${trimmed}/`;
+  }, [params]);
   const autoUnmuteEnabled = useMemo(() => {
     const raw = params.get("auto_unmute");
     if (raw == null) return true;
@@ -74,7 +82,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     return !(text === "false" || text === "0");
   }, [params]);
 
-  const videoUrl = videoFileName ? `/videos/圖像系譜學Video/${videoFileName}` : null;
+  const videoUrl = videoFileName ? `${videoBase}${videoFileName}` : null;
 
   useEffect(() => {
     setVolumeLevel(initialVolume);
@@ -173,6 +181,30 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     [playbackRate],
   );
 
+  const handleRecoverVideo = useCallback(() => {
+    if (retryAttemptedRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
+    retryAttemptedRef.current = true;
+
+    const seekTo = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+    const restoreTime = () => {
+      if (!video) return;
+      try {
+        video.currentTime = seekTo;
+      } catch {
+        // ignore seek failure
+      }
+      video.removeEventListener("loadeddata", restoreTime);
+      video.removeEventListener("canplay", restoreTime);
+    };
+
+    video.addEventListener("loadeddata", restoreTime);
+    video.addEventListener("canplay", restoreTime);
+    video.load();
+    void video.play().catch(() => setNeedsUserAction(true));
+  }, []);
+
   useEffect(() => {
     if (!controlRef) return undefined;
     controlRef.current = {
@@ -214,6 +246,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
 
   useEffect(() => {
     autoUnmuteAttemptedRef.current = false;
+    retryAttemptedRef.current = false;
   }, [videoUrl, autoUnmuteEnabled]);
 
   useEffect(() => {
@@ -346,6 +379,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
           loop={loopEnabled}
           playsInline
           preload="auto"
+          onError={handleRecoverVideo}
           ref={videoRef}
         />
       ) : (

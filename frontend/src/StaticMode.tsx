@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ensureHtml2Canvas } from "./utils/html2canvasLoader";
 import "./StaticMode.css";
 
@@ -24,6 +24,7 @@ export interface StaticModeProps {
 
 export default function StaticMode({ imagesBase, imgId, onCaptureReady = null }: StaticModeProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const objectFit = (params.get("object_fit") || "contain") as React.CSSProperties["objectFit"];
@@ -38,6 +39,10 @@ export default function StaticMode({ imagesBase, imgId, onCaptureReady = null }:
   }, [imagesBase, queryImagesBase]);
 
   const imageUrl = imgId ? `${effectiveImagesBase}${imgId}` : null;
+
+  useEffect(() => {
+    setHasError(false);
+  }, [imageUrl]);
 
   useEffect(() => {
     if (typeof onCaptureReady !== "function") {
@@ -66,15 +71,17 @@ export default function StaticMode({ imagesBase, imgId, onCaptureReady = null }:
 
   return (
     <div ref={rootRef} className="static-mode-container">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={imgId ?? undefined}
-              className="static-mode-image"
-              style={{
-                objectFit: objectFit,
-                objectPosition: objectPosition,
-              }}
+      {imageUrl && !hasError ? (
+        <img
+          src={imageUrl}
+          alt={imgId ?? undefined}
+          className="static-mode-image"
+          style={{
+            objectFit: objectFit,
+            objectPosition: objectPosition,
+          }}
+          crossOrigin="anonymous"
+          onError={() => setHasError(true)}
         />
       ) : (
         <div className="static-mode-placeholder">請在網址加上 ?img=檔名</div>

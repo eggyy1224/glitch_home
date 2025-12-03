@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { searchImagesByImage, fetchKinship } from "../api";
 import {
   BATCH_SIZE,
@@ -114,6 +114,8 @@ export function useSlidePlayback({
   );
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
+  const failedSetRef = useRef<Set<string>>(new Set());
+  const latestItemsRef = useRef<SlideItem[]>([]);
 
   const toggleCaption = useCallback(() => setShowCaption((prev) => !prev), []);
   const togglePause = useCallback(() => setIsPaused((prev) => !prev), []);
@@ -157,14 +159,19 @@ export function useSlidePlayback({
           if (mode === SlideSourceMode.KINSHIP) {
             const data = await fetchKinshipData(imageId, -1);
             if (cancelled || currentGeneration !== generation) return;
-            setItems(buildKinshipResults(data, imageId));
+            const nextItems = buildKinshipResults(data, imageId).filter(
+              (entry) => !failedSetRef.current.has(entry.cleanId),
+            );
+            setItems(nextItems);
             setIndex(0);
           } else {
             const searchPath = `backend/offspring_images/${imageId}`;
             const data = await searchByImage(searchPath, BATCH_SIZE);
             if (cancelled || currentGeneration !== generation) return;
             const fallbackClean = cleanId(imageId) || (imageId ?? "");
-            const list = buildVectorResults(data?.results, fallbackClean);
+            const list = buildVectorResults(data?.results, fallbackClean).filter(
+              (entry) => !failedSetRef.current.has(entry.cleanId),
+            );
             setItems(list.length ? list : [{ id: imageId, cleanId: fallbackClean, distance: null }]);
             setIndex(0);
           }
@@ -222,14 +229,39 @@ export function useSlidePlayback({
   }, [items, intervalMs, playbackSpeed, isPaused]);
 
   useEffect(() => {
+    latestItemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
     if (items.length <= 1) return;
-    const nextIndex = (index + 1) % items.length;
-    const nextItem = items[nextIndex];
-    if (nextItem?.cleanId) {
+    const aheadCount = Math.min(3, items.length - 1);
+    for (let step = 1; step <= aheadCount; step += 1) {
+      const nextItem = items[(index + step) % items.length];
+      if (!nextItem || failedSetRef.current.has(nextItem.cleanId)) continue;
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.src = `${imagesBase}${nextItem.cleanId}`;
     }
   }, [index, items, imagesBase]);
+
+  const handleImageError = useCallback(
+    (id?: string) => {
+      setItems((prev) => {
+        const targetId =
+          id || prev[index]?.cleanId || prev[0]?.cleanId || (latestItemsRef.current[0]?.cleanId ?? null);
+        if (!targetId) return prev;
+        failedSetRef.current.add(targetId);
+        const filtered = prev.filter((item) => item.cleanId !== targetId);
+        const nextLength = filtered.length;
+        setIndex((prevIndex) => {
+          if (!nextLength) return 0;
+          return prevIndex >= nextLength ? 0 : prevIndex;
+        });
+        return filtered;
+      });
+    },
+    [index],
+  );
 
   const current = useMemo(() => {
     if (!items.length) return null;
@@ -248,5 +280,6 @@ export function useSlidePlayback({
     setPlaybackSpeed,
     togglePause,
     toggleCaption,
+    handleImageError,
   };
 }
