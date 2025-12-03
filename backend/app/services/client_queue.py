@@ -11,7 +11,7 @@ from ..models.episode import Episode
 from ..models.scene import AudioMix
 from .episode import load_episode_definition, play_episode
 from .scene import load_scene_definition, play_scene
-from .script import load_script_definition, play_script
+from .script import load_script_definition, play_script, stop_script
 from .iframe_config import (
     config_payload_for_response as iframe_config_payload_for_response,
     restore_iframe_config_snapshot,
@@ -264,6 +264,13 @@ class ClientQueueManager:
         self._retry_backoff_seconds = retry_backoff_seconds
         self._auto_start_workers = auto_start_workers
         self._executor: Callable[[QueueItem], Awaitable[None]] = self._default_executor
+        self._stop_handlers: dict[str, Callable[[QueueItem], Awaitable[None]]] = {
+            "timeline": self._stop_timeline_item,
+            "episode": self._stop_episode_item,
+            "snapshot": self._stop_snapshot_item,
+            "scene": self._stop_scene_item,
+            "script": self._stop_script_item,
+        }
 
     def set_executor(self, executor: Callable[[QueueItem], Awaitable[None]]) -> None:
         self._executor = executor
@@ -481,23 +488,56 @@ class ClientQueueManager:
         await self._recompute_and_broadcast(affected_clients)
         return moved
 
-    async def _stop_running_item(self, item: QueueItem) -> None:
-        """Best-effort stop for running timeline/episode items."""
+    def _get_broadcaster(self) -> RealtimeBroadcaster:
+        return self._broadcaster or realtime_broadcaster
 
-        if item.item_type == "timeline":
-            await realtime_broadcaster.broadcast_timeline_control(
-                action="stop",
-                timeline_id=item.target_id,
-                target_client_id=item.client_id,
-                options={"releaseControl": True},
-            )
-        elif item.item_type == "episode":
-            await realtime_broadcaster.broadcast_timeline_control(
-                action="stop",
-                timeline_id=None,
-                target_client_id=item.client_id,
-                options={"releaseControl": True},
-            )
+    async def _stop_running_item(self, item: QueueItem) -> None:
+        """Best-effort stop for running items across supported types."""
+
+        handler = self._stop_handlers.get(item.item_type)
+        if handler:
+            await handler(item)
+        else:
+            logger.info("沒有為佇列類型 %s 定義停止邏輯，略過", item.item_type)
+
+    async def _stop_timeline_item(self, item: QueueItem) -> None:
+        await self._get_broadcaster().broadcast_timeline_control(
+            action="stop",
+            timeline_id=item.target_id,
+            target_client_id=item.client_id,
+            options={"releaseControl": True},
+        )
+
+    async def _stop_episode_item(self, item: QueueItem) -> None:
+        await self._get_broadcaster().broadcast_timeline_control(
+            action="stop",
+            timeline_id=None,
+            target_client_id=item.client_id,
+            options={"releaseControl": True},
+        )
+
+    async def _stop_snapshot_item(self, item: QueueItem) -> None:
+        await self._get_broadcaster().broadcast_timeline_control(
+            action="stop",
+            timeline_id=None,
+            target_client_id=item.client_id,
+            options={"releaseControl": True},
+        )
+
+    async def _stop_scene_item(self, item: QueueItem) -> None:
+        await self._get_broadcaster().broadcast_video_control(
+            {"action": "stop", "target_client_id": item.client_id},
+            target_client_id=item.client_id,
+        )
+
+    async def _stop_script_item(self, item: QueueItem) -> None:
+        stop_script(item.target_id)
+        await self._get_broadcaster().broadcast_timeline_control(
+            action="stop",
+            timeline_id=None,
+            target_client_id=item.client_id,
+            options={"releaseControl": True},
+        )
 
     async def _recompute_and_broadcast(self, clients: Iterable[str]) -> None:
         unique_clients = {cid for cid in clients if cid}

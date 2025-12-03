@@ -140,6 +140,110 @@ async def test_cancel_running_invokes_stop_and_clears_state() -> None:
     assert state.get("last_completed_item", {}).get("status") == "canceled"
 
 
+class _FakeBroadcaster:
+    def __init__(self) -> None:
+        self.timeline_controls: list[dict[str, object]] = []
+        self.video_controls: list[dict[str, object]] = []
+        self.client_states: list[dict[str, object]] = []
+
+    async def broadcast_timeline_control(
+        self,
+        *,
+        action,
+        timeline_id,
+        target_client_id,
+        options,
+    ) -> None:  # type: ignore[override]
+        self.timeline_controls.append(
+            {
+                "action": action,
+                "timeline_id": timeline_id,
+                "target_client_id": target_client_id,
+                "options": options,
+            }
+        )
+
+    async def broadcast_video_control(self, payload, target_client_id=None) -> None:  # type: ignore[override]
+        self.video_controls.append({"payload": payload, "target_client_id": target_client_id})
+
+    async def broadcast_client_state(self, payload) -> None:  # type: ignore[override]
+        self.client_states.append(payload)
+
+
+@pytest.mark.asyncio
+async def test_cancel_running_waits_for_stop_result(monkeypatch) -> None:
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=None, auto_start_workers=False)
+
+    started = asyncio.Event()
+    resume = asyncio.Event()
+
+    async def slow_stop(_item):
+        started.set()
+        await resume.wait()
+
+    queue_manager._stop_running_item = slow_stop  # type: ignore[attr-defined]
+
+    item_data = await queue_manager.enqueue(client_id="waiter", item_type="timeline", target_id="tl-wait")
+    async with queue_manager._lock:  # type: ignore[attr-defined]
+        item_obj = queue_manager._items[item_data["id"]]  # type: ignore[attr-defined]
+        item_obj.status = "running"
+    await state_store.mark_running(item_obj)
+
+    cancel_task = asyncio.create_task(queue_manager.cancel_items([item_data["id"]]))
+
+    await started.wait()
+    mid_state = await state_store.state_for("waiter")
+    assert mid_state is not None
+    assert mid_state.get("current_item") is not None
+
+    resume.set()
+    await cancel_task
+
+    final_state = await state_store.state_for("waiter")
+    assert final_state is not None
+    assert final_state.get("current_item") is None
+    assert final_state.get("last_completed_item", {}).get("status") == "canceled"
+
+
+@pytest.mark.asyncio
+async def test_cancel_running_dispatches_type_specific_stop(monkeypatch) -> None:
+    broadcaster = _FakeBroadcaster()
+    stopped_scripts: list[str] = []
+
+    def fake_stop_script(script_id: str) -> bool:
+        stopped_scripts.append(script_id)
+        return True
+
+    monkeypatch.setattr(client_queue, "stop_script", fake_stop_script)
+
+    state_store = ClientStateStore(offline_after_seconds=100.0)
+    queue_manager = ClientQueueManager(state_store, broadcaster=broadcaster, auto_start_workers=False)
+
+    async def _prepare_running(item_type: str, target_id: str, client_id: str) -> str:
+        queued = await queue_manager.enqueue(client_id=client_id, item_type=item_type, target_id=target_id)
+        async with queue_manager._lock:  # type: ignore[attr-defined]
+            obj = queue_manager._items[queued["id"]]  # type: ignore[attr-defined]
+            obj.status = "running"
+        await state_store.mark_running(obj)
+        return queued["id"]
+
+    snap_id = await _prepare_running("snapshot", "snap-stop", "viewer")
+    scene_id = await _prepare_running("scene", "scene-stop", "viewer")
+    script_id = await _prepare_running("script", "script-stop", "player")
+
+    await queue_manager.cancel_items([snap_id, scene_id, script_id])
+
+    actions = {(item["action"], item.get("timeline_id"), item.get("target_client_id")) for item in broadcaster.timeline_controls}
+    assert ("stop", None, "viewer") in actions
+    assert ("stop", None, "player") in actions
+    assert any(
+        payload.get("action") == "stop" and payload.get("target_client_id") == "viewer"
+        for payload in (entry["payload"] for entry in broadcaster.video_controls)
+    )
+    assert "script-stop" in stopped_scripts
+
+
 @pytest.mark.asyncio
 async def test_wait_for_wake_honors_pre_set_event() -> None:
     state_store = ClientStateStore(offline_after_seconds=100.0)
