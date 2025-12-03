@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { PanelConfig } from "./types";
 import type { PanelMode } from "./panelPresets";
 import { PanelRow } from "./PanelRow";
+import { createPanelKeyResolver } from "./panelKeyUtils";
 
 interface PanelListProps {
   panels: PanelConfig[];
@@ -34,12 +35,14 @@ export function PanelList({
   onRemoveRow,
   onSelectPanel,
 }: PanelListProps) {
+  const keyForPanel = useMemo(() => createPanelKeyResolver(panels), [panels]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {(panels || []).map((panel, index) => (
         <PanelRow
-          // eslint-disable-next-line react/no-array-index-key
-          key={panel?.id || index}
+          // id 唯一時保持穩定 key；只有在缺 id 或重複 id 時才帶 index 以避免殘留
+          key={keyForPanel(panel, index)}
           index={index}
           panel={panel}
           selected={selectedRows.includes(index)}

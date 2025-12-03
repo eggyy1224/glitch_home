@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { PanelConfig } from "./types";
 import type { PanelMode } from "./panelPresets";
 import { getPanelModeAndAsset, MODE_PRESETS } from "./panelPresets";
+import { createPanelKeyResolver } from "./panelKeyUtils";
 
 interface PanelCanvasProps {
   panels: PanelConfig[];
@@ -27,6 +28,8 @@ export function PanelCanvas({
   onToggleRow,
 }: PanelCanvasProps) {
   const cols = Math.max(1, Number(layoutColumns) || 1);
+  const keyForPanel = useMemo(() => createPanelKeyResolver(panels), [panels]);
+
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -52,9 +55,10 @@ export function PanelCanvas({
           const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
           const isVideo = preset?.assetKey === "video";
           const isActive = selectedRows.includes(index);
+          const key = keyForPanel(panel, index);
           return (
             <div
-              key={panel?.id || index}
+              key={key}
               role="button"
               tabIndex={0}
               draggable
