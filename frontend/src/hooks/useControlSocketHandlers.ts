@@ -28,7 +28,7 @@ export function useControlSocketHandlers({
   unlockAudioElementRef,
   videoControllerRef,
 }: ControlSocketHandlerOptions) {
-  const mediaControlStateRef = useRef<{ volume: number | null; muted: boolean | null } | null>(null);
+  const mediaControlStateRef = useRef<{ volume: number | null; muted: boolean | null; speed: number | null } | null>(null);
   const mediaControlIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const handleScreenshotLifecycle = useCallback(
     (payload: ScreenshotLifecyclePayload) => {
@@ -216,6 +216,7 @@ export function useControlSocketHandlers({
       const timeValue = (payload as { time?: unknown }).time;
       const volumeValue = (payload as { volume?: unknown }).volume;
       const mutedValue = (payload as { muted?: unknown }).muted;
+      const speedValue = (payload as { speed?: unknown }).speed;
       if (!action) {
         return;
       }
@@ -251,8 +252,13 @@ export function useControlSocketHandlers({
         applyToDocumentMedia(document, fn);
       };
 
-      const rememberControlState = (volume: number | null, muted: boolean | null, enableInterval: boolean): void => {
-        mediaControlStateRef.current = { volume, muted };
+      const rememberControlState = (
+        volume: number | null,
+        muted: boolean | null,
+        speed: number | null,
+        enableInterval: boolean,
+      ): void => {
+        mediaControlStateRef.current = { volume, muted, speed };
         if (!enableInterval) return;
         if (!mediaControlIntervalRef.current) {
           mediaControlIntervalRef.current = setInterval((): void => {
@@ -267,6 +273,9 @@ export function useControlSocketHandlers({
               }
               if (state.muted !== null && state.muted !== undefined) {
                 media.muted = state.muted;
+              }
+              if (state.speed !== null && state.speed !== undefined) {
+                media.playbackRate = state.speed;
               }
             });
           }, 1000);
@@ -291,6 +300,13 @@ export function useControlSocketHandlers({
         if (action === "set_volume" || action === "volume") {
           const vol = typeof volumeValue === "number" ? volumeValue : undefined;
           controller.setVolume?.(vol);
+          return;
+        }
+        if (action === "set_speed" || action === "speed") {
+          const parsed = typeof speedValue === "number" ? speedValue : Number(speedValue);
+          if (!Number.isFinite(parsed)) return;
+          const clamped = Math.max(0.25, Math.min(4, parsed));
+          controller.setSpeed?.(clamped);
           return;
         }
         if (action === "set_muted") {
@@ -321,14 +337,24 @@ export function useControlSocketHandlers({
             void playPromise.catch(() => undefined);
           }
         });
-        rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
+        rememberControlState(
+          mediaControlStateRef.current?.volume ?? null,
+          mediaControlStateRef.current?.muted ?? null,
+          mediaControlStateRef.current?.speed ?? null,
+          true,
+        );
         return;
       }
       if (action === "pause") {
         applyToMediaElements((media: HTMLMediaElement): void => {
           media.pause();
         });
-        rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
+        rememberControlState(
+          mediaControlStateRef.current?.volume ?? null,
+          mediaControlStateRef.current?.muted ?? null,
+          mediaControlStateRef.current?.speed ?? null,
+          true,
+        );
         return;
       }
       if (action === "seek" && timeValue != null) {
@@ -341,7 +367,12 @@ export function useControlSocketHandlers({
             // ignore seek errors
           }
         });
-        rememberControlState(mediaControlStateRef.current?.volume ?? null, mediaControlStateRef.current?.muted ?? null, true);
+        rememberControlState(
+          mediaControlStateRef.current?.volume ?? null,
+          mediaControlStateRef.current?.muted ?? null,
+          mediaControlStateRef.current?.speed ?? null,
+          true,
+        );
         return;
       }
       if (action === "set_volume" || action === "volume") {
@@ -353,7 +384,7 @@ export function useControlSocketHandlers({
             media.muted = false;
           }
         });
-        rememberControlState(vol, mediaControlStateRef.current?.muted ?? null, true);
+        rememberControlState(vol, mediaControlStateRef.current?.muted ?? null, mediaControlStateRef.current?.speed ?? null, true);
         return;
       }
       if (action === "set_muted") {
@@ -361,14 +392,14 @@ export function useControlSocketHandlers({
         applyToMediaElements((media: HTMLMediaElement): void => {
           media.muted = muted;
         });
-        rememberControlState(mediaControlStateRef.current?.volume ?? null, muted, true);
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, muted, mediaControlStateRef.current?.speed ?? null, true);
         return;
       }
       if (action === "mute") {
         applyToMediaElements((media: HTMLMediaElement): void => {
           media.muted = true;
         });
-        rememberControlState(mediaControlStateRef.current?.volume ?? null, true, true);
+        rememberControlState(mediaControlStateRef.current?.volume ?? null, true, mediaControlStateRef.current?.speed ?? null, true);
         return;
       }
       if (action === "unmute") {
@@ -379,7 +410,23 @@ export function useControlSocketHandlers({
             media.volume = vol;
           }
         });
-        rememberControlState(vol ?? mediaControlStateRef.current?.volume ?? null, false, true);
+        rememberControlState(vol ?? mediaControlStateRef.current?.volume ?? null, false, mediaControlStateRef.current?.speed ?? null, true);
+        return;
+      }
+      if (action === "set_speed" || action === "speed") {
+        const parsedSpeed = typeof speedValue === "number" ? speedValue : Number(speedValue);
+        if (!Number.isFinite(parsedSpeed)) return;
+        const clampedSpeed = Math.max(0.25, Math.min(4, parsedSpeed));
+        applyToMediaElements((media: HTMLMediaElement): void => {
+          media.playbackRate = clampedSpeed;
+        });
+        rememberControlState(
+          mediaControlStateRef.current?.volume ?? null,
+          mediaControlStateRef.current?.muted ?? null,
+          clampedSpeed,
+          true,
+        );
+        return;
       }
     },
     [clientId, videoControllerRef],

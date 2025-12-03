@@ -27,6 +27,7 @@ export interface VideoControlAction {
   volume?: number;
   muted?: boolean;
   time?: number;
+  speed?: number;
   offset_seconds?: number;
   offsetSeconds?: number;
   target_client_id?: ClientId | null;

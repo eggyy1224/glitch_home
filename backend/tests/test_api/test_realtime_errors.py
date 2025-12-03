@@ -22,6 +22,12 @@ def test_video_control_missing_required_fields(client):
 
 
 @pytest.mark.api
+def test_video_control_missing_speed(client):
+    resp = client.post("/api/video-control", json={"action": "set_speed"})
+    assert resp.status_code == 422
+
+
+@pytest.mark.api
 def test_stop_iframe_timeline_requires_target(client):
     resp = client.post("/api/iframe-timelines/stop", json={})
     assert resp.status_code == 400

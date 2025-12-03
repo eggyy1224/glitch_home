@@ -255,6 +255,10 @@ export function useTimelineStepActions({
           if (volumeValue !== undefined) {
             payload.volume = Math.min(1, Math.max(0, volumeValue));
           }
+          const speedValue = numberOrUndefined(action.speed);
+          if (speedValue !== undefined) {
+            payload.speed = Math.max(0.25, Math.min(4, speedValue));
+          }
           if (typeof action.muted === "boolean") {
             payload.muted = action.muted;
           }

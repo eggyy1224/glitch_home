@@ -18,12 +18,20 @@ const canvasToBlob = (canvas: HTMLCanvasElement) =>
 });
 
 const DEFAULT_VOLUME = 0.7;
+const DEFAULT_SPEED = 1;
 
 const clampVolume = (value: number | string | null | undefined, fallback = DEFAULT_VOLUME) => {
   if (value == null) return fallback;
   const numberValue = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numberValue)) return fallback;
   return Math.min(1, Math.max(0, numberValue));
+};
+
+const clampSpeed = (value: number | string | null | undefined, fallback = DEFAULT_SPEED) => {
+  if (value == null) return fallback;
+  const numberValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numberValue)) return fallback;
+  return Math.min(4, Math.max(0.25, numberValue));
 };
 
 export interface VideoModeProps {
@@ -36,6 +44,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [volumeLevel, setVolumeLevel] = useState(DEFAULT_VOLUME);
+  const [playbackRate, setPlaybackRate] = useState(DEFAULT_SPEED);
   const [needsUserAction, setNeedsUserAction] = useState(false);
   const autoUnmuteAttemptedRef = useRef(false);
 
@@ -52,6 +61,19 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     return clampVolume(raw, DEFAULT_VOLUME);
   }, [params]);
 
+  const initialSpeed = useMemo(() => {
+    const raw = params.get("video_speed") ?? params.get("speed");
+    return clampSpeed(raw, DEFAULT_SPEED);
+  }, [params]);
+
+  const loopEnabled = useMemo(() => {
+    const raw = params.get("loop");
+    if (raw == null) return true;
+    const text = raw.trim().toLowerCase();
+    if (!text) return true;
+    return !(text === "false" || text === "0");
+  }, [params]);
+
   const videoUrl = videoFileName ? `/videos/圖像系譜學Video/${videoFileName}` : null;
 
   useEffect(() => {
@@ -59,14 +81,25 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
   }, [initialVolume]);
 
   useEffect(() => {
+    setPlaybackRate(initialSpeed);
+  }, [initialSpeed]);
+
+  useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     video.volume = volumeLevel;
   }, [volumeLevel]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.playbackRate = playbackRate;
+  }, [playbackRate]);
+
   const playVideo = useCallback(() => {
     const video = videoRef.current;
     if (!video) return Promise.resolve();
+    video.playbackRate = playbackRate;
     const playPromise = video.play();
     if (playPromise && typeof playPromise.catch === "function") {
       return playPromise
@@ -129,6 +162,17 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     }
   }, []);
 
+  const setSpeedState = useCallback(
+    (value: number | string | null | undefined) => {
+      const clamped = clampSpeed(value, playbackRate);
+      setPlaybackRate(clamped);
+      const video = videoRef.current;
+      if (!video) return;
+      video.playbackRate = clamped;
+    },
+    [playbackRate],
+  );
+
   useEffect(() => {
     if (!controlRef) return undefined;
     controlRef.current = {
@@ -137,11 +181,12 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
       setVolume: (value?: number | string | null) => setVolumeState(value ?? null),
       setMuted: (muted?: boolean) => setMutedState(Boolean(muted)),
       seek: (timeInSeconds?: number | string | null) => seekVideo(timeInSeconds ?? null),
+      setSpeed: (speed?: number | string | null) => setSpeedState(speed ?? null),
     };
     return () => {
       controlRef.current = null;
     };
-  }, [controlRef, pauseVideo, playVideo, seekVideo, setMutedState, setVolumeState]);
+  }, [controlRef, pauseVideo, playVideo, seekVideo, setMutedState, setSpeedState, setVolumeState]);
 
   const handleToggleMute = useCallback(() => {
     const video = videoRef.current;
@@ -298,7 +343,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
           className="video-mode-video"
           autoPlay
           muted={isMuted}
-          loop
+          loop={loopEnabled}
           playsInline
           ref={videoRef}
         />

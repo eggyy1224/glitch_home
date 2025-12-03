@@ -363,9 +363,12 @@ curl -X POST "http://localhost:8000/api/video-control?target_client_id=desktop2-
 - `volume`: `set_volume` 或 `unmute` 時可附帶（0~1）。
 - `muted`: `set_muted` 時必填布林值；也可搭配 `unmute` 控制。
 - `time`: `seek` 動作需要指定跳轉秒數（>=0）。
+- `set_speed`: 影片倍速；參數 `speed` 為 0.25~4.0（預設 1.0）。
 - `target_client_id`: 可在 query 或 body 指定；若省略會依照 timeline step/timeline 的 `client_id` 推斷。
 
 前端會透過 WebSocket 收到 `type: "video_control"`，藉由 `VideoMode` 暴露的控制介面直接執行 `play/pause/volume/seek`，不再透過 `remote_click` 模擬按鈕。為避免瀏覽器阻擋音訊，仍建議在進入步驟前透過 `unlock_audio_targets` 解鎖。
+
+> 影片也接受網址參數：`video_volume=0.5`、`video_speed=0.8`、`auto_unmute=false`、`loop=false`。
 
 ### 任務 7.4: 取得 video_mode 可用影片清單
 
@@ -1233,6 +1236,7 @@ Script 也有版本歷史（`backend/metadata/history/scripts/`），播放 API 
 ```
 
 - `action`: 同 `/api/video-control`；`set_volume` 需搭配 `volume`，`set_muted` 需搭配 `muted`，`seek` 需搭配 `time`。
+- `set_speed`: 搭配 `speed`（0.25~4.0）控制影片倍速。
 - `offset_seconds`：延遲執行秒數，預設 0，支援 `offsetSeconds`。
 - `targetClientId`: 若未指定，沿用 step/timeline `client_id`。
 

@@ -252,6 +252,20 @@ def test_video_control_validation_requires_volume(client: TestClient) -> None:
 
 
 @pytest.mark.api
+@patch("app.services.realtime_bus.realtime_broadcaster.broadcast_video_control", new_callable=AsyncMock)
+def test_video_control_set_speed_payload(mock_broadcast: AsyncMock, client: TestClient) -> None:
+    """set_speed 應夾限並廣播 speed 參數。"""
+    response = client.post(
+        "/api/video-control",
+        json={"action": "set_speed", "speed": 3.5},
+    )
+    assert response.status_code == 200
+    payload = mock_broadcast.await_args.args[0]
+    assert payload == {"action": "set_speed", "speed": 3.5}
+    assert mock_broadcast.await_args.kwargs["target_client_id"] is None
+
+
+@pytest.mark.api
 @patch("app.services.realtime_bus.realtime_broadcaster.broadcast_unlock_audio", new_callable=AsyncMock)
 def test_unlock_audio_endpoint(mock_broadcast: AsyncMock, client: TestClient) -> None:
     """POST /api/unlock-audio should enqueue unlock broadcast for provided client."""

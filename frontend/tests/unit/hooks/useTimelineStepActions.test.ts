@@ -116,6 +116,23 @@ describe("useTimelineStepActions", () => {
     expect(result.current.actionError).toBeNull();
   });
 
+  it("video_control set_speed 會夾限 speed", async () => {
+    const { result } = renderHook(() => useTimelineStepActions({ clientId: "client-speed" }));
+
+    await act(async () => {
+      await result.current.executeStepActions({
+        step: { video_controls: [{ action: "set_speed", speed: 6 }] },
+        timelineId: "tl-speed",
+        stepIndex: 0,
+        runId: 10,
+      });
+    });
+
+    expect(sendVideoControlMock).toHaveBeenCalledTimes(1);
+    const [videoPayload] = sendVideoControlMock.mock.calls[0];
+    expect(videoPayload).toMatchObject({ action: "set_speed", speed: 4 });
+  });
+
   it("字幕、caption、TTS 與 unlock audio 會依序執行並清除錯誤", async () => {
     const onError = vi.fn();
     const { result } = renderHook(() => useTimelineStepActions({ clientId: "client-main", onError }));

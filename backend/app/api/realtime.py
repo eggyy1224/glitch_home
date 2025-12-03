@@ -120,6 +120,8 @@ async def api_video_control(
         payload["muted"] = body.muted
     if body.time is not None:
         payload["time"] = body.time
+    if body.speed is not None:
+        payload["speed"] = body.speed
     await realtime_broadcaster.broadcast_video_control(payload, target_client_id=resolved_target)
     return {"status": "queued", "message": "video control broadcast sent"}
 

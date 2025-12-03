@@ -192,9 +192,9 @@ class RemoteClickRequest(BaseModel):
 class VideoControlRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    action: Literal["play", "pause", "mute", "unmute", "set_volume", "set_muted", "seek"] = Field(
+    action: Literal["play", "pause", "mute", "unmute", "set_volume", "set_muted", "seek", "set_speed"] = Field(
         ...,
-        description="Video 控制動作：play/pause/mute/unmute/set_volume/set_muted/seek",
+        description="Video 控制動作：play/pause/mute/unmute/set_volume/set_muted/seek/set_speed",
     )
     volume: Optional[float] = Field(
         default=None,
@@ -204,6 +204,7 @@ class VideoControlRequest(BaseModel):
     )
     muted: Optional[bool] = Field(default=None, description="set_muted 動作需要提供 true/false")
     time: Optional[float] = Field(default=None, ge=0.0, description="seek 動作使用的秒數")
+    speed: Optional[float] = Field(default=None, ge=0.25, le=4.0, description="播放速度（0.25–4.0），set_speed 使用")
     target_client_id: Optional[str] = Field(
         default=None,
         alias="client_id",
@@ -218,6 +219,8 @@ class VideoControlRequest(BaseModel):
             raise ValueError("set_muted 需要 muted")
         if self.action == "seek" and self.time is None:
             raise ValueError("seek 需要 time")
+        if self.action == "set_speed" and self.speed is None:
+            raise ValueError("set_speed 需要 speed")
         if self.target_client_id is not None:
             client = str(self.target_client_id).strip()
             self.target_client_id = client or None

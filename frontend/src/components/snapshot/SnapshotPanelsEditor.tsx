@@ -7,6 +7,7 @@ import { buildUrlFromPreset, getPanelModeAndAsset, mergePresetMode, MODE_PRESETS
 import type { PanelMode } from "./panelPresets";
 import { useSnapshotPanelDnd } from "./useSnapshotPanelDnd";
 import type { AssetSearchMode, AssetTab, PanelConfig } from "./types";
+import { buildVideoModeUrl } from "./videoPanelUtils";
 
 interface SnapshotPanelsEditorProps {
   panels: PanelConfig[];
@@ -224,7 +225,8 @@ export default function SnapshotPanelsEditor({
       return;
     }
     const preset = MODE_PRESETS[nextMode as PanelMode];
-    const nextUrl = preset ? buildUrlFromPreset(nextMode as PanelMode, currentAsset) : "";
+    const nextUrl =
+      nextMode === "video_mode" ? buildVideoModeUrl(panel?.url, { video: currentAsset }) : preset ? buildUrlFromPreset(nextMode as PanelMode, currentAsset) : "";
     const patch: Partial<PanelConfig> = { url: nextUrl, params: mergePresetMode(panel?.params, nextMode) };
     if (preset?.assetKey === "img") {
       patch.image = currentAsset || panel?.image || "";
@@ -237,7 +239,8 @@ export default function SnapshotPanelsEditor({
     const isImageMode = preset?.assetKey === "img";
     const hasModePreset = Boolean(preset);
     if (hasModePreset) {
-      const nextUrl = preset ? buildUrlFromPreset(mode as PanelMode, assetValue) : "";
+      const nextUrl =
+        mode === "video_mode" ? buildVideoModeUrl(panel?.url, { video: assetValue }) : preset ? buildUrlFromPreset(mode as PanelMode, assetValue) : "";
       const patch: Partial<PanelConfig> = { url: nextUrl, params: mergePresetMode(panel?.params, mode) };
       if (isImageMode) {
         patch.image = assetValue || "";

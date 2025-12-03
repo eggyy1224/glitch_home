@@ -80,6 +80,7 @@ export interface VideoController {
   seek?: (time: number) => void;
   setVolume?: (volume?: number) => void;
   setMuted?: (muted?: boolean) => void;
+  setSpeed?: (speed?: number) => void;
 }
 
 export type { TimelineControlPayload };
