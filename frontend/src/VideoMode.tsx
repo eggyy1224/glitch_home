@@ -113,7 +113,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
     }
     setNeedsUserAction(false);
     return Promise.resolve();
-  }, []);
+  }, [playbackRate]);
 
   const pauseVideo = useCallback(() => {
     const video = videoRef.current;
