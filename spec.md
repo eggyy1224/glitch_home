@@ -36,7 +36,7 @@
 - **實時截圖系統**: WebSocket 驅動的遠端截圖請求與管理
 - **AI 音效生成**: 從圖像分析自動產生配樂（透過 ElevenLabs）
 - **TTS 旁白系統**: 整合 OpenAI TTS 產生語音旁白
-- **拼貼生成系統**: 支援多種拼貼模式（kinship、luminance、wave、source-cluster、random）
+- **拼貼生成系統**: 支援多種拼貼模式（kinship、luminance、wave、source-cluster、random、weave、weave-vertical、rotate-90）
 - **Iframe 組合模式**: 支援多視窗組合展示
 - **多客戶端協調**: 支援多個前端客戶端同時連線與協調
 - **字幕與說明文字**: 支援即時字幕與說明文字顯示
@@ -945,7 +945,7 @@ offspring_YYYYMMDD_HHMMSS_XXX.{png|jpeg}
   ],
   "rows": 12,
   "cols": 16,
-  "mode": "kinship",                    // kinship, luminance, wave, source-cluster, random
+  "mode": "kinship",                    // kinship, luminance, wave, source-cluster, random, weave, weave-vertical, rotate-90
   "base": null,                         // 可選：基礎圖像檔名
   "allow_self": false,                  // 可選：是否允許單張圖像
   "resize_w": 2048,                     // 可選：輸出寬度

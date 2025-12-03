@@ -336,7 +336,8 @@ class GenerateCollageVersionRequest(BaseModel):
         default="kinship",
         description=(
             "匹配/處理模式：kinship（邊緣顏色匹配）、random（隨機）、wave、luminance、"
-            "source-cluster、weave、rotate-90（單圖，將每個格子旋轉 90°）"
+            "source-cluster、weave（橫向編織）、weave-vertical（直向編織）、"
+            "rotate-90（單圖，將每個格子旋轉 90°）"
         ),
     )
     base: str = Field(default="first", description="基準圖選擇：first（第一張）或 mean（平均，目前實作為 first）")

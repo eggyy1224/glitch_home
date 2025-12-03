@@ -683,7 +683,8 @@ done
 - `wave`: 由中心向外的 BFS 順序（形成方向性條帶）
 - `source-cluster`: 以來源圖為單位聚塊（語義連續）
 - `random`: 隨機排列（基準對照）
-- `weave`: 不同來源圖交錯編織，形成條帶效果
+- `weave`: 不同來源圖交錯編織，形成橫向條帶效果
+- `weave-vertical`: 以欄為單位交錯，形成直向編織條帶
 - `rotate-90`: 單張圖像，對每個切片旋轉 90° 後原位重組
 
 **參數說明（`GenerateCollageVersionRequest`）**:
@@ -691,7 +692,7 @@ done
 - `rows` / `cols`: 切片行、列數（1-300，預設 12×16）。
 - `mode`: 匹配模式（見上表，預設 `kinship`）。
 - `base`: 基準圖策略（`first` 或 `mean`，目前 `mean` 仍等價 `first`）。
-- `allow_self`: 是否允許重用基準圖的 tiles（預設 `false`，`weave` 模式自動允許）。
+- `allow_self`: 是否允許重用基準圖的 tiles（預設 `false`；單張圖時需手動設為 `true`，`weave`/`weave-vertical` 仍建議提供多張圖以產生編織效果）。
 - `seed`: 隨機種子（預設使用時間戳，便於重現）。
 - `resize_w`: 輸出寬度 256-8192 px（預設 2048）。
 - `pad_px`: 填充像素 0-100（預設 0）。

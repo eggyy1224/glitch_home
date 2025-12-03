@@ -358,6 +358,7 @@ export default function CollageVersionMode({
                   <option value="luminance">亮度匹配 (luminance)</option>
                   <option value="source-cluster">來源聚類 (source-cluster)</option>
                   <option value="weave">編織模式 (weave)</option>
+                  <option value="weave-vertical">垂直編織 (weave-vertical)</option>
                   <option value="rotate-90">每格右轉 90° (rotate-90)</option>
                 </select>
               </div>

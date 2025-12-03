@@ -810,33 +810,57 @@ def match_tiles_weave(
     seed: int,
     num_images: int,  # Total number of source images
 ) -> List[Tuple[int, int, int]]:  # List of (source_idx, source_row, source_col)
-    """Weave matching: alternate rows between source images.
-    
-    For vertical strips (columns), each row alternates between source images.
+    """Weave matching: alternate source images *by row* (橫向條帶).
+
     - Row 0, 2, 4... uses images[0]
     - Row 1, 3, 5... uses images[1]
     - For 3+ images, cycles through: images[row % num_images]
-    
+
     Note: This mode uses all images regardless of allow_self setting.
     """
     random.seed(seed)
     np.random.seed(seed)
-    
+
     if num_images == 0:
         raise ValueError("至少需要 1 張來源圖")
-    
-    # Build result mapping - use all images in sequence
+
     result = []
     for row in range(rows):
         for col in range(cols):
-            # Determine source image index based on row
-            # This cycles through all images: 0, 1, 2, ..., num_images-1, 0, 1, ...
             source_idx = row % num_images
-            
-            # For weave mode, we use the same row and col from the source image
-            # This creates vertical strips that alternate between images
             result.append((source_idx, row, col))
-    
+
+    return result
+
+
+def match_tiles_weave_vertical(
+    base_tiles: List[Image.Image],
+    candidate_tiles: List[Tuple[Image.Image, int, int, int]],  # (tile, source_idx, row, col)
+    rows: int,
+    cols: int,
+    seed: int,
+    num_images: int,
+) -> List[Tuple[int, int, int]]:
+    """Weave matching: alternate source images *by column* (直向條帶).
+
+    - Col 0, 3, 6... uses images[0]
+    - Col 1, 4, 7... uses images[1]
+    - 3+ images: images[col % num_images]
+
+    Note: 同樣不排除基準圖，維持與原 weave 一致的含義。
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if num_images == 0:
+        raise ValueError("至少需要 1 張來源圖")
+
+    result = []
+    for row in range(rows):
+        for col in range(cols):
+            source_idx = col % num_images
+            result.append((source_idx, row, col))
+
     return result
 
 
@@ -994,6 +1018,7 @@ def generate_collage_version(
     ensure_metadata_write_enabled("collage_version_metadata")
     # Determine whether single image is acceptable for the requested mode
     single_image_allowed = (mode == "rotate-90") or allow_self
+    weave_modes = {"weave", "weave-vertical"}
 
     # Basic length validations aligned with mode semantics
     if len(image_paths) == 0:
@@ -1068,8 +1093,8 @@ def generate_collage_version(
                 for tile_col in range(cols):
                     tile_idx = tile_row * cols + tile_col
                     if tile_idx < len(tiles):
-                        # Skip base image tiles if allow_self=False (except for weave mode)
-                        if not allow_self and img_idx == base_idx and mode != "weave":
+                        # Skip base image tiles if allow_self=False (except for weave family)
+                        if not allow_self and img_idx == base_idx and mode not in weave_modes:
                             continue
                         candidate_tiles.append((tiles[tile_idx], img_idx, tile_row, tile_col))
 
@@ -1091,6 +1116,8 @@ def generate_collage_version(
             mapping = match_tiles_source_cluster(base_tiles, candidate_tiles, rows, cols, seed)
         elif mode == "weave":
             mapping = match_tiles_weave(base_tiles, candidate_tiles, rows, cols, seed, len(images))
+        elif mode == "weave-vertical":
+            mapping = match_tiles_weave_vertical(base_tiles, candidate_tiles, rows, cols, seed, len(images))
         else:
             raise ValueError(f"未知的 mode: {mode}")
 

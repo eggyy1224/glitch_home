@@ -129,7 +129,12 @@ Collage Version 將多張圖像切片後，根據不同的匹配模式重新組�
 - **效果**: 呈現織物般的節奏感，來源圖會平均分佈
 - **適用**: 想強調多重來源並維持一致節奏時
 
-#### 7. rotate-90（單圖旋轉）
+#### 7. weave-vertical（垂直編織）
+- **原理**: 以欄為單位輪流取不同來源的 tiles，形成直向交錯條帶；同樣不排除基準圖
+- **效果**: 垂直方向的織帶感，適合並排對照多來源
+- **適用**: 想在垂直方向強調來源交錯時
+
+#### 8. rotate-90（單圖旋轉）
 - **原理**: 僅使用單張圖像，將每個切片獨立旋轉 90° 後放回原格
 - **效果**: 保留原圖顏色但增加方向性紋理與節奏
 - **適用**: 現場只有一張圖或想快速產生實驗性變化
@@ -227,7 +232,7 @@ GET /api/collage-version/{task_id}/progress
 | `image_names` | string[] | 圖像檔名列表（一般 ≥ 2；`rotate-90` 或 `allow_self=true` 可用單張） | - | - |
 | `rows` | number | 切片行數 | 12 | 1-300 |
 | `cols` | number | 切片列數 | 16 | 1-300 |
-| `mode` | string | 匹配模式 | `kinship` | kinship, luminance, wave, source-cluster, random, weave, rotate-90 |
+| `mode` | string | 匹配模式 | `kinship` | kinship, luminance, wave, source-cluster, random, weave, weave-vertical, rotate-90 |
 | `base` | string | 基準圖策略 | `first` | `first`, `mean` |
 | `allow_self` | boolean | 是否允許重用基準圖 tiles | false | - |
 | `resize_w` | number | 輸出寬度（px） | 2048 | 256-8192 |
@@ -337,7 +342,7 @@ done
 
 ```bash
 # 使用相同參數，只改變 mode
-MODES=("kinship" "luminance" "wave" "source-cluster" "random")
+MODES=("kinship" "luminance" "wave" "source-cluster" "random" "weave" "weave-vertical")
 
 for MODE in "${MODES[@]}"; do
   curl -X POST http://localhost:8000/api/generate-collage-version \
