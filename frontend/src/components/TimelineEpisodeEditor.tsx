@@ -422,9 +422,9 @@ export default function TimelineEpisodeEditor() {
                   batchDuration={batchDuration}
                   onBatchDurationChange={setBatchDuration}
                   onBatchApply={handleBatchApply}
-                  snapshotClient={snapshotClient}
+                  snapshotClient={snapshotClient || ""}
                   snapshotKeyword={snapshotKeyword}
-                  onSnapshotClientChange={setSnapshotClient}
+                  onSnapshotClientChange={(value) => setSnapshotClient(value || "")}
                   onSnapshotKeywordChange={setSnapshotKeyword}
                   onRefreshSnapshots={refreshSnapshots}
                   snapshotMessage={snapshotMessage}

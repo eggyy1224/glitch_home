@@ -64,8 +64,10 @@ export function createMockFetch<T>(data: T, options: MockFetchOptions<T> = {}) {
 
 type FuncKeys<T> = { [K in keyof T]: T[K] extends AnyFunc ? K : never }[keyof T];
 
-type MockMap<T> = {
-  [K in keyof T]: T[K] extends AnyFunc ? MockOf<T[K]> : never;
+type FuncOf<T, K extends keyof T> = T[K] extends AnyFunc ? T[K] : never;
+
+type MockMap<T, K extends keyof T> = {
+  [P in K]: FuncOf<T, P> extends never ? never : MockOf<FuncOf<T, P>>;
 };
 
 export function createMockFetchError<T>(
@@ -90,28 +92,28 @@ export function createMockFetchError<T>(
   });
 }
 
-export function createMockApi<T extends Record<string, AnyFunc>, K extends FuncKeys<T>>(
+export function createMockApi<T extends Record<string, unknown>, K extends FuncKeys<T>>(
   keys: readonly K[],
-  implementation?: Partial<{ [P in K]: T[P] }>,
+  implementation?: Partial<{ [P in K]: FuncOf<T, P> }>,
 ) {
-  const mocks = {} as MockMap<Pick<T, K>>;
+  const mocks = {} as MockMap<Pick<T, K>, K>;
 
   keys.forEach((key) => {
-    const impl = implementation?.[key];
+    const impl = implementation?.[key] as FuncOf<T, typeof key> | undefined;
     const typedMock =
       impl != null
-        ? vi.fn<Parameters<T[K]>, ReturnType<T[K]>>((...args: Parameters<T[K]>) =>
+        ? vi.fn<Parameters<FuncOf<T, typeof key>>, ReturnType<FuncOf<T, typeof key>>>((...args) =>
             (impl as AnyFunc)(...args),
           )
-        : vi.fn<Parameters<T[K]>, ReturnType<T[K]>>();
-    (mocks as Record<K, MockOf<T[K]>>)[key] = typedMock as MockOf<T[K]>;
+        : vi.fn<Parameters<FuncOf<T, typeof key>>, ReturnType<FuncOf<T, typeof key>>>();
+    (mocks as unknown as Record<K, MockOf<FuncOf<T, K>>>)[key] = typedMock as MockOf<FuncOf<T, K>>;
   });
 
   const factory = () =>
     keys.reduce((acc, key) => {
-      (acc as Record<K, T[K]>)[key] = ((...args: Parameters<T[K]>) => {
-        return (mocks as Record<K, MockOf<T[K]>>)[key](...args);
-      }) as T[K];
+      (acc as Record<K, FuncOf<T, K>>)[key] = ((...args: Parameters<FuncOf<T, typeof key>>) => {
+        return (mocks as unknown as Record<K, MockOf<FuncOf<T, K>>>)[key](...args);
+      }) as FuncOf<T, K>;
       return acc;
     }, {} as Pick<T, K>);
 
