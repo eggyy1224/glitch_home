@@ -13,8 +13,7 @@ deactivate
 
 cd "$ROOT/frontend"
 npm test -- --watch=false --coverage
+npm run typecheck
+npm run test:e2e
 
-# 如需額外跑 Playwright E2E，請在事先啟動前後端服務後設定 RUN_E2E=1 再執行
-if [[ "${RUN_E2E:-}" == "1" ]]; then
-  npm run test:e2e
-fi
+
