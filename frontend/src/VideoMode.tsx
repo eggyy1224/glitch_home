@@ -345,6 +345,7 @@ export default function VideoMode({ onCaptureReady = null, controlRef = null }: 
           muted={isMuted}
           loop={loopEnabled}
           playsInline
+          preload="auto"
           ref={videoRef}
         />
       ) : (

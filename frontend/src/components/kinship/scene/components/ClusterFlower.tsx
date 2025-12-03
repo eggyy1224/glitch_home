@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, Suspense } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useSpring } from "@react-spring/three";
@@ -199,14 +199,16 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         });
         return (
           <group key={`p-${cluster.id}-${node.name}`}>
-            <Photo
-              url={`${imagesBase}${node.name}`}
-              size={3.0}
-              name={node.name}
-              onPick={onPick}
-              externalRef={meshRef}
-              getProgress={getParentProgress}
-            />
+            <Suspense fallback={null}>
+              <Photo
+                url={`${imagesBase}${node.name}`}
+                size={3.0}
+                name={node.name}
+                onPick={onPick}
+                externalRef={meshRef}
+                getProgress={getParentProgress}
+              />
+            </Suspense>
           </group>
         );
       })}
@@ -223,14 +225,16 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         });
         return (
           <group key={`s-${cluster.id}-${node.name}`}>
-            <Photo
-              url={`${imagesBase}${node.name}`}
-              size={2.8}
-              name={node.name}
-              onPick={onPick}
-              externalRef={meshRef}
-              getProgress={getSiblingProgress}
-            />
+            <Suspense fallback={null}>
+              <Photo
+                url={`${imagesBase}${node.name}`}
+                size={2.8}
+                name={node.name}
+                onPick={onPick}
+                externalRef={meshRef}
+                getProgress={getSiblingProgress}
+              />
+            </Suspense>
           </group>
         );
       })}
@@ -252,14 +256,16 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
               });
               return (
                 <group key={`a-${cluster.id}-${index}-${node.name}`}>
-                  <Photo
-                    url={`${imagesBase}${node.name}`}
-                    size={2.6}
-                    name={node.name}
-                    onPick={onPick}
-                    externalRef={meshRef}
-                    getProgress={ringProgress}
-                  />
+                  <Suspense fallback={null}>
+                    <Photo
+                      url={`${imagesBase}${node.name}`}
+                      size={2.6}
+                      name={node.name}
+                      onPick={onPick}
+                      externalRef={meshRef}
+                      getProgress={ringProgress}
+                    />
+                  </Suspense>
                 </group>
               );
             })}
@@ -279,14 +285,16 @@ export default function ClusterFlower({ imagesBase, cluster, onPick }: ClusterFl
         });
         return (
           <group key={`c-${cluster.id}-${node.name}`}>
-            <Photo
-              url={`${imagesBase}${node.name}`}
-              size={3.0}
-              name={node.name}
-              onPick={onPick}
-              externalRef={meshRef}
-              getProgress={getChildrenProgress}
-            />
+            <Suspense fallback={null}>
+              <Photo
+                url={`${imagesBase}${node.name}`}
+                size={3.0}
+                name={node.name}
+                onPick={onPick}
+                externalRef={meshRef}
+                getProgress={getChildrenProgress}
+              />
+            </Suspense>
           </group>
         );
       })}

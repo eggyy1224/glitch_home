@@ -93,11 +93,13 @@ export function useSlidePlayback({
   intervalMs = 3000,
   searchByImage = searchImagesByImage,
   fetchKinshipData = fetchKinship,
+  imagesBase = "/generated_images/", // Default base path
 }: {
   anchorImage?: string | null | undefined;
   intervalMs?: number;
   searchByImage?: typeof searchImagesByImage;
   fetchKinshipData?: typeof fetchKinship;
+  imagesBase?: string;
 } = {}) {
   const anchorClean = cleanId(anchorImage);
   const [items, setItems] = useState<SlideItem[]>([]);
@@ -218,6 +220,16 @@ export function useSlidePlayback({
     }, effectiveInterval);
     return () => clearInterval(timer);
   }, [items, intervalMs, playbackSpeed, isPaused]);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const nextIndex = (index + 1) % items.length;
+    const nextItem = items[nextIndex];
+    if (nextItem?.cleanId) {
+      const img = new Image();
+      img.src = `${imagesBase}${nextItem.cleanId}`;
+    }
+  }, [index, items, imagesBase]);
 
   const current = useMemo(() => {
     if (!items.length) return null;

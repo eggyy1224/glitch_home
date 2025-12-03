@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, Suspense } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Line, useTexture } from "@react-three/drei";
@@ -217,22 +217,24 @@ export default function IncubatorScene({ imagesBase, data, onPick }: IncubatorSc
 
     return (
       <group key={`inc-node-${node.name}`}>
-        <Photo
-          url={`${imagesBase}${node.name}`}
-          size={size}
-          name={node.name}
-          onPick={onPick}
-          externalRef={meshRef}
-          getProgress={progressFn}
-        />
-        <FlowOverlay
-          url={`${imagesBase}${node.name}`}
-          baseRef={meshRef}
-          getProgress={progressFn}
-          kind={node.kind || "node"}
-          flowRef={quantumFieldIntensityRef}
-          seed={flowSeed}
-        />
+        <Suspense fallback={null}>
+          <Photo
+            url={`${imagesBase}${node.name}`}
+            size={size}
+            name={node.name}
+            onPick={onPick}
+            externalRef={meshRef}
+            getProgress={progressFn}
+          />
+          <FlowOverlay
+            url={`${imagesBase}${node.name}`}
+            baseRef={meshRef}
+            getProgress={progressFn}
+            kind={node.kind || "node"}
+            flowRef={quantumFieldIntensityRef}
+            seed={flowSeed}
+          />
+        </Suspense>
       </group>
     );
   });
