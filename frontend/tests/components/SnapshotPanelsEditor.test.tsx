@@ -83,17 +83,37 @@ describe("SnapshotPanelsEditor", () => {
     expect(screen.getByText(/資產：圖片 1 \/ 影片 1/)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("模式"), { target: { value: "video_mode" } });
-    expect(onPanelChange).toHaveBeenLastCalledWith(0, { url: "/?video_mode=true" });
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({ url: "/?video_mode=true", params: { __preset_mode: "video_mode" } }),
+    );
 
     fireEvent.change(screen.getByLabelText("資產（依模式）"), { target: { value: "clipA.mp4" } });
-    expect(onPanelChange).toHaveBeenLastCalledWith(0, { url: "/?video_mode=true&video=clipA.mp4" });
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({ url: "/?video_mode=true&video=clipA.mp4", params: { __preset_mode: "video_mode" } }),
+    );
 
     fireEvent.change(screen.getByLabelText("模式"), { target: { value: "static_mode" } });
     fireEvent.change(screen.getByLabelText("資產（依模式）"), { target: { value: "img-a.png" } });
-    expect(onPanelChange).toHaveBeenLastCalledWith(0, { url: "/?static_mode=true&img=img-a.png", image: "img-a.png" });
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({
+        url: "/?static_mode=true&img=img-a.png",
+        image: "img-a.png",
+        params: { __preset_mode: "static_mode" },
+      }),
+    );
 
     fireEvent.change(screen.getByLabelText("image"), { target: { value: "img-b.png" } });
-    expect(onPanelChange).toHaveBeenLastCalledWith(0, { image: "img-b.png", url: "/?static_mode=true&img=img-b.png" });
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({
+        image: "img-b.png",
+        url: "/?static_mode=true&img=img-b.png",
+        params: { __preset_mode: "static_mode" },
+      }),
+    );
   });
 
   it("拖放數字檔名資產時不會被當成面板索引，會生成 static_mode 網址", async () => {
