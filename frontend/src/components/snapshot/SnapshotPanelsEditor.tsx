@@ -3,7 +3,7 @@ import { createTextSearchRequest, listOffspringImages, listVideoAssets } from ".
 import { AssetDrawer } from "./AssetDrawer";
 import { PanelCanvas } from "./PanelCanvas";
 import { PanelList } from "./PanelList";
-import { buildUrlFromPreset, getPanelModeAndAsset, MODE_PRESETS } from "./panelPresets";
+import { buildUrlFromPreset, getPanelModeAndAsset, mergePresetMode, MODE_PRESETS } from "./panelPresets";
 import type { PanelMode } from "./panelPresets";
 import { useSnapshotPanelDnd } from "./useSnapshotPanelDnd";
 import type { AssetSearchMode, AssetTab, PanelConfig } from "./types";
@@ -220,12 +220,12 @@ export default function SnapshotPanelsEditor({
 
   const handleModeSelect = (index: number, nextMode: PanelMode | "", currentAsset: string, panel?: PanelConfig) => {
     if (!nextMode) {
-      onPanelChange(index, { url: "", image: "" });
+      onPanelChange(index, { url: "", image: "", params: mergePresetMode(panel?.params, "") });
       return;
     }
     const preset = MODE_PRESETS[nextMode as PanelMode];
     const nextUrl = preset ? buildUrlFromPreset(nextMode as PanelMode, currentAsset) : "";
-    const patch: Partial<PanelConfig> = { url: nextUrl };
+    const patch: Partial<PanelConfig> = { url: nextUrl, params: mergePresetMode(panel?.params, nextMode) };
     if (preset?.assetKey === "img") {
       patch.image = currentAsset || panel?.image || "";
     }
@@ -238,7 +238,7 @@ export default function SnapshotPanelsEditor({
     const hasModePreset = Boolean(preset);
     if (hasModePreset) {
       const nextUrl = preset ? buildUrlFromPreset(mode as PanelMode, assetValue) : "";
-      const patch: Partial<PanelConfig> = { url: nextUrl };
+      const patch: Partial<PanelConfig> = { url: nextUrl, params: mergePresetMode(panel?.params, mode) };
       if (isImageMode) {
         patch.image = assetValue || "";
       }
@@ -255,7 +255,7 @@ export default function SnapshotPanelsEditor({
     const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
     const isImageMode = preset?.assetKey === "img";
     const resolvedMode = isImageMode ? mode : value ? "static_mode" : null;
-    const patch: Partial<PanelConfig> = { image: value || "" };
+    const patch: Partial<PanelConfig> = { image: value || "", params: mergePresetMode(panel?.params, mode) };
     if (resolvedMode) {
       patch.url = buildUrlFromPreset(resolvedMode as PanelMode, value);
     }
