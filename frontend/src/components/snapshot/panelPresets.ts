@@ -50,14 +50,15 @@ export const getPanelModeAndAsset = (panel?: SnapshotPanel | null) => {
   if (panel?.url) {
     try {
       const parsed = new URL(panel.url, base);
-      urlParams = parsed.searchParams;
-      const flagged = presetEntries.find(([, preset]) => preset.flagKey && truthy(urlParams.get(preset.flagKey)));
+      const params = parsed.searchParams;
+      urlParams = params;
+      const flagged = presetEntries.find(([, preset]) => preset.flagKey && truthy(params.get(preset.flagKey)));
       if (flagged) {
         const [matchedMode, preset] = flagged;
         mode = matchedMode;
-        asset = urlParams.get(preset.assetKey) || asset || urlParams.get("img") || "";
+        asset = params.get(preset.assetKey) || asset || params.get("img") || "";
       } else {
-        const imgParam = urlParams.get("img");
+        const imgParam = params.get("img");
         if (imgParam) {
           asset = imgParam;
           if (defaultModeKey) {
@@ -73,8 +74,16 @@ export const getPanelModeAndAsset = (panel?: SnapshotPanel | null) => {
     const hintPreset = MODE_PRESETS[presetModeHint];
     const flagKey = hintPreset?.flagKey;
     const urlIsEmpty = !panel?.url || panel.url === "/" || panel.url === "";
-    const urlHasHintFlag = flagKey && urlParams ? truthy(urlParams.get(flagKey)) : false;
-    if (urlIsEmpty || urlHasHintFlag || (presetModeHint === defaultModeKey && urlParams && urlParams.has("img"))) {
+    const hasUrlParams = Boolean(urlParams);
+    let urlHasHintFlag = false;
+    let urlHasImg = false;
+    if (flagKey && urlParams) {
+      urlHasHintFlag = truthy(urlParams.get(flagKey));
+    }
+    if (presetModeHint === defaultModeKey && urlParams) {
+      urlHasImg = urlParams.has("img");
+    }
+    if (urlIsEmpty || urlHasHintFlag || urlHasImg) {
       mode = presetModeHint;
     }
   }
