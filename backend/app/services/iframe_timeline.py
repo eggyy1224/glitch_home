@@ -250,6 +250,8 @@ def resolve_video_control_action(
         payload["muted"] = bool(action.muted)
     if action.time is not None:
         payload["time"] = max(0.0, float(action.time))
+    if action.speed is not None:
+        payload["speed"] = max(0.25, min(4.0, float(action.speed)))
     offset = action.offset_seconds
     if offset is not None:
         payload["offset_seconds"] = max(0.0, float(offset))

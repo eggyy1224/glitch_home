@@ -135,7 +135,7 @@ class TimelineRemoteClickAction(BaseModel):
 class TimelineVideoControlAction(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    action: Literal["play", "pause", "mute", "unmute", "set_volume", "set_muted", "seek"] = Field(
+    action: Literal["play", "pause", "mute", "unmute", "set_volume", "set_muted", "seek", "set_speed"] = Field(
         ...,
         description="Video 控制動作",
     )
@@ -147,6 +147,7 @@ class TimelineVideoControlAction(BaseModel):
     )
     muted: Optional[bool] = Field(default=None, description="set_muted 動作需帶布林值")
     time: Optional[float] = Field(default=None, ge=0.0, description="seek 的目標秒數")
+    speed: Optional[float] = Field(default=None, ge=0.25, le=4.0, description="set_speed 的倍速（0.25–4.0）")
     offset_seconds: Optional[float] = Field(
         default=None,
         ge=0.0,
@@ -169,6 +170,8 @@ class TimelineVideoControlAction(BaseModel):
             raise ValueError("set_muted 需要 muted")
         if self.action == "seek" and self.time is None:
             raise ValueError("seek 需要 time")
+        if self.action == "set_speed" and self.speed is None:
+            raise ValueError("set_speed 需要 speed")
         if self.target_client_id:
             client = self.target_client_id.strip()
             self.target_client_id = client or None
