@@ -19,6 +19,8 @@ const toUrl = (rawUrl?: string | null) => {
   }
 };
 
+const MODE_FLAG_KEYS = ["slide_mode", "static_mode", "incubator", "iframe_mode", "__preset_mode", "img"];
+
 const parseNumber = (value: string | null | undefined) => {
   if (value == null || value === "") return undefined;
   const parsed = Number(value);
@@ -64,6 +66,10 @@ const setBooleanParam = (params: URLSearchParams, key: string, value: boolean | 
 export const buildVideoModeUrl = (panelUrl: PanelConfig["url"], updates: Partial<VideoPanelOptions>) => {
   const url = toUrl(panelUrl);
   const params = url.searchParams;
+
+  MODE_FLAG_KEYS.forEach((key) => {
+    params.delete(key);
+  });
   params.set("video_mode", "true");
 
   const current = parseVideoPanelOptions(panelUrl);
