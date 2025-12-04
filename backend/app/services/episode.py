@@ -61,6 +61,12 @@ class ResolvedEpisode:
             "title": self.episode.title,
             "description": self.episode.description,
             "tags": self.episode.tags,
+            "version": self.episode.version,
+            "status": self.episode.status,
+            "created_at": self.episode.created_at.isoformat() if self.episode.created_at else None,
+            "updated_at": self.episode.updated_at.isoformat() if self.episode.updated_at else None,
+            "published_at": self.episode.published_at.isoformat() if self.episode.published_at else None,
+            "published_by": self.episode.published_by,
             "track_count": len(self.tracks),
             "tracks": [track.to_payload() for track in self.tracks],
         }
