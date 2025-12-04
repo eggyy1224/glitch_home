@@ -26,6 +26,7 @@ export default function EpisodeManager() {
   const [episodePlayStatus, setEpisodePlayStatus] = useState("");
   const [episodeTargetMapText, setEpisodeTargetMapText] = useState("");
   const [episodeCommandPrefix, setEpisodeCommandPrefix] = useState("");
+  const [episodeAllowDraft, setEpisodeAllowDraft] = useState(false);
   const [loadEpisodeVersion, setLoadEpisodeVersion] = useState("");
   const [rollbackVersion, setRollbackVersion] = useState("");
   const [episodeVersions, setEpisodeVersions] = useState<
@@ -98,12 +99,14 @@ export default function EpisodeManager() {
           throw new Error("episode id 必須提供在 JSON 內或輸入框");
         }
         const payload = { ...parsed, id: targetId };
-        if (mode === "update") {
-          await updateEpisode(targetId, payload, { resolve: false });
-        } else {
-          await createEpisode(payload, { resolve: false });
-        }
-        setEpisodeId(targetId);
+        const resp =
+          mode === "update"
+            ? await updateEpisode(targetId, payload, { resolve: false })
+            : await createEpisode(payload, { resolve: false });
+        const saved = (resp as { episode?: unknown }).episode ?? resp;
+        const savedId = (saved as { id?: string }).id || targetId;
+        setEpisodeId(savedId);
+        setEpisodeJson(pretty(saved));
         setEpisodeMessage(`${mode === "update" ? "已更新" : "已建立"} episode ${targetId}`);
         await fetchEpisodeVersions(targetId);
         await refreshEpisodes();
@@ -218,13 +221,13 @@ export default function EpisodeManager() {
           : undefined;
       const pickedVersion = Number.isFinite(versionFromInput) ? versionFromInput : versionFromJson;
       const versionOpt = Number.isFinite(pickedVersion || NaN) ? { version: pickedVersion } : {};
-      const data = await playEpisode(episodeId, payload, versionOpt);
+      const data = await playEpisode(episodeId, payload, { ...versionOpt, allowDraft: episodeAllowDraft });
       const trackCount = (data as { tracks?: unknown[] })?.tracks?.length ?? 0;
       setEpisodePlayStatus(`已送出（${trackCount} 條 track）`);
     } catch (err) {
       setEpisodePlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [episodeCommandPrefix, episodeId, episodeTargetMapText, loadEpisodeVersion, parsedEpisode]);
+  }, [episodeAllowDraft, episodeCommandPrefix, episodeId, episodeTargetMapText, loadEpisodeVersion, parsedEpisode]);
 
   useEffect(() => {
     refreshEpisodes();
@@ -458,6 +461,15 @@ export default function EpisodeManager() {
               style={{ width: 200 }}
               data-ai-field="episode.command-prefix"
             />
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <input
+                type="checkbox"
+                checked={episodeAllowDraft}
+                onChange={(e) => setEpisodeAllowDraft(e.target.checked)}
+                data-ai-field="episode.allow-draft"
+              />
+              允許草稿
+            </label>
             <button type="button" onClick={handlePlayEpisode} data-ai-action="episode.play">
               播放 Episode
             </button>

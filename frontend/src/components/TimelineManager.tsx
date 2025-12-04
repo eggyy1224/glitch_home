@@ -163,12 +163,14 @@ export default function TimelineManager() {
           throw new Error("timeline id 必須提供在 JSON 內或輸入框");
         }
         const payload = { ...parsed, id: targetId };
-        if (mode === "update") {
-          await updateIframeTimeline(targetId, payload, { resolve: false });
-        } else {
-          await createIframeTimeline(payload, { resolve: false });
-        }
-        setTimelineId(targetId);
+        const resp =
+          mode === "update"
+            ? await updateIframeTimeline(targetId, payload, { resolve: false })
+            : await createIframeTimeline(payload, { resolve: false });
+        const saved = (resp as { timeline?: unknown }).timeline ?? resp;
+        const savedId = (saved as { id?: string }).id || targetId;
+        setTimelineId(savedId);
+        setTimelineJson(pretty(saved));
         if (payload.clientId || payload.client_id) {
           setTimelinePlayTarget(payload.clientId || payload.client_id);
         }
