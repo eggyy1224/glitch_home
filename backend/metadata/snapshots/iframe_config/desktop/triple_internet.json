@@ -1,0 +1,43 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=%E7%B6%B2%E5%92%96.mp4&video_speed=0.65&speed=0.65&video_volume=0&volume=0",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=%E7%B6%B2%E5%92%96.mp4&video_speed=1.75&speed=1.75&video_volume=0&volume=0",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=%E7%B6%B2%E5%92%96.mp4",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
