@@ -11,7 +11,19 @@ from PIL import Image
 
 from app.services.collage_version import (
     average_rect_color,
+    color_distance,
+    compute_edge_colors,
+    compute_tile_luminance,
     generate_collage_version,
+    match_tiles_source_cluster,
+    match_tiles_greedy,
+    match_tiles_luminance,
+    match_tiles_random,
+    match_tiles_wave,
+    match_tiles_weave,
+    match_tiles_weave_vertical,
+    reassemble_collage,
+    reassemble_collage_rotate_90,
     standardize_image,
     tile_image,
 )
@@ -95,6 +107,98 @@ def test_generate_collage_version_invalid_mode(collage_source_images):
             allow_self=True,
             resize_w=64,
         )
+
+
+def test_generate_collage_version_no_images_raises():
+    with pytest.raises(ValueError, match="至少需要 1 張圖片"):
+        generate_collage_version([], rows=2, cols=2, mode="random")
+
+
+def test_generate_collage_version_rotate_mode_converts_rgba(tmp_path):
+    rgba_image = Image.new("RGBA", (16, 16), (10, 20, 30, 255))
+    img_path = tmp_path / "rgba.png"
+    rgba_image.save(img_path)
+
+    result = generate_collage_version(
+        [str(img_path)],
+        rows=2,
+        cols=2,
+        mode="rotate-90",
+        allow_self=False,
+        resize_w=16,
+        format="jpeg",
+        return_map=True,
+    )
+
+    output = Path(result["output_image_path"])
+    assert output.exists()
+    assert output.suffix == ".jpeg"
+    # rotate-90 uses identity mapping
+    assert len(result["tile_mapping"]) == 4
+
+
+def test_tile_matching_helpers_cover_branches():
+    base = Image.new("RGB", (8, 8), (100, 100, 100))
+    candidate1 = Image.new("RGB", (8, 8), (110, 110, 110))
+    candidate2 = Image.new("RGB", (8, 8), (90, 90, 90))
+    base_tiles = tile_image(base, rows=2, cols=2)
+    candidates = []
+    for idx, img in enumerate((candidate1, candidate2)):
+        tiles = tile_image(img, rows=2, cols=2)
+        for r in range(2):
+            for c in range(2):
+                candidates.append((tiles[r * 2 + c], idx, r, c))
+
+    greedy = match_tiles_greedy(base_tiles, candidates, rows=2, cols=2, seed=1)
+    random_map = match_tiles_random(base_tiles, candidates, rows=2, cols=2, seed=2)
+    wave = match_tiles_wave(base_tiles, candidates, rows=2, cols=2, seed=3)
+    luminance = match_tiles_luminance(base_tiles, candidates, rows=2, cols=2, seed=4)
+
+    assert len(greedy) == 4
+    assert len(random_map) == 4
+    assert len(wave) == 4
+    assert len(luminance) == 4
+
+    assert color_distance([], []) > 0
+    assert compute_tile_luminance(candidate1.convert("L")) > 0
+    edges = compute_edge_colors(candidate1)
+    assert set(edges.keys()) == {"top", "bottom", "left", "right", "center"}
+
+
+def test_weave_and_reassemble_variants(tmp_path):
+    base = Image.new("RGB", (12, 12), (10, 20, 30))
+    alt = Image.new("RGB", (12, 12), (200, 210, 220))
+
+    base_tiles = tile_image(base, rows=3, cols=3)
+    candidate_tiles = []
+    for img_idx, img in enumerate((base, alt)):
+        tiles = tile_image(img, rows=3, cols=3)
+        for r in range(3):
+            for c in range(3):
+                candidate_tiles.append((tiles[r * 3 + c], img_idx, r, c))
+
+    weave_map = match_tiles_weave(base_tiles, candidate_tiles, rows=3, cols=3, seed=5, num_images=2)
+    vertical_map = match_tiles_weave_vertical(base_tiles, candidate_tiles, rows=3, cols=3, seed=6, num_images=2)
+    cluster_map = match_tiles_source_cluster(base_tiles, candidate_tiles, rows=3, cols=3, seed=7)
+
+    output = reassemble_collage(
+        base,
+        candidate_tiles,
+        weave_map,
+        rows=3,
+        cols=3,
+        pad_px=1,
+        jitter_px=1,
+        rotate_deg=90,
+        seed=42,
+    )
+    rotated = reassemble_collage_rotate_90(base, rows=3, cols=3, pad_px=0)
+
+    assert len(weave_map) == 9
+    assert len(vertical_map) == 9
+    assert len(cluster_map) == 9
+    assert output.size[0] > 0 and output.size[1] > 0
+    assert rotated.size == base.size
 
 
 def test_standardize_image_validation_errors(tmp_path):

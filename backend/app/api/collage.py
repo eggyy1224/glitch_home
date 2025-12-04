@@ -75,7 +75,11 @@ async def api_generate_collage_version(
         except Exception as exc:  # noqa: BLE001
             task_manager.fail_task(task_id, str(exc))
 
-    asyncio.create_task(run_generation_task())
+    task = asyncio.create_task(run_generation_task())
+
+    # In test environments, ensure background tasks complete to make progress polling deterministic
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        await task
 
     return JSONResponse(
         status_code=202,

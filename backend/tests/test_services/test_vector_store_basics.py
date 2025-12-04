@@ -17,6 +17,12 @@ def test_mark_deprecated_images_missing_dir_returns_message(monkeypatch, tmp_pat
     assert result["marked"] == 0
 
 
+def test_iter_offspring_images_missing_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(vector_store.settings, "offspring_dir", str(tmp_path / "missing"))
+
+    assert vector_store._iter_offspring_images() is None
+
+
 def test_iter_offspring_images_limit_zero(monkeypatch, tmp_path):
     base = tmp_path / "offs"
     base.mkdir()
@@ -186,6 +192,33 @@ def test_search_images_by_image_missing_file_and_db(monkeypatch, tmp_path):
         vector_store.search_images_by_image("missing.png")
 
 
+def test_search_images_by_image_missing_embedding_raises(monkeypatch, tmp_path):
+    monkeypatch.setattr(vector_store.settings, "offspring_dir", str(tmp_path))
+
+    class FakeCol:
+        def get(self, ids, include=None):
+            return {"ids": ids, "embeddings": [None]}
+
+    monkeypatch.setattr(vector_store, "get_images_collection", lambda: FakeCol())
+
+    with pytest.raises(FileNotFoundError):
+        vector_store.search_images_by_image("ghost.png")
+
+
+def test_index_offspring_batch_handles_missing_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(vector_store.settings, "offspring_dir", str(tmp_path / "missing"))
+
+    result = vector_store.index_offspring_batch(batch_size=3, offset=0)
+
+    assert result == {
+        "indexed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "results": [],
+        "batch_info": {"batch_size": 3, "offset": 0, "total_files": 0, "next_offset": 3},
+    }
+
+
 def test_embed_image_for_search_fallback_uses_prompt(monkeypatch, tmp_path):
     image_path = tmp_path / "sample.png"
     image_path.write_bytes(b"x")
@@ -208,3 +241,30 @@ def test_embed_image_for_search_fallback_uses_prompt(monkeypatch, tmp_path):
 
     assert vec == [0.9]
     assert received_hint["hint"] == "hint"
+
+
+def test_search_images_by_text_applies_where_clause(monkeypatch):
+    vector_store._cached_embed_text.cache_clear()
+    monkeypatch.setattr(vector_store, "embed_text", lambda q: [0.1, 0.2])
+
+    captured = {}
+
+    class FakeCol:
+        def query(self, query_embeddings, n_results, where=None):
+            captured["where"] = where
+            return {
+                "ids": [["img1"]],
+                "distances": [[0.01]],
+                "metadatas": [[{"foo": "bar"}]],
+            }
+
+    monkeypatch.setattr(vector_store, "get_images_collection", lambda: FakeCol())
+
+    result = vector_store.search_images_by_text("skyline", top_k=1, include_deprecated=False)
+
+    assert captured["where"] == {"deprecated": {"$ne": True}}
+    assert result["results"][0]["metadata"]["foo"] == "bar"
+
+    # when include_deprecated=True, where should be None
+    result2 = vector_store.search_images_by_text("skyline", top_k=1, include_deprecated=True)
+    assert captured["where"] is None

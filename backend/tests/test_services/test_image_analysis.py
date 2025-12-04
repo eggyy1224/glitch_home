@@ -86,6 +86,13 @@ def test_analyze_screenshot_no_text_output(tmp_path, monkeypatch):
         image_analysis.analyze_screenshot(str(img_path))
 
 
+def test_serialise_safety_returns_empty_when_missing():
+    class DummyCandidate:
+        safety_ratings: None = None
+
+    assert image_analysis._serialise_safety(DummyCandidate()) == []
+
+
 def test_analyze_screenshot_success_includes_safety(tmp_path, monkeypatch):
     img_path = tmp_path / "rgb.png"
     Image.new("RGB", (8, 8)).save(img_path)

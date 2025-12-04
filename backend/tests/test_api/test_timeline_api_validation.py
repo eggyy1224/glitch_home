@@ -78,3 +78,63 @@ def test_stop_requires_target(monkeypatch, client: TestClient):
 
     assert resp.status_code == 400
     assert "target_client_id 必須提供" in resp.json()["detail"]
+
+
+def test_play_rejects_invalid_sanitized_client(monkeypatch, client: TestClient):
+    timeline = SimpleNamespace(id="t7", client_id="desk", status="published", version=1)
+    monkeypatch.setattr(timeline_api, "load_iframe_timeline_definition", lambda *_args, **_kwargs: timeline)
+    monkeypatch.setattr(timeline_api, "sanitize_client_id", lambda _cid: (_ for _ in ()).throw(ValueError("bad client")))
+
+    resp = client.post("/api/iframe-timelines/t7/play", json={"target_client_id": "desk"})
+
+    assert resp.status_code == 400
+    assert "bad client" in resp.json()["detail"]
+
+
+@patch("app.api.timeline.publish_iframe_timeline", side_effect=RuntimeError("boom"))
+def test_publish_unexpected_error_returns_500(_mock_publish):
+    # Use a client that surfaces 500 responses instead of raising exceptions
+    local_client = TestClient(app, raise_server_exceptions=False)
+
+    resp = local_client.post("/api/iframe-timelines/t8/publish")
+
+    assert resp.status_code == 500
+
+
+def test_list_iframe_timelines_value_error(monkeypatch, client: TestClient):
+    monkeypatch.setattr(timeline_api, "list_iframe_timelines", lambda *_: (_ for _ in ()).throw(ValueError("bad")))
+
+    resp = client.get("/api/iframe-timelines")
+
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "bad"
+
+
+def test_get_iframe_timeline_not_found(monkeypatch, client: TestClient):
+    monkeypatch.setattr(
+        timeline_api,
+        "load_iframe_timeline_definition",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError("nope")),
+    )
+
+    resp = client.get("/api/iframe-timelines/missing")
+
+    assert resp.status_code == 404
+    assert "nope" in resp.json()["detail"]
+
+
+def test_raw_payload_includes_client_id(monkeypatch):
+    class DummyTimeline:
+        def __init__(self):
+            self.client_id = "abc"
+
+        @property
+        def id(self):
+            return "demo"
+
+        def model_dump(self, mode, by_alias):
+            return {"id": self.id}
+
+    payload = timeline_api._raw_timeline_payload(DummyTimeline())
+
+    assert payload["clientId"] == "abc"
