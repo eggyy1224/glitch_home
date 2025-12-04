@@ -1,5 +1,6 @@
 import shutil
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -7,7 +8,7 @@ from app.config import settings
 from app.services.iframe_timeline import save_iframe_timeline_definition
 
 
-def _make_timeline(timeline_id: str, client_id: str) -> None:
+def _make_timeline(timeline_id: str, client_id: str, version: int | None = None) -> None:
     payload = {
         "id": timeline_id,
         "title": f"title-{timeline_id}",
@@ -17,6 +18,8 @@ def _make_timeline(timeline_id: str, client_id: str) -> None:
             {"snapshot": f"{client_id}/snap_b", "duration": 1.5},
         ],
     }
+    if version is not None:
+        payload["version"] = version
     save_iframe_timeline_definition(payload)
 
 
@@ -182,3 +185,27 @@ def test_clone_resolution_failure_does_not_persist(client):
     assert not clone_path.exists()
     # source file should remain
     assert (episodes_dir / "ep_source.json").exists()
+
+
+@patch("app.services.episode.realtime_broadcaster.broadcast_timeline_control", new_callable=AsyncMock)
+def test_play_episode_includes_timeline_version_in_options(mock_broadcast: AsyncMock, client):
+    _make_timeline("t_versioned", "c_versioned", version=4)
+    payload = {
+        "id": "ep_versioned",
+        "title": "versioned episode",
+        "tracks": [{"timelineId": "t_versioned", "targetClientId": "c_versioned"}],
+    }
+    create_resp = client.post("/api/episodes", json=payload)
+    assert create_resp.status_code == 201
+
+    play_resp = client.post("/api/episodes/ep_versioned/play", json={"command_id_prefix": "prefix"})
+    assert play_resp.status_code == 200
+    tracks = play_resp.json()["tracks"]
+    assert len(tracks) == 1
+    options = tracks[0]["options"]
+    assert options["version"] == 4
+    assert options["commandId"].startswith("prefix:")
+
+    mock_broadcast.assert_awaited_once()
+    broadcast_options = mock_broadcast.await_args.kwargs["options"]
+    assert broadcast_options["version"] == 4

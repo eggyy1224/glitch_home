@@ -10,7 +10,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-def _write_timeline_file(directory: Path, timeline_id: str = "demo", client_id: str = "desktop") -> str:
+def _write_timeline_file(
+    directory: Path, timeline_id: str = "demo", client_id: str = "desktop", version: int | None = None
+) -> str:
     payload = {
         "id": timeline_id,
         "title": "Demo timeline",
@@ -29,6 +31,8 @@ def _write_timeline_file(directory: Path, timeline_id: str = "demo", client_id: 
             },
         ],
     }
+    if version is not None:
+        payload["version"] = version
     directory.mkdir(parents=True, exist_ok=True)
     (directory / f"{timeline_id}.json").write_text(json.dumps(payload), encoding="utf-8")
     return timeline_id
@@ -70,6 +74,22 @@ def test_play_timeline_broadcasts_control(mock_broadcast: AsyncMock, client: Tes
     assert options["startStep"] == 1
     assert options["loop"] is True
     assert options["forceIframeMode"] is False
+
+
+@pytest.mark.api
+@patch("app.api.timeline.realtime_broadcaster.broadcast_timeline_control", new_callable=AsyncMock)
+def test_play_timeline_includes_version_option(mock_broadcast: AsyncMock, client: TestClient, timeline_dir: Path) -> None:
+    timeline_id = _write_timeline_file(timeline_dir, timeline_id="versioned", client_id="desktop_v", version=7)
+
+    response = client.post(f"/api/iframe-timelines/{timeline_id}/play", json={"target_client_id": "desktop_v"})
+
+    assert response.status_code == 200
+    options = response.json()["options"]
+    assert options["version"] == 7
+
+    mock_broadcast.assert_awaited_once()
+    broadcast_options = mock_broadcast.await_args.kwargs["options"]
+    assert broadcast_options["version"] == 7
 
 
 @pytest.mark.api

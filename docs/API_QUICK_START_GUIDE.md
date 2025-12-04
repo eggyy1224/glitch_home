@@ -1001,6 +1001,7 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
   - `start_step`：可選，從第幾段開始（0-based）。
   - `loop_override`：可選，覆寫 timeline 的 loop 設定。
   - `command_id`：可選，同一輪播放/停止建議共用同一 ID，方便客戶端去重。
+  - `version`：可選 query 參數，播放指定歷史版；未帶時會使用最新版本並在 WS options/回應中附帶 `version`，方便除錯。
 
 - `POST /api/iframe-timelines/stop`
 
@@ -1043,8 +1044,8 @@ curl http://localhost:8000/api/iframe-timelines/desktop2_opening_demo | jq .
 
 - `GET /api/episodes`：列出 Episode（id/title/track_count/clients/tags）
 - `GET /api/episodes/{id}`：取回詳細內容；加 `?resolve=false` 可拿未解析的原始 JSON
-- `POST /api/episodes`：建立；`PUT /api/episodes/{id}`：覆寫；`DELETE /api/episodes/{id}`：刪除；`POST /api/episodes/{id}/clone`：複製為新 id
-- `POST /api/episodes/{id}/play`：依 tracks 逐一廣播 timeline play，預設沿用 track 的 targetClientId/autoPlay/loopOverride
+- `POST /api/episodes`：建立（寫檔前會先 resolve 所有 timeline 引用，找不到會回 404/400 並不會寫檔案）；`PUT /api/episodes/{id}`：覆寫；`DELETE /api/episodes/{id}`：刪除；`POST /api/episodes/{id}/clone`：複製為新 id
+- `POST /api/episodes/{id}/play`：依 tracks 逐一廣播 timeline play，預設沿用 track 的 targetClientId/autoPlay/loopOverride；可帶 `?version=` 播放歷史版，回傳與 WS options 會附帶各 track 的 timeline `version`
 
 播放範例（覆寫特定 timeline 的 client，並指定共用 commandId 前綴）：
 
@@ -1058,6 +1059,7 @@ curl -X POST http://localhost:8000/api/episodes/ep_opening/play \
 ```
 
 回傳的 `tracks[]` 會列出實際發送的 target_client_id 與 options（autoPlay/loop/forceIframeMode/startStep/startAt/commandId），以便調試。
+options 也會帶上 timeline `version`，對應目前播放的定義。
 
 ### Scene：一次廣播多個 snapshot 到指定 client
 

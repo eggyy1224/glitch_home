@@ -26,7 +26,7 @@
   - 覆寫：`PUT /api/iframe-timelines/{id}`（支援 `expected_version`）
   - 複製：`POST /api/iframe-timelines/{id}/clone`
   - 版本：`GET /api/iframe-timelines/{id}/versions`、`POST /api/iframe-timelines/{id}/publish`、`POST /api/iframe-timelines/{id}/rollback`
-  - 播放：`POST /api/iframe-timelines/{id}/play`（透過 WebSocket 廣播 `timeline_control` 指令給 target client，可帶 `version`；草稿需先發布或開啟 `allow_draft`）
+  - 播放：`POST /api/iframe-timelines/{id}/play`（透過 WebSocket 廣播 `timeline_control` 指令給 target client，可帶 `version`；回應與 WS options 會附上 timeline `version`；草稿需先發布或開啟 `allow_draft`）
 - 用途：定義單一 client 的播放腳本，或在 Episode 中被多條 track 引用。
 - 常見欄位／限制：  
   - `steps` 至少 1 筆；`duration` > 0；`snapshot` 必填且經過 validator 去除空白。  
@@ -42,11 +42,11 @@
 - 主要 API：
   - 列表：`GET /api/episodes`
   - 讀取：`GET /api/episodes/{id}`（`resolve=false` 拿原始檔；預設會連帶 resolve timeline；可帶 `version` 指定歷史版）
-  - 建立：`POST /api/episodes`（支援 `expected_version`，並寫入 `metadata/history/episodes/{id}`）
-  - 覆寫：`PUT /api/episodes/{id}`（支援 `expected_version`）
-  - 複製：`POST /api/episodes/{id}/clone`
+  - 建立：`POST /api/episodes`（支援 `expected_version`，寫入前會先 resolve timeline 引用，找不到會回 404/400 並不寫檔；並寫入 `metadata/history/episodes/{id}`）
+  - 覆寫：`PUT /api/episodes/{id}`（支援 `expected_version`，亦會先 resolve）
+  - 複製：`POST /api/episodes/{id}/clone`（會先 resolve，target timeline 缺失會直接報錯）
   - 版本：`GET /api/episodes/{id}/versions`、`POST /api/episodes/{id}/publish`、`POST /api/episodes/{id}/rollback`
-  - 播放：`POST /api/episodes/{id}/play`（會為每個 track 發出一條 `timeline_control`，可附 target map / command_id_prefix，可帶 `version`；草稿需 allow_draft）
+  - 播放：`POST /api/episodes/{id}/play`（會為每個 track 發出一條 `timeline_control`，可附 target map / command_id_prefix，可帶 `version`；回應與 WS options 會帶上各 track 的 timeline `version`；草稿需 allow_draft）
 - 用途：同時驅動多 client，每條 track 播自己的 Timeline，可設定延遲與覆寫 client。
 
 ## 4. 組合關係與播放流程
@@ -56,7 +56,7 @@
    - 用多條 Timeline + `targetClientId` 做成 Episode tracks。  
 2) **解析（resolve）**  
    - Timeline 讀取時預設 `resolve=true`：會把 step.snapshot 指向的 Snapshot 讀進來並驗證 client；`resolve=false` 只回原始 JSON。  
-   - Episode 讀取時預設也會 resolve：替每個 track 把 timeline 解析進來，方便前端檢查。  
+   - Episode 讀取時預設也會 resolve：替每個 track 把 timeline 解析進來，方便前端檢查；建立/覆寫/複製時同樣會先 resolve 再寫檔，避免無效引用落盤。  
 3) **播放**  
    - 播放 Timeline：後端廣播 `timeline_control` WS 事件給目標 client，前端 `useIframeTimelinePlayer` 依 step.duration 依序套用 Snapshot。  
    - 播放 Episode：後端對每條 track 各發一條 `timeline_control`，client 依自己的指令播放；若提供 target map，會在這次播放改送指定 client。  
