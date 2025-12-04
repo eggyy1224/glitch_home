@@ -31,38 +31,99 @@ describe("VideoMode", () => {
     expect(onCaptureReady).toHaveBeenCalledWith(expect.anything());
   });
 
-  it("支援控制播放/音量/靜音，並將控制器暴露到 ref", async () => {
-    window.history.replaceState({}, "", "?video=demo.mp4&auto_unmute=false&video_volume=0.3");
-    const controlRef = createRef<VideoController | null>();
+  it("自動解除靜音失敗時等待使用者點擊", async () => {
+    window.history.replaceState({}, "", "?video=demo.mp4&auto_unmute=true");
 
-    const { container } = render(<VideoMode controlRef={controlRef} />);
+    const playMock = vi.fn().mockRejectedValueOnce(new Error("blocked")).mockResolvedValueOnce(undefined);
+    const pauseMock = vi.fn();
+    const loadMock = vi.fn();
+
+    const originalPlay = HTMLMediaElement.prototype.play;
+    const originalPause = HTMLMediaElement.prototype.pause;
+    const originalLoad = HTMLMediaElement.prototype.load;
+    const readyStateDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "readyState");
+
+    Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: playMock });
+    Object.defineProperty(HTMLMediaElement.prototype, "pause", { configurable: true, value: pauseMock });
+    Object.defineProperty(HTMLMediaElement.prototype, "load", { configurable: true, value: loadMock });
+    Object.defineProperty(HTMLMediaElement.prototype, "readyState", { configurable: true, get: () => 3 });
+
+    const { container } = render(<VideoMode />);
+    const button = screen.getByRole("button");
     const video = container.querySelector("video") as HTMLVideoElement | null;
     expect(video).not.toBeNull();
-    if (!video) {
-      throw new Error("video element not found");
+    if (!video) throw new Error("video not found");
+
+    await waitFor(() => expect(playMock).toHaveBeenCalled());
+    expect(button).toHaveAttribute("aria-pressed", "true");
+
+    document.dispatchEvent(new Event("click"));
+    await waitFor(() => expect(playMock).toHaveBeenCalledTimes(2));
+    expect(button).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(playMock).toHaveBeenCalledTimes(2);
+
+    Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: originalPlay });
+    Object.defineProperty(HTMLMediaElement.prototype, "pause", { configurable: true, value: originalPause });
+    Object.defineProperty(HTMLMediaElement.prototype, "load", { configurable: true, value: originalLoad });
+    if (readyStateDescriptor) {
+      Object.defineProperty(HTMLMediaElement.prototype, "readyState", readyStateDescriptor);
     }
+  });
 
-    video.play = vi.fn().mockResolvedValue(undefined);
-    video.pause = vi.fn();
+  it("支援控制播放、快轉、靜音與截圖回呼", async () => {
+    window.history.replaceState({}, "", "?video=demo.mp4&auto_unmute=false&video_volume=0.3&video_speed=1.5&loop=false");
+    const controlRef = createRef<VideoController | null>();
+    const blob = new Blob(["video"], { type: "image/png" });
+    const toBlob = vi.fn((cb: BlobCallback) => cb(blob));
+    mockEnsureHtml2Canvas.mockResolvedValueOnce(async () => ({ toBlob } as unknown as HTMLCanvasElement));
+    const onCaptureReady = vi.fn();
 
-    await waitFor(() => expect(video.volume).toBeCloseTo(0.3));
+    const { container } = render(<VideoMode controlRef={controlRef} onCaptureReady={onCaptureReady} />);
+    const video = container.querySelector("video") as HTMLVideoElement | null;
+    expect(video).not.toBeNull();
+    if (!video) throw new Error("video not found");
+
+    const playMock = vi.fn().mockResolvedValue(undefined);
+    const pauseMock = vi.fn();
+    video.play = playMock;
+    video.pause = pauseMock;
+    Object.defineProperty(video, "currentTime", { value: 0, writable: true });
+
+    await waitFor(() => {
+      expect(video.volume).toBeCloseTo(0.3);
+      expect(video.playbackRate).toBeCloseTo(1.5);
+    });
 
     const controller = controlRef.current;
     expect(controller).toBeDefined();
-    if (!controller) {
-      throw new Error("controller not ready");
-    }
-    await controller.play?.();
-    expect(video.play).toHaveBeenCalled();
+    if (!controller) throw new Error("controller missing");
 
+    await controller.play?.();
     controller.setVolume?.(0.8);
+    controller.setMuted?.(false);
+    controller.setSpeed?.(2.5);
+    controller.seek?.(5);
+    controller.pause?.();
+
     expect(video.volume).toBeCloseTo(0.8);
     expect(video.muted).toBe(false);
+    expect(video.playbackRate).toBeCloseTo(2.5);
+    expect(video.currentTime).toBe(5);
+    expect(playMock).toHaveBeenCalled();
+    expect(pauseMock).toHaveBeenCalled();
 
-    controller.setMuted?.(true);
-    expect(video.muted).toBe(true);
+    await waitFor(() => expect(onCaptureReady).toHaveBeenCalledWith(expect.any(Function)));
+    const capture = onCaptureReady.mock.calls[0][0] as () => Promise<Blob>;
+    await expect(capture()).resolves.toEqual(blob);
 
-    fireEvent.click(screen.getByRole("button"));
-    expect(video.muted).toBe(false);
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    fireEvent.keyDown(button, { key: "Enter" });
+    expect(button).toHaveAttribute("aria-pressed", "true");
   });
 });

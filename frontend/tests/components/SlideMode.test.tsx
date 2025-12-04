@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SlideMode from "../../src/SlideMode";
 
 const { mockUseSlidePlayback, mockUseSlideScreenshot } = vi.hoisted(() => ({
@@ -67,5 +67,78 @@ describe("SlideMode", () => {
 
     render(<SlideMode imagesBase="/imgs/" anchorImage={null} />);
     expect(screen.getByText("load failed")).toBeInTheDocument();
+  });
+
+  it("ResizeObserver 存在時會更新 size class", async () => {
+    const togglePause = vi.fn();
+    const setPlaybackSpeed = vi.fn();
+    let resizeHandler: (() => void) | null = null;
+
+    mockUseSlidePlayback.mockReturnValue({
+      current: { cleanId: "img-3" },
+      items: [{ cleanId: "img-3" }],
+      index: 0,
+      loading: false,
+      error: null,
+      showCaption: false,
+      playbackSpeed: 1,
+      isPaused: true,
+      setPlaybackSpeed,
+      togglePause,
+    });
+
+    class MockResizeObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      constructor(handler: () => void) {
+        resizeHandler = handler;
+      }
+    }
+
+    const originalResizeObserver = global.ResizeObserver;
+    // @ts-expect-error jsdom 注入 mock
+    global.ResizeObserver = MockResizeObserver;
+
+    const { container } = render(<SlideMode imagesBase="/imgs/" anchorImage="img-3" />);
+    const root = container.firstChild as HTMLElement;
+    root.getBoundingClientRect = () => ({ width: 380, height: 300, x: 0, y: 0, top: 0, left: 0, bottom: 0, right: 0 });
+
+    resizeHandler?.();
+
+    await screen.findByAltText("img-3");
+    await waitFor(() => expect(root.style.padding).toBe("12px"));
+
+    global.ResizeObserver = originalResizeObserver;
+  });
+
+  it("沒有 ResizeObserver 時使用 window.resize", async () => {
+    const togglePause = vi.fn();
+    const setPlaybackSpeed = vi.fn();
+    mockUseSlidePlayback.mockReturnValue({
+      current: { cleanId: "img-4" },
+      items: [{ cleanId: "img-4" }],
+      index: 0,
+      loading: false,
+      error: null,
+      showCaption: true,
+      playbackSpeed: 1,
+      isPaused: false,
+      setPlaybackSpeed,
+      togglePause,
+    });
+
+    const originalResizeObserver = global.ResizeObserver;
+    // @ts-expect-error 覆寫為 undefined 模擬舊環境
+    global.ResizeObserver = undefined;
+
+    const { container } = render(<SlideMode imagesBase="/imgs/" anchorImage="img-4" />);
+    const root = container.firstChild as HTMLElement;
+    root.getBoundingClientRect = () => ({ width: 600, height: 480, x: 0, y: 0, top: 0, left: 0, bottom: 0, right: 0 });
+
+    window.dispatchEvent(new Event("resize"));
+
+    await waitFor(() => expect(root.style.padding).toBe("24px 16px 32px"));
+
+    global.ResizeObserver = originalResizeObserver;
   });
 });
