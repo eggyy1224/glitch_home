@@ -103,8 +103,10 @@ describe("useIframeTimelinePlayer", () => {
         await firstFetch;
       });
     }
-    expect(result.current.isPlaying).toBe(false);
-    expect(result.current.currentStepIndex).toBe(1);
+    await waitFor(() => {
+      expect(result.current.isPlaying).toBe(false);
+      expect(result.current.currentStepIndex).toBe(1);
+    });
 
     act(() => {
       result.current.jumpToStep(0);
