@@ -96,12 +96,24 @@ export default function Photo({
     if (cached) return;
 
     let cancelled = false;
-    loadTextureSafely(url, "anonymous").then((texture) => {
+    let retryHandle: ReturnType<typeof setTimeout> | null = null;
+
+    const attempt = () => {
       if (cancelled) return;
-      setTex(texture);
-    });
+      loadTextureSafely(url, "anonymous").then((texture) => {
+        if (cancelled) return;
+        if (texture) {
+          setTex(texture);
+          return;
+        }
+        retryHandle = setTimeout(attempt, FAILED_RETRY_DELAY_MS);
+      });
+    };
+
+    attempt();
     return () => {
       cancelled = true;
+      if (retryHandle) clearTimeout(retryHandle);
     };
   }, [url]);
 
