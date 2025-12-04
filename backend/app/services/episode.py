@@ -288,6 +288,8 @@ def resolve_episode(
             options["loop"] = bool(track.loop_override)
         if track.start_at is not None:
             options["startAt"] = max(0.0, float(track.start_at))
+        if timeline.version is not None:
+            options["version"] = timeline.version
 
         if command_id_prefix:
             options["commandId"] = f"{command_id_prefix}:{timeline.id}"
