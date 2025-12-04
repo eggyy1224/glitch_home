@@ -103,7 +103,6 @@ def api_create_episode(
         safe_id = sanitize_episode_id(raw_id)
         payload = {**body, "id": safe_id}
         episode = Episode.model_validate(payload)
-        resolved = resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -118,6 +117,12 @@ def api_create_episode(
 
     if not resolve:
         return {"episode": _raw_episode_payload(episode)}
+    try:
+        resolved = resolve_episode(episode)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"episode": resolved.to_payload()}
 
 
@@ -142,7 +147,6 @@ def api_update_episode(
         safe_id = sanitize_episode_id(episode_id)
         payload = {**body, "id": safe_id}
         episode = Episode.model_validate(payload)
-        resolved = resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -157,6 +161,12 @@ def api_update_episode(
 
     if not resolve:
         return {"episode": _raw_episode_payload(episode)}
+    try:
+        resolved = resolve_episode(episode)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"episode": resolved.to_payload()}
 
 
@@ -192,7 +202,6 @@ def api_clone_episode(
         payload = source.model_dump(mode="json", by_alias=True)
         payload["id"] = clean_id
         episode = Episode.model_validate(payload)
-        resolved = resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -204,6 +213,12 @@ def api_clone_episode(
 
     if not resolve:
         return {"episode": _raw_episode_payload(episode)}
+    try:
+        resolved = resolve_episode(episode)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"episode": resolved.to_payload()}
 
 
