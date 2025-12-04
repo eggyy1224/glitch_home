@@ -9,7 +9,12 @@ from typing import List
 import pytest
 from PIL import Image
 
-from app.services.collage_version import generate_collage_version
+from app.services.collage_version import (
+    average_rect_color,
+    generate_collage_version,
+    standardize_image,
+    tile_image,
+)
 
 
 @pytest.fixture
@@ -90,3 +95,25 @@ def test_generate_collage_version_invalid_mode(collage_source_images):
             allow_self=True,
             resize_w=64,
         )
+
+
+def test_standardize_image_validation_errors(tmp_path):
+    img_path = tmp_path / "tiny.png"
+    Image.new("RGB", (8, 8)).save(img_path)
+    img = Image.open(img_path)
+
+    with pytest.raises(ValueError, match="正整數"):
+        standardize_image(img, target_w=16, rows=0, cols=2)
+
+    with pytest.raises(ValueError, match="不相容"):
+        standardize_image(img, target_w=8, rows=10, cols=10)
+
+
+def test_tile_image_and_color_helpers(tmp_path):
+    img = Image.new("RGB", (4, 2), (10, 20, 30))
+
+    with pytest.raises(ValueError, match="0 像素"):
+        tile_image(img, rows=5, cols=1)
+
+    color = average_rect_color(img, start_x=0, start_y=0, width=0, height=0)
+    assert color == [0.0, 0.0, 0.0]

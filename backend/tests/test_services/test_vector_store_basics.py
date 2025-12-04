@@ -134,3 +134,77 @@ def test_index_files_surface_embedding_failures(monkeypatch, tmp_path):
     assert result["status"] == "error"
     assert "primary fail" in result["error"]
     assert "fallback fail" in result["error"]
+
+
+def test_search_images_by_text_empty_query(monkeypatch):
+    vector_store._cached_embed_text.cache_clear()
+    monkeypatch.setattr(vector_store, "embed_text", lambda q: [0.1])
+
+    with pytest.raises(ValueError):
+        vector_store.search_images_by_text(" ")
+
+
+def test_search_images_by_image_prefers_cached_embedding(monkeypatch):
+    fake_collector = type(
+        "FakeCol",
+        (),
+        {
+            "get": lambda self, ids, include=None: {
+                "ids": ids,
+                "embeddings": [[0.5, 0.6]],
+                "metadatas": [[{"foo": "bar"}]],
+            },
+            "query": lambda self, query_embeddings, n_results, where=None: {
+                "ids": [["ghost.png"]],
+                "distances": [[0.01]],
+                "metadatas": [[{"foo": "bar"}]],
+                "where": where,
+                "query_embeddings": query_embeddings,
+            },
+        },
+    )()
+    monkeypatch.setattr(vector_store, "get_images_collection", lambda: fake_collector)
+    monkeypatch.setattr(vector_store, "embed_image", lambda path: (_ for _ in ()).throw(RuntimeError("should not embed")))
+    monkeypatch.setattr(vector_store, "embed_image_as_text", lambda path, extra_hint=None: (_ for _ in ()).throw(RuntimeError("should not embed")))
+
+    result = vector_store.search_images_by_image("ghost.png", top_k=1)
+
+    assert result["results"][0]["id"] == "ghost.png"
+    assert result["results"][0]["metadata"]["foo"] == "bar"
+
+
+def test_search_images_by_image_missing_file_and_db(monkeypatch, tmp_path):
+    monkeypatch.setattr(vector_store.settings, "offspring_dir", str(tmp_path))
+    fake_collector = type(
+        "FakeCol",
+        (),
+        {"get": lambda self, ids, include=None: {"ids": [], "embeddings": []}},
+    )()
+    monkeypatch.setattr(vector_store, "get_images_collection", lambda: fake_collector)
+
+    with pytest.raises(FileNotFoundError):
+        vector_store.search_images_by_image("missing.png")
+
+
+def test_embed_image_for_search_fallback_uses_prompt(monkeypatch, tmp_path):
+    image_path = tmp_path / "sample.png"
+    image_path.write_bytes(b"x")
+    meta_dir = tmp_path / "meta"
+    meta_dir.mkdir()
+    (meta_dir / "sample.json").write_text(json.dumps({"prompt": "hint"}), encoding="utf-8")
+
+    monkeypatch.setattr(vector_store.settings, "metadata_dir", str(meta_dir))
+    monkeypatch.setattr(vector_store, "embed_image", lambda path: (_ for _ in ()).throw(RuntimeError("fail")))
+
+    received_hint = {}
+
+    def fake_embed_as_text(path, extra_hint=None):
+        received_hint["hint"] = extra_hint
+        return [0.9]
+
+    monkeypatch.setattr(vector_store, "embed_image_as_text", fake_embed_as_text)
+
+    vec = vector_store._embed_image_for_search(str(image_path))
+
+    assert vec == [0.9]
+    assert received_hint["hint"] == "hint"
