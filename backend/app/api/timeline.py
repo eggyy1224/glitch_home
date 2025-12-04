@@ -64,13 +64,20 @@ async def api_play_iframe_timeline(
     if allow_draft:
         ensure_metadata_write_enabled("iframe_timeline_play_draft")
     try:
-        timeline = load_iframe_timeline_definition(timeline_id, version=version)
+        if version is None:
+            timeline = load_iframe_timeline_definition(timeline_id)
+        else:
+            timeline = load_iframe_timeline_definition(timeline_id, version=version)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    if not allow_draft and timeline.status != "published":
+    status = getattr(timeline, "status", None)
+    if status is None and isinstance(timeline, dict):
+        status = timeline.get("status")
+
+    if not allow_draft and (status or "published") != "published":
         raise HTTPException(status_code=400, detail="僅允許播放已發布的 timeline，或設定 allow_draft=true")
 
     request_payload = body or TimelinePlayRequest()

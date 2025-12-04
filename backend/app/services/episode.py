@@ -210,7 +210,6 @@ def clone_episode_definition(source_id: str, new_id: str) -> Episode:
 
 def list_episodes() -> List[Dict[str, object]]:
     entries: List[Dict[str, object]] = []
-    _ensure_episode_dir()
     for path in sorted(_EPISODE_DIR.glob("*.json")):
         try:
             with path.open("r", encoding="utf-8") as fp:
