@@ -122,16 +122,3 @@ class Episode(BaseModel):
             return None
         text = str(value).strip()
         return text or None
-
-    @model_validator(mode="after")
-    def _apply_metadata_defaults(self) -> "Episode":
-        now = datetime.now(timezone.utc)
-        if self.created_at is None:
-            self.created_at = now
-        if self.updated_at is None:
-            self.updated_at = self.created_at
-        if self.status is None:
-            self.status = "published"
-        if self.version is None or self.version < 1:
-            self.version = 1
-        return self

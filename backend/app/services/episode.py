@@ -123,6 +123,8 @@ def _write_episode_history(episode: Episode) -> None:
 
 
 def _maybe_backfill_episode_history(episode: Episode) -> None:
+    if not isinstance(episode.version, int):
+        return
     version_path = _episode_version_path(episode.id, episode.version)
     if version_path.exists():
         return
@@ -161,9 +163,9 @@ def save_episode_definition(
     next_version = max(int(payload_version) if payload_version else 0, base_version + 1)
 
     now = datetime.now(timezone.utc)
-    payload.setdefault("created_at", existing.created_at if existing else now)
+    payload["created_at"] = payload.get("created_at") or (existing.created_at if existing else now)
     payload["updated_at"] = now
-    payload.setdefault("status", payload.get("status") or (existing.status if existing else "published"))
+    payload["status"] = payload.get("status") or (existing.status if existing else "published")
     payload["version"] = next_version
 
     episode = Episode.model_validate(payload)
