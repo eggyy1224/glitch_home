@@ -6,8 +6,9 @@ import { Float } from "@react-three/drei";
 import { clamp01 } from "../../utils/math";
 
 const MAX_CONCURRENT_TEXTURES = 6;
+const FAILED_RETRY_DELAY_MS = 5000;
 const TEXTURE_CACHE = new Map<string, THREE.Texture>();
-const FAILED_TEXTURES = new Set<string>();
+const FAILED_TEXTURES = new Map<string, number>(); // url -> last failed timestamp
 const LOAD_QUEUE: Array<{
   url: string;
   resolve: (tex: THREE.Texture | null) => void;
@@ -31,13 +32,14 @@ const dequeueLoad = () => {
     (tex) => {
       activeLoads = Math.max(0, activeLoads - 1);
       TEXTURE_CACHE.set(next.url, tex);
+      FAILED_TEXTURES.delete(next.url);
       next.resolve(tex);
       dequeueLoad();
     },
     undefined,
     () => {
       activeLoads = Math.max(0, activeLoads - 1);
-      FAILED_TEXTURES.add(next.url);
+      FAILED_TEXTURES.set(next.url, Date.now());
       next.resolve(null);
       dequeueLoad();
     },
@@ -48,8 +50,13 @@ const loadTextureSafely = (url: string, crossOrigin: string | null): Promise<THR
   if (TEXTURE_CACHE.has(url)) {
     return Promise.resolve(TEXTURE_CACHE.get(url) || null);
   }
-  if (FAILED_TEXTURES.has(url)) {
-    return Promise.resolve(null);
+  const failedAt = FAILED_TEXTURES.get(url);
+  if (failedAt) {
+    const elapsed = Date.now() - failedAt;
+    if (elapsed < FAILED_RETRY_DELAY_MS) {
+      return Promise.resolve(null);
+    }
+    FAILED_TEXTURES.delete(url);
   }
 
   return new Promise<THREE.Texture | null>((resolve) => {
