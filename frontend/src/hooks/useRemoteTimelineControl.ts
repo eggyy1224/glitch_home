@@ -23,6 +23,7 @@ interface RemoteTimelineControlState {
   autoPlay: boolean;
   loopOverride: boolean | null;
   sessionKey: string | null;
+  timelineVersion: number | null;
 }
 
 export function useRemoteTimelineControl({
@@ -45,6 +46,7 @@ export function useRemoteTimelineControl({
   } = useTimelineStepActions({ clientId, capabilities: capabilities || {} });
 
   const effectiveTimelineId = remoteTimelineControl?.timelineId ?? iframeTimelineId;
+  const effectiveTimelineVersion = remoteTimelineControl?.timelineVersion ?? null;
   const remoteTimelineInitialStep = remoteTimelineControl?.startStep ?? null;
   const remoteTimelineAutoPlay = remoteTimelineControl ? remoteTimelineControl.autoPlay : true;
   const remoteTimelineLoopOverride =
@@ -52,6 +54,7 @@ export function useRemoteTimelineControl({
       ? remoteTimelineControl.loopOverride
       : null;
   const remoteTimelineSessionKey = remoteTimelineControl?.sessionKey ?? null;
+  const remoteTimelineVersion = effectiveTimelineVersion;
 
   const releaseRemoteTimelineControl = useCallback(() => {
     setRemoteTimelineControl(null);
@@ -83,6 +86,7 @@ export function useRemoteTimelineControl({
     reload: reloadTimeline,
   } = useIframeTimelinePlayer({
     timelineId: effectiveTimelineId,
+    timelineVersion: remoteTimelineVersion,
     isActive: activeMode === DisplayModes.IFRAME,
     applyRemoteConfig: applyRemoteIframeConfig,
     releaseRemoteConfig: releaseRemoteIframeConfig,
@@ -157,12 +161,15 @@ export function useRemoteTimelineControl({
             ? Math.max(0, Math.floor(options.startStep))
             : null;
         const loopOverride = typeof options?.loop === "boolean" ? Boolean(options.loop) : null;
+        const versionOpt =
+          typeof options?.version === "number" && Number.isFinite(options.version) ? options.version : null;
         setRemoteTimelineControl({
           timelineId,
           startStep: startFrom,
           autoPlay: options?.autoPlay !== false,
           loopOverride,
           sessionKey: commandId || `${timelineId}:${Date.now()}`,
+          timelineVersion: versionOpt,
         });
         if (options?.forceIframeMode !== false && setActiveModeOverride) {
           setActiveModeOverride(DisplayModes.IFRAME);

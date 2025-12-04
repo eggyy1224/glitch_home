@@ -135,6 +135,7 @@ export interface TimelineControlOptions {
   releaseControl?: boolean;
   forceIframeMode?: boolean;
   commandId?: string;
+   version?: number;
   [key: string]: unknown;
 }
 

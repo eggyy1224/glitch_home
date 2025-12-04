@@ -11,6 +11,7 @@ const clampIndex = (index: number, max: number) => {
 
 interface UseIframeTimelinePlayerOptions {
   timelineId: string | null;
+  timelineVersion?: number | null;
   isActive: boolean;
   applyRemoteConfig?: (config: Partial<IframeConfig> | null) => void;
   releaseRemoteConfig?: () => void;
@@ -23,6 +24,7 @@ interface UseIframeTimelinePlayerOptions {
 
 export function useIframeTimelinePlayer({
   timelineId,
+  timelineVersion = null,
   isActive,
   applyRemoteConfig,
   releaseRemoteConfig,
@@ -83,7 +85,8 @@ export function useIframeTimelinePlayer({
     setLoading(true);
     setError(null);
 
-    fetchIframeTimeline(timelineId, { signal: controller.signal })
+    const versionOpt = typeof timelineVersion === "number" && Number.isFinite(timelineVersion) ? timelineVersion : undefined;
+    fetchIframeTimeline(timelineId, { signal: controller.signal, version: versionOpt })
       .then((data) => {
         if (cancelled) return;
         const payload = (data as { timeline?: IframeTimelineResolved }).timeline ?? data;
@@ -119,7 +122,7 @@ export function useIframeTimelinePlayer({
       cancelled = true;
       controller.abort();
     };
-  }, [timelineId, isActive, reloadKey, stopTimer, loopOverride, sessionKey, initialStep, autoPlayOnLoad]);
+  }, [timelineId, timelineVersion, isActive, reloadKey, stopTimer, loopOverride, sessionKey, initialStep, autoPlayOnLoad]);
 
   useEffect(() => {
     if (!isActive) {

@@ -99,6 +99,8 @@ async def api_play_iframe_timeline(
         options["loop"] = bool(request_payload.loop_override)
     if request_payload.command_id:
         options["commandId"] = request_payload.command_id
+    if timeline.version is not None:
+        options["version"] = timeline.version
 
     await realtime_broadcaster.broadcast_timeline_control(
         action="play",
