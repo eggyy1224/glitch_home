@@ -1,0 +1,246 @@
+.admin-mobile {
+  --bg: #000;
+  --panel: #061a0b;
+  --panel-strong: #0a2b14;
+  --border: #0f4;
+  --border-strong: #22ff88;
+  --text: #c8ffd2;
+  --text-muted: #82dca5;
+  --danger: #ff6b6b;
+  --warning: #f4c15c;
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: monospace;
+  padding: 14px;
+  letter-spacing: 0.02em;
+}
+
+.admin-mobile * {
+  box-sizing: border-box;
+}
+
+.admin-mobile h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-mobile .subtitle {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.admin-mobile .card {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 255, 128, 0.08);
+}
+
+.admin-mobile .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-mobile .card-title {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-mobile .tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--panel-strong);
+  color: var(--text);
+}
+
+.admin-mobile .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.admin-mobile label {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.admin-mobile input,
+.admin-mobile select,
+.admin-mobile textarea {
+  background: #000;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+}
+
+.admin-mobile textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.admin-mobile button {
+  background: var(--border);
+  color: #000;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.admin-mobile button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.admin-mobile button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-mobile .ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.admin-mobile .danger {
+  background: #1a0000;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.admin-mobile .compact-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.admin-mobile .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-mobile .chip {
+  padding: 6px 10px;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.admin-mobile .chip.active {
+  background: var(--border);
+  color: #000;
+  border-color: var(--border-strong);
+}
+
+.admin-mobile .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #000;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.admin-mobile .list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-mobile .list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #000;
+}
+
+.admin-mobile .list-item .meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.admin-mobile .status {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.admin-mobile .section-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.admin-mobile .segmented {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-mobile .segmented button {
+  background: #000;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.admin-mobile .segmented button.active {
+  background: var(--border);
+  color: #000;
+  border-color: var(--border-strong);
+}
+
+.admin-mobile .note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.admin-mobile .inline-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .admin-mobile {
+    padding: 18px;
+  }
+
+  .admin-mobile .section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

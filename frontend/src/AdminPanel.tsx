@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import type { AdminPanelContextValue } from "./AdminPanelContext";
 import { AdminPanelContext } from "./AdminPanelContext";
+import AdminPanelMobile from "./AdminPanelMobile";
 import "./AdminPanelMatrix.css";
 import {
   activeTabButtonStyle,
@@ -10,6 +11,7 @@ import {
   tabPanelStyle,
   tabRowStyle,
 } from "./AdminPanelStyles";
+import { useIsMobileAdmin } from "./hooks/useIsMobileAdmin";
 import SnapshotManager from "./components/SnapshotManager";
 import TimelineManager from "./components/TimelineManager";
 import EpisodeManager from "./components/EpisodeManager";
@@ -30,36 +32,18 @@ interface AdminPanelProps {
   forbidMessage?: string;
 }
 
-export default function AdminPanel({
-  clientId,
-  appMode = "STUDIO",
-  canWriteMetadata = true,
-  canWriteAssets = true,
-  canAnalyze = true,
-  canRebuildIndex = true,
-  forbidMessage = "",
-}: AdminPanelProps) {
+interface AdminPanelDesktopProps {
+  appMode: string;
+  canWriteMetadata: boolean;
+  forbidMessage: string;
+}
+
+function AdminPanelDesktop({ appMode, canWriteMetadata, forbidMessage }: AdminPanelDesktopProps) {
   const [activeTab, setActiveTab] = useState<string>("manage");
   const [visitedTabs, setVisitedTabs] = useState<string[]>(["manage"]);
   const [manageTab, setManageTab] = useState<string>("snapshot");
   const [visitedManageTabs, setVisitedManageTabs] = useState<string[]>(["snapshot"]);
   const [editorTab, setEditorTab] = useState<string>("timeline");
-  const resolvedDefaultClient = useMemo(() => {
-    if (clientId && clientId !== "admin") return clientId;
-    return "desktop";
-  }, [clientId]);
-  const contextValue = useMemo<AdminPanelContextValue>(
-    () => ({
-      defaultClientId: resolvedDefaultClient,
-      appMode,
-      canWriteMetadata,
-      canWriteAssets,
-      canAnalyze,
-      canRebuildIndex,
-      forbidMessage: forbidMessage || `目前 APP_MODE=${appMode} 禁止此操作`,
-    }),
-    [appMode, canWriteAssets, canWriteMetadata, canAnalyze, canRebuildIndex, forbidMessage, resolvedDefaultClient],
-  );
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
@@ -70,54 +54,50 @@ export default function AdminPanel({
   }, []);
 
   return (
-    <AdminPanelContext.Provider value={contextValue}>
-      <div style={containerStyle} className="admin-matrix">
-        {!canWriteMetadata && (
-          <div
-            role="alert"
-            style={{ marginBottom: 12, padding: "10px 12px", background: "#2a2a2a", border: "1px solid #f39c12" }}
-          >
-            {forbidMessage || `目前 APP_MODE=${appMode} 禁止管理操作，已切換為唯讀模式`}
-          </div>
-        )}
-        <div style={tabRowStyle} role="tablist" aria-label="Admin panel tabs" data-ai-id="admin.tablist">
-          <button
-            type="button"
-            style={activeTab === "manage" ? activeTabButtonStyle : tabButtonStyle}
-            onClick={() => handleTabChange("manage")}
-            role="tab"
-            aria-selected={activeTab === "manage"}
-            aria-controls="admin-tabpanel-manage"
-            id="admin-tab-manage"
-            data-ai-id="admin.tab.manage"
-          >
-            管理
-          </button>
-          <button
-            type="button"
-            style={activeTab === "editor" ? activeTabButtonStyle : tabButtonStyle}
-            onClick={() => handleTabChange("editor")}
-            role="tab"
-            aria-selected={activeTab === "editor"}
-            aria-controls="admin-tabpanel-editor"
-            id="admin-tab-editor"
-            data-ai-id="admin.tab.editor"
-          >
-            Editor
-          </button>
-          <button
-            type="button"
-            style={activeTab === "state" ? activeTabButtonStyle : tabButtonStyle}
-            onClick={() => handleTabChange("state")}
-            role="tab"
-            aria-selected={activeTab === "state"}
-            aria-controls="admin-tabpanel-state"
-            id="admin-tab-state"
-            data-ai-id="admin.tab.state"
-          >
-            狀態 / 排程
-          </button>
+    <div style={containerStyle} className="admin-matrix">
+      {!canWriteMetadata && (
+        <div role="alert" style={{ marginBottom: 12, padding: "10px 12px", background: "#2a2a2a", border: "1px solid #f39c12" }}>
+          {forbidMessage || `目前 APP_MODE=${appMode} 禁止管理操作，已切換為唯讀模式`}
         </div>
+      )}
+      <div style={tabRowStyle} role="tablist" aria-label="Admin panel tabs" data-ai-id="admin.tablist">
+        <button
+          type="button"
+          style={activeTab === "manage" ? activeTabButtonStyle : tabButtonStyle}
+          onClick={() => handleTabChange("manage")}
+          role="tab"
+          aria-selected={activeTab === "manage"}
+          aria-controls="admin-tabpanel-manage"
+          id="admin-tab-manage"
+          data-ai-id="admin.tab.manage"
+        >
+          管理
+        </button>
+        <button
+          type="button"
+          style={activeTab === "editor" ? activeTabButtonStyle : tabButtonStyle}
+          onClick={() => handleTabChange("editor")}
+          role="tab"
+          aria-selected={activeTab === "editor"}
+          aria-controls="admin-tabpanel-editor"
+          id="admin-tab-editor"
+          data-ai-id="admin.tab.editor"
+        >
+          Editor
+        </button>
+        <button
+          type="button"
+          style={activeTab === "state" ? activeTabButtonStyle : tabButtonStyle}
+          onClick={() => handleTabChange("state")}
+          role="tab"
+          aria-selected={activeTab === "state"}
+          aria-controls="admin-tabpanel-state"
+          id="admin-tab-state"
+          data-ai-id="admin.tab.state"
+        >
+          狀態 / 排程
+        </button>
+      </div>
 
         {visitedTabs.includes("manage") && (
           <div
@@ -312,7 +292,56 @@ export default function AdminPanel({
             <ClientStateQueuePanel />
           </div>
         )}
-      </div>
+    </div>
+  );
+}
+
+export default function AdminPanel({
+  clientId,
+  appMode = "STUDIO",
+  canWriteMetadata = true,
+  canWriteAssets = true,
+  canAnalyze = true,
+  canRebuildIndex = true,
+  forbidMessage = "",
+}: AdminPanelProps) {
+  const resolvedDefaultClient = useMemo(() => {
+    if (clientId && clientId !== "admin") return clientId;
+    return "desktop";
+  }, [clientId]);
+
+  const resolvedForbidMessage = useMemo(
+    () => forbidMessage || `目前 APP_MODE=${appMode} 禁止此操作`,
+    [appMode, forbidMessage],
+  );
+
+  const contextValue = useMemo<AdminPanelContextValue>(
+    () => ({
+      defaultClientId: resolvedDefaultClient,
+      appMode,
+      canWriteMetadata,
+      canWriteAssets,
+      canAnalyze,
+      canRebuildIndex,
+      forbidMessage: resolvedForbidMessage,
+    }),
+    [appMode, canAnalyze, canRebuildIndex, canWriteAssets, canWriteMetadata, resolvedDefaultClient, resolvedForbidMessage],
+  );
+
+  const desktopProps = useMemo<AdminPanelDesktopProps>(
+    () => ({
+      appMode,
+      canWriteMetadata,
+      forbidMessage: resolvedForbidMessage,
+    }),
+    [appMode, canWriteMetadata, resolvedForbidMessage],
+  );
+
+  const isMobileAdmin = useIsMobileAdmin();
+
+  return (
+    <AdminPanelContext.Provider value={contextValue}>
+      {isMobileAdmin ? <AdminPanelMobile /> : <AdminPanelDesktop {...desktopProps} />}
     </AdminPanelContext.Provider>
   );
 }
