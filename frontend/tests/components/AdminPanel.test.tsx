@@ -156,13 +156,15 @@ describe("AdminPanel", () => {
       const apiMocks = getApiMocks();
       apiMocks.fetchClientStates.mockResolvedValue([]);
       const originalUA = navigator.userAgent;
-      (window as typeof window & { matchMedia?: unknown }).matchMedia = undefined;
+      const originalMM = window.matchMedia;
+      Object.defineProperty(window, "matchMedia", { value: undefined, configurable: true, writable: true });
       Object.defineProperty(window.navigator, "userAgent", { value: "iPhone", configurable: true });
 
       try {
         render(<AdminPanel />);
         await screen.findByText("Admin Mobile");
       } finally {
+        Object.defineProperty(window, "matchMedia", { value: originalMM, configurable: true, writable: true });
         Object.defineProperty(window.navigator, "userAgent", { value: originalUA, configurable: true });
       }
     });
