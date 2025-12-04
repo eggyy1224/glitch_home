@@ -28,7 +28,7 @@ const ACTION_LABEL: Record<QuickActionType, string> = {
   script: "Script",
 };
 
-const buildOptionLabel = (value: { id?: string; name?: string; title?: string; client?: string; clientId?: string }) => {
+const buildOptionLabel = (value: { id?: string; name?: string; title?: string; client?: string | null; clientId?: string | null }) => {
   const id = (value as { id?: string }).id || (value as { name?: string }).name || "";
   const title = (value as { title?: string }).title;
   const client = (value as { client?: string }).client || (value as { clientId?: string }).clientId;

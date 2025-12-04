@@ -10,7 +10,8 @@ const isMobileUserAgent = () => {
 export function useIsMobileAdmin(breakpoint = 900) {
   const getIsMobile = () => {
     if (typeof window === "undefined") return false;
-    const widthMatch = window.matchMedia(`(max-width: ${breakpoint}px)`).matches;
+    const hasMatchMedia = typeof window.matchMedia === "function";
+    const widthMatch = hasMatchMedia ? window.matchMedia(`(max-width: ${breakpoint}px)`).matches : false;
     return widthMatch || isMobileUserAgent();
   };
 
@@ -18,6 +19,11 @@ export function useIsMobileAdmin(breakpoint = 900) {
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
+    if (typeof window.matchMedia !== "function") {
+      // jsdom/SSR 環境沒有 matchMedia，使用 UA 判斷一次即可。
+      setIsMobile(getIsMobile());
+      return undefined;
+    }
     const media = window.matchMedia(`(max-width: ${breakpoint}px)`);
     const handler = () => setIsMobile(getIsMobile());
     handler();
