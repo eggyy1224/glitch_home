@@ -138,7 +138,7 @@ export default function Photo({
 
   useFrame(({ clock }) => {
     const node = meshRef.current;
-    if (!node || !tex) return;
+    if (!node) return;
     const progress = clamp01(progressFnRef.current?.() ?? 1);
     const t = clock.getElapsedTime();
     const [baseX, baseY, baseZ] = scaleRef.current;
@@ -148,7 +148,9 @@ export default function Photo({
     node.visible = progress > 0.001;
   });
 
-  if (!tex) return null;
+  const materialProps = tex
+    ? { map: tex, transparent: false }
+    : { color: "#666666", transparent: true, opacity: 0.5 };
 
   return (
     <Float speed={1} rotationIntensity={0.25} floatIntensity={0.6}>
@@ -164,7 +166,7 @@ export default function Photo({
         onPointerOut={() => (document.body.style.cursor = "default")}
       >
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial map={tex} toneMapped={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial {...materialProps} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
     </Float>
   );
