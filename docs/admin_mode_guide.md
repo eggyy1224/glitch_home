@@ -13,6 +13,11 @@
 - 所有 JSON 區塊皆為即時編輯；送出時由對應 API 驗證。錯誤訊息會顯示在分頁下方的 status 行。
 - 讀寫權限：APP_MODE 禁寫時頂部會顯示唯讀警告，Scene/Script 播放若勾選 `allowDraft` 也會額外檢查寫入權限。
 
+### 行動版控制介面（Admin Mobile）
+- 偵測條件：螢幕寬度 ≤ 900px 或 UA 為常見手機（iPhone/Android 等），自動切換為「Admin Mobile」單欄介面。
+- 功能：快速選擇在線 client（chip 會亮綠底表示當前）、刷新 client 狀態、緊急停止 timeline、快速播放 Snapshot/Timeline/Episode/Scene/Script（Scene/Script 可切換 allow draft）、查看當前 client 狀態摘要。
+- 使用：手機直接開 `/?admin_mode=true` 即進入，桌面縮到窄寬也會切到行動版；恢復桌面寬度會自動回到完整 Matrix 介面。
+
 ## 1. Snapshot 管理（單一 client 的 iframe 配置）
 - 主要操作：
   - Client 欄輸入後點「重新載入列表」取得該 client 的 snapshots。
