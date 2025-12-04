@@ -103,6 +103,8 @@ def api_create_episode(
         safe_id = sanitize_episode_id(raw_id)
         payload = {**body, "id": safe_id}
         episode = Episode.model_validate(payload)
+        # 先 resolve，避免把無效引用寫入檔案
+        resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -147,6 +149,8 @@ def api_update_episode(
         safe_id = sanitize_episode_id(episode_id)
         payload = {**body, "id": safe_id}
         episode = Episode.model_validate(payload)
+        # 先 resolve，避免把無效引用寫入檔案
+        resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -202,6 +206,8 @@ def api_clone_episode(
         payload = source.model_dump(mode="json", by_alias=True)
         payload["id"] = clean_id
         episode = Episode.model_validate(payload)
+        # 先 resolve，避免把無效引用寫入檔案
+        resolve_episode(episode)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
