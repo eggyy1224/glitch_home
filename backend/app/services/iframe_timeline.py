@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+from pydantic import ValidationError
 
 from ..config import settings
 from ..models.iframe import IframeConfig
@@ -25,9 +29,12 @@ from .iframe_config import (
 
 
 _TIMELINE_DIR = Path(settings.metadata_dir) / "timelines" / "iframe"
-_TIMELINE_DIR.mkdir(parents=True, exist_ok=True)
+_TIMELINE_HISTORY_DIR = Path(settings.metadata_dir) / "history" / "timelines" / "iframe"
+_TIMELINE_HISTORY_LIMIT = 200
 
 _TIMELINE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -102,7 +109,49 @@ def _timeline_path_for(timeline_id: str) -> Path:
     return _TIMELINE_DIR / f"{safe_id}.json"
 
 
-def save_iframe_timeline_definition(payload: dict, timeline_id: Optional[str] = None) -> IframeTimeline:
+def _timeline_history_dir_for(timeline_id: str) -> Path:
+    safe_id = _sanitize_timeline_id(timeline_id)
+    return _TIMELINE_HISTORY_DIR / safe_id
+
+
+def _timeline_version_path(timeline_id: str, version: int) -> Path:
+    return _timeline_history_dir_for(timeline_id) / f"version-{version:04d}.json"
+
+
+def _ensure_timeline_dir() -> None:
+    _TIMELINE_DIR.mkdir(parents=True, exist_ok=True)
+    _TIMELINE_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _write_timeline_history(timeline: IframeTimeline) -> None:
+    history_dir = _timeline_history_dir_for(timeline.id)
+    history_dir.mkdir(parents=True, exist_ok=True)
+    version_path = _timeline_version_path(timeline.id, timeline.version)
+    with version_path.open("w", encoding="utf-8") as fp:
+        json.dump(timeline.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    versions = sorted(history_dir.glob("version-*.json"))
+    if _TIMELINE_HISTORY_LIMIT and len(versions) > _TIMELINE_HISTORY_LIMIT:
+        excess = len(versions) - _TIMELINE_HISTORY_LIMIT
+        for old_path in versions[:excess]:
+            try:
+                old_path.unlink()
+            except OSError:
+                logger.warning("清理舊 Timeline 版本失敗：%s", old_path)
+
+
+def _maybe_backfill_timeline_history(timeline: IframeTimeline) -> None:
+    version_path = _timeline_version_path(timeline.id, timeline.version)
+    if version_path.exists():
+        return
+    try:
+        _write_timeline_history(timeline)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("補寫 Timeline 版本歷史失敗 %s v%s：%s", timeline.id, timeline.version, exc)
+
+
+def save_iframe_timeline_definition(
+    payload: dict, timeline_id: Optional[str] = None, expected_version: int | None = None
+) -> IframeTimeline:
     ensure_metadata_write_enabled("iframe_timeline")
     if not isinstance(payload, dict):
         raise ValueError("payload 必須為 JSON 物件")
@@ -113,12 +162,34 @@ def save_iframe_timeline_definition(payload: dict, timeline_id: Optional[str] = 
     safe_id = _sanitize_timeline_id(candidate_id)
 
     payload = {**payload, "id": safe_id}
+
+    existing: IframeTimeline | None = None
+    path = _timeline_path_for(safe_id)
+    if path.exists():
+        try:
+            existing = load_iframe_timeline_definition(safe_id)
+        except Exception:  # noqa: BLE001
+            existing = None
+
+    if expected_version is not None and existing is not None and existing.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+
+    base_version = expected_version if expected_version is not None else (existing.version if existing else 0)
+    payload_version = payload.get("version")
+    next_version = max(int(payload_version) if payload_version else 0, base_version + 1)
+
+    now = datetime.now(timezone.utc)
+    payload.setdefault("created_at", existing.created_at if existing else now)
+    payload["updated_at"] = now
+    payload.setdefault("status", payload.get("status") or (existing.status if existing else "published"))
+    payload["version"] = next_version
+
     timeline = IframeTimeline.model_validate(payload)
 
-    path = _timeline_path_for(safe_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_timeline_dir()
     with path.open("w", encoding="utf-8") as fp:
         json.dump(timeline.model_dump(mode="json", by_alias=True), fp, ensure_ascii=False, indent=2)
+    _write_timeline_history(timeline)
     return timeline
 
 
@@ -261,7 +332,16 @@ def resolve_video_control_action(
     return payload
 
 
-def load_iframe_timeline_definition(timeline_id: str) -> IframeTimeline:
+def load_iframe_timeline_definition(timeline_id: str, version: int | None = None) -> IframeTimeline:
+    if version is not None:
+        version_path = _timeline_version_path(timeline_id, int(version))
+        if not version_path.exists():
+            raise FileNotFoundError("timeline 指定版本不存在")
+        with version_path.open("r", encoding="utf-8") as fp:
+            raw = json.load(fp)
+        raw.setdefault("id", timeline_id)
+        raw["id"] = _sanitize_timeline_id(raw["id"])
+        return IframeTimeline.model_validate(raw)
     path = _timeline_path_for(timeline_id)
     if not path.exists():
         raise FileNotFoundError("timeline 不存在")
@@ -270,12 +350,14 @@ def load_iframe_timeline_definition(timeline_id: str) -> IframeTimeline:
     raw.setdefault("id", timeline_id)
     raw["id"] = _sanitize_timeline_id(raw["id"])
     timeline = IframeTimeline.model_validate(raw)
+    _maybe_backfill_timeline_history(timeline)
     return timeline
 
 
 def list_iframe_timelines(client_id: Optional[str] = None) -> List[Dict[str, object]]:
     sanitized_client = sanitize_client_id(client_id)
     entries: List[Dict[str, object]] = []
+    _ensure_timeline_dir()
     for path in sorted(_TIMELINE_DIR.glob("*.json")):
         try:
             with path.open("r", encoding="utf-8") as fp:
@@ -296,6 +378,9 @@ def list_iframe_timelines(client_id: Optional[str] = None) -> List[Dict[str, obj
                 "step_count": len(timeline.steps),
                 "estimated_duration": estimated_duration,
                 "loop": timeline.loop,
+                "version": timeline.version,
+                "status": timeline.status,
+                "updated_at": timeline.updated_at.isoformat() if timeline.updated_at else None,
             }
         )
     return entries
@@ -370,3 +455,66 @@ def resolve_iframe_timeline(timeline: IframeTimeline) -> ResolvedIframeTimeline:
             )
         )
     return ResolvedIframeTimeline(timeline=timeline, steps=resolved_steps, total_duration=total_duration)
+
+
+def list_iframe_timeline_versions(timeline_id: str) -> List[Dict[str, object]]:
+    versions: List[Dict[str, object]] = []
+    history_dir = _timeline_history_dir_for(timeline_id)
+    if not history_dir.exists():
+        return versions
+    for path in sorted(history_dir.glob("version-*.json")):
+        try:
+            with path.open("r", encoding="utf-8") as fp:
+                raw = json.load(fp)
+            raw.setdefault("id", timeline_id)
+            raw["id"] = _sanitize_timeline_id(raw["id"])
+            timeline = IframeTimeline.model_validate(raw)
+        except (json.JSONDecodeError, ValidationError, ValueError) as exc:
+            logger.warning("略過 Timeline 版本檔案 %s：%s", path.name, exc)
+            continue
+        versions.append(
+            {
+                "version": timeline.version,
+                "status": timeline.status,
+                "created_at": timeline.created_at.isoformat() if timeline.created_at else None,
+                "updated_at": timeline.updated_at.isoformat() if timeline.updated_at else None,
+                "published_at": timeline.published_at.isoformat() if timeline.published_at else None,
+                "published_by": timeline.published_by,
+            }
+        )
+    return versions
+
+
+def publish_iframe_timeline(
+    timeline_id: str, *, publish_as: str | None = None, expected_version: int | None = None
+) -> IframeTimeline:
+    ensure_metadata_write_enabled("iframe_timeline_publish")
+    base = load_iframe_timeline_definition(timeline_id)
+    if expected_version is not None and base.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+    resolve_iframe_timeline(base)
+    now = datetime.now(timezone.utc)
+    payload = base.model_dump(mode="json", by_alias=True)
+    payload["status"] = "published"
+    payload["published_at"] = now
+    payload["published_by"] = publish_as or base.published_by
+    payload["updated_at"] = now
+    return save_iframe_timeline_definition(payload, timeline_id=timeline_id, expected_version=base.version)
+
+
+def rollback_iframe_timeline(
+    timeline_id: str, target_version: int, *, publish_as: str | None = None, expected_version: int | None = None
+) -> IframeTimeline:
+    ensure_metadata_write_enabled("iframe_timeline_rollback")
+    current = load_iframe_timeline_definition(timeline_id)
+    if expected_version is not None and current.version != expected_version:
+        raise ValueError("版本不符，請重新載入後再試")
+    target = load_iframe_timeline_definition(timeline_id, version=target_version)
+    resolve_iframe_timeline(target)
+    now = datetime.now(timezone.utc)
+    payload = target.model_dump(mode="json", by_alias=True)
+    payload["status"] = "published"
+    payload["published_at"] = now
+    payload["published_by"] = publish_as or target.published_by
+    payload["updated_at"] = now
+    return save_iframe_timeline_definition(payload, timeline_id=timeline_id, expected_version=current.version)

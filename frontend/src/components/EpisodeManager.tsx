@@ -1,11 +1,14 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   cloneEpisode,
   createEpisode,
   deleteEpisode,
   fetchEpisode,
+  listEpisodeVersions,
   listEpisodes,
+  publishEpisode,
   playEpisode,
+  rollbackEpisode,
   updateEpisode,
 } from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
@@ -23,6 +26,18 @@ export default function EpisodeManager() {
   const [episodePlayStatus, setEpisodePlayStatus] = useState("");
   const [episodeTargetMapText, setEpisodeTargetMapText] = useState("");
   const [episodeCommandPrefix, setEpisodeCommandPrefix] = useState("");
+  const [loadEpisodeVersion, setLoadEpisodeVersion] = useState("");
+  const [rollbackVersion, setRollbackVersion] = useState("");
+  const [episodeVersions, setEpisodeVersions] = useState<
+    Array<{ version?: number; status?: string; updated_at?: string; published_at?: string; published_by?: string }>
+  >([]);
+  const parsedEpisode = useMemo(() => {
+    try {
+      return JSON.parse(episodeJson) as Partial<EpisodeEntry>;
+    } catch {
+      return null;
+    }
+  }, [episodeJson]);
 
   const refreshEpisodes = useCallback(async () => {
     try {
@@ -34,16 +49,44 @@ export default function EpisodeManager() {
     }
   }, []);
 
-  const handleLoadEpisode = useCallback(async (id: string) => {
+  const fetchEpisodeVersions = useCallback(async (id: string) => {
     try {
-      const data = await fetchEpisode(id, { resolve: false });
+      const data = await listEpisodeVersions(id);
+      const versions = Array.isArray((data as { versions?: unknown }).versions)
+        ? ((data as { versions?: unknown[] }).versions as Array<{
+            version?: number;
+            status?: string;
+            updated_at?: string;
+            published_at?: string;
+            published_by?: string;
+          }>)
+        : [];
+      setEpisodeVersions(versions);
+    } catch (err) {
+      setEpisodeMessage((err as Error)?.message || "載入版本列表失敗");
+    }
+  }, []);
+
+  const handleLoadEpisode = useCallback(async (id: string, opts?: { ignoreVersion?: boolean }) => {
+    try {
+      const parsedVersion = parseInt(loadEpisodeVersion, 10);
+      const versionOpt = opts?.ignoreVersion
+        ? {}
+        : Number.isFinite(parsedVersion)
+          ? { version: parsedVersion }
+          : {};
+      if (opts?.ignoreVersion) {
+        setLoadEpisodeVersion("");
+      }
+      const data = await fetchEpisode(id, { resolve: false, ...versionOpt });
       setEpisodeId(id);
       setEpisodeJson(pretty(data.episode || data));
-      setEpisodeMessage(`已載入 episode ${id}`);
+      setEpisodeMessage(`已載入 episode ${id}${versionOpt.version ? ` (v${versionOpt.version})` : ""}`);
+      await fetchEpisodeVersions(id);
     } catch (err) {
       setEpisodeMessage((err as Error)?.message || "載入 episode 失敗");
     }
-  }, []);
+  }, [fetchEpisodeVersions, loadEpisodeVersion]);
 
   const handleSaveEpisode = useCallback(
     async (mode: "update" | "create") => {
@@ -62,12 +105,13 @@ export default function EpisodeManager() {
         }
         setEpisodeId(targetId);
         setEpisodeMessage(`${mode === "update" ? "已更新" : "已建立"} episode ${targetId}`);
+        await fetchEpisodeVersions(targetId);
         await refreshEpisodes();
       } catch (err) {
         setEpisodeMessage((err as Error)?.message || "儲存失敗");
       }
     },
-    [episodeId, episodeJson, refreshEpisodes],
+    [episodeId, episodeJson, fetchEpisodeVersions, refreshEpisodes],
   );
 
   const handleDeleteEpisode = useCallback(
@@ -100,6 +144,57 @@ export default function EpisodeManager() {
     }
   }, [episodeCloneId, episodeId, refreshEpisodes]);
 
+  const currentEpisodeVersion = useCallback((): number | null => {
+    try {
+      const parsed = JSON.parse(episodeJson);
+      const v = (parsed as { version?: unknown }).version;
+      return typeof v === "number" ? v : null;
+    } catch {
+      return null;
+    }
+  }, [episodeJson]);
+
+  const handlePublishEpisode = useCallback(async () => {
+    if (!episodeId) {
+      setEpisodeMessage("請先載入 episode");
+      return;
+    }
+    const expected = currentEpisodeVersion();
+    try {
+      await publishEpisode(episodeId, {}, { expectedVersion: expected ?? undefined });
+      setEpisodeMessage("已發布 episode");
+      await handleLoadEpisode(episodeId, { ignoreVersion: true });
+      await refreshEpisodes();
+      await fetchEpisodeVersions(episodeId);
+    } catch (err) {
+      setEpisodeMessage((err as Error)?.message || "發布失敗");
+    }
+  }, [currentEpisodeVersion, episodeId, fetchEpisodeVersions, handleLoadEpisode, refreshEpisodes]);
+
+  const handleRollbackEpisode = useCallback(async () => {
+    if (!episodeId) {
+      setEpisodeMessage("請先載入 episode");
+      return;
+    }
+    const target = parseInt(rollbackVersion, 10);
+    if (!Number.isFinite(target)) {
+      setEpisodeMessage("請輸入要回滾的版本號");
+      return;
+    }
+    const expected = currentEpisodeVersion();
+    try {
+      await rollbackEpisode(episodeId, { version: target }, { expectedVersion: expected ?? undefined });
+      setEpisodeMessage(`已回滾到版本 ${target}`);
+      setRollbackVersion("");
+      setLoadEpisodeVersion("");
+      await handleLoadEpisode(episodeId, { ignoreVersion: true });
+      await refreshEpisodes();
+      await fetchEpisodeVersions(episodeId);
+    } catch (err) {
+      setEpisodeMessage((err as Error)?.message || "回滾失敗");
+    }
+  }, [currentEpisodeVersion, episodeId, fetchEpisodeVersions, handleLoadEpisode, refreshEpisodes, rollbackVersion]);
+
   const handlePlayEpisode = useCallback(async () => {
     if (!episodeId) {
       setEpisodePlayStatus("請先載入或儲存 episode");
@@ -116,13 +211,20 @@ export default function EpisodeManager() {
       if (prefix) {
         payload.command_id_prefix = prefix;
       }
-      const data = await playEpisode(episodeId, payload);
+      const versionFromInput = parseInt(loadEpisodeVersion, 10);
+      const versionFromJson =
+        parsedEpisode && typeof (parsedEpisode as { version?: unknown }).version === "number"
+          ? (parsedEpisode as { version?: number }).version
+          : undefined;
+      const pickedVersion = Number.isFinite(versionFromInput) ? versionFromInput : versionFromJson;
+      const versionOpt = Number.isFinite(pickedVersion || NaN) ? { version: pickedVersion } : {};
+      const data = await playEpisode(episodeId, payload, versionOpt);
       const trackCount = (data as { tracks?: unknown[] })?.tracks?.length ?? 0;
       setEpisodePlayStatus(`已送出（${trackCount} 條 track）`);
     } catch (err) {
       setEpisodePlayStatus((err as Error)?.message || "播放指令失敗");
     }
-  }, [episodeCommandPrefix, episodeId, episodeTargetMapText]);
+  }, [episodeCommandPrefix, episodeId, episodeTargetMapText, loadEpisodeVersion, parsedEpisode]);
 
   useEffect(() => {
     refreshEpisodes();
@@ -228,6 +330,63 @@ export default function EpisodeManager() {
             style={{ width: "100%", marginBottom: 8 }}
             data-ai-field="episode.id"
           />
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+            <input
+              type="text"
+              placeholder="版本號（可選）"
+              value={loadEpisodeVersion}
+              onChange={(e) => setLoadEpisodeVersion(e.target.value)}
+              style={{ width: 140 }}
+              data-ai-field="episode.load-version"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (episodeId) {
+                  void handleLoadEpisode(episodeId);
+                } else {
+                  setEpisodeMessage("請輸入 episode id 後再載入");
+                }
+              }}
+              data-ai-action="episode.load-version"
+            >
+              載入指定版
+            </button>
+            <select
+              value={loadEpisodeVersion}
+              onChange={(e) => setLoadEpisodeVersion(e.target.value)}
+              data-ai-field="episode.version-select"
+              style={{ minWidth: 140 }}
+            >
+              <option value="">最新</option>
+              {episodeVersions
+                .filter((v) => typeof v.version === "number")
+                .map((v) => (
+                  <option key={`v-${v.version}`} value={String(v.version ?? "")}>{`v${v.version} ${v.status ? `(${v.status})` : ""}`}</option>
+                ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                if (episodeId) {
+                  void fetchEpisodeVersions(episodeId);
+                }
+              }}
+              data-ai-action="episode.reload-versions"
+            >
+              重新載入版本列表
+            </button>
+          </div>
+          <div style={{ marginBottom: 8, fontSize: 12, color: "#9be7ff" }}>
+            目前版本：{parsedEpisode?.version ?? "?"} / 狀態：{parsedEpisode?.status ?? "?"} / published_at：
+            {(parsedEpisode as { published_at?: string; publishedAt?: string })?.published_at ||
+              (parsedEpisode as { publishedAt?: string })?.publishedAt ||
+              "n/a"}
+            {" / published_by："}
+            {(parsedEpisode as { published_by?: string; publishedBy?: string })?.published_by ||
+              (parsedEpisode as { publishedBy?: string })?.publishedBy ||
+              "n/a"}
+          </div>
           <label style={labelStyle} htmlFor="episode-json">
             JSON
           </label>
@@ -253,6 +412,20 @@ export default function EpisodeManager() {
               data-ai-action="episode.fill-default"
             >
               填入預設
+            </button>
+            <button type="button" onClick={handlePublishEpisode} data-ai-action="episode.publish">
+              發布
+            </button>
+            <input
+              type="text"
+              placeholder="回滾版本號"
+              value={rollbackVersion}
+              onChange={(e) => setRollbackVersion(e.target.value)}
+              style={{ width: 120 }}
+              data-ai-field="episode.rollback-version"
+            />
+            <button type="button" onClick={handleRollbackEpisode} data-ai-action="episode.rollback">
+              回滾
             </button>
           </div>
 

@@ -7,13 +7,16 @@ from ..services.iframe_timeline import (
     clone_iframe_timeline_definition,
     delete_iframe_timeline_definition,
     list_iframe_timelines,
+    list_iframe_timeline_versions,
     load_iframe_timeline_definition,
+    publish_iframe_timeline,
     resolve_iframe_timeline,
+    rollback_iframe_timeline,
     save_iframe_timeline_definition,
     sanitize_timeline_id,
 )
 from ..services.realtime_bus import realtime_broadcaster
-from ..utils.permissions import require_metadata_write_enabled
+from ..utils.permissions import ensure_metadata_write_enabled, require_metadata_write_enabled
 
 router = APIRouter()
 
@@ -35,9 +38,11 @@ def api_list_iframe_timelines(client: str | None = Query(default=None)) -> dict:
 
 
 @router.get("/api/iframe-timelines/{timeline_id}")
-def api_get_iframe_timeline(timeline_id: str, resolve: bool = Query(default=True)) -> dict:
+def api_get_iframe_timeline(
+    timeline_id: str, resolve: bool = Query(default=True), version: int | None = Query(default=None)
+) -> dict:
     try:
-        timeline = load_iframe_timeline_definition(timeline_id)
+        timeline = load_iframe_timeline_definition(timeline_id, version=version)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
@@ -53,13 +58,20 @@ async def api_play_iframe_timeline(
     timeline_id: str,
     body: TimelinePlayRequest | None = Body(default=None),
     target_client_id: str | None = Query(default=None),
+    allow_draft: bool = Query(default=False),
+    version: int | None = Query(default=None),
 ) -> dict:
+    if allow_draft:
+        ensure_metadata_write_enabled("iframe_timeline_play_draft")
     try:
-        timeline = load_iframe_timeline_definition(timeline_id)
+        timeline = load_iframe_timeline_definition(timeline_id, version=version)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not allow_draft and timeline.status != "published":
+        raise HTTPException(status_code=400, detail="僅允許播放已發布的 timeline，或設定 allow_draft=true")
 
     request_payload = body or TimelinePlayRequest()
     explicit_target = target_client_id or request_payload.target_client_id
@@ -99,14 +111,26 @@ async def api_play_iframe_timeline(
 def api_create_iframe_timeline(
     body: dict = Body(...),
     resolve: bool = Query(default=True),
+    expected_version: int | None = Query(default=None),
     _: None = Depends(require_metadata_write_enabled),
 ) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
-        timeline = save_iframe_timeline_definition(body)
+        candidate_id = body.get("id")
+        if not candidate_id or not isinstance(candidate_id, str):
+            raise ValueError("timeline id 必填")
+        safe_id = sanitize_timeline_id(candidate_id)
+        payload = {**body, "id": safe_id}
+        timeline_model = IframeTimeline.model_validate(payload)
+        resolve_iframe_timeline(timeline_model)
+        timeline = save_iframe_timeline_definition(
+            timeline_model.model_dump(mode="json", by_alias=True), expected_version=expected_version
+        )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        message = str(exc)
+        status_code = 409 if "版本不符" in message else 400
+        raise HTTPException(status_code=status_code, detail=message) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -121,14 +145,25 @@ def api_update_iframe_timeline(
     timeline_id: str,
     body: dict = Body(...),
     resolve: bool = Query(default=True),
+    expected_version: int | None = Query(default=None),
     _: None = Depends(require_metadata_write_enabled),
 ) -> dict:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
     try:
-        timeline = save_iframe_timeline_definition(body, timeline_id=timeline_id)
+        safe_id = sanitize_timeline_id(timeline_id)
+        payload = {**body, "id": safe_id}
+        timeline_model = IframeTimeline.model_validate(payload)
+        resolve_iframe_timeline(timeline_model)
+        timeline = save_iframe_timeline_definition(
+            timeline_model.model_dump(mode="json", by_alias=True),
+            timeline_id=timeline_id,
+            expected_version=expected_version,
+        )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        message = str(exc)
+        status_code = 409 if "版本不符" in message else 400
+        raise HTTPException(status_code=status_code, detail=message) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -178,6 +213,59 @@ def api_clone_iframe_timeline(
         return {"timeline": _raw_timeline_payload(timeline)}
     resolved = resolve_iframe_timeline(timeline)
     return {"timeline": resolved.to_payload()}
+
+
+@router.get("/api/iframe-timelines/{timeline_id}/versions")
+def api_list_iframe_timeline_versions(timeline_id: str) -> dict:
+    try:
+        safe_id = sanitize_timeline_id(timeline_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    versions = list_iframe_timeline_versions(safe_id)
+    return {"timeline_id": safe_id, "versions": versions}
+
+
+@router.post("/api/iframe-timelines/{timeline_id}/publish")
+def api_publish_iframe_timeline(
+    timeline_id: str,
+    body: dict | None = Body(default=None),
+    expected_version: int | None = Query(default=None),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
+    publish_as = None
+    if body and isinstance(body, dict):
+        publish_as = body.get("publish_as") or body.get("publishAs")
+    try:
+        timeline = publish_iframe_timeline(timeline_id, publish_as=publish_as, expected_version=expected_version)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409 if "版本不符" in str(exc) else 400, detail=str(exc)) from exc
+    return {"timeline": _raw_timeline_payload(timeline)}
+
+
+@router.post("/api/iframe-timelines/{timeline_id}/rollback")
+def api_rollback_iframe_timeline(
+    timeline_id: str,
+    body: dict = Body(...),
+    expected_version: int | None = Query(default=None),
+    _: None = Depends(require_metadata_write_enabled),
+) -> dict:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="payload 必須為 JSON 物件")
+    target_version = body.get("version")
+    if not target_version:
+        raise HTTPException(status_code=400, detail="version 必須提供")
+    publish_as = body.get("publish_as") or body.get("publishAs")
+    try:
+        timeline = rollback_iframe_timeline(
+            timeline_id, int(target_version), publish_as=publish_as, expected_version=expected_version
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409 if "版本不符" in str(exc) else 400, detail=str(exc)) from exc
+    return {"timeline": _raw_timeline_payload(timeline)}
 
 
 @router.post("/api/iframe-timelines/stop")

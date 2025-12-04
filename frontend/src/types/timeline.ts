@@ -88,6 +88,12 @@ export interface TimelineStep {
 
 export interface IframeTimeline {
   id: string;
+  version?: number;
+  status?: "draft" | "published" | "deprecated" | string;
+  created_at?: string;
+  updated_at?: string;
+  published_at?: string;
+  published_by?: string;
   title?: string;
   clientId?: ClientId;
   client_id?: ClientId;
@@ -110,6 +116,12 @@ export interface EpisodeTrack {
 
 export interface EpisodeEntry {
   id: string;
+  version?: number;
+  status?: "draft" | "published" | "deprecated" | string;
+  created_at?: string;
+  updated_at?: string;
+  published_at?: string;
+  published_by?: string;
   title?: string;
   tracks?: EpisodeTrack[];
   tags?: string[];

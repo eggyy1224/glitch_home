@@ -15,17 +15,18 @@
 - Admin Snapshot Editor 小抄：拖曳資產（含數字檔名）到畫布即可套用；影片拖曳會切到 `video_mode`，圖片會保留既有的 image 模式（含 `slide_mode`），初次選圖片預設會用 `static_mode` 生成預覽 URL。
 
 ## 2. Timeline（多 Snapshot 的時間序列）
-- 內容：`id`、`title`、`clientId`（步驟預設的 client）、`loop`、`steps[]`。  
-  - Step：`snapshot`（格式 `client/name` 或 name，若缺 client 會用 step.clientId → timeline.clientId）、`duration`、可選 `at`（起始秒）、`label`、`clientId` 覆寫。  
+- 內容：`id`、`title`、`clientId`（步驟預設的 client）、`loop`、`steps[]`。
+  - Step：`snapshot`（格式 `client/name` 或 name，若缺 client 會用 step.clientId → timeline.clientId）、`duration`、可選 `at`（起始秒）、`label`、`clientId` 覆寫。
   - 進階動作：`subtitle`/`caption`、`tts`、`remote_clicks[]`、`video_controls[]`、`unlock_audio_targets[]`。
 - 儲存：`backend/metadata/timelines/iframe/<id>.json`。
-- 主要 API：  
-  - 列表：`GET /api/iframe-timelines?client={client?}`  
-  - 讀取：`GET /api/iframe-timelines/{id}`（`resolve=false` 拿原始檔；預設會幫你載入 step.snapshot 對應的 Snapshot 並補完）  
-  - 建立：`POST /api/iframe-timelines`  
-  - 覆寫：`PUT /api/iframe-timelines/{id}`  
-  - 複製：`POST /api/iframe-timelines/{id}/clone`  
-  - 播放：`POST /api/iframe-timelines/{id}/play`（透過 WebSocket 廣播 `timeline_control` 指令給 target client）
+- 主要 API：
+  - 列表：`GET /api/iframe-timelines?client={client?}`
+  - 讀取：`GET /api/iframe-timelines/{id}`（`resolve=false` 拿原始檔；預設會幫你載入 step.snapshot 對應的 Snapshot 並補完；可帶 `version` 指定歷史版）
+  - 建立：`POST /api/iframe-timelines`（支援 `expected_version`，並寫入 `metadata/history/timelines/iframe/{id}`）
+  - 覆寫：`PUT /api/iframe-timelines/{id}`（支援 `expected_version`）
+  - 複製：`POST /api/iframe-timelines/{id}/clone`
+  - 版本：`GET /api/iframe-timelines/{id}/versions`、`POST /api/iframe-timelines/{id}/publish`、`POST /api/iframe-timelines/{id}/rollback`
+  - 播放：`POST /api/iframe-timelines/{id}/play`（透過 WebSocket 廣播 `timeline_control` 指令給 target client，可帶 `version`；草稿需先發布或開啟 `allow_draft`）
 - 用途：定義單一 client 的播放腳本，或在 Episode 中被多條 track 引用。
 - 常見欄位／限制：  
   - `steps` 至少 1 筆；`duration` > 0；`snapshot` 必填且經過 validator 去除空白。  
@@ -34,17 +35,18 @@
   - `loop` 為 timeline 預設，`loopOverride`/`startStep` 可在 Episode track 覆寫。
 
 ## 3. Episode（多 Timeline 的協同編排）
-- 內容：`id`、`title`、`description?`、`tags[]`、`tracks[]`。  
-  - Track：`timelineId`、`targetClientId`、`offset/delay`（欄位 `start_at`）、`autoPlay`、`loopOverride`、`startStep`、`forceIframeMode`。  
+- 內容：`id`、`title`、`description?`、`tags[]`、`tracks[]`。
+  - Track：`timelineId`、`targetClientId`、`offset/delay`（欄位 `start_at`）、`autoPlay`、`loopOverride`、`startStep`、`forceIframeMode`。
   - 播放時可再傳「目標 map 覆寫」：`timeline_id:client_id` 逗號分隔，覆寫單次播放的 target。
 - 儲存：`backend/metadata/episodes/<id>.json`。
-- 主要 API：  
-  - 列表：`GET /api/episodes`  
-  - 讀取：`GET /api/episodes/{id}`（`resolve=false` 拿原始檔；預設會連帶 resolve timeline）  
-  - 建立：`POST /api/episodes`  
-  - 覆寫：`PUT /api/episodes/{id}`  
-  - 複製：`POST /api/episodes/{id}/clone`  
-  - 播放：`POST /api/episodes/{id}/play`（會為每個 track 發出一條 `timeline_control`，可附 target map / command_id_prefix）
+- 主要 API：
+  - 列表：`GET /api/episodes`
+  - 讀取：`GET /api/episodes/{id}`（`resolve=false` 拿原始檔；預設會連帶 resolve timeline；可帶 `version` 指定歷史版）
+  - 建立：`POST /api/episodes`（支援 `expected_version`，並寫入 `metadata/history/episodes/{id}`）
+  - 覆寫：`PUT /api/episodes/{id}`（支援 `expected_version`）
+  - 複製：`POST /api/episodes/{id}/clone`
+  - 版本：`GET /api/episodes/{id}/versions`、`POST /api/episodes/{id}/publish`、`POST /api/episodes/{id}/rollback`
+  - 播放：`POST /api/episodes/{id}/play`（會為每個 track 發出一條 `timeline_control`，可附 target map / command_id_prefix，可帶 `version`；草稿需 allow_draft）
 - 用途：同時驅動多 client，每條 track 播自己的 Timeline，可設定延遲與覆寫 client。
 
 ## 4. 組合關係與播放流程

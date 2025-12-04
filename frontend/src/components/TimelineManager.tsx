@@ -4,8 +4,11 @@ import {
   createIframeTimeline,
   deleteIframeTimeline,
   fetchIframeTimeline,
+  listIframeTimelineVersions,
   listIframeTimelines,
+  publishIframeTimeline,
   playIframeTimeline,
+  rollbackIframeTimeline,
   updateIframeTimeline,
 } from "../api";
 import { AdminPanelContext } from "../AdminPanelContext";
@@ -48,6 +51,18 @@ export default function TimelineManager() {
   const [timelinePlayTarget, setTimelinePlayTarget] = useState(defaultClientId);
   const [timelinePlayStatus, setTimelinePlayStatus] = useState("");
   const [timelinePreviewWidth, setTimelinePreviewWidth] = useState<number>(defaultPreviewWidth);
+  const [timelineVersions, setTimelineVersions] = useState<
+    Array<{ version?: number; status?: string; updated_at?: string; published_at?: string; published_by?: string }>
+  >([]);
+  const [loadTimelineVersion, setLoadTimelineVersion] = useState("");
+  const [rollbackVersion, setRollbackVersion] = useState("");
+  const parsedTimeline = useMemo(() => {
+    try {
+      return JSON.parse(timelineJson) as Partial<IframeTimeline>;
+    } catch {
+      return null;
+    }
+  }, [timelineJson]);
 
   const timelineFrameHeight = useMemo(() => {
     const colWidth = (timelinePreviewWidth - 12) / 2;
@@ -89,9 +104,36 @@ export default function TimelineManager() {
     }
   }, [timelineClientFilter]);
 
-  const handleLoadTimeline = useCallback(async (id: string) => {
+  const fetchTimelineVersions = useCallback(async (id: string) => {
     try {
-      const data = await fetchIframeTimeline(id, { resolve: false });
+      const data = await listIframeTimelineVersions(id);
+      const versions = Array.isArray((data as { versions?: unknown }).versions)
+        ? ((data as { versions?: unknown[] }).versions as Array<{
+            version?: number;
+            status?: string;
+            updated_at?: string;
+            published_at?: string;
+            published_by?: string;
+          }>)
+        : [];
+      setTimelineVersions(versions);
+    } catch (err) {
+      setTimelineMessage((err as Error)?.message || "載入版本列表失敗");
+    }
+  }, []);
+
+  const handleLoadTimeline = useCallback(async (id: string, opts?: { ignoreVersion?: boolean }) => {
+    try {
+      const parsedVersion = parseInt(loadTimelineVersion, 10);
+      const versionOpt = opts?.ignoreVersion
+        ? {}
+        : Number.isFinite(parsedVersion)
+          ? { version: parsedVersion }
+          : {};
+      if (opts?.ignoreVersion) {
+        setLoadTimelineVersion("");
+      }
+      const data = await fetchIframeTimeline(id, { resolve: false, ...versionOpt });
       const timelinePayload = (data as { timeline?: unknown }).timeline ?? data;
       setTimelineId(id);
       setTimelineJson(pretty(timelinePayload));
@@ -102,13 +144,14 @@ export default function TimelineManager() {
       if (resolvedTarget) {
         setTimelinePlayTarget(resolvedTarget);
       }
-      setTimelineMessage(`已載入 timeline ${id}`);
+      setTimelineMessage(`已載入 timeline ${id}${versionOpt.version ? ` (v${versionOpt.version})` : ""}`);
       setTimelinePlaySrc(null);
       setTimelinePlayError(null);
+      await fetchTimelineVersions(id);
     } catch (err) {
       setTimelineMessage(((err as Error)?.message) || "載入 timeline 失敗");
     }
-  }, [timelinePlayTarget]);
+  }, [fetchTimelineVersions, loadTimelineVersion, timelinePlayTarget]);
 
   const handleSaveTimeline = useCallback(
     async (mode: "update" | "create") => {
@@ -132,12 +175,13 @@ export default function TimelineManager() {
         setTimelineMessage(`${mode === "update" ? "已更新" : "已建立"} timeline ${targetId}`);
         setTimelinePlaySrc(null);
         setTimelinePlayError(null);
+        await fetchTimelineVersions(targetId);
         await refreshTimelines();
       } catch (err) {
         setTimelineMessage((err as Error)?.message || "儲存失敗");
       }
     },
-    [refreshTimelines, timelineId, timelineJson],
+    [fetchTimelineVersions, refreshTimelines, timelineId, timelineJson],
   );
 
   const handleDeleteTimeline = useCallback(
@@ -180,6 +224,57 @@ export default function TimelineManager() {
     }
   }, [refreshTimelines, timelineCloneId, timelineCloneTarget, timelineId]);
 
+  const currentTimelineVersion = useCallback((): number | null => {
+    try {
+      const parsed = JSON.parse(timelineJson);
+      const v = (parsed as { version?: unknown }).version;
+      return typeof v === "number" ? v : null;
+    } catch {
+      return null;
+    }
+  }, [timelineJson]);
+
+  const handlePublishTimeline = useCallback(async () => {
+    if (!timelineId) {
+      setTimelineMessage("請先載入 timeline");
+      return;
+    }
+    const expected = currentTimelineVersion();
+    try {
+      await publishIframeTimeline(timelineId, {}, { expectedVersion: expected ?? undefined });
+      setTimelineMessage("已發布 timeline");
+      await handleLoadTimeline(timelineId, { ignoreVersion: true });
+      await refreshTimelines();
+      await fetchTimelineVersions(timelineId);
+    } catch (err) {
+      setTimelineMessage((err as Error)?.message || "發布失敗");
+    }
+  }, [currentTimelineVersion, fetchTimelineVersions, handleLoadTimeline, refreshTimelines, timelineId]);
+
+  const handleRollbackTimeline = useCallback(async () => {
+    if (!timelineId) {
+      setTimelineMessage("請先載入 timeline");
+      return;
+    }
+    const target = parseInt(rollbackVersion, 10);
+    if (!Number.isFinite(target)) {
+      setTimelineMessage("請輸入要回滾的版本號");
+      return;
+    }
+    const expected = currentTimelineVersion();
+    try {
+      await rollbackIframeTimeline(timelineId, { version: target }, { expectedVersion: expected ?? undefined });
+      setTimelineMessage(`已回滾到版本 ${target}`);
+      setRollbackVersion("");
+      setLoadTimelineVersion("");
+      await handleLoadTimeline(timelineId, { ignoreVersion: true });
+      await refreshTimelines();
+      await fetchTimelineVersions(timelineId);
+    } catch (err) {
+      setTimelineMessage((err as Error)?.message || "回滾失敗");
+    }
+  }, [currentTimelineVersion, fetchTimelineVersions, handleLoadTimeline, refreshTimelines, rollbackVersion, timelineId]);
+
   const handlePlayTimelinePreview = useCallback(() => {
     try {
       const parsed = JSON.parse(timelineJson);
@@ -206,12 +301,19 @@ export default function TimelineManager() {
     }
     try {
       setTimelinePlayStatus("發送中...");
-      await playIframeTimeline(timelineId, {}, { targetClientId: timelinePlayTarget.trim() });
+      const versionFromInput = parseInt(loadTimelineVersion, 10);
+      const versionFromJson =
+        parsedTimeline && typeof (parsedTimeline as { version?: unknown }).version === "number"
+          ? (parsedTimeline as { version?: number }).version
+          : undefined;
+      const pickedVersion = Number.isFinite(versionFromInput) ? versionFromInput : versionFromJson;
+      const versionOpt = Number.isFinite(pickedVersion || NaN) ? { version: pickedVersion } : {};
+      await playIframeTimeline(timelineId, {}, { targetClientId: timelinePlayTarget.trim(), ...versionOpt });
       setTimelinePlayStatus(`已送出播放到 ${timelinePlayTarget.trim()}`);
     } catch (err) {
       setTimelinePlayStatus(((err as Error)?.message) || "播放指令失敗");
     }
-  }, [timelineId, timelinePlayTarget]);
+  }, [loadTimelineVersion, parsedTimeline, timelineId, timelinePlayTarget]);
 
   useEffect(() => {
     let cancelled = false;
@@ -421,6 +523,63 @@ export default function TimelineManager() {
             style={{ width: "100%", marginBottom: 8 }}
             data-ai-field="timeline.id"
           />
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+            <input
+              type="text"
+              placeholder="版本號（可選）"
+              value={loadTimelineVersion}
+              onChange={(e) => setLoadTimelineVersion(e.target.value)}
+              style={{ width: 140 }}
+              data-ai-field="timeline.load-version"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (timelineId) {
+                  void handleLoadTimeline(timelineId);
+                } else {
+                  setTimelineMessage("請輸入 timeline id 後再載入");
+                }
+              }}
+              data-ai-action="timeline.load-version"
+            >
+              載入指定版
+            </button>
+            <select
+              value={loadTimelineVersion}
+              onChange={(e) => setLoadTimelineVersion(e.target.value)}
+              data-ai-field="timeline.version-select"
+              style={{ minWidth: 140 }}
+            >
+              <option value="">最新</option>
+              {timelineVersions
+                .filter((v) => typeof v.version === "number")
+                .map((v) => (
+                  <option key={`v-${v.version}`} value={String(v.version ?? "")}>{`v${v.version} ${v.status ? `(${v.status})` : ""}`}</option>
+                ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                if (timelineId) {
+                  void fetchTimelineVersions(timelineId);
+                }
+              }}
+              data-ai-action="timeline.reload-versions"
+            >
+              重新載入版本列表
+            </button>
+          </div>
+          <div style={{ marginBottom: 8, fontSize: 12, color: "#9be7ff" }}>
+            目前版本：{parsedTimeline?.version ?? "?"} / 狀態：{parsedTimeline?.status ?? "?"} / published_at：
+            {(parsedTimeline as { published_at?: string; publishedAt?: string })?.published_at ||
+              (parsedTimeline as { publishedAt?: string })?.publishedAt ||
+              "n/a"}
+            {" / published_by："}
+            {(parsedTimeline as { published_by?: string; publishedBy?: string })?.published_by ||
+              (parsedTimeline as { publishedBy?: string })?.publishedBy ||
+              "n/a"}
+          </div>
           <label style={labelStyle} htmlFor="timeline-json">
             JSON
           </label>
@@ -447,6 +606,20 @@ export default function TimelineManager() {
               data-testid="timeline-fill-default"
             >
               填入預設
+            </button>
+            <button type="button" onClick={handlePublishTimeline} data-ai-action="timeline.publish">
+              發布
+            </button>
+            <input
+              type="text"
+              placeholder="回滾版本號"
+              value={rollbackVersion}
+              onChange={(e) => setRollbackVersion(e.target.value)}
+              style={{ width: 120 }}
+              data-ai-field="timeline.rollback-version"
+            />
+            <button type="button" onClick={handleRollbackTimeline} data-ai-action="timeline.rollback">
+              回滾
             </button>
           </div>
 

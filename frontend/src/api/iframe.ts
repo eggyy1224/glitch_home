@@ -5,14 +5,17 @@ import type { IframeTimeline, SnapshotEntry } from "../types/admin";
 
 export async function fetchIframeTimeline(
   timelineId: string,
-  { signal, resolve = true }: ResolveOption = {},
+  { signal, resolve = true, version }: ResolveOption = {},
 ): Promise<IframeTimeline> {
   if (!timelineId) {
     throw new Error("timelineId is required");
   }
+  const query: Record<string, string> = {};
+  if (resolve === false) query.resolve = "false";
+  if (typeof version === "number") query.version = `${version}`;
   return apiClient.get(`/api/iframe-timelines/${encodeURIComponent(timelineId)}`, {
     signal,
-    query: resolve === false ? { resolve: "false" } : undefined,
+    query: Object.keys(query).length ? query : undefined,
   });
 }
 
@@ -28,22 +31,31 @@ export async function listIframeTimelines(
 
 export async function createIframeTimeline(
   payload: Partial<IframeTimeline>,
-  { resolve = true, signal }: ResolveOption = {},
+  { resolve = true, signal, expectedVersion }: ResolveOption = {},
 ): Promise<IframeTimeline> {
+  const query: Record<string, string> = {};
+  if (resolve === false) query.resolve = "false";
+  if (typeof expectedVersion === "number") query.expected_version = `${expectedVersion}`;
   return apiClient.post(`/api/iframe-timelines`, payload, {
     signal,
-    query: resolve === false ? { resolve: "false" } : undefined,
+    query: Object.keys(query).length ? query : undefined,
   });
 }
 
 export async function updateIframeTimeline(
   timelineId: string,
   payload: Partial<IframeTimeline>,
-  { resolve = true, signal }: ResolveOption = {},
+  { resolve = true, signal, expectedVersion }: ResolveOption = {},
 ): Promise<IframeTimeline> {
   return apiClient.put(`/api/iframe-timelines/${encodeURIComponent(timelineId)}`, payload, {
     signal,
-    query: resolve === false ? { resolve: "false" } : undefined,
+    query:
+      resolve === false || typeof expectedVersion === "number"
+        ? {
+            ...(resolve === false ? { resolve: "false" } : {}),
+            ...(typeof expectedVersion === "number" ? { expected_version: `${expectedVersion}` } : {}),
+          }
+        : undefined,
   });
 }
 
@@ -65,14 +77,62 @@ export async function cloneIframeTimeline(
 export async function playIframeTimeline(
   timelineId: string,
   payload: Record<string, unknown> = {},
-  { targetClientId = null, signal }: { targetClientId?: string | null; signal?: AbortSignal } = {},
+  {
+    targetClientId = null,
+    signal,
+    allowDraft = false,
+    version,
+  }: { targetClientId?: string | null; signal?: AbortSignal; allowDraft?: boolean; version?: number } = {},
 ): Promise<unknown> {
   if (!timelineId) {
     throw new Error("timelineId is required");
   }
+  const query: Record<string, string> = {};
+  if (targetClientId) query.target_client_id = targetClientId;
+  if (allowDraft) query.allow_draft = "true";
+  if (typeof version === "number") query.version = `${version}`;
   return apiClient.post(`/api/iframe-timelines/${encodeURIComponent(timelineId)}/play`, payload || {}, {
     signal,
-    query: targetClientId ? { target_client_id: targetClientId } : undefined,
+    query: Object.keys(query).length ? query : undefined,
+  });
+}
+
+export async function listIframeTimelineVersions(
+  timelineId: string,
+  { signal }: RequestOptions = {},
+): Promise<{ versions?: unknown[] }> {
+  if (!timelineId) throw new Error("timelineId is required");
+  return apiClient.get(`/api/iframe-timelines/${encodeURIComponent(timelineId)}/versions`, { signal });
+}
+
+export async function publishIframeTimeline(
+  timelineId: string,
+  payload: Record<string, unknown> | null = null,
+  { signal, expectedVersion }: RequestOptions & { expectedVersion?: number } = {},
+): Promise<IframeTimeline> {
+  if (!timelineId) throw new Error("timelineId is required");
+  const query: Record<string, string> = {};
+  if (typeof expectedVersion === "number") query.expected_version = `${expectedVersion}`;
+  return apiClient.post(`/api/iframe-timelines/${encodeURIComponent(timelineId)}/publish`, payload || {}, {
+    signal,
+    query: Object.keys(query).length ? query : undefined,
+  });
+}
+
+export async function rollbackIframeTimeline(
+  timelineId: string,
+  payload: Record<string, unknown>,
+  { signal, expectedVersion }: RequestOptions & { expectedVersion?: number } = {},
+): Promise<IframeTimeline> {
+  if (!timelineId) throw new Error("timelineId is required");
+  if (!payload || typeof (payload as { version?: unknown }).version === "undefined") {
+    throw new Error("rollback payload requires version");
+  }
+  const query: Record<string, string> = {};
+  if (typeof expectedVersion === "number") query.expected_version = `${expectedVersion}`;
+  return apiClient.post(`/api/iframe-timelines/${encodeURIComponent(timelineId)}/rollback`, payload, {
+    signal,
+    query: Object.keys(query).length ? query : undefined,
   });
 }
 
