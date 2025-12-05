@@ -37,3 +37,5 @@ frontend/playwright-report
 backend/.coverage
 
 .vite
+
+正式展覽相關文件
