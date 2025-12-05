@@ -1,0 +1,25 @@
+{
+  "id": "booboo_horse",
+  "version": 1,
+  "status": "published",
+  "created_at": "2025-12-05T05:42:09.778822Z",
+  "updated_at": "2025-12-05T05:42:09.779278Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "範例 Scene",
+  "targets": {
+    "desktop": "desktop/triptych1",
+    "desktop2": "desktop2/dancing_with_car"
+  },
+  "audio_mix": {
+    "left": 1.0,
+    "right": 0.3,
+    "mode": "left-dominant",
+    "muted": null
+  },
+  "tags": [
+    "demo"
+  ],
+  "description": "",
+  "notes": ""
+}

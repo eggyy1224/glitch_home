@@ -1,0 +1,25 @@
+{
+  "id": "stormy_night",
+  "version": 2,
+  "status": "published",
+  "created_at": "2025-12-05T05:47:07.644656Z",
+  "updated_at": "2025-12-05T05:47:07.645842Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "stormy_night",
+  "targets": {
+    "desktop": "desktop/drive_in_stormy_100_grid",
+    "desktop2": "desktop2/opening_stage6"
+  },
+  "audio_mix": {
+    "left": 1.0,
+    "right": 0.0,
+    "mode": "left-dominant",
+    "muted": null
+  },
+  "tags": [
+    "stormy_night"
+  ],
+  "description": "",
+  "notes": ""
+}

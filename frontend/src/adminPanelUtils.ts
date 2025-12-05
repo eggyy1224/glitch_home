@@ -181,7 +181,7 @@ export function firstSnapshotRef(timeline?: Partial<IframeTimeline> | null): Sna
 
 export function defaultScenePayload(targetClient?: string | null): Record<string, unknown> {
   const clientA = targetClient || "left";
-  const clientB = clientA === "left" ? "right" : `${clientA}_b`;
+  const clientB = clientA === "desktop" ? "desktop2" : clientA === "left" ? "right" : `${clientA}_b`;
   return {
     id: "new_scene",
     title: "範例 Scene",

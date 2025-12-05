@@ -1,0 +1,40 @@
+{
+  "id": "long_script_test",
+  "version": 1,
+  "status": "published",
+  "created_at": "2025-12-05T05:49:34.945989Z",
+  "updated_at": "2025-12-05T05:49:34.947997Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "範例 Script",
+  "entries": [
+    {
+      "type": "scene",
+      "sceneId": "booboo_horse",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 6.7,
+      "audio_override": null,
+      "notes": null
+    },
+    {
+      "type": "scene",
+      "sceneId": "demo_dual_scene",
+      "left_snapshot": null,
+      "right_snapshot": null,
+      "duration": 5.9,
+      "audio_override": {
+        "left": 0.8,
+        "right": 0.8,
+        "mode": "balanced",
+        "muted": null
+      },
+      "notes": null
+    }
+  ],
+  "tags": [
+    "demo"
+  ],
+  "description": "",
+  "notes": ""
+}

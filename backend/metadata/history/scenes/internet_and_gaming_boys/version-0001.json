@@ -1,0 +1,25 @@
+{
+  "id": "internet_and_gaming_boys",
+  "version": 1,
+  "status": "published",
+  "created_at": "2025-12-05T05:32:01.790709Z",
+  "updated_at": "2025-12-05T05:32:01.791962Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "範例 Scene",
+  "targets": {
+    "desktop": "desktop/triple_internet",
+    "desktop2": "desktop2/video_dual_gaming"
+  },
+  "audio_mix": {
+    "left": 1.0,
+    "right": 0.3,
+    "mode": "left-dominant",
+    "muted": null
+  },
+  "tags": [
+    "internet_and_gaming_boys"
+  ],
+  "description": "",
+  "notes": ""
+}
