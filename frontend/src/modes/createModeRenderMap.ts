@@ -70,6 +70,7 @@ const StaticMode = lazy(() => import("../StaticMode"));
 const VideoMode = lazy(() => import("../VideoMode"));
 const KinshipScene = lazy(() => import("../ThreeKinshipScene"));
 const AdminPanel = lazy(() => import("../AdminPanel"));
+const ExhibitionMode = lazy(() => import("../ExhibitionMode"));
 
 const modeBaseConfigs: Record<string, ModeBaseConfig> = {
   [DisplayModes.IFRAME]: { component: IframeMode, withCaptureReady: true },
@@ -84,6 +85,7 @@ const modeBaseConfigs: Record<string, ModeBaseConfig> = {
   [DisplayModes.VIDEO]: { component: VideoMode, withCaptureReady: true },
   [DisplayModes.KINSHIP]: { component: KinshipScene, withCaptureReady: true },
   [DisplayModes.ADMIN]: { component: AdminPanel },
+  [DisplayModes.EXHIBITION]: { component: ExhibitionMode },
 };
 
 function buildModeEntry(baseConfig: ModeBaseConfig, overrides: ModeEntryOverrides = {}): ModeRenderEntry {
@@ -211,6 +213,7 @@ export function createModeRenderMap({
         imgId,
       },
     }),
+    [DisplayModes.EXHIBITION]: buildModeEntry(modeBaseConfigs[DisplayModes.EXHIBITION]),
     [DisplayModes.VIDEO]: buildModeEntry(modeBaseConfigs[DisplayModes.VIDEO], {
       componentProps: {
         controlRef: videoControllerRef,

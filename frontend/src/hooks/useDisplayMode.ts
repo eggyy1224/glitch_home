@@ -13,12 +13,14 @@ export const DisplayModes = {
   STATIC: "static",
   VIDEO: "video",
   ADMIN: "admin",
+  EXHIBITION: "exhibition",
 } as const;
 
 export type DisplayModeType = (typeof DisplayModes)[keyof typeof DisplayModes];
 
 const PARAM_SEQUENCE: Array<{ type: DisplayModeType; key: string }> = [
   { type: DisplayModes.ADMIN, key: "admin_mode" },
+  { type: DisplayModes.EXHIBITION, key: "exhibition_mode" },
   { type: DisplayModes.IFRAME, key: "iframe_mode" },
   { type: DisplayModes.SLIDE, key: "slide_mode" },
   { type: DisplayModes.ORGANIC, key: "organic_mode" },

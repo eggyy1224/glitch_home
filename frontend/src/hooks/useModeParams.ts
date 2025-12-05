@@ -12,6 +12,7 @@ export const KINSHIP_DATA_EXCLUDED: Set<DisplayModeType> = new Set([
   DisplayModes.STATIC,
   DisplayModes.VIDEO,
   DisplayModes.ADMIN,
+  DisplayModes.EXHIBITION,
 ]);
 
 export const readSearchParams = () => new URLSearchParams(window.location.search);
