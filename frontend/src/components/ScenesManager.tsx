@@ -228,14 +228,16 @@ export default function ScenesManager() {
           重新載入列表
         </button>
       </div>
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <div style={{ marginBottom: 6 }}>Scene 列表：</div>
           <ul
             role="list"
             data-ai-id="scene.list"
             style={{
-              maxHeight: 220,
+              flex: 1,
+              minHeight: 280,
+              maxHeight: "60vh",
               overflowY: "auto",
               border: "1px solid #0f4",
               padding: 8,
