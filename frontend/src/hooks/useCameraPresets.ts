@@ -98,7 +98,7 @@ export function useCameraPresets(options: UseCameraPresetsOptions = {}) {
       target: cameraInfo.target,
     };
     try {
-      const saved = await saveCameraPreset(payload, { scope });
+      const saved = scope ? await saveCameraPreset(payload, { scope }) : await saveCameraPreset(payload);
       const normalized = normalizePreset(saved);
       upsertPresetInState(normalized);
       setSelectedPresetName(normalized.name);
@@ -122,7 +122,11 @@ export function useCameraPresets(options: UseCameraPresetsOptions = {}) {
     const ok = window.confirm(`確定要刪除視角 "${selectedPresetName}" 嗎？`);
     if (!ok) return;
     try {
-      await deleteCameraPreset(selectedPresetName, { scope });
+      if (scope) {
+        await deleteCameraPreset(selectedPresetName, { scope });
+      } else {
+        await deleteCameraPreset(selectedPresetName);
+      }
       removePresetInState(selectedPresetName);
       pushPresetMessage(`視角 "${selectedPresetName}" 已刪除。`, 2000);
       setSelectedPresetName("");

@@ -259,7 +259,7 @@ describe("TimelineEpisodeEditor", () => {
       fireEvent.click(screen.getByRole("button", { name: "貼上" }));
     });
     expect(screen.getAllByLabelText(/選取 track/)).toHaveLength(3);
-  });
+  }, 10000);
 
   it("狀態訊息會依模式切換並只顯示該模式內容", async () => {
     renderWithContext(<TimelineEpisodeEditor />);

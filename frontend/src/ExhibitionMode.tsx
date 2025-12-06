@@ -136,11 +136,11 @@ export default function ExhibitionMode({ onCaptureReady, onCameraUpdate, applyPr
           maxPolarAngle={Math.PI * 0.9}
           dampingFactor={0.12}
           enableDamping
-          makeDefault
-        />
-        <CameraTracker onCameraUpdate={onCameraUpdate} />
-        <CameraPresetApplier preset={applyPreset} />
-      </Canvas>
-    </div>
+      makeDefault
+    />
+    <CameraTracker onCameraUpdate={onCameraUpdate} />
+    <CameraPresetApplier preset={applyPreset ?? null} />
+  </Canvas>
+</div>
   );
 }
