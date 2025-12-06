@@ -48,6 +48,9 @@ type ModeRenderMapOptions = {
   pendingPreset?: KinshipCameraPreset | null;
   topbarContent?: ReactNode;
   screenshotContent?: ReactNode;
+  exhibitionBeforeContent?: ReactNode;
+  handleExhibitionCameraUpdate?: (payload: KinshipCameraPose) => void;
+  exhibitionPendingPreset?: KinshipCameraPreset | null;
   clientId?: string;
   canGenerate?: boolean;
   canWriteMetadata?: boolean;
@@ -141,6 +144,9 @@ export function createModeRenderMap({
   pendingPreset,
   topbarContent,
   screenshotContent,
+  exhibitionBeforeContent,
+  handleExhibitionCameraUpdate,
+  exhibitionPendingPreset,
   clientId,
   canGenerate,
   canWriteMetadata,
@@ -213,7 +219,13 @@ export function createModeRenderMap({
         imgId,
       },
     }),
-    [DisplayModes.EXHIBITION]: buildModeEntry(modeBaseConfigs[DisplayModes.EXHIBITION]),
+    [DisplayModes.EXHIBITION]: buildModeEntry(modeBaseConfigs[DisplayModes.EXHIBITION], {
+      componentProps: {
+        onCameraUpdate: handleExhibitionCameraUpdate,
+        applyPreset: exhibitionPendingPreset,
+      },
+      beforeContent: exhibitionBeforeContent,
+    }),
     [DisplayModes.VIDEO]: buildModeEntry(modeBaseConfigs[DisplayModes.VIDEO], {
       componentProps: {
         controlRef: videoControllerRef,

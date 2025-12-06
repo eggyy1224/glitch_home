@@ -252,18 +252,19 @@ async def api_put_collage_config(
 
 
 @router.get("/api/camera-presets", response_model=list[CameraPreset])
-def api_list_camera_presets() -> list[CameraPreset]:
-    presets = list_camera_presets()
+def api_list_camera_presets(scope: str | None = Query(default=None, max_length=120)) -> list[CameraPreset]:
+    presets = list_camera_presets(scope)
     return presets
 
 
 @router.post("/api/camera-presets", response_model=CameraPreset, status_code=201)
 def api_save_camera_preset(
     body: SaveCameraPresetRequest,
+    scope: str | None = Query(default=None, max_length=120),
     _: None = Depends(require_metadata_write_enabled),
 ) -> CameraPreset:
     try:
-        saved = upsert_camera_preset(body.model_dump())
+        saved = upsert_camera_preset(body.model_dump(), scope=scope)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return saved
@@ -272,6 +273,7 @@ def api_save_camera_preset(
 @router.delete("/api/camera-presets/{name}", status_code=204)
 def api_delete_camera_preset(
     name: str,
+    scope: str | None = Query(default=None, max_length=120),
     _: None = Depends(require_metadata_write_enabled),
 ) -> Response:
     cleaned = name.strip()
@@ -279,7 +281,7 @@ def api_delete_camera_preset(
         raise HTTPException(status_code=400, detail="name is required")
     if any(sep in cleaned for sep in ("/", "\\", ":", "*", "?", '"', "<", ">", "|")):
         raise HTTPException(status_code=400, detail="invalid name")
-    deleted = delete_camera_preset(cleaned)
+    deleted = delete_camera_preset(cleaned, scope=scope)
     if not deleted:
         raise HTTPException(status_code=404, detail="preset not found")
     return Response(status_code=204)

@@ -19,6 +19,7 @@ export interface CameraPreset extends Record<string, unknown> {
   position: CameraVector;
   target: CameraVector;
   key?: number;
+  scope?: string | null;
 }
 
 export interface SubtitleCaptionState {

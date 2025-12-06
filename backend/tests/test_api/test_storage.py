@@ -296,15 +296,16 @@ def test_save_camera_preset(client: TestClient):
     preset = {
         "name": "test_preset",
         "position": {"x": 0, "y": 0, "z": 5},
-        "target": {"x": 0, "y": 0, "z": 0}
+        "target": {"x": 0, "y": 0, "z": 0},
     }
-    
+
     response = client.post("/api/camera-presets", json=preset)
     assert response.status_code == 201
-    
+
     data = response.json()
     assert data["name"] == "test_preset"
-    
+    assert data.get("scope") is None
+
     # Clean up
     client.delete(f"/api/camera-presets/{preset['name']}")
 
@@ -324,7 +325,7 @@ def test_delete_camera_preset(client: TestClient):
     preset = {
         "name": "temp_preset",
         "position": {"x": 0, "y": 0, "z": 5},
-        "target": {"x": 0, "y": 0, "z": 0}
+        "target": {"x": 0, "y": 0, "z": 0},
     }
     create_response = client.post("/api/camera-presets", json=preset)
     assert create_response.status_code == 201
@@ -332,6 +333,116 @@ def test_delete_camera_preset(client: TestClient):
     # Then delete it
     response = client.delete("/api/camera-presets/temp_preset")
     assert response.status_code == 204
+
+
+@pytest.mark.api
+def test_camera_presets_scoped_by_scope_query(client: TestClient):
+    """Scoped camera preset CRUD should not leak across scopes, with legacy entries kept for kinship."""
+    kinship_preset = {
+        "name": "scoped_kinship",
+        "position": {"x": 0, "y": 1, "z": 2},
+        "target": {"x": 0, "y": 0, "z": 0},
+    }
+    exhibition_preset = {
+        "name": "scoped_exhibition",
+        "position": {"x": 5, "y": 6, "z": 7},
+        "target": {"x": 1, "y": 0, "z": -1},
+    }
+    legacy_preset = {
+        "name": "legacy_scope",
+        "position": {"x": 1, "y": 2, "z": 3},
+        "target": {"x": -1, "y": 0, "z": 1},
+    }
+    shared_name_kinship = {
+        "name": "shared_name",
+        "position": {"x": 2, "y": 2, "z": 2},
+        "target": {"x": 0, "y": 0, "z": 0},
+    }
+    shared_name_exhibition = {
+        "name": "shared_name",
+        "position": {"x": 9, "y": 9, "z": 9},
+        "target": {"x": 1, "y": 0, "z": 1},
+    }
+
+    client.post("/api/camera-presets", json=kinship_preset, params={"scope": "kinship"})
+    client.post("/api/camera-presets", json=exhibition_preset, params={"scope": "exhibition"})
+    client.post("/api/camera-presets", json=legacy_preset)
+    client.post("/api/camera-presets", json=shared_name_kinship, params={"scope": "kinship"})
+    client.post("/api/camera-presets", json=shared_name_exhibition, params={"scope": "exhibition"})
+
+    kinship_list = client.get("/api/camera-presets", params={"scope": "kinship"})
+    assert kinship_list.status_code == 200
+    kinship_names = [item["name"] for item in kinship_list.json()]
+    assert "scoped_kinship" in kinship_names
+    assert "scoped_exhibition" not in kinship_names
+    assert "legacy_scope" in kinship_names
+    kinship_shared = [item for item in kinship_list.json() if item["name"] == "shared_name"]
+    assert kinship_shared and kinship_shared[0]["position"]["x"] == 2
+
+    exhibition_list = client.get("/api/camera-presets", params={"scope": "exhibition"})
+    assert exhibition_list.status_code == 200
+    exhibition_names = [item["name"] for item in exhibition_list.json()]
+    assert "scoped_exhibition" in exhibition_names
+    assert "scoped_kinship" not in exhibition_names
+    assert "legacy_scope" not in exhibition_names
+    exhibition_shared = [item for item in exhibition_list.json() if item["name"] == "shared_name"]
+    assert exhibition_shared and exhibition_shared[0]["position"]["x"] == 9
+
+    # Update kinship shared name should not overwrite exhibition entry
+    updated_shared = {
+        "name": "shared_name",
+        "position": {"x": 3, "y": 3, "z": 3},
+        "target": {"x": 0, "y": 0, "z": 0},
+    }
+    client.post("/api/camera-presets", json=updated_shared, params={"scope": "kinship"})
+    kinship_after_update = client.get("/api/camera-presets", params={"scope": "kinship"}).json()
+    kinship_shared_after = [item for item in kinship_after_update if item["name"] == "shared_name"]
+    assert kinship_shared_after and kinship_shared_after[0]["position"]["x"] == 3
+
+    exhibition_after_update = client.get("/api/camera-presets", params={"scope": "exhibition"}).json()
+    exhibition_shared_after = [item for item in exhibition_after_update if item["name"] == "shared_name"]
+    assert exhibition_shared_after and exhibition_shared_after[0]["position"]["x"] == 9
+
+    client.delete("/api/camera-presets/scoped_kinship", params={"scope": "kinship"})
+    client.delete("/api/camera-presets/scoped_exhibition", params={"scope": "exhibition"})
+    client.delete("/api/camera-presets/legacy_scope")
+    client.delete("/api/camera-presets/shared_name", params={"scope": "kinship"})
+    client.delete("/api/camera-presets/shared_name", params={"scope": "exhibition"})
+
+
+@pytest.mark.api
+def test_delete_camera_preset_default_scope_does_not_wipe_other_scopes(client: TestClient):
+    """Deleting without scope should only target the default (kinship) scope."""
+    name = "shared_scope_delete"
+    kinship_preset = {
+        "name": name,
+        "position": {"x": 1, "y": 2, "z": 3},
+        "target": {"x": 0, "y": 0, "z": 0},
+    }
+    exhibition_preset = {
+        "name": name,
+        "position": {"x": 9, "y": 9, "z": 9},
+        "target": {"x": 1, "y": 1, "z": 1},
+    }
+
+    create_kinship = client.post("/api/camera-presets", json=kinship_preset)
+    assert create_kinship.status_code == 201
+    create_exhibition = client.post("/api/camera-presets", json=exhibition_preset, params={"scope": "exhibition"})
+    assert create_exhibition.status_code == 201
+
+    delete_response = client.delete(f"/api/camera-presets/{name}")
+    assert delete_response.status_code == 204
+
+    kinship_list = client.get("/api/camera-presets", params={"scope": "kinship"})
+    assert kinship_list.status_code == 200
+    assert name not in [item["name"] for item in kinship_list.json()]
+
+    exhibition_list = client.get("/api/camera-presets", params={"scope": "exhibition"})
+    assert exhibition_list.status_code == 200
+    assert name in [item["name"] for item in exhibition_list.json()]
+
+    cleanup_exhibition = client.delete(f"/api/camera-presets/{name}", params={"scope": "exhibition"})
+    assert cleanup_exhibition.status_code == 204
 
 
 @pytest.mark.api

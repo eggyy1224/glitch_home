@@ -2,9 +2,14 @@ import React, { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import CameraTracker from "./components/kinship/scene/trackers/CameraTracker";
+import CameraPresetApplier from "./components/kinship/scene/trackers/CameraPresetApplier";
+import type { KinshipCameraPose, KinshipCameraPreset } from "./types/kinship";
 
 type ExhibitionModeProps = {
   onCaptureReady?: (capture: (() => Promise<Blob>) | null) => void;
+  onCameraUpdate?: (payload: KinshipCameraPose) => void;
+  applyPreset?: KinshipCameraPreset | null;
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -78,7 +83,7 @@ function GlitchSculpture() {
 
 useGLTF.preload("/glb/glitch_3F.glb");
 
-export default function ExhibitionMode({ onCaptureReady }: ExhibitionModeProps) {
+export default function ExhibitionMode({ onCaptureReady, onCameraUpdate, applyPreset }: ExhibitionModeProps) {
   return (
     <div style={styles.page}>
       <div style={styles.overlay}>
@@ -130,7 +135,11 @@ export default function ExhibitionMode({ onCaptureReady }: ExhibitionModeProps) 
           minDistance={1.8}
           maxPolarAngle={Math.PI * 0.9}
           dampingFactor={0.12}
+          enableDamping
+          makeDefault
         />
+        <CameraTracker onCameraUpdate={onCameraUpdate} />
+        <CameraPresetApplier preset={applyPreset} />
       </Canvas>
     </div>
   );

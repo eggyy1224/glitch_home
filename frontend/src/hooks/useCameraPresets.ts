@@ -3,6 +3,10 @@ import { deleteCameraPreset, fetchCameraPresets, saveCameraPreset } from "../api
 import type { CameraInfo, CameraPreset, CameraVector } from "../types/control";
 import type { CameraPreset as ApiCameraPreset } from "../api";
 
+export interface UseCameraPresetsOptions {
+  scope?: string;
+}
+
 const toVector = (value: unknown): CameraVector => {
   const obj = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
   const x = typeof obj.x === "number" ? obj.x : 0;
@@ -15,9 +19,11 @@ const normalizePreset = (preset: ApiCameraPreset): CameraPreset => ({
   name: preset.name,
   position: toVector(preset.position),
   target: toVector(preset.target),
+  scope: typeof preset.scope === "string" ? preset.scope : null,
 });
 
-export function useCameraPresets() {
+export function useCameraPresets(options: UseCameraPresetsOptions = {}) {
+  const { scope } = options;
   const [cameraInfo, setCameraInfo] = useState<CameraInfo | null>(null);
   const [cameraPresets, setCameraPresets] = useState<CameraPreset[]>([]);
   const [selectedPresetName, setSelectedPresetName] = useState("");
@@ -26,7 +32,7 @@ export function useCameraPresets() {
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    fetchCameraPresets()
+    fetchCameraPresets({ scope })
       .then((list) => {
         const arr = Array.isArray(list)
           ? [...list].map((item) => normalizePreset(item)).sort((a, b) => a.name.localeCompare(b.name))
@@ -39,7 +45,7 @@ export function useCameraPresets() {
         }
       })
       .catch(() => setCameraPresets([]));
-  }, []);
+  }, [scope]);
 
   const pushPresetMessage = useCallback((text: string, ttl = 2500) => {
     setPresetMessage(text);
@@ -92,7 +98,7 @@ export function useCameraPresets() {
       target: cameraInfo.target,
     };
     try {
-      const saved = await saveCameraPreset(payload);
+      const saved = await saveCameraPreset(payload, { scope });
       const normalized = normalizePreset(saved);
       upsertPresetInState(normalized);
       setSelectedPresetName(normalized.name);
@@ -101,7 +107,7 @@ export function useCameraPresets() {
       const message = err instanceof Error ? err.message : String(err);
       window.alert(`儲存失敗：${message}`);
     }
-  }, [cameraInfo, pushPresetMessage, upsertPresetInState]);
+  }, [cameraInfo, scope, pushPresetMessage, upsertPresetInState]);
 
   const handleApplyPreset = useCallback(() => {
     if (!selectedPresetName) return;
@@ -116,7 +122,7 @@ export function useCameraPresets() {
     const ok = window.confirm(`確定要刪除視角 "${selectedPresetName}" 嗎？`);
     if (!ok) return;
     try {
-      await deleteCameraPreset(selectedPresetName);
+      await deleteCameraPreset(selectedPresetName, { scope });
       removePresetInState(selectedPresetName);
       pushPresetMessage(`視角 "${selectedPresetName}" 已刪除。`, 2000);
       setSelectedPresetName("");
@@ -124,7 +130,7 @@ export function useCameraPresets() {
       const message = err instanceof Error ? err.message : String(err);
       window.alert(`刪除失敗：${message}`);
     }
-  }, [selectedPresetName, pushPresetMessage, removePresetInState]);
+  }, [selectedPresetName, scope, pushPresetMessage, removePresetInState]);
 
   const handleCameraUpdate = useCallback((info: CameraInfo | null) => {
     setCameraInfo(info);

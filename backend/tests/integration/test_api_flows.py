@@ -293,20 +293,40 @@ async def test_camera_preset_crud(async_client: AsyncClient) -> None:
         "position": {"x": 1.0, "y": 2.0, "z": 3.0},
         "target": {"x": 0.0, "y": 0.0, "z": -1.0},
     }
-    create_resp = await async_client.post("/api/camera-presets", json=preset_body)
+    scope = "kinship"
+    create_resp = await async_client.post("/api/camera-presets", json=preset_body, params={"scope": scope})
     assert create_resp.status_code == 201
     created = create_resp.json()
     assert created["name"] == "preset-int"
 
-    list_resp = await async_client.get("/api/camera-presets")
+    list_resp = await async_client.get("/api/camera-presets", params={"scope": scope})
     assert list_resp.status_code == 200
     names = [item["name"] for item in list_resp.json()]
     assert "preset-int" in names
 
-    delete_resp = await async_client.delete("/api/camera-presets/preset-int")
+    # ensure scoped update does not replace other scopes with the same name
+    await async_client.post(
+        "/api/camera-presets",
+        json={"name": "preset-int", "position": {"x": 9, "y": 9, "z": 9}, "target": {"x": 1, "y": 0, "z": 0}},
+        params={"scope": "exhibition"},
+    )
+    update_resp = await async_client.post(
+        "/api/camera-presets",
+        json={"name": "preset-int", "position": {"x": 2, "y": 2, "z": 2}, "target": {"x": 0, "y": 0, "z": -1}},
+        params={"scope": scope},
+    )
+    assert update_resp.status_code == 201
+    kinship_resp = await async_client.get("/api/camera-presets", params={"scope": scope})
+    exhibition_resp = await async_client.get("/api/camera-presets", params={"scope": "exhibition"})
+    kinship_item = next(item for item in kinship_resp.json() if item["name"] == "preset-int")
+    exhibition_item = next(item for item in exhibition_resp.json() if item["name"] == "preset-int")
+    assert kinship_item["position"]["x"] == 2
+    assert exhibition_item["position"]["x"] == 9
+
+    delete_resp = await async_client.delete("/api/camera-presets/preset-int", params={"scope": scope})
     assert delete_resp.status_code == 204
 
-    delete_again = await async_client.delete("/api/camera-presets/preset-int")
+    delete_again = await async_client.delete("/api/camera-presets/preset-int", params={"scope": scope})
     assert delete_again.status_code == 404
 
 

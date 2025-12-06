@@ -119,9 +119,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
     "height": 768
   }
   ```
-- `GET /api/camera-presets`：列出目前儲存的視角列表。
-- `POST /api/camera-presets`：儲存 / 覆寫視角。Body 需要包含 `name`、`position{x,y,z}`、`target{x,y,z}`。
-- `DELETE /api/camera-presets/{name}`：刪除指定名稱的視角。
+- `GET /api/camera-presets`：列出目前儲存的視角列表，可用 `scope` query（如 `kinship`、`exhibition`）分別存取。
+- `POST /api/camera-presets`：儲存 / 覆寫視角。Body 需要包含 `name`、`position{x,y,z}`、`target{x,y,z}`；可透過 `scope` query/body 指定所屬情境。
+- `DELETE /api/camera-presets/{name}`：刪除指定名稱的視角，可搭配 `scope` 避免刪到其他情境。
 
 ### 向量嵌入與 ChromaDB
 

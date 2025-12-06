@@ -8,20 +8,27 @@ export interface CameraPreset {
   [key: string]: unknown;
 }
 
+export interface CameraPresetRequestOptions extends RequestOptions {
+  scope?: string;
+}
+
 export async function fetchKinship(img: string, depth = -1, { signal }: RequestOptions = {}): Promise<unknown> {
   const query = { img, depth };
   return apiClient.get(`/api/kinship`, { signal, query });
 }
 
-export async function fetchCameraPresets({ signal }: RequestOptions = {}): Promise<CameraPreset[]> {
-  return apiClient.get(`/api/camera-presets`, { signal });
+export async function fetchCameraPresets({ signal, scope }: CameraPresetRequestOptions = {}): Promise<CameraPreset[]> {
+  return apiClient.get(`/api/camera-presets`, { signal, query: scope ? { scope } : undefined });
 }
 
-export async function saveCameraPreset(preset: Partial<CameraPreset>): Promise<CameraPreset> {
-  return apiClient.post(`/api/camera-presets`, preset);
+export async function saveCameraPreset(
+  preset: Partial<CameraPreset>,
+  { scope }: CameraPresetRequestOptions = {},
+): Promise<CameraPreset> {
+  return apiClient.post(`/api/camera-presets`, preset, { query: scope ? { scope } : undefined });
 }
 
-export async function deleteCameraPreset(name: string): Promise<boolean> {
-  await apiClient.del(`/api/camera-presets/${encodeURIComponent(name)}`);
+export async function deleteCameraPreset(name: string, { scope }: CameraPresetRequestOptions = {}): Promise<boolean> {
+  await apiClient.del(`/api/camera-presets/${encodeURIComponent(name)}`, { query: scope ? { scope } : undefined });
   return true;
 }

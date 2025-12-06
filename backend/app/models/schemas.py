@@ -46,12 +46,14 @@ class CameraPreset(BaseModel):
     position: Vector3
     target: Vector3
     updated_at: Optional[datetime] = None
+    scope: Optional[str] = Field(default=None, min_length=1, max_length=120)
 
 
 class SaveCameraPresetRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     position: Vector3
     target: Vector3
+    scope: Optional[str] = Field(default=None, min_length=1, max_length=120)
 
 
 class AnalyzeScreenshotRequest(BaseModel):

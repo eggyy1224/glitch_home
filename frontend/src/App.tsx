@@ -19,8 +19,11 @@ import { useControlSocketHandlers } from "./hooks/useControlSocketHandlers";
 import { createModeRenderMap, type ModeRenderEntry } from "./modes/createModeRenderMap";
 import { useSilentAudioUnlock } from "./hooks/useSilentAudioUnlock";
 import type { VideoController } from "./types/control";
+import ExhibitionCameraPanel from "./components/ExhibitionCameraPanel";
 
 const IMAGES_BASE = import.meta.env.VITE_IMAGES_BASE || "/generated_images/";
+const CAMERA_SCOPE_KINSHIP = "kinship";
+const CAMERA_SCOPE_EXHIBITION = "exhibition";
 const IFRAME_DEFAULT_CONFIG = {
   layout: "grid",
   gap: 12,
@@ -89,17 +92,30 @@ export default function App() {
   const shouldLoadKinshipData = !KINSHIP_DATA_EXCLUDED.has(activeMode);
 
   const {
-    cameraInfo,
-    cameraPresets,
-    selectedPresetName,
-    pendingPreset,
-    presetMessage,
-    setSelectedPresetName,
-    handleCameraUpdate,
-    handleSavePreset,
-    handleApplyPreset,
-    handleDeletePreset,
-  } = useCameraPresets();
+    cameraInfo: cameraInfoKinship,
+    cameraPresets: cameraPresetsKinship,
+    selectedPresetName: selectedPresetNameKinship,
+    pendingPreset: pendingPresetKinship,
+    presetMessage: presetMessageKinship,
+    setSelectedPresetName: setSelectedPresetNameKinship,
+    handleCameraUpdate: handleCameraUpdateKinship,
+    handleSavePreset: handleSavePresetKinship,
+    handleApplyPreset: handleApplyPresetKinship,
+    handleDeletePreset: handleDeletePresetKinship,
+  } = useCameraPresets({ scope: CAMERA_SCOPE_KINSHIP });
+
+  const {
+    cameraInfo: cameraInfoExhibition,
+    cameraPresets: cameraPresetsExhibition,
+    selectedPresetName: selectedPresetNameExhibition,
+    pendingPreset: pendingPresetExhibition,
+    presetMessage: presetMessageExhibition,
+    setSelectedPresetName: setSelectedPresetNameExhibition,
+    handleCameraUpdate: handleCameraUpdateExhibition,
+    handleSavePreset: handleSavePresetExhibition,
+    handleApplyPreset: handleApplyPresetExhibition,
+    handleDeletePreset: handleDeletePresetExhibition,
+  } = useCameraPresets({ scope: CAMERA_SCOPE_EXHIBITION });
 
   const { imgId, data, err, clusters, navigateToImage } = useKinshipData({
     initialImg,
@@ -275,20 +291,34 @@ export default function App() {
       siblingsCount={siblings.length}
       ancestorsCount={ancestors.length}
       fps={fps}
-      cameraInfo={cameraInfo}
-      presets={cameraPresets}
-      selectedPresetName={selectedPresetName}
-      onSelectPreset={setSelectedPresetName}
-      onSavePreset={handleSavePreset}
-      onApplyPreset={handleApplyPreset}
-      onDeletePreset={handleDeletePreset}
-      presetMessage={presetMessage}
+      cameraInfo={cameraInfoKinship}
+      presets={cameraPresetsKinship}
+      selectedPresetName={selectedPresetNameKinship}
+      onSelectPreset={setSelectedPresetNameKinship}
+      onSavePreset={handleSavePresetKinship}
+      onApplyPreset={handleApplyPresetKinship}
+      onDeletePreset={handleDeletePresetKinship}
+      presetMessage={presetMessageKinship}
       subtitle={subtitleText}
       caption={captionText}
     />
   );
 
   const screenshotContent = <ScreenshotMessage message={screenshotMessage} />;
+
+  const exhibitionTopbarContent = (
+    <ExhibitionCameraPanel
+      visible={showInfo}
+      cameraInfo={cameraInfoExhibition}
+      presets={cameraPresetsExhibition}
+      selectedPresetName={selectedPresetNameExhibition}
+      onSelectPreset={setSelectedPresetNameExhibition}
+      onSavePreset={handleSavePresetExhibition}
+      onApplyPreset={handleApplyPresetExhibition}
+      onDeletePreset={handleDeletePresetExhibition}
+      presetMessage={presetMessageExhibition}
+    />
+  );
 
   const iframeTimelineOverlay =
     activeMode === DisplayModes.IFRAME && effectiveTimelineId ? (
@@ -331,10 +361,13 @@ export default function App() {
     phylogenyMode,
     incubatorMode,
     handleFpsUpdate,
-    handleCameraUpdate,
-    pendingPreset,
+    handleCameraUpdate: handleCameraUpdateKinship,
+    pendingPreset: pendingPresetKinship,
     topbarContent,
     screenshotContent,
+    exhibitionBeforeContent: exhibitionTopbarContent,
+    handleExhibitionCameraUpdate: handleCameraUpdateExhibition,
+    exhibitionPendingPreset: pendingPresetExhibition,
     clientId,
     canGenerate,
     canWriteMetadata,

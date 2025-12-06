@@ -463,23 +463,23 @@ describe("api extended coverage", () => {
       );
 
       requestMock.mockResolvedValueOnce({ presets: [] });
-      await fetchCameraPresets({ signal: "sig" } as any);
+      await fetchCameraPresets({ signal: "sig", scope: "exhibition" } as any);
       expect(requestMock).toHaveBeenCalledWith(
-        "/api/camera-presets",
+        "/api/camera-presets?scope=exhibition",
         expect.objectContaining({ method: "GET", signal: "sig" }),
       );
 
       requestMock.mockResolvedValueOnce({ ok: true });
-      await saveCameraPreset({ name: "demo" });
+      await saveCameraPreset({ name: "demo" }, { scope: "kinship" });
       expect(requestMock).toHaveBeenCalledWith(
-        "/api/camera-presets",
+        "/api/camera-presets?scope=kinship",
         expect.objectContaining({ method: "POST", body: { name: "demo" } }),
       );
 
       requestMock.mockResolvedValueOnce({ ok: true });
-      await deleteCameraPreset("preset 1");
+      await deleteCameraPreset("preset 1", { scope: "exhibition" });
       expect(requestMock).toHaveBeenCalledWith(
-        "/api/camera-presets/preset%201",
+        "/api/camera-presets/preset%201?scope=exhibition",
         expect.objectContaining({ method: "DELETE" }),
       );
     });
