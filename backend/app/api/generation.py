@@ -10,6 +10,7 @@ from ..config import settings
 from ..exceptions import ExternalServiceError, GenerationIOError
 from ..models.schemas import GenerateMixTwoRequest, GenerateMixTwoResponse
 from ..services.gemini_image import generate_mixed_offspring, generate_mixed_offspring_v2
+from ..services.image_cache import image_cache
 from ..utils.permissions import require_generation_enabled
 
 router = APIRouter()
@@ -39,6 +40,14 @@ def api_generate_mix_two(
                 output_max_side=body.output_max_side,
                 resize_mode=body.resize_mode,
             )
+        
+        # Optimistically update cache
+        if "output_image_path" in result:
+            # We only need the filename
+            import os
+            filename = os.path.basename(result["output_image_path"])
+            image_cache.add_image(filename)
+
     except ValueError as exc:
         logger.info("mix-two 驗證失敗：%s", exc)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -57,17 +66,5 @@ def api_generate_mix_two(
 
 @router.get("/api/offspring-images")
 def api_list_offspring_images() -> dict:
-    """List all images in offspring_images directory."""
-    image_dir = Path(settings.offspring_dir)
-    if not image_dir.exists():
-        return {"images": []}
-
-    images = []
-    for path in sorted(image_dir.iterdir()):
-        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
-            images.append({
-                "filename": path.name,
-                "url": f"/generated_images/{path.name}",
-            })
-
-    return {"images": images}
+    """List all images in offspring_images directory using cached service."""
+    return {"images": image_cache.get_images()}
