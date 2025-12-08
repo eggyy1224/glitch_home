@@ -5,9 +5,9 @@
     "offspring_20250924_144818_648.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_135013_875.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
+    "backend/offspring_images/offspring_20250925_135013_875.png",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Vertical portrait continuation. LOCK THE SKY COLOR to the REFERENCE parent: same hue (crimson/carmine ~ H 356° ±2), no magenta/purple, no orange. Match luminance (L* ~ 30–40) and smooth vertical gradient with thin haze; darker at top, slightly brighter near horizon. Replace only the sky region; preserve all alley geometry, tree silhouette, materials, and lighting elsewhere. Single‑exposure photorealism; coherent perspective/shadows. Filmic fine grain, high micro‑contrast, natural color science; no painterly look, no collage seams.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",

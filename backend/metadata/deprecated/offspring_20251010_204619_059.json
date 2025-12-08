@@ -4,8 +4,8 @@
     "IMG_3694.JPG"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203814_315.png",
-    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_3694.JPG"
+    "backend/offspring_images/offspring_20250928_203814_315.png",
+    "觀眾臉孔照片/IMG_3694.JPG"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reuse the first reference image for the forest road backdrop, lighting, and uniformed crowd arrangement. Transform every visible person into the same individual from the second reference image, but blend the new faces and head shapes naturally with the existing lighting and necks. Match skin tone, specular highlights, and shadow direction so nothing feels pasted on. Ensure all figures share the subject's signature glasses and beard, with subtle pose and expression variations so the formation still feels like a real group portrait. Avoid over-smoothing—retain realistic texture and depth while keeping the identity consistent across the crowd.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.78 (0=loose, 1=strict).",

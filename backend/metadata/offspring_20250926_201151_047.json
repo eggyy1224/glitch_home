@@ -4,8 +4,8 @@
     "offspring_20250926_193623_670.jpeg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF2022.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250926_193623_670.jpeg"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF2022.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250926_193623_670.jpeg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Annealed assimilation on agave: brightest ember near root base and mid-blade; tips cool down to darker red with occasional extinguished segments; maintain integration into leaf geometry; add subtle ground-level ash particles; single photographic exposure, realistic falloff; no neon, no line-art, no double exposure.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.36 (0=loose, 1=strict).",

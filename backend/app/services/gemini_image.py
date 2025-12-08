@@ -14,6 +14,7 @@ from ..utils.permissions import (
     ensure_metadata_write_enabled,
 )
 from ..utils.fs import ensure_dirs
+from ..utils.paths import to_relative
 from ..utils.metadata import write_metadata, validate_metadata_schema
 from ..utils.gemini_client import get_gemini_client
 from ..models.metadata import GeneratedImageMetadata
@@ -208,10 +209,18 @@ class GeminiImageGenerator:
         height: int,
         output_path: str,
     ) -> dict:
+        parent_relative_paths = [to_relative(p) for p in parent_paths]
+        normalized_details: List[dict] = []
+        for detail in input_details:
+            normalized = dict(detail)
+            if "path" in normalized:
+                normalized["path"] = to_relative(normalized["path"])
+            normalized_details.append(normalized)
+
         return {
             "parents": [detail["name"] for detail in input_details],
-            "parents_full_paths": parent_paths,
-            "input_details": input_details,
+            "parents_full_paths": parent_relative_paths,
+            "input_details": normalized_details,
             "model_name": settings.model_name,
             "prompt": prompt,
             "strength": strength,

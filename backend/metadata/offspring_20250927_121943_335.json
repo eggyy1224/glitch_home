@@ -4,8 +4,8 @@
     "DSCF4385.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Recompose a clean night‑garden scene from the provided images as semantic references only. Center a hooded/robed statue from behind as a crisp, readable silhouette. Arrange multiple orange‑red radial paper umbrellas behind it as a symmetric fan—several full circles, none clipped; slightly larger than before so they frame the figure. Keep tall evergreen trees as left/right columns and keep foreground shrubs low and subdued.\n\nHard constraints (must satisfy):\n- No poles, stakes, rods, wires, scaffolding, or saplings anywhere in the foreground.\n- Remove the small tree in front of the statue.\n- Nothing intersects or touches the statue’s contour—clean, uninterrupted outline.\n\nLighting: deep night sky; warm backlight from umbrellas; gentle off‑camera fill on foliage about −1.5 EV; stronger cool rim light tracing the statue’s edges; the statue overall about +0.3 EV brighter while preserving silhouette readability; no on‑camera flash look.\n\nCamera/look: large‑format bellows photography with precise perspective control (slight front tilt), high micro‑contrast, fine film grain, natural color science, rich dynamic range, realistic optical falloff and lens bokeh. Vertical 2:3 composition; viewpoint slightly lower than eye level.\n\nBuild the layout from scratch—do not paste or preserve whole backgrounds; maintain consistent geometry and palette; single photographic exposure, no painterly style, no compositing artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.85 (0=loose, 1=strict).",

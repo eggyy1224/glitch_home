@@ -4,8 +4,8 @@
     "DSCF4385.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "robed statue silhouette, umbrellas grouped at the base, shallow depth of field (statue edge sharp, background umbrellas soft glowing bokeh), natural soft rim light only (no neon outline), remove poles, wires and sticks, clean background, subdued front fill, moody teal/orange grading, 85mm f/2.0, realistic film grain, single photographic exposure, no painterly artifacts",

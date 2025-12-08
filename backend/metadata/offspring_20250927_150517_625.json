@@ -4,8 +4,8 @@
     "offspring_20250927_115953_059.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250927_115953_059.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250927_115953_059.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Role map:\nDSCF4385.jpg → hooded statue, evergreen trees.\noffspring_20250927_115953_059.png → background of orange-red umbrellas.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.75 (0=loose, 1=strict).",

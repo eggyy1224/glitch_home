@@ -22,6 +22,7 @@ from ..utils.permissions import (
     ensure_metadata_write_enabled,
 )
 from ..models.metadata import CollageMetadata
+from ..utils.paths import to_relative
 
 
 # Task manager for progress tracking
@@ -1155,7 +1156,7 @@ def generate_collage_version(
     
     # Prepare metadata
     parent_basenames = [os.path.basename(p) for p in image_paths]
-    parent_full_paths = [os.path.abspath(p) for p in image_paths]
+    parent_full_paths = [to_relative(p) for p in image_paths]
     
     metadata = {
         "generation_type": "collage",

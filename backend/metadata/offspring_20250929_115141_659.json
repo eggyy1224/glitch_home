@@ -4,8 +4,8 @@
     "offspring_20250929_113731_778.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_114940_017.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png"
+    "backend/offspring_images/offspring_20250929_114940_017.png",
+    "backend/offspring_images/offspring_20250929_113731_778.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Ultra-wide cinematic reinterpretation. Keep the birds, pond reflections, and central lineup intact, but simulate an extreme 14mm full-frame fisheye with dramatic curvature: strong radial distortion pulling edges outward, exaggerated converging lines, foreground blurred heads enormously enlarged near camera, mid-ground row sweeping across the frame, distant rows receding sharply toward a curved horizon. Maintain realistic lighting and uniforms, avoid glitchy duplications, and ensure faces remain plausible despite the perspective push. Let the sky arc overhead with birds following the curve to accentuate the super-wide field of view.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.65 (0=loose, 1=strict).",

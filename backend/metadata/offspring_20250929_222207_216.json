@@ -4,8 +4,8 @@
     "offspring_20250929_113731_778.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_120902_864.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png"
+    "backend/offspring_images/offspring_20250929_120902_864.png",
+    "backend/offspring_images/offspring_20250929_113731_778.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Extreme fisheye night portrait with flash hitting mist. Keep the birds and dense crowd composition, but introduce a visible low-lying fog layer between mid-ground and background. Let the frontal flash blast into the fog, creating luminous highlights, volumetric light beams, and soft haze gradients that wrap around the figures. Faces and uniforms in the front rows should show specular flash reflections, while the fog scatters light in the distance. Maintain believable texture without overexposing, ensure depth stays legible, and keep the curvature and reflections consistent.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.65 (0=loose, 1=strict).",

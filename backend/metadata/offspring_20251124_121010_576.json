@@ -7,39 +7,39 @@
     "offspring_20251119_175822_620.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251004_220447_139.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_143054_575.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251120_184649_562.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251119_180043_819.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251119_175822_620.png"
+    "夜遊 - 毛刺/projectP/offspring_20251004_220447_139.png",
+    "backend/offspring_images/offspring_20251005_143054_575.png",
+    "backend/offspring_images/offspring_20251120_184649_562.png",
+    "backend/offspring_images/offspring_20251119_180043_819.png",
+    "backend/offspring_images/offspring_20251119_175822_620.png"
   ],
   "input_details": [
     {
-      "path": "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251004_220447_139.png",
+      "path": "夜遊 - 毛刺/projectP/offspring_20251004_220447_139.png",
       "name": "offspring_20251004_220447_139.png",
       "file_size": "1.74MB",
       "dimensions": "796x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_143054_575.png",
+      "path": "backend/offspring_images/offspring_20251005_143054_575.png",
       "name": "offspring_20251005_143054_575.png",
       "file_size": "1.92MB",
       "dimensions": "796x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251120_184649_562.png",
+      "path": "backend/offspring_images/offspring_20251120_184649_562.png",
       "name": "offspring_20251120_184649_562.png",
       "file_size": "152B",
       "dimensions": "64x64"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251119_180043_819.png",
+      "path": "backend/offspring_images/offspring_20251119_180043_819.png",
       "name": "offspring_20251119_180043_819.png",
       "file_size": "1.71MB",
       "dimensions": "683x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251119_175822_620.png",
+      "path": "backend/offspring_images/offspring_20251119_175822_620.png",
       "name": "offspring_20251119_175822_620.png",
       "file_size": "1.87MB",
       "dimensions": "747x1024"

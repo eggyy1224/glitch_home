@@ -6,9 +6,9 @@
     "offspring_20251012_181804_889.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182656_147.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182243_165.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_181804_889.png"
+    "backend/offspring_images/offspring_20251012_182656_147.png",
+    "backend/offspring_images/offspring_20251012_182243_165.png",
+    "backend/offspring_images/offspring_20251012_181804_889.png"
   ],
   "collage_params": {
     "rows": 117,

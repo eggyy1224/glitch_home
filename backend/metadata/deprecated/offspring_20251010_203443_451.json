@@ -4,8 +4,8 @@
     "IMG_3694.JPG"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203814_315.png",
-    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_3694.JPG"
+    "backend/offspring_images/offspring_20250928_203814_315.png",
+    "觀眾臉孔照片/IMG_3694.JPG"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Use the first reference image purely for the stage, crowd composition, lighting, and camera angle. Replace every single person in that scene—faces, bodies, and silhouettes—with cloned representations of the individual in the second reference image. Ensure every visible human reads as the same person from reference two, including facial structure, skin tone, hair, and overall identity. Keep natural variations in pose, clothing colors, and staging so the crowd still feels dynamic, but do not allow any original faces or features from reference one to remain. Matching the cinematic atmosphere, contrast, and lighting of the base photo is critical. If in doubt, overwrite the original people completely.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.95 (0=loose, 1=strict).",

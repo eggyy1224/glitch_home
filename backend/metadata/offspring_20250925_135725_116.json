@@ -5,9 +5,9 @@
     "offspring_20250924_144818_648.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Night tree with mossy trunk. Integrate the bird motif into bark and root as charred cracks and ember veins; use the third image only as a very faint silhouette cue (no direct copying). No neon, no line-art feathers. Single photographic exposure, realistic light falloff, high micro-contrast, fine film grain.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.45 (0=loose, 1=strict).",

@@ -4,8 +4,8 @@
     "offspring_20250923_185932_976.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF1111.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250923_185932_976.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF1111.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250923_185932_976.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Night alley, realistic fluorescent signage limited to small fixtures; no full-edge neon outlines, no cartoon linework, no painterly glow; embed the bird motif subtly as moss/lichen and warm reflections on walls; single photographic exposure, coherent shadows, micro-contrast, puddle reflections natural; avoid stickers, overlays, duplicated patterns.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.55 (0=loose, 1=strict).",

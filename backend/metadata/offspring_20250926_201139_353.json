@@ -5,9 +5,9 @@
     "DSCF4159.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF2022.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250926_193623_670.jpeg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4159.jpg"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF2022.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250926_193623_670.jpeg",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4159.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Refine the agave assimilation: narrow ember cracks by 20–30% and add finer secondary branches within leaves; keep integration strictly to leaf edges and internal veins; slightly reduce overall glow; single photographic exposure, realistic falloff; no neon, no line-art, no double exposure.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.34 (0=loose, 1=strict).",

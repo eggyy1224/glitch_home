@@ -4,8 +4,8 @@
     "offspring_20250929_114341_263.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_114341_263.png"
+    "backend/offspring_images/offspring_20250929_113731_778.png",
+    "backend/offspring_images/offspring_20250929_114341_263.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-first: treat offspring_20250929_113731_778.png as the primary composition. Keep the entire flock of birds, the pond, reflections, and lighting exactly intact. Integrate the dense crowd feeling from the second reference but make it believable: foreground should hold three or four very close, out-of-focus heads at chest level; mid-ground row (the original standing lineup) must stay sharp and realistic; behind them, extend additional rows that gradually diminish in scale with slight atmospheric haze, varied faces, and no obvious cloning. Preserve the uniforms and serious expressions, but ensure depth perspective feels photographic, with consistent vanishing lines and gentle falloff. Avoid warping or surreal distortions. Subtly increase the number of birds without overpowering the human focus.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.75 (0=loose, 1=strict).",

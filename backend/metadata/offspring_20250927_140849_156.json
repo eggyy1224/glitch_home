@@ -5,9 +5,9 @@
     "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_115953_059.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "backend/offspring_images/offspring_20250927_115953_059.png",
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Role map — direct‑flash snapshot, photoreal.\nDSCF4385 → centered hooded statue; tall evergreens L/R; low shrubs; night garden.\noffspring_20250927_115953_059 → background decor: multiple orange‑red umbrellas with green‑rim accents and strong radial spokes; 9–12 distinct circles behind the statue; varied size/tilt; partial overlaps; keep head/shoulders clear.\nwc6725_crowd → dense inward‑facing ring; show front one–two rows large at the bottom (waist‑up) with clear individual faces.\nLighting → on‑camera direct flash: hard shadows under chins, crisp skin pores, strong speculars; front rows +0.7 EV; mid/back rows fall off fast; no halo/rim.\nCleanups → remove front sapling; no poles/rods crossing the statue.\nLook → 4×5 film, fine grain; vertical 2:3.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.73 (0=loose, 1=strict).",

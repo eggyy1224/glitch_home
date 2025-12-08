@@ -6,32 +6,32 @@
     "offspring_20251004_212003_969.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_120711_168.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250926_210142_439.jpeg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250926_193206_285.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251004_212003_969.png"
+    "backend/offspring_images/offspring_20250927_120711_168.png",
+    "backend/offspring_images/offspring_20250926_210142_439.jpeg",
+    "backend/offspring_images/offspring_20250926_193206_285.png",
+    "backend/offspring_images/offspring_20251004_212003_969.png"
   ],
   "input_details": [
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_120711_168.png",
+      "path": "backend/offspring_images/offspring_20250927_120711_168.png",
       "name": "offspring_20250927_120711_168.png",
       "file_size": "2.15MB",
       "dimensions": "683x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250926_210142_439.jpeg",
+      "path": "backend/offspring_images/offspring_20250926_210142_439.jpeg",
       "name": "offspring_20250926_210142_439.jpeg",
       "file_size": "436.26KB",
       "dimensions": "768x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250926_193206_285.png",
+      "path": "backend/offspring_images/offspring_20250926_193206_285.png",
       "name": "offspring_20250926_193206_285.png",
       "file_size": "2.22MB",
       "dimensions": "683x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251004_212003_969.png",
+      "path": "backend/offspring_images/offspring_20251004_212003_969.png",
       "name": "offspring_20251004_212003_969.png",
       "file_size": "2.23MB",
       "dimensions": "683x1024"

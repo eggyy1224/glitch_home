@@ -4,8 +4,8 @@
     "offspring_20250929_005152_311.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7119.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_005152_311.png"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7119.jpg",
+    "backend/offspring_images/offspring_20250929_005152_311.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-only assembly. Use first image as new scene background. Place a very large static group of Taiwanese female public servants (bowl-cut), natural small clusters, four to five rows, neutral serious. Hard frontal flash; preserve reflections or ground contact naturally. No bird heads; optional distant flying birds.",

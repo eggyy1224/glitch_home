@@ -5,9 +5,9 @@
     "IMG_3694.JPG"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203814_315.png",
-    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_3694.JPG",
-    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_3694.JPG"
+    "backend/offspring_images/offspring_20250928_203814_315.png",
+    "觀眾臉孔照片/IMG_3694.JPG",
+    "觀眾臉孔照片/IMG_3694.JPG"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Keep the first reference image's night-time forest road, uniforms, and formation. Transform every person into the same East Asian subject from the second reference image: preserve his rounder facial structure, flatter nose bridge, subtle eyelid crease, and natural black hair texture. Make sure every face keeps his identity without drifting toward Western facial proportions. Blend each new face smoothly with the original necks and lighting so shadows, highlights, and color temperature feel photographic, not pasted on. Include the subject's glasses and light beard consistently, allowing slight pose or expression variation so the group remains believable.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.85 (0=loose, 1=strict).",

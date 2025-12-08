@@ -4,18 +4,18 @@
     "offspring_20251006_203335_175.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251007_165615_400.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_203335_175.png"
+    "夜遊 - 毛刺/projectP/offspring_20251007_165615_400.png",
+    "backend/offspring_images/offspring_20251006_203335_175.png"
   ],
   "input_details": [
     {
-      "path": "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251007_165615_400.png",
+      "path": "夜遊 - 毛刺/projectP/offspring_20251007_165615_400.png",
       "name": "offspring_20251007_165615_400.png",
       "file_size": "2.43MB",
       "dimensions": "796x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_203335_175.png",
+      "path": "backend/offspring_images/offspring_20251006_203335_175.png",
       "name": "offspring_20251006_203335_175.png",
       "file_size": "2.10MB",
       "dimensions": "796x1024"

@@ -4,8 +4,8 @@
     "IMG_3694.JPG"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251008_193039_435.png",
-    "/Volumes/2024data/glitch_home_project/觀眾臉孔照片/IMG_3694.JPG"
+    "backend/offspring_images/offspring_20251008_193039_435.png",
+    "觀眾臉孔照片/IMG_3694.JPG"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Keep the first reference image's stage, lighting, and composition exactly, but overwrite every character—especially the central puppet head—with wooden effigy versions of the person from the second reference photo. Each figure must read as that individual carved from varnished wood: preserve facial proportions, hairstyle silhouette, and identity markers from reference two, yet make the surface clearly polished wood with visible grain, carved seams, and puppet joints. Remove all original faces or non-wood textures; if any puppet or human detail remains from the base image, redo it as a wooden clone of the second reference. Maintain believable lighting and shadows so the wood material integrates with the scene.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.97 (0=loose, 1=strict).",

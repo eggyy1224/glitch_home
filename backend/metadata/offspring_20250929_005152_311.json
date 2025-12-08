@@ -4,8 +4,8 @@
     "offspring_20250927_183722_078.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_183722_078.png"
+    "backend/offspring_images/offspring_20250928_203748_266.png",
+    "backend/offspring_images/offspring_20250927_183722_078.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-only assembly. Horizontal composition. Extremely large static group of Taiwanese young female public servants: pretty faces, bowl-cut (guapi) hairstyles, neat uniforms—white shirts, black skirts, black belts, black shoes—neutral serious. Arrange four to five rows, tightly packed but natural slight staggering. Hard frontal flash. Keep flying birds above; preserve reflections.",

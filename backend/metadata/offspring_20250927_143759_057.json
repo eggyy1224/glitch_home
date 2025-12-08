@@ -5,9 +5,9 @@
     "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250927_115953_059.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250927_115953_059.png",
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Role map — direct‑flash, layered crowd depth.\nDSCF4385 → hooded statue centered; tall evergreens L/R; low shrubs; night.\noffspring_20250927_115953_059 → decor: 9–12 orange‑red umbrellas with green rims, strong spokes; irregular size/tilt; partial overlaps; foliage/supports may cross the statue.\nwc6725 crowd → dense inward‑facing ring; show front 1–2 rows waist‑up; 1970s Taiwan youth (neat side parts/bowl cuts/bobs/ponytails; white shirts; high‑waist dark slacks/skirts; narrow belts; metal‑frame glasses; no modern logos).\nLighting → on‑camera direct flash: faces +0.6 EV; hard chin shadows; fast falloff. Mid/back rows −0.7 EV; distant foliage slight cyan shift. Allow mild hotspots; no rim/halo.\nLook → raw/gritty 4×5 film, fine grain; vertical 2:3; single photographic exposure; no painterly stylization; no digital compositing artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.75 (0=loose, 1=strict).",

@@ -10,6 +10,7 @@ from PIL import Image
 
 from app.services import gemini_image
 from app.services.image_outputs import DefaultImagePreprocessor, LocalOutputWriter
+from app.utils.paths import to_relative
 
 
 def _fake_response_with_bytes(image_bytes: bytes) -> SimpleNamespace:
@@ -111,7 +112,9 @@ def test_build_metadata_contains_expected_fields(tmp_path):
 
     assert metadata["output_format"] == "png"
     assert metadata["output_size"] == {"width": 32, "height": 32}
-    assert metadata["parents_full_paths"] == parents
+    expected_rel = [to_relative(p) for p in parents]
+    assert metadata["parents_full_paths"] == expected_rel
+    assert metadata["input_details"][0]["path"] == expected_rel[0]
 
 
 class _StubParentSelector:
@@ -172,7 +175,8 @@ def test_generate_uses_injected_services(monkeypatch, tmp_path):
     assert preprocessor.received == parents
     assert Path(result["output_image_path"]).exists()
     assert Path(result["metadata_path"]).exists()
-    assert result["parents_full_paths"] == parents
+    expected_rel = [to_relative(p) for p in parents]
+    assert result["parents_full_paths"] == expected_rel
 
 
 def test_generate_mixed_offspring_v2_writes_outputs(monkeypatch, tmp_path):

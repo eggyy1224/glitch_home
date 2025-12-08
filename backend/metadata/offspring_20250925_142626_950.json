@@ -5,9 +5,9 @@
     "offspring_20250925_140634_297.jpeg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_140634_297.jpeg"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "backend/offspring_images/offspring_20250925_140634_297.jpeg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Night scene with black sky. Render the main tree as a bright white silhouette with subtle backlit fog; layer false-color red vegetation near the ground and mid bushes (not the canopy); an optional white horse form may emerge from the haze, sculpted and photographic, not a drawing. No neon, no line-art, no posterization; single photographic exposure with realistic light falloff and fine film grain. Keep perspective and shadows coherent; avoid overlays or duplicated patterns.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.42 (0=loose, 1=strict).",

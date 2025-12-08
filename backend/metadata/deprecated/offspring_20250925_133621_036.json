@@ -4,8 +4,8 @@
     "wc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Assimilate the flaming-bird motif into tree roots and soil mound as fibrous ember veins; keep perspective and lighting consistent with night alley; warm root glow vs cool ambient night; single exposure, fine film grain, subtle halation.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.65 (0=loose, 1=strict).",

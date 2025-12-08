@@ -11,15 +11,15 @@
     "offspring_20250924_220926_073.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/projectP/offspring_20251006_202714_956.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251108_143452_165.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251108_143608_993.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251108_144604_677.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251108_144626_923.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_192024_039.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250924_195420_044.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250924_220844_024.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250924_220926_073.png"
+    "夜遊 - 毛刺/projectP/offspring_20251006_202714_956.png",
+    "backend/offspring_images/offspring_20251108_143452_165.png",
+    "backend/offspring_images/offspring_20251108_143608_993.png",
+    "backend/offspring_images/offspring_20251108_144604_677.png",
+    "backend/offspring_images/offspring_20251108_144626_923.png",
+    "backend/offspring_images/offspring_20251006_192024_039.png",
+    "backend/offspring_images/offspring_20250924_195420_044.png",
+    "backend/offspring_images/offspring_20250924_220844_024.png",
+    "backend/offspring_images/offspring_20250924_220926_073.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Extract the most distinctive subjects, forms, textures, and lighting cues from the provided images and recombine them into a freshly composed scene. Build a new layout from scratch—do not preserve or layer whole backgrounds; reinterpret placement, perspective, and scale so every element feels re-staged rather than pasted. Render as photorealistic large-format bellows camera (4x5/8x10) photography: precise perspective control (tilt/shift), shallow depth of field when appropriate, high micro-contrast, fine film grain, natural color science, rich dynamic range, realistic lighting, optical falloff and lens bokeh. Maintain consistent geometry and palette; keep it a single photographic exposure—no painterly stylization or obvious digital compositing artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",

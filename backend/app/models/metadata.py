@@ -81,7 +81,7 @@ class SoundEffectMetadata(BaseModel):
     loop: Optional[bool] = None
     output_format: str
     output_audio: str
-    absolute_path: str
+    absolute_path: Optional[str] = None
     relative_path: Optional[str] = None
     size_bytes: int
     checksum_sha256: str
@@ -100,7 +100,7 @@ class TTSMetadata(BaseModel):
     format: str
     speed: Optional[float] = None
     output_audio: str
-    absolute_path: str
+    absolute_path: Optional[str] = None
     relative_path: Optional[str] = None
     size_bytes: int
     checksum_sha256: str

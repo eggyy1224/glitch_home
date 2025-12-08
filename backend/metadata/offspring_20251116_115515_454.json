@@ -10,13 +10,13 @@
     "offspring_20251004_215056_674.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251008_193228_239.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251008_192044_321.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_201901_202.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_192735_743.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251006_191644_532.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251004_225907_030.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251004_215056_674.png"
+    "backend/offspring_images/offspring_20251008_193228_239.png",
+    "backend/offspring_images/offspring_20251008_192044_321.png",
+    "backend/offspring_images/offspring_20251006_201901_202.png",
+    "backend/offspring_images/offspring_20251006_192735_743.png",
+    "backend/offspring_images/offspring_20251006_191644_532.png",
+    "backend/offspring_images/offspring_20251004_225907_030.png",
+    "backend/offspring_images/offspring_20251004_215056_674.png"
   ],
   "collage_params": {
     "rows": 300,

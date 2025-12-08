@@ -4,18 +4,18 @@
     "offspring_20251121_122744_136.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251121_122911_456.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251121_122744_136.png"
+    "backend/offspring_images/offspring_20251121_122911_456.png",
+    "backend/offspring_images/offspring_20251121_122744_136.png"
   ],
   "input_details": [
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251121_122911_456.png",
+      "path": "backend/offspring_images/offspring_20251121_122911_456.png",
       "name": "offspring_20251121_122911_456.png",
       "file_size": "1.72MB",
       "dimensions": "878x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251121_122744_136.png",
+      "path": "backend/offspring_images/offspring_20251121_122744_136.png",
       "name": "offspring_20251121_122744_136.png",
       "file_size": "1.82MB",
       "dimensions": "800x1024"

@@ -4,8 +4,8 @@
     "offspring_20250928_203748_266.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png"
+    "backend/offspring_images/offspring_20250928_203748_266.png",
+    "backend/offspring_images/offspring_20250928_203748_266.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-only assembly. Same scene; move camera closer for half-length class photo; tightly packed rows; keep flash look; maintain water reflections cropping naturally.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.93 (0=loose, 1=strict).",

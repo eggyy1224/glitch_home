@@ -4,8 +4,8 @@
     "offspring_20250927_183722_078.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250928_203748_266.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250927_183722_078.png"
+    "backend/offspring_images/offspring_20250928_203748_266.png",
+    "backend/offspring_images/offspring_20250927_183722_078.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-only assembly. Horizontal composition; natural small clusters; slight staggering. Strong flash slightly right; keep reflections. Subtle realistic bird elements among crowd.",

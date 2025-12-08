@@ -4,8 +4,8 @@
     "offspring_20250925_133955_922.jpeg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250926_223225_691.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_133955_922.jpeg"
+    "backend/offspring_images/offspring_20250926_223225_691.png",
+    "backend/offspring_images/offspring_20250925_133955_922.jpeg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "single photographic exposure, realistic falloff, high micro-contrast, fine film grain; no neon outlines, no cartoon linework, no double exposure, no uniform overlays; layered low ground fog, two strata, clear silhouette; maintain single photographic exposure; no bokeh orbs\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.40 (0=loose, 1=strict).",

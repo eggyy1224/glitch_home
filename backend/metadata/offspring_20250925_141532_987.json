@@ -5,9 +5,9 @@
     "offspring_20250925_141030_592.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250925_141030_592.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250925_141030_592.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Twilight color gradient. Integrate firefly swarms with subtle motion trails clustered around grasses and trunk; near larger, far smaller; uneven distribution influenced by wind and depth; use the third parent only as particle style reference, not as uniform overlay; single photographic exposure, realistic falloff/shadows, no neon, no line-art, no double exposure.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.48 (0=loose, 1=strict).",

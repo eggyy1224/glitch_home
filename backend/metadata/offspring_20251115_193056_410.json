@@ -6,32 +6,32 @@
     "offspring_20251109_121441_325.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_122052_344.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_121500_498.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_124023_164.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_121441_325.png"
+    "backend/offspring_images/offspring_20251109_122052_344.png",
+    "backend/offspring_images/offspring_20251109_121500_498.png",
+    "backend/offspring_images/offspring_20251109_124023_164.png",
+    "backend/offspring_images/offspring_20251109_121441_325.png"
   ],
   "input_details": [
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_122052_344.png",
+      "path": "backend/offspring_images/offspring_20251109_122052_344.png",
       "name": "offspring_20251109_122052_344.png",
       "file_size": "7.73MB",
       "dimensions": "688x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_121500_498.png",
+      "path": "backend/offspring_images/offspring_20251109_121500_498.png",
       "name": "offspring_20251109_121500_498.png",
       "file_size": "6.81MB",
       "dimensions": "699x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_124023_164.png",
+      "path": "backend/offspring_images/offspring_20251109_124023_164.png",
       "name": "offspring_20251109_124023_164.png",
       "file_size": "7.58MB",
       "dimensions": "670x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_121441_325.png",
+      "path": "backend/offspring_images/offspring_20251109_121441_325.png",
       "name": "offspring_20251109_121441_325.png",
       "file_size": "6.57MB",
       "dimensions": "712x1024"

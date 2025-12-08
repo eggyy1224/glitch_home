@@ -4,8 +4,8 @@
     "DSCF4385.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Role mapping from the two references:\n- From DSCF4385.jpg: hooded statue (back view) as the centered subject; tall evergreens as left/right columns; low shrubs in front kept darker.\n- From DSCF7655.jpg: a cluster of 8–12 separate orange‑red radial umbrellas behind the statue—distinct circles, varied size/tilt, gentle overlaps; do not fuse into one disk.\nConstraints: keep the statue’s head/shoulders silhouette clean; remove the small front sapling; no poles/rods crossing the figure.\nLighting: warm backlight from the umbrellas; soft off‑camera fill on shrubs (~−1.5 EV); very faint physical rim only—no halo/outline.\nLook: photoreal 4×5 film, fine grain, gentle highlight roll‑off; vertical 2:3.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",

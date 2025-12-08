@@ -4,8 +4,8 @@
     "DSCF7516.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_162226_463.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF7516.jpg"
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_162226_463.png",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF7516.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reinterpret the source images into a surreal, dream-like landscape. Use vibrant, impossible colors and blend the subjects in unexpected ways. The style should be reminiscent of Salvador Dalí.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",

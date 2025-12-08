@@ -4,8 +4,8 @@
     "offspring_20250924_175206_828.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_surreal_nighttime_scene_under_a_deep_cobalt-blue_sky_t_4501baa0-1686-4371-a71d-55a18a1846e0.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_175206_828.png"
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_surreal_nighttime_scene_under_a_deep_cobalt-blue_sky_t_4501baa0-1686-4371-a71d-55a18a1846e0.png",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_175206_828.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-first. Same framing. Semi-circle group with closed paper umbrellas at front. White blouses, dark skirts. Keep flash look.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.80 (0=loose, 1=strict).",

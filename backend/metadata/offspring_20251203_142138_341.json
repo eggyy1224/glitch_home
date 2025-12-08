@@ -5,8 +5,8 @@
     "offspring_20251109_160709_115.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251004_212841_983.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_160709_115.png"
+    "backend/offspring_images/offspring_20251004_212841_983.png",
+    "backend/offspring_images/offspring_20251109_160709_115.png"
   ],
   "collage_params": {
     "rows": 56,

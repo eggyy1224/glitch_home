@@ -5,9 +5,9 @@
     "wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250927_115953_059.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250927_115953_059.png",
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Role map — direct‑flash, minimal umbrella silhouette.\nDSCF4385 → hooded statue slightly off‑center (±8% horizontal); tall evergreens and low shrubs at night.\noffspring_20250927_115953_059 → decor: 6–8 orange‑red umbrellas with green rims; larger spacing; minimal overlaps; keep 2–3 strong spokes silhouette crossing the statue’s edge for tension; reduce foliage clutter but keep some supports.\nwc6725 crowd → inward‑facing ring; front 1 row waist‑up; more negative space around statue shoulders; same 1970s Taiwan youth styling; no logos.\nLighting → on‑camera flash with crisp pores and small speculars; faces +0.5 EV; back rows darker; no rim/halo.\nLook → raw 4×5 film; fine grain; high micro‑contrast; natural color science; single exposure; 2:3 vertical.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",

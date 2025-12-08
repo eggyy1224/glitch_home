@@ -5,9 +5,9 @@
     "wc6725_A_towering_leafless_tree_at_night_its_thick_trunk_and_gn_c8b85731-8c6e-42bb-8bfa-f8e525b797cb.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/AI生成靜態影像/wc6725_A_towering_leafless_tree_at_night_its_thick_trunk_and_gn_c8b85731-8c6e-42bb-8bfa-f8e525b797cb.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_vast_crowd_of_East_Asian_people_in_black_suits_converg_03fd5c9b-fe17-413c-8ac4-79c79a753908.png",
+    "夜遊 - 毛刺/AI生成靜態影像/wc6725_A_towering_leafless_tree_at_night_its_thick_trunk_and_gn_c8b85731-8c6e-42bb-8bfa-f8e525b797cb.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Cinematic twilight alley, photorealistic single exposure. Recompose: crowd density and gesture; twisted leafless tree forms and root mass; Taiwanese alley perspective and materials (brick wall, corrugated metal). New layout: tree rises from alley center; crowd flows along mid-ground edges; one foreground human-scale anchor. Warm flash spill and sodium rim-light on surfaces; cool cobalt sky; fine film grain; high micro-contrast; realistic optical falloff and lens bokeh. Avoid collage seams; keep consistent geometry and consistent palette.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.60 (0=loose, 1=strict).",

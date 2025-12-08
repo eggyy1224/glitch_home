@@ -8,11 +8,11 @@
     "offspring_20251109_125300_027.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251113_170233_114.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251113_170035_794.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251113_170448_723.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_162424_673.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251109_125300_027.png"
+    "backend/offspring_images/offspring_20251113_170233_114.png",
+    "backend/offspring_images/offspring_20251113_170035_794.png",
+    "backend/offspring_images/offspring_20251113_170448_723.png",
+    "backend/offspring_images/offspring_20251109_162424_673.png",
+    "backend/offspring_images/offspring_20251109_125300_027.png"
   ],
   "collage_params": {
     "rows": 267,

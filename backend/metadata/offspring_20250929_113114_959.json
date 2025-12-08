@@ -4,8 +4,8 @@
     "offspring_20250929_005152_311.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7119.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_005152_311.png"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7119.jpg",
+    "backend/offspring_images/offspring_20250929_005152_311.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-first. Keep pipe-stack scene as background. Large group of Taiwanese female public servants (bowl-cut), four to five rows. Place feet firmly on corrugated pipes with contact shadows following curvature; two-tier staggered height. Single hard frontal flash slightly off-center with distance falloff; match scene white balance. Natural small clusters, slight head tilts, height variance ±3%. Water reflections only for front row, darker and slightly rippled. Subtle sensor noise and lens vignette to match background.",

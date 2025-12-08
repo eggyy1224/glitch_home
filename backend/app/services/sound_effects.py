@@ -13,6 +13,7 @@ from ..utils.permissions import ensure_asset_write_enabled
 from ..utils.fs import ensure_dirs
 from ..utils.metadata import compute_sha256, write_metadata, utc_now_iso_z, validate_metadata_schema
 from ..models.metadata import SoundEffectMetadata
+from ..utils.paths import to_relative
 
 
 DEFAULT_OUTPUT_FORMAT = "mp3_44100_128"
@@ -144,11 +145,9 @@ def generate_sound_effect(
 
     output_path.write_bytes(audio_bytes)
 
-    relative_path: str | None = None
-    try:
-        relative_path = str(output_path.relative_to(Path(settings.generated_sounds_dir).parent))
-    except ValueError:
-        relative_path = str(output_path)
+    base_for_relative = Path(settings.generated_sounds_dir).expanduser().resolve().parent
+    relative_path = to_relative(output_path, base=base_for_relative)
+    absolute_path = str(output_path)
 
     stat = output_path.stat()
     metadata = {
@@ -156,7 +155,7 @@ def generate_sound_effect(
         "provider": "elevenlabs",
         "created_at": utc_now_iso_z(),
         "prompt": prompt.strip(),
-        "image_path": str(image_path),
+        "image_path": to_relative(str(image_path)),
         "request_id": request_id,
         "model_id": payload["model_id"],
         "duration_seconds": duration_seconds,
@@ -164,7 +163,6 @@ def generate_sound_effect(
         "loop": loop,
         "output_format": target_format,
         "output_audio": output_path.name,
-        "absolute_path": str(output_path),
         "relative_path": relative_path,
         "size_bytes": stat.st_size,
         "checksum_sha256": compute_sha256(output_path),
@@ -173,6 +171,7 @@ def generate_sound_effect(
         metadata,
         model=SoundEffectMetadata,
         context="sound_effect",
+        exclude_none=True,
     )
     metadata_path = write_metadata(metadata, base_name=output_path.name)
 
@@ -185,7 +184,7 @@ def generate_sound_effect(
         "duration_seconds": duration_seconds,
         "prompt_influence": prompt_influence,
         "filename": output_path.name,
-        "absolute_path": str(output_path),
+        "absolute_path": absolute_path,
         "relative_path": relative_path,
         "size_bytes": stat.st_size,
         "checksum_sha256": metadata["checksum_sha256"],

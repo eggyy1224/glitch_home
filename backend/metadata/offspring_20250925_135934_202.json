@@ -5,9 +5,9 @@
     "offspring_20250925_134447_915.jpeg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_134447_915.jpeg"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF0424.jpg",
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "backend/offspring_images/offspring_20250925_134447_915.jpeg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Night tree with on-camera flash. Constrain ember cracks strictly to the trunk and root base; no lines on leaves or canopy, no neon, no cartoon linework. Use the third image only as moss/lichen texture cue. Render charred wood fissures with subtle incandescent edges and realistic falloff. Single photographic exposure, micro-contrast, fine film grain; avoid overlays and duplicated motifs.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.38 (0=loose, 1=strict).",

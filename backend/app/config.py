@@ -118,12 +118,17 @@ class Settings:
     openai_tts_voice: str = os.getenv("OPENAI_TTS_VOICE", "alloy")
     openai_tts_format: str = os.getenv("OPENAI_TTS_FORMAT", "mp3")
 
+    # Derived values
+    project_root: str = field(init=False)
+
     def __post_init__(self) -> None:
         # Resolve relative paths against project root to allow using
         # paths like "夜遊 - 毛刺/AI生成靜態影像" regardless of cwd.
         here = os.path.dirname(__file__)
         backend_dir = os.path.abspath(os.path.join(here, ".."))
         project_root = os.path.abspath(os.path.join(backend_dir, ".."))
+        # Keep project root handy for downstream path helpers
+        self.project_root = project_root
 
         def resolve(p: str) -> str:
             p_expanded = os.path.expanduser(p)

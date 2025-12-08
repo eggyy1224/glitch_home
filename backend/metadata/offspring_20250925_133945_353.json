@@ -4,8 +4,8 @@
     "offspring_20250925_132631_308.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_132631_308.png"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF6251.jpg",
+    "backend/offspring_images/offspring_20250925_132631_308.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Integrate the bird motif into tree roots as charred wood cracks and ember veins; no line-art feathers, no pure neon strokes; limit glow to fissures and cavity edges; single exposure, realistic falloff, fine film grain.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.60 (0=loose, 1=strict).",

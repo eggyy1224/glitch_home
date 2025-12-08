@@ -4,8 +4,8 @@
     "DSCF4385.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7655.jpg",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Recompose a night garden scene using the provided images as semantic references only. Center a hooded/robed statue seen from behind as a clean, readable silhouette. Arrange multiple orange‑red radial paper umbrellas/lanterns behind it in a symmetric fan, several full circles visible, none clipped. Keep evergreen trees as framing columns on both sides and low shrubs in the foreground, but keep the shrubs subdued so they do not steal attention.\n\nRemove obstructions: no poles, stakes, or small saplings in front of the statue; keep any branches clear of the subject’s contour.\n\nLighting: dark night sky; warm backlight from the umbrellas; very soft off‑camera fill on foliage at about −1.5 EV; a subtle cool rim light tracing the statue’s edges to create separation; no harsh on‑camera flash look.\n\nCamera/look: large‑format bellows photo quality with precise perspective control (slight front tilt), high micro‑contrast, fine film grain, natural color science, rich dynamic range, realistic optical falloff and lens bokeh. 35–50mm equivalent perspective on 4×5; vertical 2:3 composition; viewpoint slightly lower than eye level.\n\nDo not paste or preserve whole backgrounds; build the layout from scratch with consistent geometry and palette; single photographic exposure—no painterly style, no compositing artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",

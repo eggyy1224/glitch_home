@@ -4,8 +4,8 @@
     "offspring_20251005_143538_869.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_143542_079.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251005_143538_869.png"
+    "backend/offspring_images/offspring_20251005_143542_079.png",
+    "backend/offspring_images/offspring_20251005_143538_869.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Restage the provided subjects into a fresh composition with RISO-inspired COLOR BLOCKING only. Use a limited palette of Sunflower Yellow, Federal Blue, Fluorescent Orange, Black. Flat fills, crisp edges, vector-like shapes. Allow overprint-style COLOR MIXING to create secondaries, but DO NOT simulate printing textures: no halftone dots, no paper grain, no ink speckle, no off-registration. Avoid photographic gradients and glossy lighting; prefer clean, poster-like areas of color and strong negative space.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.50 (0=loose, 1=strict).",

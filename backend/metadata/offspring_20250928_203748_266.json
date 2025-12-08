@@ -4,8 +4,8 @@
     "DSCF0970.jpg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250923_163230_415.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF0970.jpg"
+    "夜遊 - 毛刺/選中的後代/offspring_20250923_163230_415.png",
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF0970.jpg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Reference-first. Keep original composition. Front row: white shirts, formal lineup. Frontal flash. Do not alter trees and plinth.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.85 (0=loose, 1=strict).",

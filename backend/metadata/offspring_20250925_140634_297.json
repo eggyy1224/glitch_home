@@ -5,9 +5,9 @@
     "offspring_20250925_133955_922.jpeg"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/橫式/DSCF7733.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF0188.jpg",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_133955_922.jpeg"
+    "夜遊 - 毛刺/攝影圖像/橫式/DSCF7733.jpg",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF0188.jpg",
+    "backend/offspring_images/offspring_20250925_133955_922.jpeg"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Monochrome long-exposure night scene with layered low ground fog and distant tiny lights; use the third image only as tonal and compositional vibe (no direct copying). No bokeh orbs, no glitter spheres, no double exposure, no neon or line-art. Single photographic exposure, realistic light falloff, high micro-contrast; clear silhouette subject integrated naturally into environment.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.40 (0=loose, 1=strict).",

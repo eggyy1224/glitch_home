@@ -5,9 +5,9 @@
     "offspring_20250925_132631_308.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/場地模擬/3A.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_150915_655.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250925_132631_308.png"
+    "場地模擬/3A.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_150915_655.png",
+    "夜遊 - 毛刺/選中的後代/offspring_20250925_132631_308.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Use the provided exhibition room photo (3A.jpg). Update the setup to feature only two screens: retain the left vertical display showing offspring_20250924_150915_655.png, and convert the large central LED wall into a single wide horizontal screen showing offspring_20250925_132631_308.png. Remove the right stack of monitors entirely, leaving that wall blank with ambient green lighting. Keep the room architecture, lighting wash, speakers, and reflective curtain. Ensure the artworks sit naturally on their displays, photorealistic, with realistic screen glow.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.70 (0=loose, 1=strict).",

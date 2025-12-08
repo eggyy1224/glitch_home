@@ -5,9 +5,9 @@
     "offspring_20250924_161704_050.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF3738.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_162355_486.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_161704_050.png"
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF3738.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_162355_486.png",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_161704_050.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "single photographic exposure, realistic falloff, high micro-contrast, fine film grain, nocturnal alley with a backlit pale tree framed by damp brick walls, streaks of moss and seepage creeping up the bricks, red undergrowth broken into irregular clumps with exposed wet ground, low ground fog kept thin around the roots, no neon outlines, no cartoon linework, no double exposure, no uniform overlays\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.38 (0=loose, 1=strict).",

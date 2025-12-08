@@ -4,8 +4,8 @@
     "offspring_20250929_113731_778.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_222207_216.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250929_113731_778.png"
+    "backend/offspring_images/offspring_20250929_222207_216.png",
+    "backend/offspring_images/offspring_20250929_113731_778.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Extreme fisheye night group with birds. Preserve the dense crowd and composition, but make the flash interaction with mist a soft continuous halo: a single luminous bloom centered on the group, diffused through the fog with gentle gradients, no separated light beams. Foreground heads stay blurred, mid-ground row sharp, background recedes into a glowing haze. Let reflections pick up the glow subtly, and maintain believable lighting with smooth falloff.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.60 (0=loose, 1=strict).",

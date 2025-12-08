@@ -5,9 +5,9 @@
     "offspring_20250924_144818_648.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20250925_135013_875.png",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
+    "backend/offspring_images/offspring_20250925_135013_875.png",
+    "夜遊 - 毛刺/攝影圖像/直式/DSCF4385.jpg",
+    "夜遊 - 毛刺/選中的後代/offspring_20250924_144818_648.png"
   ],
   "model_name": "gemini-2.5-flash-image-preview",
   "prompt": "Iterate the previous vertical composition. Match the sky to the REFERENCE parent’s blood‑red: same hue (crimson/carmine), luminance and gentle gradient with thin haze. Do not oversaturate; avoid magenta banding and neon. Keep Taiwanese alley materials (brick, corrugated metal) and the upward-reaching root-mass tree; single‑exposure photorealism, consistent perspective and shadows. Lighting: warm flash spill + sodium rim on bricks/roots; filmic fine grain, high micro‑contrast, natural color science; gentle optical falloff and lens bokeh. No collage seams or painterly artifacts.\n[Guidance] Use the provided images as references with an image-to-image transformation strength ≈ 0.60 (0=loose, 1=strict).",

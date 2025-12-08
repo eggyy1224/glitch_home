@@ -6,32 +6,32 @@
     "offspring_20251012_182828_799.png"
   ],
   "parents_full_paths": [
-    "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/夢遊/offspring_20251012_182829_357.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182701_624.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182656_147.png",
-    "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182828_799.png"
+    "夜遊 - 毛刺/夢遊/offspring_20251012_182829_357.png",
+    "backend/offspring_images/offspring_20251012_182701_624.png",
+    "backend/offspring_images/offspring_20251012_182656_147.png",
+    "backend/offspring_images/offspring_20251012_182828_799.png"
   ],
   "input_details": [
     {
-      "path": "/Volumes/2024data/glitch_home_project/夜遊 - 毛刺/夢遊/offspring_20251012_182829_357.png",
+      "path": "夜遊 - 毛刺/夢遊/offspring_20251012_182829_357.png",
       "name": "offspring_20251012_182829_357.png",
       "file_size": "2.03MB",
       "dimensions": "796x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182701_624.png",
+      "path": "backend/offspring_images/offspring_20251012_182701_624.png",
       "name": "offspring_20251012_182701_624.png",
       "file_size": "1.98MB",
       "dimensions": "683x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182656_147.png",
+      "path": "backend/offspring_images/offspring_20251012_182656_147.png",
       "name": "offspring_20251012_182656_147.png",
       "file_size": "2.31MB",
       "dimensions": "683x1024"
     },
     {
-      "path": "/Volumes/2024data/glitch_home_project/backend/offspring_images/offspring_20251012_182828_799.png",
+      "path": "backend/offspring_images/offspring_20251012_182828_799.png",
       "name": "offspring_20251012_182828_799.png",
       "file_size": "2.16MB",
       "dimensions": "683x1024"
