@@ -34,23 +34,32 @@ class WindowManager {
     const displays = screen.getAllDisplays();
     const displayCount = Array.isArray(displays) ? displays.length : 0;
     const requiresMultipleDisplays = this.requiredDisplayCount > 1;
-    const singleDisplayDetected = displayCount === 1;
-    const fallbackSingleDisplayMode = this.singleDisplayMode && requiresMultipleDisplays && singleDisplayDetected;
+    const fallbackEnabled = Boolean(this.singleDisplayMode);
 
-    if (displayCount < this.requiredDisplayCount && !fallbackSingleDisplayMode) {
+    if (displayCount === 0) {
+      throw new Error("[WindowManager] 偵測不到任何顯示器，無法啟動");
+    }
+
+    if (displayCount < this.requiredDisplayCount && !fallbackEnabled) {
       throw new Error(
         `[WindowManager] 偵測到 ${displayCount} 個顯示器，但配置至少需要 ${this.requiredDisplayCount} 個顯示器`,
       );
     }
 
-    if (fallbackSingleDisplayMode) {
-      console.warn(
-        `[WindowManager] 僅偵測到單一顯示器，已啟用 single_display_mode，僅啟動 display_index=0 的 client`,
-      );
+    if (fallbackEnabled && displayCount < this.requiredDisplayCount) {
+      if (requiresMultipleDisplays && displayCount === 1) {
+        console.warn(
+          "[WindowManager] 僅偵測到單一顯示器，已啟用 single_display_mode，僅啟動 display_index=0 的 client",
+        );
+      } else {
+        console.warn(
+          `[WindowManager] 偵測到 ${displayCount} 個顯示器（配置需要 ${this.requiredDisplayCount}），僅啟動對應 display_index < ${displayCount} 的 client`,
+        );
+      }
     }
 
     for (const client of this.clientsById.values()) {
-      if (fallbackSingleDisplayMode && client.displayIndex > 0) {
+      if (fallbackEnabled && client.displayIndex >= displayCount) {
         console.info(
           `[WindowManager] single_display_mode：略過需要 display ${client.displayIndex} 的 client '${client.clientId}'`,
         );

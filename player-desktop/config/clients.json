@@ -4,7 +4,7 @@
     "cooldown_ms": 3000,
     "max_attempts": 5
   },
-  "single_display_mode": false,
+  "single_display_mode": true,
   "clients": [
     {
       "client_id": "desktop-main",
@@ -19,12 +19,23 @@
     },
     {
       "client_id": "desktop-side",
-      "display_index": 1,
+      "display_index": 2,
       "fullscreen": true,
       "kiosk": false,
       "devtools": false,
       "url_params": {
         "client": "desktop2",
+        "iframe_mode": "true"
+      }
+    },
+    {
+      "client_id": "desktop-vertical",
+      "display_index": 1,
+      "fullscreen": true,
+      "kiosk": false,
+      "devtools": false,
+      "url_params": {
+        "client": "desktop3",
         "iframe_mode": "true"
       }
     }
