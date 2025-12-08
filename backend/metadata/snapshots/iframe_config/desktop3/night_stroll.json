@@ -6,7 +6,7 @@
     {
       "id": "p1",
       "image": null,
-      "url": "/?video_mode=true&video=SCHC-1-modified2.mp4",
+      "url": "/?video_mode=true&video=SCHC-1-withsound.mp4",
       "params": {
         "__preset_mode": "video_mode"
       },

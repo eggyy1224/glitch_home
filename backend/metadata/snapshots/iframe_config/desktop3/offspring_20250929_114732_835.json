@@ -5,10 +5,10 @@
   "panels": [
     {
       "id": "p1",
-      "image": null,
-      "url": "/?video_mode=true&video=SCHC-1-modified2.mp4",
+      "image": "offspring_20250929_114732_835.png",
+      "url": "/?slide_mode=true&img=offspring_20250929_114732_835.png",
       "params": {
-        "__preset_mode": "video_mode"
+        "__preset_mode": "slide_mode"
       },
       "ratio": 1.0,
       "label": "desktop panel",

@@ -1,15 +1,15 @@
 {
-  "id": "booboo_horse",
+  "id": "diptych_bloody_dog_kiss",
   "version": 2,
   "status": "published",
-  "created_at": "2025-12-08T06:39:11.808663Z",
-  "updated_at": "2025-12-08T06:39:11.811164Z",
+  "created_at": "2025-12-08T07:25:02.158098Z",
+  "updated_at": "2025-12-08T07:25:02.160143Z",
   "published_at": null,
   "published_by": null,
   "title": "範例 Scene",
   "targets": {
-    "desktop": "desktop/triptych1",
-    "desktop2": "desktop2/dancing_with_car",
+    "desktop": "desktop/diptych_bloody_dog",
+    "desktop2": "desktop2/offspring_20250923_172041_821",
     "desktop3": "desktop3/offspring_20250929_114732_835"
   },
   "audio_mix": {
