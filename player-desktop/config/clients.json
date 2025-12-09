@@ -19,7 +19,7 @@
     },
     {
       "client_id": "desktop-side",
-      "display_index": 2,
+      "display_index": 1,
       "fullscreen": true,
       "kiosk": false,
       "devtools": false,
@@ -30,7 +30,7 @@
     },
     {
       "client_id": "desktop-vertical",
-      "display_index": 1,
+      "display_index": 2,
       "fullscreen": true,
       "kiosk": false,
       "devtools": false,
