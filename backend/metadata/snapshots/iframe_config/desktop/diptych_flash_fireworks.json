@@ -1,0 +1,31 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "flash_left",
+      "image": "offspring_20251203_233216_435.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "fireworks_right",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4&client=fireworks-right",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Fireworks",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

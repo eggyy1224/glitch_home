@@ -1,0 +1,35 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "archive_left",
+      "image": "offspring_20250923_174024_128.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Archive 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vector_right",
+      "image": "offspring_20251203_233208_113.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector 右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

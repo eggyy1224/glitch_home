@@ -1,0 +1,33 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "vector_left",
+      "image": "offspring_20251203_233208_113.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "flash_right",
+      "image": "offspring_20251203_233251_705.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "glow_tv",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E5%85%89tv.mp4&client=glow-tv-triptych",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "夜光 TV",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-triptych",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.95,
+      "label": "Birdman",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "macro_slide",
+      "image": "offspring_20251203_135813_299.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Macro 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

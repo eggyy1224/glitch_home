@@ -1,0 +1,45 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "drive_center",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-center",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "暴雨車流",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "fireworks_right",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4&client=fireworks-right",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "煙火",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "macro_strip",
+      "image": "offspring_20251203_134512_623.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Macro 長條",
+      "col_span": 3,
+      "row_span": 1
+    }
+  ]
+}

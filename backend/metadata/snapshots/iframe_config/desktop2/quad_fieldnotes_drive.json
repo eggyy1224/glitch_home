@@ -1,0 +1,59 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "fieldnotes_slide",
+      "image": "offspring_20251203_140849_325.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Fieldnotes 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "archive_slide",
+      "image": "offspring_20250923_174024_128.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Archive 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "drive_video",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-quad",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "暴雨車流",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "flash_static",
+      "image": "offspring_20250923_173803_154.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 靜態",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

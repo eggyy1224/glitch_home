@@ -1,0 +1,31 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "incense_left",
+      "image": "offspring_20250927_150517_625.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "祈火左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "incense_right",
+      "image": "offspring_20250927_150834_936.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "祈火右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

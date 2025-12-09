@@ -1,0 +1,95 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 4,
+  "panels": [
+    {
+      "id": "stormy_drive",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=storm-hub",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.25,
+      "label": "暴雨車陣",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "birds_wall",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-hyper",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "鳥群連屏",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "macro_slide",
+      "image": "offspring_20250923_162223_271.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.1,
+      "label": "Macrocosm 幻燈",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "vector_flash",
+      "image": "offspring_20250923_162135_155.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 0.9,
+      "label": "Vector 閃擊",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "owl_night",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4&client=night-owl",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "夜梟",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_loop",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-loop",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.95,
+      "label": "Birdman Loop",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "static_flash",
+      "image": "offspring_20250923_171906_216.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash Portrait",
+      "col_span": 2,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "club_core",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=club-core",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "Club Core",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "glow_tv",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E5%85%89tv.mp4&client=glow-tv",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "夜光 TV",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "disco_bird",
+      "image": null,
+      "url": "/?video_mode=true&video=Disco%E9%B3%A5%E4%BA%BA.mp4&client=disco-bird",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Disco 鳥人",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "cosmic_party",
+      "image": null,
+      "url": "/?video_mode=true&video=%E6%98%9F%E9%9A%9B%E6%B4%BE%E5%B0%8D.mp4&client=cosmic-party",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "星際派對",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "light_wave",
+      "image": null,
+      "url": "/?video_mode=true&video=%E8%A6%96%E8%A6%BA%E5%85%89%E6%B3%A2.mp4&client=light-wave",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "視覺光波",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_micro",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-micro",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.85,
+      "label": "Birdman 微縮",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "owl_night",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4&client=owl-night",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "夜梟掠影",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "flash_tile",
+      "image": "offspring_20250923_170859_729.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash Tile",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

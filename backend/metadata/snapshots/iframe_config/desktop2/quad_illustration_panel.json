@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "illu_a",
+      "image": "offspring_20251005_145045_162.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫 A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "illu_b",
+      "image": "offspring_20251005_145045_722.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫 B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "illu_c",
+      "image": "offspring_20251109_114441_069.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫 C",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "illu_d",
+      "image": "offspring_20251109_114509_984.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫 D",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

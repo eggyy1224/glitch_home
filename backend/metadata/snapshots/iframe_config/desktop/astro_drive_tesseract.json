@@ -1,0 +1,107 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 4,
+  "panels": [
+    {
+      "id": "storm_core",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=storm-core",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "Storm Core",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "cosmic_burst",
+      "image": null,
+      "url": "/?video_mode=true&video=%E6%98%9F%E9%9A%9B%E6%B4%BE%E5%B0%8D.mp4&client=cosmic-burst",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "星際爆炸",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "light_wave",
+      "image": null,
+      "url": "/?video_mode=true&video=%E8%A6%96%E8%A6%BA%E5%85%89%E6%B3%A2.mp4&client=light-wave",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "光波",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "macro_slide",
+      "image": "offspring_20251203_135813_299.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Macro 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vector_slide",
+      "image": "offspring_20251203_140438_793.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 0.9,
+      "label": "Vector 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_loop",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-loop-astro",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.95,
+      "label": "Birdman 微循環",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "flash_static",
+      "image": "offspring_20251203_140637_329.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 靜態",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "owl_corner",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4&client=owl-corner",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "夜梟角落",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

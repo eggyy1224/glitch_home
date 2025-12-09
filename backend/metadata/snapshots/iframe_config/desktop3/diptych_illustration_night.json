@@ -1,0 +1,31 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "night_left",
+      "image": "offspring_20251109_000402_561.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "夜行插畫左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_right",
+      "image": "offspring_20251109_000523_923.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "夜行插畫右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

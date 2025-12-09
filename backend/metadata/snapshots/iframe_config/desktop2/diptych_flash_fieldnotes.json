@@ -1,0 +1,33 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "flash_left",
+      "image": "offspring_20251203_140637_329.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "fieldnotes_right",
+      "image": "offspring_20250923_172918_483.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Fieldnotes 右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

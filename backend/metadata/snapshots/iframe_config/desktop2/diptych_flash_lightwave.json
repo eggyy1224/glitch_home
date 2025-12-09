@@ -1,0 +1,31 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "flash_left",
+      "image": "offspring_20251203_233241_150.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "lightwave_right",
+      "image": null,
+      "url": "/?video_mode=true&video=%E8%A6%96%E8%A6%BA%E5%85%89%E6%B3%A2.mp4&client=lightwave-right",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "光波右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "grass_wide",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-wide",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.3,
+      "label": "草人主軸",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "storm_slice",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=storm-slice-rush",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "暴雨切片",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "macro_slide",
+      "image": "offspring_20250923_174024_128.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Macro 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "kinship_slide",
+      "image": "offspring_20250923_174417_753.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "archive_slide",
+      "image": "offspring_20251203_140803_532.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Archive 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "fieldnotes_static",
+      "image": "offspring_20250923_172918_483.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.9,
+      "label": "Fieldnotes 靜態",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_micro",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-rush",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "Birdman 小窗",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

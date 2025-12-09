@@ -1,0 +1,33 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "macro_left",
+      "image": "offspring_20251203_140712_372.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.05,
+      "label": "Macro 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "storm_right",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=storm-right",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "暴雨右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

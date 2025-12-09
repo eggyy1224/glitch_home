@@ -1,0 +1,46 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "burst_left",
+      "image": "offspring_20251109_114408_390.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "burst_center",
+      "image": "offspring_20251109_114534_671.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫中",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "burst_right",
+      "image": "offspring_20251109_114804_023.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "插畫右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

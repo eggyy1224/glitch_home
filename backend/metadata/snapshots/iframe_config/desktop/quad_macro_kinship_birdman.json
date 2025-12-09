@@ -1,0 +1,59 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "macro_slide",
+      "image": "offspring_20251203_135813_299.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Macro 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "kinship_slide",
+      "image": "offspring_20251203_141026_936.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "flash_static",
+      "image": "offspring_20250923_171906_216.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 靜態",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_video",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-quad",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "Birdman",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

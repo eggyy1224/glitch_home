@@ -1,0 +1,107 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "club_core",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=club-core-patch",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "Club Core",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "night_walk",
+      "image": null,
+      "url": "/?video_mode=true&video=night_stroll_3.mp4&client=night-walk",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "夜遊長鏡",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "disco_bird",
+      "image": null,
+      "url": "/?video_mode=true&video=Disco%E9%B3%A5%E4%BA%BA.mp4&client=disco-bird-patch",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Disco 鳥人",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "macro_slide",
+      "image": "offspring_20251203_140712_372.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Macro 幻燈",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vector_slide",
+      "image": "offspring_20251203_140619_529.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 0.95,
+      "label": "Vector 線格",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "static_flash",
+      "image": "offspring_20250923_173803_154.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Flash 靜框",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "owl_overlay",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4&client=owl-overlay",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "夜梟",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "glow_tile",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E5%85%89tv.mp4&client=glow-tile",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "夜光 TV",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

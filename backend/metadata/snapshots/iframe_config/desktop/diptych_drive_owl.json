@@ -1,0 +1,31 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "drive_left",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=drive-left",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "暴雨左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "owl_right",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4&client=owl-right",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "夜梟右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

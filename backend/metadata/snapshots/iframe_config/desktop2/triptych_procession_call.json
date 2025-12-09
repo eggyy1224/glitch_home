@@ -1,0 +1,43 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "crowd_left",
+      "image": "offspring_20250927_143151_576.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "群眾左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "procession_center",
+      "image": null,
+      "url": "/?video_mode=true&video=%E9%A6%AC%E8%88%87%E4%BA%BA%E7%BE%A4.mp4&client=procession-center",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "遊行中心",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "crowd_right",
+      "image": "offspring_20250927_145119_361.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "群眾右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "club_span",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=club-span",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "Club 主景",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "fieldnotes_corner",
+      "image": "offspring_20251203_140849_325.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Fieldnotes 角落",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "kinship_tile",
+      "image": "offspring_20250923_172918_483.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship 磚",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_mini",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-mini",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.9,
+      "label": "Birdman 小窗",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

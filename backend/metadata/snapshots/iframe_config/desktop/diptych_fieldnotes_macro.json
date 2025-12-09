@@ -1,0 +1,35 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "fieldnotes_left",
+      "image": "offspring_20251203_140849_325.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.05,
+      "label": "Fieldnotes 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "macro_right",
+      "image": "offspring_20251203_140712_372.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.05,
+      "label": "Macro 右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

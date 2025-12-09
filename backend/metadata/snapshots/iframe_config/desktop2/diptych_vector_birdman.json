@@ -1,0 +1,33 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "vector_left",
+      "image": "offspring_20251203_233208_113.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "birdman_right",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=birdman-right",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Birdman 右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

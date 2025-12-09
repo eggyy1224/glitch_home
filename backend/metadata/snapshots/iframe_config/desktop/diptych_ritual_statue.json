@@ -1,0 +1,31 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "statue_left",
+      "image": "offspring_20250927_140849_156.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "儀式左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "statue_right",
+      "image": "offspring_20250927_142559_763.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "儀式右",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

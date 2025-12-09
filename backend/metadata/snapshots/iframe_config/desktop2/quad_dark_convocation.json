@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "conv_a",
+      "image": "offspring_20250927_140540_742.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "集會 A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "conv_b",
+      "image": "offspring_20250927_141336_787.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "集會 B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "conv_c",
+      "image": "offspring_20250927_142352_329.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "集會 C",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "conv_d",
+      "image": "offspring_20250927_143740_296.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "集會 D",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}
