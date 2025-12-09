@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "night_portrait",
+      "image": null,
+      "url": "/?video_mode=true&video=night_stroll_3.mp4&client=desktop3-portrait-night",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.56,
+      "label": "夜行 Portrait",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

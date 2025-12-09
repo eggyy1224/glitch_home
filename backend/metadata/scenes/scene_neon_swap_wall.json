@@ -1,0 +1,19 @@
+{
+  "id": "scene_neon_swap_wall",
+  "version": 1,
+  "status": "published",
+  "title": "霓虹交換牆",
+  "targets": {
+    "desktop": "desktop3/nightclub_supercut",
+    "desktop2": "desktop/birdstorm_hypergrid",
+    "desktop3": "desktop3/portrait_illustration_pink"
+  },
+  "audio_mix": null,
+  "tags": [
+    "neon",
+    "swap",
+    "portrait"
+  ],
+  "description": "desktop 播夜店霓虹拼貼，desktop2 用 birdstorm hypergrid 提供高密度動態，desktop3 直式插畫作視覺休止。",
+  "notes": "desktop3 直式圖片；desktop/desktop2 皆為影片+幻燈混排。"
+}

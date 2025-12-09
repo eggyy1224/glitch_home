@@ -1,0 +1,19 @@
+{
+  "id": "scene_fire_procession_wall",
+  "version": 1,
+  "status": "published",
+  "title": "火雨遊行牆",
+  "targets": {
+    "desktop": "desktop/triptych_drive_fireworks_macro",
+    "desktop2": "desktop2/diptych_procession_fire",
+    "desktop3": "desktop3/triptych_lament_nightwalk"
+  },
+  "audio_mix": null,
+  "tags": [
+    "procession",
+    "fire",
+    "night"
+  ],
+  "description": "桌機三欄暴雨+煙火+macro，desktop2 左遊行右煙火，desktop3 夜行哀歌三欄，形成縱深火雨遊行牆。",
+  "notes": "影片：Drive_in_stormy、fireworks、night_stroll_3；其餘幻燈/靜態皆為既有。"
+}

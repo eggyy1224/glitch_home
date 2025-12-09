@@ -1,0 +1,18 @@
+{
+  "id": "scene_fire_procession",
+  "version": 1,
+  "status": "published",
+  "title": "火行禱告",
+  "targets": {
+    "desktop": "desktop/diptych_incense_fire",
+    "desktop2": "desktop2/diptych_procession_fire",
+    "desktop3": "desktop3/triptych_lament_nightwalk"
+  },
+  "audio_mix": null,
+  "tags": [
+    "ritual",
+    "procession"
+  ],
+  "description": "左右香火、遊行+煙火、夜行哀歌三屏同步，營造強烈召喚感。",
+  "notes": "影片：馬與人群.mp4、fireworks.mp4、night_stroll_3.mp4；其餘皆為現成靜態。"
+}

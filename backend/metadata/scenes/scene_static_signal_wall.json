@@ -1,0 +1,19 @@
+{
+  "id": "scene_static_signal_wall",
+  "version": 1,
+  "status": "published",
+  "title": "靜態信號牆",
+  "targets": {
+    "desktop": "desktop/static_vector_flash_wall",
+    "desktop2": "desktop2/static_riso_blocks_wall",
+    "desktop3": "desktop3/portrait_static_night_stack"
+  },
+  "audio_mix": null,
+  "tags": [
+    "static",
+    "portrait",
+    "color-block"
+  ],
+  "description": "三端全靜態：desktop vector/flash 牆，desktop2 RISO 色塊四格，desktop3 直式夜行三連。",
+  "notes": "全部 static_mode，無影片與 slide。"
+}

@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "illu_portrait",
+      "image": "offspring_20251005_145030_435.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.56,
+      "label": "插畫 Portrait",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

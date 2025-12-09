@@ -1,0 +1,19 @@
+{
+  "id": "scene_procession_swap_line",
+  "version": 1,
+  "status": "published",
+  "title": "遊行交換線",
+  "targets": {
+    "desktop": "desktop2/diptych_procession_fire",
+    "desktop2": "desktop/triptych_drive_fireworks_macro",
+    "desktop3": "desktop3/diptych_cosmic_flash"
+  },
+  "audio_mix": null,
+  "tags": [
+    "procession",
+    "swap",
+    "video"
+  ],
+  "description": "desktop 播遊行+煙火雙片，desktop2 三欄暴雨+煙火+macro，desktop3 星際對上 Flash 直式 diptych，成一條交換式遊行線。",
+  "notes": "影片來源：Drive_in_stormy、fireworks、星際派對；desktop3 為 diptych 直式。"
+}

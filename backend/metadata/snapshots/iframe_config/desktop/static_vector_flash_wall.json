@@ -1,0 +1,67 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "vec_a",
+      "image": "offspring_20251203_233208_113.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vec_b",
+      "image": "offspring_20251203_233216_435.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vec_c",
+      "image": "offspring_20251203_233241_150.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector C",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vec_d",
+      "image": "offspring_20251203_233251_705.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector D",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "vec_e",
+      "image": "offspring_20251203_233313_007.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector E",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

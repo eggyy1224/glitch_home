@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "riso_a",
+      "image": "offspring_20251005_145030_435.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "RISO A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "riso_b",
+      "image": "offspring_20251005_145041_884.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "RISO B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "riso_c",
+      "image": "offspring_20251005_145045_162.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "RISO C",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "riso_d",
+      "image": "offspring_20251005_145045_722.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "RISO D",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

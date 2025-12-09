@@ -1,0 +1,18 @@
+{
+  "id": "scene_illustration_triptych_signal",
+  "version": 1,
+  "status": "published",
+  "title": "插畫三頻訊號",
+  "targets": {
+    "desktop": "desktop/diptych_vector_poster",
+    "desktop2": "desktop2/quad_illustration_panel",
+    "desktop3": "desktop3/diptych_illustration_night"
+  },
+  "audio_mix": null,
+  "tags": [
+    "illustration",
+    "color-block"
+  ],
+  "description": "desktop 雙 poster，desktop2 四格插畫牆，desktop3 夜行插畫 diptych，純色塊訊號同步亮起。",
+  "notes": "純圖片場景，無影片。"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "scene_portrait_macro_signal",
+  "version": 1,
+  "status": "published",
+  "title": "直屏宏觀信號",
+  "targets": {
+    "desktop": "desktop/quad_macro_kinship_birdman",
+    "desktop2": "desktop2/kinship_flashbang_wall",
+    "desktop3": "desktop3/portrait_macro_slide"
+  },
+  "audio_mix": null,
+  "tags": [
+    "portrait",
+    "macro",
+    "slide"
+  ],
+  "description": "desktop 四格宏觀+Birdman，desktop2 kinship/macro/grass/slide 牆，desktop3 直式 macro 幻燈，信號同步。",
+  "notes": "desktop3 直屏 slide_mode，macrocosm 資料。"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "scene_cosmic_storm_drive",
+  "version": 1,
+  "status": "published",
+  "title": "宇宙暴雨",
+  "targets": {
+    "desktop": "desktop/astro_drive_tesseract",
+    "desktop2": "desktop2/diptych_macro_drive",
+    "desktop3": "desktop3/diptych_cosmic_flash"
+  },
+  "audio_mix": null,
+  "tags": [
+    "cosmic",
+    "storm",
+    "video"
+  ],
+  "description": "桌機三面暴雨＋星際：主屏暴雨+星爆，desktop2 左 macro 幻燈右暴雨，desktop3 星際對上 Flash 靜態。",
+  "notes": "影片：Drive_in_stormy.mp4、星際派對.mp4；其餘為既有靜態/幻燈。"
+}

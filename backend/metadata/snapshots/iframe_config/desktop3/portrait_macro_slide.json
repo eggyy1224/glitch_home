@@ -1,0 +1,21 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "macro_portrait",
+      "image": "offspring_20251203_135813_299.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 0.56,
+      "label": "Macro Portrait",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

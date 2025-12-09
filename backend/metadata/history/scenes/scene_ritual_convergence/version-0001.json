@@ -1,0 +1,22 @@
+{
+  "id": "scene_ritual_convergence",
+  "version": 1,
+  "status": "published",
+  "created_at": "2025-12-09T18:30:21.962087Z",
+  "updated_at": "2025-12-09T18:30:21.962087Z",
+  "published_at": null,
+  "published_by": null,
+  "title": "夜祭匯流",
+  "targets": {
+    "desktop": "desktop/triptych_procession_altar",
+    "desktop2": "desktop2/quad_dark_convocation",
+    "desktop3": "desktop3/quad_night_congregation"
+  },
+  "audio_mix": null,
+  "tags": [
+    "ritual",
+    "dark"
+  ],
+  "description": "三端同時召喚：主桌祭壇+遊行，左屏暗夜集會牆，右屏多祭壇。",
+  "notes": "素材均為既有 snapshot，無需新媒體。"
+}

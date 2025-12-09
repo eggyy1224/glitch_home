@@ -1,0 +1,18 @@
+{
+  "id": "scene_illustration_signal",
+  "version": 1,
+  "status": "published",
+  "title": "插畫訊號塔",
+  "targets": {
+    "desktop": "desktop/diptych_riso_pink_teal",
+    "desktop2": "desktop2/triptych_illustration_burst",
+    "desktop3": "desktop3/diptych_illustration_night"
+  },
+  "audio_mix": null,
+  "tags": [
+    "illustration",
+    "color-block"
+  ],
+  "description": "三端插畫牆：RISO 雙屏、三連插畫流、夜行雙幅，強色塊對話。",
+  "notes": "純圖片場景，無影片。"
+}

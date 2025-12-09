@@ -1,0 +1,19 @@
+{
+  "id": "scene_club_neon_wall",
+  "version": 1,
+  "status": "published",
+  "title": "霓虹夜牆",
+  "targets": {
+    "desktop": "desktop/birdstorm_hypergrid",
+    "desktop2": "desktop2/grass_triptych_rush",
+    "desktop3": "desktop3/nightclub_supercut"
+  },
+  "audio_mix": null,
+  "tags": [
+    "club",
+    "neon",
+    "video"
+  ],
+  "description": "desktop 以 birdstorm hypergrid 打底，desktop2 草人+暴雨衝刺，desktop3 夜店霓虹多視窗，形成高密度舞動牆。",
+  "notes": "影片：Drive_in_stormy / BirdmanTalk / 夜光TV / Disco鳥人 / 星際派對 / 視覺光波 等均為既有。"
+}

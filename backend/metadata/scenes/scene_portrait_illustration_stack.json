@@ -1,0 +1,19 @@
+{
+  "id": "scene_portrait_illustration_stack",
+  "version": 1,
+  "status": "published",
+  "title": "直屏插畫塔",
+  "targets": {
+    "desktop": "desktop/diptych_vector_poster",
+    "desktop2": "desktop2/triptych_illustration_burst",
+    "desktop3": "desktop3/portrait_illustration_pink"
+  },
+  "audio_mix": null,
+  "tags": [
+    "portrait",
+    "illustration",
+    "color-block"
+  ],
+  "description": "desktop 雙 poster，desktop2 三連插畫流，desktop3 直式插畫，垂直色塊塔。",
+  "notes": "desktop3 用 portrait_illustration_pink，適合直屏。"
+}

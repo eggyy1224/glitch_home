@@ -1,0 +1,19 @@
+{
+  "id": "scene_ritual_swap_fire",
+  "version": 1,
+  "status": "published",
+  "title": "祭壇交換·火行",
+  "targets": {
+    "desktop": "desktop2/quad_dark_convocation",
+    "desktop2": "desktop/triptych_procession_altar",
+    "desktop3": "desktop3/portrait_video_night"
+  },
+  "audio_mix": null,
+  "tags": [
+    "ritual",
+    "swap",
+    "portrait"
+  ],
+  "description": "將暗夜集會牆搬到 desktop，遊行祭壇移到 desktop2，desktop3 以直式夜行影片收束，形成交換式召喚。",
+  "notes": "影片：馬與人群.mp4、night_stroll_3.mp4；其他為靜態/幻燈。"
+}

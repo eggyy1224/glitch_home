@@ -1,0 +1,19 @@
+{
+  "id": "scene_macro_slide_wall",
+  "version": 1,
+  "status": "published",
+  "title": "宏觀滑動牆",
+  "targets": {
+    "desktop": "desktop/diptych_macro_vector",
+    "desktop2": "desktop2/quad_fieldnotes_drive",
+    "desktop3": "desktop3/portrait_macro_slide"
+  },
+  "audio_mix": null,
+  "tags": [
+    "macro",
+    "slide",
+    "portrait"
+  ],
+  "description": "desktop 雙宏觀/Vector 幻燈，desktop2 fieldnotes+archive+暴雨+flash 四格，desktop3 直式 macro 幻燈，形成上下滑動的宏觀牆。",
+  "notes": "均為幻燈/靜態，無聲。"
+}

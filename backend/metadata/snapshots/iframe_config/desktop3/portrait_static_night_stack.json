@@ -1,0 +1,43 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "night_a",
+      "image": "offspring_20251109_000402_561.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.56,
+      "label": "夜行 A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_b",
+      "image": "offspring_20251109_000523_923.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.56,
+      "label": "夜行 B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "night_c",
+      "image": "offspring_20251109_000701_890.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.56,
+      "label": "夜行 C",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

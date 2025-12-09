@@ -1,0 +1,19 @@
+{
+  "id": "scene_portrait_cosmic_rain",
+  "version": 1,
+  "status": "published",
+  "title": "直屏宇宙雨",
+  "targets": {
+    "desktop": "desktop/astro_drive_tesseract",
+    "desktop2": "desktop2/diptych_macro_drive",
+    "desktop3": "desktop3/portrait_video_night"
+  },
+  "audio_mix": null,
+  "tags": [
+    "portrait",
+    "video",
+    "cosmic"
+  ],
+  "description": "desktop 暴雨星爆，desktop2 macro+暴雨雙欄，desktop3 直式夜行影片，三端連成宇宙雨幕。",
+  "notes": "直式螢幕：desktop3 使用 portrait_video_night（night_stroll_3.mp4）。"
+}
