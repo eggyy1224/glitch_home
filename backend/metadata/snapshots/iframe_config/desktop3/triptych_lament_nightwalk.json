@@ -1,7 +1,7 @@
 {
   "layout": "grid",
   "gap": 12,
-  "columns": 3,
+  "columns": 1,
   "panels": [
     {
       "id": "lam_left",
@@ -12,30 +12,6 @@
       },
       "ratio": 1.0,
       "label": "夜行左",
-      "col_span": 1,
-      "row_span": 1
-    },
-    {
-      "id": "nightwalk_center",
-      "image": null,
-      "url": "/?video_mode=true&video=night_stroll_3.mp4&client=nightwalk-center",
-      "params": {
-        "sound_player": "false"
-      },
-      "ratio": 1.0,
-      "label": "夜行中心",
-      "col_span": 1,
-      "row_span": 1
-    },
-    {
-      "id": "lam_right",
-      "image": "offspring_20250927_151051_437.png",
-      "url": null,
-      "params": {
-        "static_mode": "true"
-      },
-      "ratio": 1.0,
-      "label": "夜行右",
       "col_span": 1,
       "row_span": 1
     }

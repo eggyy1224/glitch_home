@@ -1,7 +1,7 @@
 {
   "layout": "grid",
   "gap": 12,
-  "columns": 3,
+  "columns": 1,
   "panels": [
     {
       "id": "glow_tv",
@@ -24,20 +24,6 @@
       },
       "ratio": 0.95,
       "label": "Birdman",
-      "col_span": 1,
-      "row_span": 1
-    },
-    {
-      "id": "macro_slide",
-      "image": "offspring_20251203_135813_299.png",
-      "url": null,
-      "params": {
-        "slide_mode": "true",
-        "slide_source": "macrocosm",
-        "continuous": "true"
-      },
-      "ratio": 1.0,
-      "label": "Macro 幻燈",
       "col_span": 1,
       "row_span": 1
     }
