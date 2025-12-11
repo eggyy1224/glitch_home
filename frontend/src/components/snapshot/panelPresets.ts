@@ -93,7 +93,12 @@ export const getPanelModeAndAsset = (panel?: SnapshotPanel | null) => {
   return { mode, asset };
 };
 
-export const buildUrlFromPreset = (mode: PanelMode, asset: string) => {
+const ensureTrailingSlash = (value?: string | null): string | null => {
+  if (!value) return null;
+  return value.endsWith("/") ? value : `${value}/`;
+};
+
+export const buildUrlFromPreset = (mode: PanelMode, asset: string, options?: { imgBase?: string | null }) => {
   const preset = MODE_PRESETS[mode];
   if (!preset) return "";
   const qs = new URLSearchParams();
@@ -102,6 +107,10 @@ export const buildUrlFromPreset = (mode: PanelMode, asset: string) => {
   }
   if (asset) {
     qs.set(preset.assetKey, asset);
+  }
+  const imgBase = preset.assetKey === "img" ? ensureTrailingSlash(options?.imgBase) : null;
+  if (imgBase) {
+    qs.set("img_base", imgBase);
   }
   const queryString = qs.toString();
   return queryString ? `/?${queryString}` : "/";

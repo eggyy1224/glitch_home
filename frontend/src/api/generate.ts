@@ -1,10 +1,19 @@
 import { apiClient } from "./client";
 import { IMAGES_BASE } from "../utils/request";
 import type { RequestOptions } from "../utils/request";
-import type { GenerateMixTwoParams, GenerateMixTwoResponse, ListOffspringImagesResponse } from "../types/generate";
+import type {
+  GenerateMixTwoParams,
+  GenerateMixTwoResponse,
+  ListAncestorImagesResponse,
+  ListOffspringImagesResponse,
+} from "../types/generate";
 
 export async function listOffspringImages({ signal }: RequestOptions = {}): Promise<ListOffspringImagesResponse> {
   return apiClient.get(`/api/offspring-images`, { signal });
+}
+
+export async function listAncestorImages({ signal }: RequestOptions = {}): Promise<ListAncestorImagesResponse> {
+  return apiClient.get(`/api/ancestor-images`, { signal });
 }
 
 export async function generateMixTwo(params: GenerateMixTwoParams): Promise<GenerateMixTwoResponse> {

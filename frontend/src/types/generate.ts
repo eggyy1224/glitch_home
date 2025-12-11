@@ -1,6 +1,7 @@
 export interface OffspringImage {
   filename: string;
   url?: string;
+  relative_path?: string;
 }
 
 export interface SearchApiResult {
@@ -36,6 +37,10 @@ export interface GenerateMixTwoResponse {
 }
 
 export interface ListOffspringImagesResponse {
+  images?: OffspringImage[];
+}
+
+export interface ListAncestorImagesResponse {
   images?: OffspringImage[];
 }
 

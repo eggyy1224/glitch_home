@@ -71,16 +71,29 @@ export function AssetDrawer({
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
             <button
               type="button"
-              onClick={() => onTabChange("images")}
+              onClick={() => onTabChange("offspring_images")}
               style={{
                 padding: "6px 10px",
-                background: assetTab === "images" ? "#0f4" : "#000",
-                color: assetTab === "images" ? "#000" : "#c8ffd2",
+                background: assetTab === "offspring_images" ? "#0f4" : "#000",
+                color: assetTab === "offspring_images" ? "#000" : "#c8ffd2",
                 border: "1px solid #0f4",
                 borderRadius: 4,
               }}
             >
-              Images
+              OFFSPRING_IMAGES
+            </button>
+            <button
+              type="button"
+              onClick={() => onTabChange("ancestor_images")}
+              style={{
+                padding: "6px 10px",
+                background: assetTab === "ancestor_images" ? "#0f4" : "#000",
+                color: assetTab === "ancestor_images" ? "#000" : "#c8ffd2",
+                border: "1px solid #0f4",
+                borderRadius: 4,
+              }}
+            >
+              ANCESTOR_IMAGES
             </button>
             <button
               type="button"
@@ -108,23 +121,29 @@ export function AssetDrawer({
               style={{ width: 220 }}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              <button type="button" onClick={onSearch} disabled={assetTab === "videos" || searchingSemantic}>
-                {searchingSemantic ? "搜尋中..." : assetTab === "videos" ? "語意搜尋停用" : "語意搜尋"}
+              <button type="button" onClick={onSearch} disabled={assetTab !== "offspring_images" || searchingSemantic}>
+                {searchingSemantic ? "搜尋中..." : assetTab !== "offspring_images" ? "語意搜尋停用" : "語意搜尋"}
               </button>
-              <button type="button" onClick={onClearSearch} disabled={semanticResults.length === 0 && assetSearchMode !== "semantic"}>
+              <button
+                type="button"
+                onClick={onClearSearch}
+                disabled={semanticResults.length === 0 && assetSearchMode !== "semantic"}
+              >
                 清除搜尋
               </button>
               <span style={{ color: "#82dca5" }}>
-                {assetSearchMode === "semantic" && assetTab === "images"
-                  ? `語意結果 ${semanticResults.length} 筆`
-                  : assetStatus}
+                {assetSearchMode === "semantic" && assetTab === "offspring_images" ? `語意結果 ${semanticResults.length} 筆` : assetStatus}
               </span>
               {assetSearchError && <span style={{ color: "#ffb347" }}>{assetSearchError}</span>}
             </div>
             <button type="button" onClick={onReload} disabled={loadingAssets}>
               重新載入資產
             </button>
-            <button type="button" onClick={() => onApplyAsset(filteredAssets[0])} disabled={!selectedRows.length}>
+            <button
+              type="button"
+              onClick={() => onApplyAsset(filteredAssets[0])}
+              disabled={!selectedRows.length || filteredAssets.length === 0}
+            >
               套用到選取 panel
             </button>
           </div>

@@ -31,6 +31,7 @@ from ..services.iframe_config import (
 from ..services.realtime_bus import realtime_broadcaster
 from ..services.screenshot_queue import screenshot_request_queue
 from ..services.screenshots import save_screenshot
+from ..services.nightwalk_image_cache import nightwalk_image_cache
 from ..config import settings
 from ..utils.permissions import require_asset_write_enabled, require_metadata_write_enabled
 
@@ -221,6 +222,13 @@ def api_list_video_assets() -> dict:
         name = path.name
         videos.append({"filename": name, "url": f"{public_base}/{name}"})
     return {"videos": videos}
+
+
+@router.get("/api/ancestor-images")
+def api_list_ancestor_images() -> dict:
+    """List nightwalk (ancestor) images, filtering out offspring_* leftovers."""
+    images = nightwalk_image_cache.get_images()
+    return {"images": images}
 
 
 @router.get("/api/collage-config")

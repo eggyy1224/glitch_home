@@ -10,9 +10,21 @@ interface PanelRowProps {
   videoAssets: string[];
   imageAssets: string[];
   onPanelChange: (index: number, patch: Partial<PanelConfig>) => void;
-  onModeSelect: (index: number, nextMode: PanelMode | "", currentAsset: string, panel?: PanelConfig) => void;
-  onAssetChange: (index: number, mode: PanelMode | "", assetValue: string, panel?: PanelConfig) => void;
-  onImageChange: (index: number, value: string, panel?: PanelConfig, modeOverride?: PanelMode | "") => void;
+  onModeSelect: (index: number, nextMode: PanelMode | "", currentAsset: string, panel?: PanelConfig, options?: { imgBase?: string | null }) => void;
+  onAssetChange: (
+    index: number,
+    mode: PanelMode | "",
+    assetValue: string,
+    panel?: PanelConfig,
+    options?: { imgBase?: string | null },
+  ) => void;
+  onImageChange: (
+    index: number,
+    value: string,
+    panel?: PanelConfig,
+    modeOverride?: PanelMode | "",
+    imgBaseOverride?: string | null,
+  ) => void;
   onToggleRow: (index: number) => void;
   onMoveRow: (index: number, delta: number) => void;
   onDuplicateRow: (index: number) => void;

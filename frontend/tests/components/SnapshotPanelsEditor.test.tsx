@@ -8,6 +8,7 @@ import type { IframePanelConfig } from "../../src/types/control";
 
 type ApiMocks = {
   listOffspringImages: Mock;
+  listAncestorImages: Mock;
   listVideoAssets: Mock;
 };
 
@@ -24,8 +25,9 @@ const getApiMocks = () => {
 
 vi.mock("../../src/api", async () => {
   const { createMockApi } = await import("../testUtils");
-  const { mocks, factory } = createMockApi<typeof api, "listOffspringImages" | "listVideoAssets">([
+  const { mocks, factory } = createMockApi<typeof api, "listOffspringImages" | "listAncestorImages" | "listVideoAssets">([
     "listOffspringImages",
+    "listAncestorImages",
     "listVideoAssets",
   ]);
   apiMocksRef.current = mocks;
@@ -34,7 +36,7 @@ vi.mock("../../src/api", async () => {
 
 type PanelChangeHandler = (index: number, patch: Partial<SnapshotPanel & IframePanelConfig>) => void;
 
-function ControlledEditor({ onPanelChange }: { onPanelChange: PanelChangeHandler }) {
+function ControlledEditor({ onPanelChange, selectedRows = [0] }: { onPanelChange: PanelChangeHandler; selectedRows?: number[] }) {
   const [panels, setPanels] = useState<SnapshotPanel[]>([{ id: "p1", url: "", image: "" }]);
   const handleChange: PanelChangeHandler = (index, patch) => {
     setPanels((prev) => prev.map((panel, i) => (i === index ? { ...panel, ...patch } : panel)));
@@ -43,7 +45,7 @@ function ControlledEditor({ onPanelChange }: { onPanelChange: PanelChangeHandler
   return (
     <SnapshotPanelsEditor
       panels={panels}
-      selectedRows={[]}
+      selectedRows={selectedRows}
       onToggleRow={vi.fn()}
       onMoveRow={(from, delta) => handleChange(from + delta, {})}
       onDuplicateRow={vi.fn()}
@@ -61,6 +63,7 @@ beforeEach(() => {
   apiMocks = getApiMocks();
   vi.clearAllMocks();
   apiMocks.listOffspringImages.mockResolvedValue({ images: [{ filename: "img-a.png" }] });
+  apiMocks.listAncestorImages.mockResolvedValue({ images: [{ relative_path: "攝影圖像/img-b.png" }] });
   apiMocks.listVideoAssets.mockResolvedValue({ videos: [{ filename: "clipA.mp4" }] });
 });
 
@@ -80,7 +83,8 @@ describe("SnapshotPanelsEditor", () => {
     render(<ControlledEditor onPanelChange={onPanelChange} />);
 
     await waitFor(() => expect(apiMocks.listOffspringImages).toHaveBeenCalled());
-    expect(screen.getByText(/資產：圖片 1 \/ 影片 1/)).toBeInTheDocument();
+    await waitFor(() => expect(apiMocks.listAncestorImages).toHaveBeenCalled());
+    expect(screen.getByText(/資產：後代 1 \/ 祖先 1 \/ 影片 1/)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("模式"), { target: { value: "video_mode" } });
     expect(onPanelChange).toHaveBeenLastCalledWith(
@@ -114,6 +118,38 @@ describe("SnapshotPanelsEditor", () => {
         params: { __preset_mode: "static_mode" },
       }),
     );
+  });
+
+  it("祖先資產面板會過濾 offspring 檔名並自動帶入 img_base", async () => {
+    apiMocks.listAncestorImages.mockResolvedValue({
+      images: [
+        { relative_path: "攝影圖像/good-a.png" },
+        { relative_path: "offspring_legacy.png" },
+      ],
+    });
+    const onPanelChange = vi.fn();
+    render(<ControlledEditor onPanelChange={onPanelChange} />);
+
+    await waitFor(() => expect(apiMocks.listAncestorImages).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "ANCESTOR_IMAGES" }));
+
+    const assetButton = await screen.findByRole("button", { name: /good-a\.png/i });
+    expect(screen.queryByText(/offspring_legacy\.png/i)).not.toBeInTheDocument();
+
+    fireEvent.click(assetButton);
+
+    await waitFor(() => {
+      expect(onPanelChange).toHaveBeenCalledWith(
+        0,
+        expect.objectContaining({ url: expect.stringContaining("static_mode=true") }),
+      );
+    });
+
+    const lastPatch = onPanelChange.mock.calls[onPanelChange.mock.calls.length - 1]?.[1] as SnapshotPanel;
+    const parsed = new URL(lastPatch.url || "", "http://localhost");
+    expect(parsed.searchParams.get("img")).toBe("攝影圖像/good-a.png");
+    expect(parsed.searchParams.get("img_base")).toBe("/nightwalk_assets/");
   });
 
   it("拖放數字檔名資產時不會被當成面板索引，會生成 static_mode 網址", async () => {
