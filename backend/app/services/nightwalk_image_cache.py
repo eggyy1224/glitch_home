@@ -41,7 +41,9 @@ class NightwalkImageCache:
 
         images: list[dict[str, str]] = []
         try:
-            for dirpath, _dirnames, filenames in os.walk(root):
+            for dirpath, dirnames, filenames in os.walk(root):
+                # 排除指定資料夾
+                dirnames[:] = [d for d in dirnames if d != "spacelive"]
                 for filename in filenames:
                     lower = filename.lower()
                     if not lower.endswith((".png", ".jpg", ".jpeg", ".webp")):

@@ -38,6 +38,9 @@ def test_ancestor_images_filters_and_encodes(client, tmp_path, monkeypatch):
     nested_dir = target_dir / "子資料夾"
     nested_dir.mkdir(parents=True, exist_ok=True)
     (nested_dir / "tree photo 01.jpeg").write_bytes(b"c")
+    spacelive_dir = base / "spacelive"
+    spacelive_dir.mkdir(parents=True, exist_ok=True)
+    (spacelive_dir / "should_ignore.jpg").write_bytes(b"x")
 
     nightwalk_image_cache.refresh()
 
@@ -52,3 +55,4 @@ def test_ancestor_images_filters_and_encodes(client, tmp_path, monkeypatch):
         "/nightwalk_assets/%E6%94%9D%E5%BD%B1%E5%9C%96%E5%83%8F/DSCF0001.JPG",
         "/nightwalk_assets/%E6%94%9D%E5%BD%B1%E5%9C%96%E5%83%8F/%E5%AD%90%E8%B3%87%E6%96%99%E5%A4%BE/tree%20photo%2001.jpeg",
     ]
+    assert all("spacelive" not in name for name in names)
