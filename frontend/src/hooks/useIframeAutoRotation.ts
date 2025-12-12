@@ -125,6 +125,7 @@ export function useIframeAutoRotation({
   const [current, setCurrent] = useState<AutoRotationSnapshot | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const prevEnabledRef = useRef(enabled);
   const enabledRef = useRef(enabled);
   const isPlayingRef = useRef(isPlaying);
   const queueRef = useRef<AutoRotationSnapshot[]>([]);
@@ -156,7 +157,11 @@ export function useIframeAutoRotation({
 
   useEffect(() => {
     enabledRef.current = enabled;
-    if (!enabled) {
+    const prevEnabled = prevEnabledRef.current;
+    prevEnabledRef.current = enabled;
+
+    // 僅在「從 enabled → disabled」時才重設狀態，避免 disabled 預設值造成額外 re-render。
+    if (!enabled && prevEnabled) {
       stopAll();
       setStatus("idle");
       setError(null);
