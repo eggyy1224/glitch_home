@@ -353,11 +353,27 @@ function buildControllerHtml() {
 
       function qs(id) { return document.getElementById(id); }
 
+      function buildQuery(params) {
+        if (!params || typeof params !== "object") return "";
+        const entries = Object.entries(params).filter(([key, value]) => {
+          if (!key) return false;
+          if (value === undefined || value === null) return false;
+          const str = String(value);
+          return str.trim().length > 0;
+        });
+        if (entries.length === 0) return "";
+        return "?" + entries
+          .map(([key, value]) => encodeURIComponent(key) + "=" + encodeURIComponent(String(value)))
+          .join("&");
+      }
+
       function render(state) {
         qs("mappingPath").textContent = state.displayMappingPath || "";
         const container = qs("rows");
         container.innerHTML = "";
         const presetIds = state.presetIds || [];
+        const clientPresets = state.clientPresets || {};
+        const baseUrlParamsBySlotId = state.baseUrlParamsBySlotId || {};
 
         for (const slot of state.slots || []) {
           const row = document.createElement("div");
@@ -390,9 +406,20 @@ function buildControllerHtml() {
           });
           const presetHint = document.createElement("div");
           presetHint.className = "hint";
-          presetHint.textContent = "對應你說的 ?iframe_mode=true&client=desktopX；未來可擴充更多參數。";
+          presetHint.textContent = "例如 ?iframe_mode=true&client=desktopX&auto_mode=true（auto_mode 會啟動輪播）";
+
+          const resolvedBase = baseUrlParamsBySlotId[slot.slotId] || {};
+          const presetParams = slot.presetId ? (clientPresets[slot.presetId] || {}) : {};
+          const resolvedParams = { ...(resolvedBase || {}), ...(presetParams || {}) };
+          const autoModeEnabled = String(resolvedParams.auto_mode || "").trim().toLowerCase() === "true";
+          const presetParamsHint = document.createElement("div");
+          presetParamsHint.className = "hint";
+          presetParamsHint.textContent =
+            (Object.keys(resolvedParams).length ? `參數：${buildQuery(resolvedParams)}` : "參數：（無）") +
+            (autoModeEnabled ? "（auto_mode=on）" : "");
           preset.appendChild(presetSelect);
           preset.appendChild(presetHint);
+          preset.appendChild(presetParamsHint);
 
           const displays = document.createElement("div");
           displays.className = "displays";
@@ -613,6 +640,8 @@ function runCalibration() {
       displayMappingPath,
       displays: orderedDisplays.map(serializeDisplay),
       presetIds,
+      clientPresets: config.clientPresets,
+      baseUrlParamsBySlotId,
       slots: slots.map((slotId) => ({
         slotId,
         displayIds: slotsById[slotId]?.displayIds || [],
@@ -748,6 +777,8 @@ function runCalibration() {
       displayMappingPath,
       displays: orderedDisplays.map(serializeDisplay),
       presetIds,
+      clientPresets: config.clientPresets,
+      baseUrlParamsBySlotId,
       slots: slots.map((slotId) => ({
         slotId,
         displayIds: slotsById[slotId]?.displayIds || [],

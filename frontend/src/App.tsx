@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppMode } from "./appMode/AppModeContext";
 import { useSubtitleCaption } from "./hooks/useSubtitleCaption";
 import { useScreenshotManager } from "./hooks/useScreenshotManager";
@@ -13,11 +13,13 @@ import { useKinshipData } from "./hooks/useKinshipData";
 import ControlPanel from "./components/ControlPanel";
 import ScreenshotMessage from "./components/ScreenshotMessage";
 import IframeTimelineControls from "./components/IframeTimelineControls";
+import IframeAutoModeControls from "./components/IframeAutoModeControls";
 import { useSoundQueue } from "./hooks/useSoundQueue";
 import { useRemoteTimelineControl } from "./hooks/useRemoteTimelineControl";
 import { useControlSocketHandlers } from "./hooks/useControlSocketHandlers";
 import { createModeRenderMap, type ModeRenderEntry } from "./modes/createModeRenderMap";
 import { useSilentAudioUnlock } from "./hooks/useSilentAudioUnlock";
+import { useIframeAutoRotation } from "./hooks/useIframeAutoRotation";
 import type { VideoController } from "./types/control";
 import ExhibitionCameraPanel from "./components/ExhibitionCameraPanel";
 
@@ -69,6 +71,11 @@ export default function App() {
     clientId,
     iframeTimelineId,
   } = useModeParams();
+
+  const autoModeRequested = useMemo(() => {
+    const rawValue = initialParams.get("auto_mode");
+    return String(rawValue ?? "false").trim().toLowerCase() === "true";
+  }, [initialParams]);
 
   const { appMode, capabilities } = useAppMode();
   const canGenerate = capabilities?.canGenerate ?? true;
@@ -185,6 +192,19 @@ export default function App() {
     releaseRemoteIframeConfig,
     setActiveModeOverride,
     capabilities: { canWriteAssets, canAnalyze, forbidMessage },
+  });
+
+  const autoRotationEnabled = activeMode === DisplayModes.IFRAME && autoModeRequested && !effectiveTimelineId;
+  const applyAutoRotationConfig = useCallback(
+    (config: Record<string, unknown>) => {
+      applyRemoteIframeConfig(config as Record<string, unknown>);
+    },
+    [applyRemoteIframeConfig],
+  );
+  const iframeAutoRotation = useIframeAutoRotation({
+    enabled: autoRotationEnabled,
+    clientId,
+    onApplyConfig: applyAutoRotationConfig,
   });
 
   const {
@@ -341,11 +361,36 @@ export default function App() {
       />
     ) : null;
 
+  const iframeAutoModeOverlay =
+    activeMode === DisplayModes.IFRAME && autoModeRequested ? (
+      <IframeAutoModeControls
+        enabled={autoRotationEnabled}
+        status={iframeAutoRotation.status}
+        statusText={iframeAutoRotation.statusText}
+        error={iframeAutoRotation.error}
+        isPlaying={iframeAutoRotation.isPlaying}
+        queue={iframeAutoRotation.queue}
+        current={iframeAutoRotation.current}
+        onTogglePlay={iframeAutoRotation.togglePlay}
+        onNext={iframeAutoRotation.next}
+        onPrevious={iframeAutoRotation.previous}
+        onReload={iframeAutoRotation.reload}
+      />
+    ) : null;
+
+  const iframeOverlays =
+    iframeTimelineOverlay || iframeAutoModeOverlay ? (
+      <>
+        {iframeTimelineOverlay}
+        {iframeAutoModeOverlay}
+      </>
+    ) : null;
+
   const modeRenderMap = createModeRenderMap({
     iframeActiveConfig,
     iframeControlsEnabled,
     handleLocalIframeConfigApply,
-    iframeTimelineOverlay,
+    iframeTimelineOverlay: iframeOverlays,
     imagesBase: IMAGES_BASE,
     imgId,
     slideIntervalMs,

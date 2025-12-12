@@ -1,0 +1,124 @@
+.iframe-auto-mode-control-trigger {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 80;
+  width: 48px;
+  height: 48px;
+  overflow: visible;
+}
+
+.iframe-auto-mode-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 320px;
+  max-width: 420px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.85);
+  color: #f0f0f0;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.iframe-auto-mode-control-trigger:hover .iframe-auto-mode-controls,
+.iframe-auto-mode-control-trigger:focus-within .iframe-auto-mode-controls {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.auto-mode-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.auto-mode-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.auto-mode-meta {
+  font-size: 12px;
+  color: #a0a0a0;
+}
+
+.auto-mode-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #2c2c2c;
+  white-space: nowrap;
+}
+
+.auto-mode-status-playing {
+  background: #1f6feb;
+}
+
+.auto-mode-status-loading {
+  background: #a36d00;
+}
+
+.auto-mode-status-error {
+  background: #b4231f;
+}
+
+.auto-mode-status-paused {
+  background: #2c2c2c;
+}
+
+.auto-mode-current {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.auto-mode-current-label {
+  font-size: 12px;
+  color: #a0a0a0;
+  flex: 0 0 auto;
+}
+
+.auto-mode-current-value {
+  font-size: 12px;
+  color: #f0f0f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auto-mode-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.auto-mode-actions button {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: #232323;
+  color: #fff;
+  cursor: pointer;
+}
+
+.auto-mode-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.auto-mode-error {
+  font-size: 12px;
+  color: #ff8080;
+}
