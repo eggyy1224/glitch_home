@@ -105,6 +105,36 @@ export default function TimelineEpisodeEditor() {
     startSnapshotResize,
   } = useTimelineEpisodeEditor();
 
+  const [snapshotListHeight, setSnapshotListHeight] = React.useState<number>(() => {
+    if (typeof window === "undefined") return 180;
+    return Math.max(140, Math.min(320, Math.round(window.innerHeight * 0.22)));
+  });
+
+  const clampSnapshotListHeight = React.useCallback((height: number) => {
+    const min = 120;
+    const max = typeof window !== "undefined" ? Math.max(220, window.innerHeight - 260) : 800;
+    return Math.min(Math.max(height, min), max);
+  }, []);
+
+  const startSnapshotListResize = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = snapshotListHeight;
+      const onMove = (e: MouseEvent) => {
+        const delta = e.clientY - startY;
+        setSnapshotListHeight(clampSnapshotListHeight(startHeight + delta));
+      };
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [clampSnapshotListHeight, snapshotListHeight],
+  );
+
   return (
     <div
       style={boxStyle}
@@ -290,49 +320,60 @@ export default function TimelineEpisodeEditor() {
               </div>
               <div style={{ marginBottom: 8 }}>
                 <div style={{ marginBottom: 4 }}>Snapshot 列表（{snapshotMessage || "尚未載入"}）</div>
-                <ul
-                  role="list"
-                  data-ai-id="snapshot.editor.list"
-                  style={{
-                    maxHeight: 180,
-                    overflowY: "auto",
-                    border: "1px solid #0f4",
-                    padding: 8,
-                    listStyle: "none",
-                    margin: 0,
-                    background: "#000",
-                  }}
-                >
-                  {snapshotOptions.length === 0 && (
-                    <li style={{ color: "#82dca5" }} data-ai-state="empty">
-                      尚無資料
-                    </li>
-                  )}
-                  {snapshotOptions.map((item) => (
-                    <li
-                      key={`${item.client}/${item.name || item.id}`}
-                      style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}
-                      data-ai-item={`snapshot:${item.name || item.id}`}
-                    >
-                      <span style={{ flex: 1 }}>
-                        {item.client}/{item.name || item.id} {item.created_at ? `（${formatTs(item.created_at)}）` : ""}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const targetName = item.name || item.id || "";
-                          const targetClient = item.client ?? "";
-                          setSnapshotName(targetName);
-                          setSnapshotClient(targetClient);
-                          handleLoadSnapshot(targetName, item.client || undefined);
-                        }}
-                        data-ai-action="snapshot.editor.load-item"
+                <div style={{ position: "relative" }}>
+                  <ul
+                    role="list"
+                    data-ai-id="snapshot.editor.list"
+                    style={{
+                      height: snapshotListHeight,
+                      minHeight: 120,
+                      overflowY: "auto",
+                      border: "1px solid #0f4",
+                      padding: "8px 8px 28px 8px",
+                      listStyle: "none",
+                      margin: 0,
+                      background: "#000",
+                    }}
+                  >
+                    {snapshotOptions.length === 0 && (
+                      <li style={{ color: "#82dca5" }} data-ai-state="empty">
+                        尚無資料
+                      </li>
+                    )}
+                    {snapshotOptions.map((item) => (
+                      <li
+                        key={`${item.client}/${item.name || item.id}`}
+                        style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}
+                        data-ai-item={`snapshot:${item.name || item.id}`}
                       >
-                        載入
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const targetName = item.name || item.id || "";
+                            const targetClient = item.client ?? "";
+                            setSnapshotName(targetName);
+                            setSnapshotClient(targetClient);
+                            handleLoadSnapshot(targetName, item.client || undefined);
+                          }}
+                          data-ai-action="snapshot.editor.load-item"
+                        >
+                          載入
+                        </button>
+                        <span style={{ flex: 1 }}>
+                          {item.client}/{item.name || item.id} {item.created_at ? `（${formatTs(item.created_at)}）` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div
+                    style={{ ...resizerHitboxStyle, right: 6, bottom: 6 }}
+                    onMouseDown={startSnapshotListResize}
+                    aria-hidden="true"
+                    title="拖曳調整 Snapshot 列表高度"
+                  >
+                    <div style={resizerHandleStyle} />
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, marginBottom: 10 }}>
