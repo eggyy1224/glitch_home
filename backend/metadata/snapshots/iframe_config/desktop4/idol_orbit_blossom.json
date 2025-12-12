@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "projectP/offspring_20251004_224522_734.png",
+      "url": "/?static_mode=true&img=projectP%2Foffspring_20251004_224522_734.png&img_base=%2Fnightwalk_assets%2F",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

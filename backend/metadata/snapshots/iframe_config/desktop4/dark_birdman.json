@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "夢遊/wc6725__258c11ef-0fee-45f4-8f6e-0a9f74b4cf0c.png",
+      "url": "/?static_mode=true&img=%E5%A4%A2%E9%81%8A%2Fwc6725__258c11ef-0fee-45f4-8f6e-0a9f74b4cf0c.png&img_base=%2Fnightwalk_assets%2F",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

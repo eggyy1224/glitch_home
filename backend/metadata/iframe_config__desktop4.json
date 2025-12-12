@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "AI生成靜態影像/wc6725_Visualize_a_mysterious_and_atmospheric_night_scene_where_a6ee515d-e8ea-47a3-a309-c7d78c29c335.png",
+      "url": "/?static_mode=true&img=AI%E7%94%9F%E6%88%90%E9%9D%9C%E6%85%8B%E5%BD%B1%E5%83%8F%2Fwc6725_Visualize_a_mysterious_and_atmospheric_night_scene_where_a6ee515d-e8ea-47a3-a309-c7d78c29c335.png&img_base=%2Fnightwalk_assets%2F",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
