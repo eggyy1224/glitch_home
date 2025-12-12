@@ -5,7 +5,7 @@ const os = require("node:os");
 const DEFAULT_BACKGROUND = "#000000";
 
 class WindowManager {
-  constructor({ frontendUrl, clients, autoRestart, singleDisplayMode }) {
+  constructor({ frontendUrl, clients, autoRestart, singleDisplayMode, displayOrder }) {
     this.frontendUrl = frontendUrl;
     this.clientsById = new Map();
     let maxDisplayIndex = 0;
@@ -28,10 +28,30 @@ class WindowManager {
     this.restartTimers = new Map();
     this.requiredDisplayCount = maxDisplayIndex + 1;
     this.singleDisplayMode = Boolean(singleDisplayMode);
+    this.displayOrder = displayOrder === "spatial" ? "spatial" : "system";
+  }
+
+  getOrderedDisplays() {
+    const displays = screen.getAllDisplays();
+    if (!Array.isArray(displays)) {
+      return [];
+    }
+    if (this.displayOrder !== "spatial") {
+      return displays;
+    }
+    return [...displays].sort((a, b) => {
+      const ax = a?.bounds?.x ?? 0;
+      const bx = b?.bounds?.x ?? 0;
+      if (ax !== bx) return ax - bx;
+      const ay = a?.bounds?.y ?? 0;
+      const by = b?.bounds?.y ?? 0;
+      if (ay !== by) return ay - by;
+      return (a?.id ?? 0) - (b?.id ?? 0);
+    });
   }
 
   launchAll() {
-    const displays = screen.getAllDisplays();
+    const displays = this.getOrderedDisplays();
     const displayCount = Array.isArray(displays) ? displays.length : 0;
     const requiresMultipleDisplays = this.requiredDisplayCount > 1;
     const fallbackEnabled = Boolean(this.singleDisplayMode);
@@ -281,9 +301,29 @@ class WindowManager {
   }
 
   getBoundsForClient(clientConfig) {
-    const displays = screen.getAllDisplays();
+    const displays = this.getOrderedDisplays();
     if (!displays || displays.length === 0) {
       throw new Error("系統沒有可用顯示器，無法建立視窗");
+    }
+
+    if (Number.isInteger(clientConfig.displayId) && clientConfig.displayId > 0) {
+      const displayById = displays.find((display) => display?.id === clientConfig.displayId);
+      if (displayById) {
+        const bounds = { ...displayById.bounds };
+        if (clientConfig.bounds) {
+          bounds.width = clientConfig.bounds.width;
+          bounds.height = clientConfig.bounds.height;
+          if (typeof clientConfig.bounds.x === "number") bounds.x = clientConfig.bounds.x;
+          if (typeof clientConfig.bounds.y === "number") bounds.y = clientConfig.bounds.y;
+        }
+        if (process.platform === "darwin" && bounds.y === 0 && displayById.bounds.y !== 0) {
+          bounds.y = displayById.bounds.y;
+        }
+        return bounds;
+      }
+      console.warn(
+        `[WindowManager] client '${clientConfig.clientId}' 找不到 display_id=${clientConfig.displayId}，將回退使用 display_index`,
+      );
     }
 
     const displayIndex = Number(clientConfig.displayIndex);

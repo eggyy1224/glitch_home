@@ -5,6 +5,8 @@ const DEFAULT_CONFIG_PATH = path.resolve(__dirname, "..", "config", "clients.jso
 const DEFAULT_FRONTEND_URL = "http://localhost:5173";
 const DEFAULT_AUTORESTART = Object.freeze({ cooldownMs: 3000, maxAttempts: 5 });
 const DEFAULT_SINGLE_DISPLAY_MODE = false;
+const DEFAULT_DISPLAY_ORDER = "system";
+const DEFAULT_DISPLAY_MAPPING_FILENAME = "display-mapping.json";
 
 function loadConfig(configPath = DEFAULT_CONFIG_PATH) {
   const resolvedPath = path.resolve(configPath);
@@ -36,18 +38,27 @@ function normalizeConfig(rawConfig, resolvedPath) {
     throw new Error(`配置檔 ${resolvedPath} 格式錯誤：必須是 JSON 物件`);
   }
 
+  const baseDir = path.dirname(resolvedPath);
   const frontendUrl = normalizeFrontendUrl(rawConfig.frontend_url ?? rawConfig.frontendUrl);
   const autoRestart = normalizeAutoRestart(rawConfig.auto_restart ?? rawConfig.autoRestart);
   const singleDisplayMode = normalizeSingleDisplayMode(
     rawConfig.single_display_mode ?? rawConfig.singleDisplayMode ?? rawConfig.allowSingleDisplayMode,
   );
+  const displayOrder = normalizeDisplayOrder(rawConfig.display_order ?? rawConfig.displayOrder);
+  const displayMappingPath = normalizeDisplayMappingPath(
+    rawConfig.display_mapping_path ?? rawConfig.displayMappingPath,
+    baseDir,
+  );
   const clients = normalizeClients(rawConfig.clients, resolvedPath);
+  applyDisplayMappingIfAvailable(clients, displayMappingPath);
 
   return {
     configPath: resolvedPath,
     frontendUrl,
     autoRestart,
     singleDisplayMode,
+    displayOrder,
+    displayMappingPath,
     clients,
   };
 }
@@ -86,6 +97,32 @@ function normalizeSingleDisplayMode(rawValue) {
   return DEFAULT_SINGLE_DISPLAY_MODE;
 }
 
+function normalizeDisplayOrder(rawValue) {
+  if (typeof rawValue !== "string") {
+    return DEFAULT_DISPLAY_ORDER;
+  }
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized === "system" || normalized === "spatial") {
+    return normalized;
+  }
+  return DEFAULT_DISPLAY_ORDER;
+}
+
+function normalizeDisplayMappingPath(rawValue, baseDir) {
+  if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
+    if (typeof baseDir === "string" && baseDir.trim().length > 0) {
+      return path.resolve(baseDir, DEFAULT_DISPLAY_MAPPING_FILENAME);
+    }
+    // fallback：避免 baseDir 異常時寫到未知位置
+    return path.resolve(__dirname, "..", "config", DEFAULT_DISPLAY_MAPPING_FILENAME);
+  }
+  const trimmed = rawValue.trim();
+  if (path.isAbsolute(trimmed)) {
+    return trimmed;
+  }
+  return path.resolve(baseDir, trimmed);
+}
+
 function normalizeClients(clientsValue, resolvedPath) {
   if (!Array.isArray(clientsValue) || clientsValue.length === 0) {
     throw new Error(`配置檔 ${resolvedPath} 必須包含至少一個 clients 項目`);
@@ -102,6 +139,7 @@ function normalizeClient(rawClient, index, resolvedPath) {
   }
 
   const clientId = extractClientId(rawClient, index);
+  const displayId = extractDisplayId(rawClient, clientId, resolvedPath);
   const displayIndex = extractDisplayIndex(rawClient, clientId, resolvedPath);
   const fullscreen = rawClient.fullscreen !== false;
   const kiosk = Boolean(rawClient.kiosk);
@@ -112,6 +150,7 @@ function normalizeClient(rawClient, index, resolvedPath) {
 
   return {
     clientId,
+    displayId,
     displayIndex,
     fullscreen,
     kiosk,
@@ -138,6 +177,18 @@ function extractDisplayIndex(rawClient, clientId, resolvedPath) {
     throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' 缺少合法的 display_index`);
   }
   return value;
+}
+
+function extractDisplayId(rawClient, clientId, resolvedPath) {
+  const value = rawClient.display_id ?? rawClient.displayId;
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' display_id 必須是正整數`);
+  }
+  return parsed;
 }
 
 function normalizeBounds(boundsValue, resolvedPath, clientId) {
@@ -187,6 +238,76 @@ function ensureUniqueClientIds(clients, resolvedPath) {
     }
     seen.add(client.clientId);
   }
+}
+
+function applyDisplayMappingIfAvailable(clients, displayMappingPath) {
+  if (!displayMappingPath || typeof displayMappingPath !== "string") {
+    return;
+  }
+  if (!fs.existsSync(displayMappingPath)) {
+    return;
+  }
+
+  let mappingJson;
+  try {
+    const raw = fs.readFileSync(displayMappingPath, "utf8");
+    mappingJson = JSON.parse(raw);
+  } catch (error) {
+    console.warn(
+      `[ConfigLoader] display mapping 讀取/解析失敗，將忽略：${displayMappingPath} (${error.message})`,
+    );
+    return;
+  }
+
+  const mapping = extractClientDisplayIdMapping(mappingJson);
+  if (!mapping) {
+    return;
+  }
+
+  for (const client of clients) {
+    const entry = mapping[client.clientId];
+    const displayId = extractDisplayIdFromMappingEntry(entry);
+    if (Number.isInteger(displayId) && displayId > 0) {
+      client.displayId = displayId;
+    }
+  }
+}
+
+function extractClientDisplayIdMapping(mappingJson) {
+  if (!mappingJson || typeof mappingJson !== "object") {
+    return null;
+  }
+  const candidates = [
+    mappingJson.clients,
+    mappingJson.mapping,
+  ];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object") {
+      return candidate;
+    }
+  }
+  return mappingJson;
+}
+
+function extractDisplayIdFromMappingEntry(entry) {
+  if (Number.isInteger(entry) && entry > 0) {
+    return entry;
+  }
+  if (typeof entry === "string") {
+    const parsed = Number(entry);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+  const raw = entry.display_id ?? entry.displayId ?? entry.display;
+  const parsed = Number(raw);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+  return null;
 }
 
 module.exports = {

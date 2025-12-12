@@ -33,6 +33,8 @@
    - `frontend_url`：預設 `http://localhost:5173`。
    - `auto_restart.cooldown_ms`：>0，預設 3000。
    - `auto_restart.max_attempts`：>0，預設 5。
+   - `display_order`：`system`（預設）或 `spatial`（依 bounds 排序，較穩定對應實體擺位）。
+   - `display_mapping_path`：顯示器 mapping 檔（未指定時預設「與 config 檔同層的 `display-mapping.json`」；相對路徑以 config 檔所在資料夾為基準）。
    - `clients`：至少一筆；每筆需包含 `client_id`、`display_index`；`url_params` 會補上 `client` 預設值。
 3. **唯一性檢查**：`client_id` 不能重複，否則啟動即失敗。
 4. **bounds**：若提供 `width/height` 必須為數字，可額外指定 `x/y` 以微調。
@@ -86,4 +88,5 @@
 3. **硬體整合**：與 GPIO / USB 控制器整合，將訊號轉為後端 API 呼叫。
 4. **紀錄檔**：導入 `winston` 或其他 logger，把所有事件寫入檔案方便追蹤。
 5. **健康檢查 UI**：在 Shell 內提供簡單面板顯示各 client 的最近載入狀態與錯誤次數。
+6. **校正流程強化**：若 `display.id` 在某些情境不穩，可加入「依 bounds 最近鄰」或「人工確認」的自動回退策略。
 

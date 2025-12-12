@@ -65,8 +65,10 @@ npm run dev    # 或 npm start
 | `auto_restart.cooldown_ms` | 異常後等待多少毫秒再重啟視窗（預設 3000）。 |
 | `auto_restart.max_attempts` | 單一視窗最多重啟次數（預設 5，填入較大的數字可放寬）。 |
 | `single_display_mode` | 僅偵測到一個螢幕時是否允許啟動 fallback 模式。`false`（預設）會直接失敗並冒出錯誤；`true` 代表僅啟動 `display_index = 0` 的 client，其餘會被略過。 |
+| `display_order` | 顯示器排序策略：`system`（預設，沿用 `screen.getAllDisplays()` 回傳順序）或 `spatial`（依螢幕 `bounds.x/y` 由左到右、由上到下排序，較穩定對應實體擺位）。 |
 | `clients[].client_id` | 每個視窗的唯一 ID，也會寫入 URL `?client=` 供前端識別。 |
 | `clients[].display_index` | 指定第幾個實體螢幕（0 為主螢幕）。若超出現有螢幕數量，應用程式會拒絕啟動。 |
+| `clients[].display_id` | （選用）鎖定 Electron `Display.id` 指定的顯示器；若找不到該 `display_id`，會回退使用 `display_index`。可用 `npm run dev -- --dump-displays` 取得目前機器的 id/bounds。 |
 | `clients[].fullscreen` | 是否自動進入全螢幕（預設 `true`）。 |
 | `clients[].kiosk` | Kiosk 模式（隱藏系統 UI、避免 Alt+Tab）。 |
 | `clients[].devtools` | 啟動時是否開啟 DevTools，方便除錯。 |
@@ -119,6 +121,26 @@ npm run dev    # 或 npm start
 
 - CLI：`npm start -- --config /path/to/custom.json`
 - 環境變數：`PLAYER_DESKTOP_CONFIG=/path/to/custom.json npm run dev`
+- 列出目前顯示器資訊（id/bounds）：`npm run dev -- --dump-displays`
+
+## 螢幕校正模式（展場對應用）
+
+當 macOS 在重開機、拔插螢幕、或變更顯示器排列後，`screen.getAllDisplays()` 的順序可能變動，導致僅用 `display_index` 時畫面跑錯螢幕。
+
+Player Desktop Shell 提供 `--calibrate` 來建立「client ↔ 顯示器」的 mapping 檔，讓現場用單一面板快速校正：
+
+```bash
+npm run dev -- --calibrate
+```
+
+- 會在每個螢幕顯示一個大字 overlay（含 `display.id` 與 bounds）
+- 主螢幕會開「控制面板」，你可以把每個 `client_id` 指派到某個 `display.id`
+- 按 `Save & Launch` 會寫入 mapping 檔並直接啟動正式展演視窗
+
+### Mapping 檔與設定
+
+- `display_mapping_path`（可選）：mapping 檔路徑（相對路徑會以 config 檔所在資料夾為基準）。未指定時預設為「與 `clients.json` 同層的 `display-mapping.json`」
+- mapping 檔存在時，啟動會自動套用到 `clients[].display_id`（找不到再回退 `display_index`）
 
 ## 疑難排解
 
