@@ -34,19 +34,20 @@
    - `auto_restart.cooldown_ms`：>0，預設 3000。
    - `auto_restart.max_attempts`：>0，預設 5。
    - `display_order`：`system`（預設）或 `spatial`（依 bounds 排序，較穩定對應實體擺位）。
-   - `display_mapping_path`：顯示器 mapping 檔（未指定時預設「與 config 檔同層的 `display-mapping.json`」；相對路徑以 config 檔所在資料夾為基準）。
-   - `clients`：至少一筆；每筆需包含 `client_id`、`display_index`；`url_params` 會補上 `client` 預設值。
+   - `display_mapping_path`：顯示器/介面 mapping 檔（未指定時預設「與 config 檔同層的 `display-mapping.json`」；相對路徑以 config 檔所在資料夾為基準）。
+   - `client_presets`：前端介面 preset 定義（可選）。用於 `--calibrate` UI 選取，並可在 mapping 中以 `preset_id` 引用。
+   - `clients`：至少一筆；每筆需包含 `client_id`。`display_index` 仍建議提供，但在使用 `display_id` / `display_ids` 時允許省略（會回退為 0）。
 3. **唯一性檢查**：`client_id` 不能重複，否則啟動即失敗。
 4. **bounds**：若提供 `width/height` 必須為數字，可額外指定 `x/y` 以微調。
 
 ## 3. 視窗生命週期
 
 1. **建立**：
-   - 依 `display_index` 取得 `screen.getAllDisplays()` 中的對應螢幕。
+   - 依 `display_ids`（多螢幕組合）或 `display_id`（單螢幕鎖定）或 `display_index`（排序後索引）決定目標顯示器與 bounds。
    - 若 index 超出可用螢幕數量，丟出錯誤並停止建立該視窗。
    - 設定 `fullscreen` / `kiosk` / `autoplayPolicy` / `backgroundThrottling=false` 等選項。
 2. **顯示**：
-   - `ready-to-show` 時強制 `setFullScreen(true)` 並顯示視窗。
+   - `ready-to-show` 時若是單螢幕視窗且允許 fullscreen，會 `setFullScreen(true)` 並顯示視窗。
    - `devtools` 為 `true` 時會開啟分離式 DevTools。
 3. **監控**：
    - `did-fail-load`、`render-process-gone`、`unresponsive`、`minimize` 皆由 `handleWindowFailure` 處理。

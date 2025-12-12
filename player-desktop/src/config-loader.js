@@ -49,8 +49,9 @@ function normalizeConfig(rawConfig, resolvedPath) {
     rawConfig.display_mapping_path ?? rawConfig.displayMappingPath,
     baseDir,
   );
+  const clientPresets = normalizeClientPresets(rawConfig.client_presets ?? rawConfig.clientPresets, resolvedPath);
   const clients = normalizeClients(rawConfig.clients, resolvedPath);
-  applyDisplayMappingIfAvailable(clients, displayMappingPath);
+  applyDisplayMappingIfAvailable(clients, displayMappingPath, clientPresets);
 
   return {
     configPath: resolvedPath,
@@ -59,6 +60,7 @@ function normalizeConfig(rawConfig, resolvedPath) {
     singleDisplayMode,
     displayOrder,
     displayMappingPath,
+    clientPresets,
     clients,
   };
 }
@@ -123,6 +125,60 @@ function normalizeDisplayMappingPath(rawValue, baseDir) {
   return path.resolve(baseDir, trimmed);
 }
 
+function normalizeClientPresets(rawValue, resolvedPath) {
+  if (!rawValue) {
+    return {};
+  }
+
+  const presets = {};
+  if (Array.isArray(rawValue)) {
+    for (const [index, entry] of rawValue.entries()) {
+      if (!entry || typeof entry !== "object") {
+        throw new Error(`配置檔 ${resolvedPath} 的 client_presets[${index}] 必須是物件`);
+      }
+      const presetId = String(entry.preset_id ?? entry.presetId ?? entry.id ?? "").trim();
+      if (!presetId) {
+        throw new Error(`配置檔 ${resolvedPath} 的 client_presets[${index}] 缺少 id`);
+      }
+      presets[presetId] = normalizeClientPresetUrlParams(entry.url_params ?? entry.urlParams, resolvedPath, presetId);
+    }
+    return presets;
+  }
+
+  if (typeof rawValue === "object") {
+    for (const [presetIdRaw, presetValue] of Object.entries(rawValue)) {
+      const presetId = String(presetIdRaw).trim();
+      if (!presetId) {
+        continue;
+      }
+      if (typeof presetValue === "string") {
+        // 簡寫：{ "desktop3": "desktop3" } 代表 url_params.client
+        presets[presetId] = { client: presetValue };
+        continue;
+      }
+      presets[presetId] = normalizeClientPresetUrlParams(presetValue, resolvedPath, presetId);
+    }
+    return presets;
+  }
+
+  throw new Error(`配置檔 ${resolvedPath} 的 client_presets 格式錯誤：必須是陣列或物件`);
+}
+
+function normalizeClientPresetUrlParams(rawUrlParams, resolvedPath, presetId) {
+  if (!rawUrlParams || typeof rawUrlParams !== "object") {
+    return { client: presetId };
+  }
+  const params = {};
+  for (const [key, value] of Object.entries(rawUrlParams)) {
+    if (value === undefined || value === null) continue;
+    params[key] = String(value);
+  }
+  if (!params.client) {
+    params.client = presetId;
+  }
+  return params;
+}
+
 function normalizeClients(clientsValue, resolvedPath) {
   if (!Array.isArray(clientsValue) || clientsValue.length === 0) {
     throw new Error(`配置檔 ${resolvedPath} 必須包含至少一個 clients 項目`);
@@ -140,6 +196,7 @@ function normalizeClient(rawClient, index, resolvedPath) {
 
   const clientId = extractClientId(rawClient, index);
   const displayId = extractDisplayId(rawClient, clientId, resolvedPath);
+  const displayIds = extractDisplayIds(rawClient, clientId, resolvedPath);
   const displayIndex = extractDisplayIndex(rawClient, clientId, resolvedPath);
   const fullscreen = rawClient.fullscreen !== false;
   const kiosk = Boolean(rawClient.kiosk);
@@ -151,6 +208,7 @@ function normalizeClient(rawClient, index, resolvedPath) {
   return {
     clientId,
     displayId,
+    displayIds,
     displayIndex,
     fullscreen,
     kiosk,
@@ -173,6 +231,16 @@ function extractClientId(rawClient, index) {
 
 function extractDisplayIndex(rawClient, clientId, resolvedPath) {
   const value = rawClient.display_index ?? rawClient.displayIndex;
+  if (value === undefined || value === null) {
+    // 若採用 display_id / display_ids，允許省略 display_index，預設回退為 0
+    if (rawClient.display_id !== undefined || rawClient.displayId !== undefined) {
+      return 0;
+    }
+    if (rawClient.display_ids !== undefined || rawClient.displayIds !== undefined) {
+      return 0;
+    }
+    throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' 缺少合法的 display_index`);
+  }
   if (!Number.isInteger(value) || value < 0) {
     throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' 缺少合法的 display_index`);
   }
@@ -189,6 +257,34 @@ function extractDisplayId(rawClient, clientId, resolvedPath) {
     throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' display_id 必須是正整數`);
   }
   return parsed;
+}
+
+function extractDisplayIds(rawClient, clientId, resolvedPath) {
+  const value = rawClient.display_ids ?? rawClient.displayIds;
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' display_ids 必須是陣列`);
+  }
+  if (value.length === 0) {
+    return null;
+  }
+  const parsed = value.map((item) => Number(item));
+  for (const entry of parsed) {
+    if (!Number.isInteger(entry) || entry <= 0) {
+      throw new Error(`配置檔 ${resolvedPath} 的 client '${clientId}' display_ids 需為正整數陣列`);
+    }
+  }
+  // 去重但保留順序
+  const seen = new Set();
+  const unique = [];
+  for (const entry of parsed) {
+    if (seen.has(entry)) continue;
+    seen.add(entry);
+    unique.push(entry);
+  }
+  return unique.length ? unique : null;
 }
 
 function normalizeBounds(boundsValue, resolvedPath, clientId) {
@@ -240,7 +336,7 @@ function ensureUniqueClientIds(clients, resolvedPath) {
   }
 }
 
-function applyDisplayMappingIfAvailable(clients, displayMappingPath) {
+function applyDisplayMappingIfAvailable(clients, displayMappingPath, clientPresets) {
   if (!displayMappingPath || typeof displayMappingPath !== "string") {
     return;
   }
@@ -259,6 +355,11 @@ function applyDisplayMappingIfAvailable(clients, displayMappingPath) {
     return;
   }
 
+  if (Number(mappingJson?.version) >= 2 && mappingJson && typeof mappingJson === "object") {
+    applyDisplayMappingV2(clients, mappingJson, clientPresets, displayMappingPath);
+    return;
+  }
+
   const mapping = extractClientDisplayIdMapping(mappingJson);
   if (!mapping) {
     return;
@@ -269,6 +370,7 @@ function applyDisplayMappingIfAvailable(clients, displayMappingPath) {
     const displayId = extractDisplayIdFromMappingEntry(entry);
     if (Number.isInteger(displayId) && displayId > 0) {
       client.displayId = displayId;
+      client.displayIds = [displayId];
     }
   }
 }
@@ -308,6 +410,92 @@ function extractDisplayIdFromMappingEntry(entry) {
     return parsed;
   }
   return null;
+}
+
+function applyDisplayMappingV2(clients, mappingJson, clientPresets, displayMappingPath) {
+  const mappingClients = mappingJson?.clients;
+  if (!mappingClients || typeof mappingClients !== "object") {
+    console.warn(`[ConfigLoader] display mapping v2 格式錯誤，缺少 clients：${displayMappingPath}`);
+    return;
+  }
+
+  for (const client of clients) {
+    const entry = mappingClients[client.clientId];
+    if (!entry) continue;
+
+    const displayIds = extractDisplayIdsFromMappingEntry(entry);
+    const displayId = extractDisplayIdFromMappingEntry(entry);
+
+    if (Array.isArray(displayIds) && displayIds.length > 0) {
+      client.displayIds = displayIds;
+      if (displayIds.length === 1) {
+        client.displayId = displayIds[0];
+      }
+    } else if (Number.isInteger(displayId) && displayId > 0) {
+      client.displayId = displayId;
+      client.displayIds = [displayId];
+    }
+
+    const mergedUrlParams = resolveUrlParamsFromMappingEntry(entry, clientPresets);
+    if (mergedUrlParams) {
+      client.urlParams = { ...(client.urlParams || {}), ...mergedUrlParams };
+    }
+  }
+}
+
+function extractDisplayIdsFromMappingEntry(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+  const value = entry.display_ids ?? entry.displayIds;
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+  const parsed = value.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0);
+  const seen = new Set();
+  const unique = [];
+  for (const item of parsed) {
+    if (seen.has(item)) continue;
+    seen.add(item);
+    unique.push(item);
+  }
+  return unique.length ? unique : null;
+}
+
+function resolveUrlParamsFromMappingEntry(entry, clientPresets) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const params = {};
+  const presetId = String(entry.preset_id ?? entry.presetId ?? "").trim();
+  if (presetId && clientPresets && typeof clientPresets === "object") {
+    const presetParams = clientPresets[presetId];
+    if (presetParams && typeof presetParams === "object") {
+      for (const [key, value] of Object.entries(presetParams)) {
+        if (value === undefined || value === null) continue;
+        params[key] = String(value);
+      }
+    } else {
+      params.client = presetId;
+    }
+  }
+
+  // 支援 entry.frontend_client / entry.client 簡寫
+  const frontendClient = entry.frontend_client ?? entry.frontendClient;
+  if (typeof frontendClient === "string" && frontendClient.trim().length > 0) {
+    params.client = frontendClient.trim();
+  }
+
+  const urlParams = entry.url_params ?? entry.urlParams;
+  if (urlParams && typeof urlParams === "object") {
+    for (const [key, value] of Object.entries(urlParams)) {
+      if (value === undefined || value === null) continue;
+      params[key] = String(value);
+    }
+  }
+
+  return Object.keys(params).length ? params : null;
 }
 
 module.exports = {

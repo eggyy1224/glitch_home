@@ -250,7 +250,7 @@ function buildOverlayHtml(display) {
   <body>
     <div class="card">
       <h1 class="title">螢幕校正模式</h1>
-      <p class="subtitle">請在「控制面板」選擇這個螢幕要跑哪個 client</p>
+      <p class="subtitle">請在「控制面板」把輸出槽位與前端 preset 指派到這個螢幕（可多螢幕組合）</p>
       <div class="meta">
         display.id = ${escapeHtml(display?.id)}<br />
         bounds = ${escapeHtml(JSON.stringify(bounds))}<br />
@@ -264,7 +264,7 @@ function buildOverlayHtml(display) {
       const displayId = ${JSON.stringify(display?.id)};
       ipcRenderer.on("calibration:assignmentUpdated", (_event, payload) => {
         if (!payload || payload.displayId !== displayId) return;
-        const label = payload.clientId ? payload.clientId : "（未指派）";
+        const label = payload.label ? payload.label : "（未指派）";
         document.getElementById("assigned").textContent = label;
       });
     </script>
@@ -291,11 +291,28 @@ function buildControllerHtml() {
       header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: 0.4px; }
       header .path { opacity: 0.7; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
       main { padding: 18px 20px 24px; }
-      .row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+      .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+      .rows { border: 1px solid rgba(255,255,255,0.10); border-radius: 14px; overflow: hidden; }
+      .row { display: grid; grid-template-columns: 180px 220px 1fr; gap: 12px; align-items: start; padding: 12px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
       .row:last-child { border-bottom: 0; }
-      .label { width: 130px; font-weight: 700; }
-      .meta { flex: 1; opacity: 0.75; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
-      select { min-width: 240px; padding: 8px 10px; border-radius: 10px; background: #111722; color: #e8eef8; border: 1px solid rgba(255,255,255,0.12); }
+      .label { font-weight: 800; letter-spacing: 0.2px; }
+      .label .sub { margin-top: 6px; font-weight: 600; opacity: 0.7; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      .preset { display: flex; flex-direction: column; gap: 8px; }
+      .preset select { width: 100%; }
+      .preset .hint { opacity: 0.7; font-size: 12px; line-height: 1.35; }
+      .displays { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(17,23,34,0.9);
+      }
+      .chip input { transform: translateY(0.5px); }
+      .chip .meta { opacity: 0.7; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      select { padding: 8px 10px; border-radius: 10px; background: #111722; color: #e8eef8; border: 1px solid rgba(255,255,255,0.12); }
       .actions { margin-top: 16px; display: flex; gap: 10px; }
       button {
         padding: 10px 14px;
@@ -318,7 +335,11 @@ function buildControllerHtml() {
       <div class="path" id="mappingPath"></div>
     </header>
     <main>
-      <div id="rows"></div>
+      <div class="toolbar">
+        <button id="autoAssign">Auto assign（依顯示器排序）</button>
+        <button id="clearAll">Clear all</button>
+      </div>
+      <div class="rows" id="rows"></div>
       <div class="actions">
         <button class="primary" id="saveLaunch">Save &amp; Launch</button>
         <button id="saveExit">Save &amp; Exit</button>
@@ -336,50 +357,73 @@ function buildControllerHtml() {
         qs("mappingPath").textContent = state.displayMappingPath || "";
         const container = qs("rows");
         container.innerHTML = "";
-        const displayIds = state.displays.map(d => d.id);
+        const presetIds = state.presetIds || [];
 
-        for (const display of state.displays) {
+        for (const slot of state.slots || []) {
           const row = document.createElement("div");
           row.className = "row";
 
           const label = document.createElement("div");
           label.className = "label";
-          label.textContent = "display.id " + display.id;
+          label.textContent = slot.slotId;
+          const sub = document.createElement("div");
+          sub.className = "sub";
+          sub.textContent = "output slot (clients[].client_id)";
+          label.appendChild(sub);
 
-          const meta = document.createElement("div");
-          meta.className = "meta";
-          meta.textContent = "bounds=" + JSON.stringify(display.bounds) + " scale=" + display.scaleFactor + " rotation=" + display.rotation + " internal=" + display.internal;
-
-          const select = document.createElement("select");
-          const empty = document.createElement("option");
-          empty.value = "";
-          empty.textContent = "（未指派）";
-          select.appendChild(empty);
-          for (const clientId of state.clients) {
+          const preset = document.createElement("div");
+          preset.className = "preset";
+          const presetSelect = document.createElement("select");
+          const emptyPreset = document.createElement("option");
+          emptyPreset.value = "";
+          emptyPreset.textContent = "（維持原本 url_params）";
+          presetSelect.appendChild(emptyPreset);
+          for (const presetId of presetIds) {
             const opt = document.createElement("option");
-            opt.value = clientId;
-            opt.textContent = clientId;
-            select.appendChild(opt);
+            opt.value = presetId;
+            opt.textContent = presetId;
+            presetSelect.appendChild(opt);
           }
-          select.value = state.assignmentsByDisplayId[String(display.id)] || "";
-          select.addEventListener("change", () => {
-            ipcRenderer.send("calibration:setAssignment", { displayId: display.id, clientId: select.value || null });
+          presetSelect.value = slot.presetId || "";
+          presetSelect.addEventListener("change", () => {
+            ipcRenderer.send("calibration:setSlotPreset", { slotId: slot.slotId, presetId: presetSelect.value || null });
           });
+          const presetHint = document.createElement("div");
+          presetHint.className = "hint";
+          presetHint.textContent = "對應你說的 ?iframe_mode=true&client=desktopX；未來可擴充更多參數。";
+          preset.appendChild(presetSelect);
+          preset.appendChild(presetHint);
+
+          const displays = document.createElement("div");
+          displays.className = "displays";
+          for (const display of state.displays || []) {
+            const chip = document.createElement("label");
+            chip.className = "chip";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = (slot.displayIds || []).includes(display.id);
+            checkbox.addEventListener("change", () => {
+              ipcRenderer.send("calibration:toggleSlotDisplay", {
+                slotId: slot.slotId,
+                displayId: display.id,
+                checked: checkbox.checked,
+              });
+            });
+            const text = document.createElement("div");
+            text.innerHTML = "<div><strong>display.id " + display.id + "</strong></div>" +
+              "<div class='meta'>bounds=" + JSON.stringify(display.bounds) + "</div>";
+            chip.appendChild(checkbox);
+            chip.appendChild(text);
+            displays.appendChild(chip);
+          }
 
           row.appendChild(label);
-          row.appendChild(meta);
-          row.appendChild(select);
+          row.appendChild(preset);
+          row.appendChild(displays);
           container.appendChild(row);
         }
 
-        const assignedClients = new Set();
-        const duplicates = [];
-        for (const [displayId, clientId] of Object.entries(state.assignmentsByDisplayId)) {
-          if (!clientId) continue;
-          if (assignedClients.has(clientId)) duplicates.push(clientId);
-          assignedClients.add(clientId);
-        }
-        qs("warning").textContent = duplicates.length ? ("警告：client 重複被指派：" + duplicates.join(", ")) : "";
+        qs("warning").textContent = state.warning || "";
         qs("status").textContent = "updated_at=" + (state.updatedAt || "n/a");
       }
 
@@ -390,6 +434,8 @@ function buildControllerHtml() {
         render(state);
       }
 
+      qs("autoAssign").addEventListener("click", () => ipcRenderer.send("calibration:autoAssign"));
+      qs("clearAll").addEventListener("click", () => ipcRenderer.send("calibration:clearAll"));
       qs("saveLaunch").addEventListener("click", () => ipcRenderer.send("calibration:finish", { action: "launch" }));
       qs("saveExit").addEventListener("click", () => ipcRenderer.send("calibration:finish", { action: "exit" }));
       qs("exitNoSave").addEventListener("click", () => ipcRenderer.send("calibration:finish", { action: "exit", noSave: true }));
@@ -411,20 +457,54 @@ function ensureDirectoryExists(filePath) {
   }
 }
 
-function writeDisplayMapping(displayMappingPath, displayOrder, displays, assignmentsByDisplayId) {
+function resolvePresetUrlParams(presetId, clientPresets) {
+  if (!presetId) {
+    return null;
+  }
+  if (clientPresets && typeof clientPresets === "object") {
+    const preset = clientPresets[presetId];
+    if (preset && typeof preset === "object") {
+      const normalized = {};
+      for (const [key, value] of Object.entries(preset)) {
+        if (value === undefined || value === null) continue;
+        normalized[key] = String(value);
+      }
+      return normalized;
+    }
+  }
+  // fallback：若沒有 presets 定義，就用 client=presetId
+  return { client: String(presetId) };
+}
+
+function writeDisplayMapping(displayMappingPath, displayOrder, displays, slotsById, clientPresets, baseUrlParamsBySlotId) {
   ensureDirectoryExists(displayMappingPath);
   const clients = {};
-  for (const [displayIdString, clientId] of Object.entries(assignmentsByDisplayId)) {
-    if (!clientId) continue;
-    const displayId = Number(displayIdString);
-    const display = displays.find((d) => d.id === displayId);
-    clients[clientId] = {
-      display_id: displayId,
-      display_bounds: display?.bounds || null,
-    };
+  for (const [slotId, slot] of Object.entries(slotsById || {})) {
+    const entry = {};
+    const displayIds = Array.isArray(slot?.displayIds) ? slot.displayIds.filter((id) => Number.isInteger(id) && id > 0) : [];
+    if (displayIds.length > 0) {
+      entry.display_ids = displayIds;
+      if (displayIds.length === 1) {
+        entry.display_id = displayIds[0];
+      }
+    }
+
+    const presetId = slot?.presetId ? String(slot.presetId) : "";
+    if (presetId) {
+      entry.preset_id = presetId;
+    }
+
+    const baseParams = (baseUrlParamsBySlotId && baseUrlParamsBySlotId[slotId]) ? baseUrlParamsBySlotId[slotId] : {};
+    const presetParams = resolvePresetUrlParams(presetId, clientPresets) || {};
+    const resolvedParams = { ...(baseParams || {}), ...(presetParams || {}) };
+    if (Object.keys(resolvedParams).length > 0) {
+      entry.url_params = resolvedParams;
+    }
+
+    clients[slotId] = entry;
   }
   const payload = {
-    version: 1,
+    version: 2,
     updated_at: new Date().toISOString(),
     display_order: displayOrder,
     displays: displays.map(serializeDisplay),
@@ -449,61 +529,155 @@ function runCalibration() {
     return;
   }
 
-  const primaryDisplay = screen.getPrimaryDisplay();
   const displayMappingPath = config.displayMappingPath;
-  const clients = config.clients.map((client) => client.clientId);
-
-  const assignmentsByDisplayId = {};
-  for (const display of orderedDisplays) {
-    assignmentsByDisplayId[String(display.id)] = null;
-  }
-  // 以目前 config（可能已套用 mapping）預填
+  const slots = config.clients.map((client) => client.clientId);
+  const baseUrlParamsBySlotId = {};
   for (const client of config.clients) {
-    if (Number.isInteger(client.displayId) && client.displayId > 0) {
-      const key = String(client.displayId);
-      if (key in assignmentsByDisplayId) {
-        assignmentsByDisplayId[key] = client.clientId;
+    baseUrlParamsBySlotId[client.clientId] = client.urlParams || {};
+  }
+
+  const presetIdsFromConfig = config.clientPresets && typeof config.clientPresets === "object"
+    ? Object.keys(config.clientPresets)
+    : [];
+  const derivedPresetIds = Array.from(
+    new Set(config.clients.map((client) => String(client.urlParams?.client || "").trim()).filter(Boolean)),
+  );
+  const presetIds = presetIdsFromConfig.length ? presetIdsFromConfig : derivedPresetIds;
+
+  const slotsById = {};
+  for (const slotClient of config.clients) {
+    const slotId = slotClient.clientId;
+    const presetId = String(slotClient.urlParams?.client || "").trim();
+    let displayIds = [];
+    if (Array.isArray(slotClient.displayIds) && slotClient.displayIds.length > 0) {
+      displayIds = slotClient.displayIds.filter((id) => Number.isInteger(id) && id > 0);
+    } else if (Number.isInteger(slotClient.displayId) && slotClient.displayId > 0) {
+      displayIds = [slotClient.displayId];
+    } else {
+      const fallbackDisplay = orderedDisplays[slotClient.displayIndex];
+      if (fallbackDisplay) {
+        displayIds = [fallbackDisplay.id];
       }
     }
+    slotsById[slotId] = { displayIds, presetId: presetIds.includes(presetId) ? presetId : "" };
+  }
+
+  // 避免同一 display 被多個 slot 佔用：先到先得
+  const claimedDisplays = new Set();
+  for (const slotId of slots) {
+    const slot = slotsById[slotId];
+    const unique = [];
+    for (const displayId of slot.displayIds || []) {
+      if (claimedDisplays.has(displayId)) continue;
+      claimedDisplays.add(displayId);
+      unique.push(displayId);
+    }
+    slot.displayIds = unique;
   }
 
   const overlayWindows = new Map();
 
   function broadcastState(controllerWindow) {
+    const warnings = [];
+    const used = new Set();
+    for (const slotId of slots) {
+      const slot = slotsById[slotId];
+      const ids = slot?.displayIds || [];
+      if (ids.length === 0) {
+        warnings.push(`slot '${slotId}' 尚未指派任何 display`);
+      }
+      for (const id of ids) {
+        if (used.has(id)) {
+          warnings.push(`display.id ${id} 被重複指派（請檢查）`);
+        }
+        used.add(id);
+      }
+    }
+
     const state = {
       displayOrder: config.displayOrder,
       displayMappingPath,
       displays: orderedDisplays.map(serializeDisplay),
-      clients,
-      assignmentsByDisplayId,
+      presetIds,
+      slots: slots.map((slotId) => ({
+        slotId,
+        displayIds: slotsById[slotId]?.displayIds || [],
+        presetId: slotsById[slotId]?.presetId || "",
+      })),
+      warning: warnings.join(" / "),
       updatedAt: new Date().toISOString(),
     };
     if (controllerWindow && !controllerWindow.isDestroyed()) {
       controllerWindow.webContents.send("calibration:state", state);
     }
     for (const display of orderedDisplays) {
-      const clientId = assignmentsByDisplayId[String(display.id)] || null;
+      let label = null;
+      for (const slotId of slots) {
+        const slot = slotsById[slotId];
+        if (Array.isArray(slot?.displayIds) && slot.displayIds.includes(display.id)) {
+          label = slot.presetId ? `${slotId} / ${slot.presetId}` : slotId;
+          break;
+        }
+      }
       const overlay = overlayWindows.get(display.id);
       if (overlay && !overlay.isDestroyed()) {
-        overlay.webContents.send("calibration:assignmentUpdated", { displayId: display.id, clientId });
+        overlay.webContents.send("calibration:assignmentUpdated", { displayId: display.id, label });
       }
     }
   }
 
-  function setAssignment(displayId, clientId) {
-    const displayKey = String(displayId);
-    if (!(displayKey in assignmentsByDisplayId)) {
+  function toggleSlotDisplay(slotId, displayId, checked) {
+    const slot = slotsById[slotId];
+    if (!slot) {
       return;
     }
-    // 若該 client 已在其他螢幕，先移除（確保 client 唯一）
-    if (clientId) {
-      for (const [otherDisplayId, otherClientId] of Object.entries(assignmentsByDisplayId)) {
-        if (otherDisplayId !== displayKey && otherClientId === clientId) {
-          assignmentsByDisplayId[otherDisplayId] = null;
-        }
-      }
+    const id = Number(displayId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return;
     }
-    assignmentsByDisplayId[displayKey] = clientId || null;
+
+    const current = new Set(slot.displayIds || []);
+    if (checked) {
+      // display 只能屬於一個 slot：先從其他 slot 移除
+      for (const otherSlotId of slots) {
+        if (otherSlotId === slotId) continue;
+        const other = slotsById[otherSlotId];
+        if (!other) continue;
+        other.displayIds = (other.displayIds || []).filter((entry) => entry !== id);
+      }
+      current.add(id);
+    } else {
+      current.delete(id);
+    }
+    slot.displayIds = Array.from(current);
+  }
+
+  function setSlotPreset(slotId, presetId) {
+    const slot = slotsById[slotId];
+    if (!slot) return;
+    const normalized = presetId ? String(presetId).trim() : "";
+    slot.presetId = normalized;
+  }
+
+  function autoAssignSlots() {
+    const orderedIds = orderedDisplays.map((d) => d.id);
+    for (const slotId of slots) {
+      slotsById[slotId].displayIds = [];
+    }
+    for (let i = 0; i < slots.length; i += 1) {
+      const slotId = slots[i];
+      const displayId = orderedIds[i];
+      if (displayId === undefined) {
+        break;
+      }
+      slotsById[slotId].displayIds = [displayId];
+    }
+  }
+
+  function clearAllAssignments() {
+    for (const slotId of slots) {
+      slotsById[slotId].displayIds = [];
+    }
   }
 
   for (const display of orderedDisplays) {
@@ -559,23 +733,42 @@ function runCalibration() {
       displayOrder: config.displayOrder,
       displayMappingPath,
       displays: orderedDisplays.map(serializeDisplay),
-      clients,
-      assignmentsByDisplayId,
+      presetIds,
+      slots: slots.map((slotId) => ({
+        slotId,
+        displayIds: slotsById[slotId]?.displayIds || [],
+        presetId: slotsById[slotId]?.presetId || "",
+      })),
       updatedAt: new Date().toISOString(),
     };
   });
   cleanupHandlers.push(() => ipcMain.removeHandler("calibration:getState"));
 
-  on("calibration:setAssignment", (_event, payload) => {
+  on("calibration:toggleSlotDisplay", (_event, payload) => {
+    const slotId = payload?.slotId;
     const displayId = payload?.displayId;
-    const clientId = payload?.clientId;
-    if (!Number.isInteger(displayId)) {
-      return;
-    }
-    if (clientId !== null && clientId !== undefined && typeof clientId !== "string") {
-      return;
-    }
-    setAssignment(displayId, clientId || null);
+    const checked = Boolean(payload?.checked);
+    if (typeof slotId !== "string" || !slotId) return;
+    toggleSlotDisplay(slotId, displayId, checked);
+    broadcastState(controllerWindow);
+  });
+
+  on("calibration:setSlotPreset", (_event, payload) => {
+    const slotId = payload?.slotId;
+    const presetId = payload?.presetId;
+    if (typeof slotId !== "string" || !slotId) return;
+    if (presetId !== null && presetId !== undefined && typeof presetId !== "string") return;
+    setSlotPreset(slotId, presetId || "");
+    broadcastState(controllerWindow);
+  });
+
+  on("calibration:autoAssign", () => {
+    autoAssignSlots();
+    broadcastState(controllerWindow);
+  });
+
+  on("calibration:clearAll", () => {
+    clearAllAssignments();
     broadcastState(controllerWindow);
   });
 
@@ -585,7 +778,14 @@ function runCalibration() {
 
     try {
       if (!noSave) {
-        writeDisplayMapping(displayMappingPath, config.displayOrder, orderedDisplays, assignmentsByDisplayId);
+        writeDisplayMapping(
+          displayMappingPath,
+          config.displayOrder,
+          orderedDisplays,
+          slotsById,
+          config.clientPresets,
+          baseUrlParamsBySlotId,
+        );
         console.info(`[PlayerShell] display mapping 已寫入：${displayMappingPath}`);
       }
     } catch (error) {

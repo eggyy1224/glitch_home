@@ -4,6 +4,33 @@ const os = require("node:os");
 
 const DEFAULT_BACKGROUND = "#000000";
 
+function mergeDisplayBounds(displays) {
+  if (!Array.isArray(displays) || displays.length === 0) {
+    return null;
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const display of displays) {
+    const b = display?.bounds;
+    if (!b) continue;
+    minX = Math.min(minX, b.x);
+    minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.width);
+    maxY = Math.max(maxY, b.y + b.height);
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+    return null;
+  }
+  return {
+    x: Math.round(minX),
+    y: Math.round(minY),
+    width: Math.round(maxX - minX),
+    height: Math.round(maxY - minY),
+  };
+}
+
 class WindowManager {
   constructor({ frontendUrl, clients, autoRestart, singleDisplayMode, displayOrder }) {
     this.frontendUrl = frontendUrl;
@@ -108,6 +135,10 @@ class WindowManager {
     } catch (error) {
       throw new Error(`[WindowManager] 無法建立 client '${clientId}': ${error.message}`);
     }
+
+    const displaySpanCount = Array.isArray(clientConfig.displayIds) ? clientConfig.displayIds.length : 0;
+    const spansMultipleDisplays = displaySpanCount > 1;
+    const effectiveFullscreen = clientConfig.fullscreen !== false && !spansMultipleDisplays;
     const windowOptions = {
       title: `Player Shell - ${clientConfig.clientId}`,
       show: false,
@@ -115,7 +146,9 @@ class WindowManager {
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      fullscreen: clientConfig.fullscreen !== false,
+      fullscreen: effectiveFullscreen,
+      // 跨螢幕（display_ids）時通常不走 fullscreen，避免出現 title bar
+      frame: !spansMultipleDisplays,
       kiosk: Boolean(clientConfig.kiosk),
       backgroundColor: clientConfig.backgroundColor || DEFAULT_BACKGROUND,
       autoHideMenuBar: true,
@@ -134,7 +167,7 @@ class WindowManager {
     this.windows.set(clientId, window);
     this.windowStates.set(clientId, { suppressRestart: false });
 
-    this.attachWindowEvents(window, clientConfig);
+    this.attachWindowEvents(window, { ...clientConfig, effectiveFullscreen });
 
     const targetUrl = this.buildClientUrl(clientConfig);
     window
@@ -151,7 +184,7 @@ class WindowManager {
     const { clientId, devTools } = clientConfig;
 
     window.once("ready-to-show", () => {
-      if (clientConfig.fullscreen !== false) {
+      if (clientConfig.effectiveFullscreen) {
         window.setFullScreen(true);
       }
       window.show();
@@ -165,7 +198,7 @@ class WindowManager {
     window.on("minimize", () => {
       // 展演模式避免意外縮到 dock，強制回復
       window.restore();
-      if (clientConfig.fullscreen !== false) {
+      if (clientConfig.effectiveFullscreen) {
         window.setFullScreen(true);
       }
     });
@@ -304,6 +337,35 @@ class WindowManager {
     const displays = this.getOrderedDisplays();
     if (!displays || displays.length === 0) {
       throw new Error("系統沒有可用顯示器，無法建立視窗");
+    }
+
+    if (Array.isArray(clientConfig.displayIds) && clientConfig.displayIds.length > 0) {
+      const selectedDisplays = [];
+      for (const displayId of clientConfig.displayIds) {
+        if (!Number.isInteger(displayId) || displayId <= 0) continue;
+        const found = displays.find((display) => display?.id === displayId);
+        if (found) {
+          selectedDisplays.push(found);
+        } else {
+          console.warn(
+            `[WindowManager] client '${clientConfig.clientId}' 找不到 display_id=${displayId}（display_ids），將忽略該項`,
+          );
+        }
+      }
+      const merged = mergeDisplayBounds(selectedDisplays);
+      if (merged) {
+        const bounds = { ...merged };
+        if (clientConfig.bounds) {
+          bounds.width = clientConfig.bounds.width;
+          bounds.height = clientConfig.bounds.height;
+          if (typeof clientConfig.bounds.x === "number") bounds.x = clientConfig.bounds.x;
+          if (typeof clientConfig.bounds.y === "number") bounds.y = clientConfig.bounds.y;
+        }
+        return bounds;
+      }
+      console.warn(
+        `[WindowManager] client '${clientConfig.clientId}' display_ids 無法對應任何顯示器，將回退使用 display_id / display_index`,
+      );
     }
 
     if (Number.isInteger(clientConfig.displayId) && clientConfig.displayId > 0) {
