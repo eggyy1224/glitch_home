@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "AI生成靜態影像/wc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_2001_ccd_low_74e3e001-07cd-40f8-8468-56d48d68a6f9.png",
+      "url": "/?static_mode=true&img=AI生成靜態影像%2Fwc6725_Taiwan_Taiwan_Taichung_midwest_Waipu_Tachia_2001_ccd_low_74e3e001-07cd-40f8-8468-56d48d68a6f9.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

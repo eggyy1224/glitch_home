@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "AI生成靜態影像/wc6725_A_nighttime_hillside_scene_with_a_colossal_ancient_tree__81966f49-a61c-4cf9-83dd-0b0db6da11d6.png",
+      "url": "/?static_mode=true&img=AI生成靜態影像%2Fwc6725_A_nighttime_hillside_scene_with_a_colossal_ancient_tree__81966f49-a61c-4cf9-83dd-0b0db6da11d6.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

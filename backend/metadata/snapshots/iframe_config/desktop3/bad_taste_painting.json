@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "projectP/wc6725_resimulate_this_picture_with_a_milder_content__cabf4a14-f261-4e6b-b226-3b45aa2b47ba.png",
+      "url": "/?static_mode=true&img=projectP%2Fwc6725_resimulate_this_picture_with_a_milder_content__cabf4a14-f261-4e6b-b226-3b45aa2b47ba.png&img_base=%2Fnightwalk_assets%2F",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

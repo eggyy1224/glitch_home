@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "攝影圖像/直式/DSCF4875.jpg",
+      "url": "/?static_mode=true&img=%E6%94%9D%E5%BD%B1%E5%9C%96%E5%83%8F%2F%E7%9B%B4%E5%BC%8F%2FDSCF4875.jpg&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

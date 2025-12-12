@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "AI生成靜態影像/wc6725_Imagine_you_are_a_automatic_camera_triggered_by_anim_df1f7939-d201-4128-a9f8-d86edaeabb81.png",
+      "url": "/?static_mode=true&img=AI生成靜態影像%2Fwc6725_Imagine_you_are_a_automatic_camera_triggered_by_anim_df1f7939-d201-4128-a9f8-d86edaeabb81.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

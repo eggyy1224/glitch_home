@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "AI生成靜態影像/wc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png",
+      "url": "/?static_mode=true&img=AI生成靜態影像%2Fwc6725_A_nighttime_flash_photograph_of_several_closely_spaced_b_e381c946-fef0-4994-a834-27d5b3ba5075.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
