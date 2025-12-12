@@ -543,6 +543,20 @@ function runCalibration() {
     new Set(config.clients.map((client) => String(client.urlParams?.client || "").trim()).filter(Boolean)),
   );
   const presetIds = presetIdsFromConfig.length ? presetIdsFromConfig : derivedPresetIds;
+  presetIds.sort((a, b) => {
+    const ax = String(a);
+    const bx = String(b);
+    const am = ax.match(/^(.*?)(\d+)$/);
+    const bm = bx.match(/^(.*?)(\d+)$/);
+    if (am && bm && am[1] === bm[1]) {
+      const an = Number(am[2]);
+      const bn = Number(bm[2]);
+      if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) {
+        return an - bn;
+      }
+    }
+    return ax.localeCompare(bx, "en", { numeric: true, sensitivity: "base" });
+  });
 
   const slotsById = {};
   for (const slotClient of config.clients) {

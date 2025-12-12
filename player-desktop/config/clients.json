@@ -5,6 +5,48 @@
     "max_attempts": 5
   },
   "single_display_mode": true,
+  "client_presets": {
+    "desktop": {
+      "client": "desktop",
+      "iframe_mode": "true"
+    },
+    "desktop2": {
+      "client": "desktop2",
+      "iframe_mode": "true"
+    },
+    "desktop3": {
+      "client": "desktop3",
+      "iframe_mode": "true"
+    },
+    "desktop4": {
+      "client": "desktop4",
+      "iframe_mode": "true"
+    },
+    "desktop5": {
+      "client": "desktop5",
+      "iframe_mode": "true"
+    },
+    "desktop6": {
+      "client": "desktop6",
+      "iframe_mode": "true"
+    },
+    "desktop7": {
+      "client": "desktop7",
+      "iframe_mode": "true"
+    },
+    "desktop8": {
+      "client": "desktop8",
+      "iframe_mode": "true"
+    },
+    "desktop9": {
+      "client": "desktop9",
+      "iframe_mode": "true"
+    },
+    "desktop10": {
+      "client": "desktop10",
+      "iframe_mode": "true"
+    }
+  },
   "clients": [
     {
       "client_id": "desktop-main",

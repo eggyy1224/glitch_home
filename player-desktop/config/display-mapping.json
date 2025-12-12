@@ -1,0 +1,96 @@
+{
+  "version": 2,
+  "updated_at": "2025-12-12T09:43:59.845Z",
+  "display_order": "system",
+  "displays": [
+    {
+      "id": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "workArea": {
+        "x": 0,
+        "y": 25,
+        "width": 2560,
+        "height": 1415
+      },
+      "scaleFactor": 2,
+      "rotation": 0,
+      "internal": false
+    },
+    {
+      "id": 4,
+      "bounds": {
+        "x": 2560,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "workArea": {
+        "x": 2560,
+        "y": 25,
+        "width": 2560,
+        "height": 1415
+      },
+      "scaleFactor": 1,
+      "rotation": 0,
+      "internal": false
+    },
+    {
+      "id": 5,
+      "bounds": {
+        "x": -1080,
+        "y": 0,
+        "width": 1080,
+        "height": 1920
+      },
+      "workArea": {
+        "x": -1080,
+        "y": 25,
+        "width": 1080,
+        "height": 1895
+      },
+      "scaleFactor": 1,
+      "rotation": 90,
+      "internal": false
+    }
+  ],
+  "clients": {
+    "desktop-main": {
+      "display_ids": [
+        4
+      ],
+      "display_id": 4,
+      "preset_id": "desktop",
+      "url_params": {
+        "client": "desktop",
+        "iframe_mode": "true"
+      }
+    },
+    "desktop-side": {
+      "display_ids": [
+        1
+      ],
+      "display_id": 1,
+      "preset_id": "desktop2",
+      "url_params": {
+        "client": "desktop2",
+        "iframe_mode": "true"
+      }
+    },
+    "desktop-vertical": {
+      "display_ids": [
+        5
+      ],
+      "display_id": 5,
+      "preset_id": "desktop4",
+      "url_params": {
+        "client": "desktop4",
+        "iframe_mode": "true"
+      }
+    }
+  }
+}
