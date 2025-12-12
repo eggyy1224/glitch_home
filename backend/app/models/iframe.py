@@ -31,9 +31,11 @@ class PanelConfig(BaseModel):
         sanitized = value.strip()
         if not sanitized:
             return None
-        if Path(sanitized).name != sanitized:
-            raise ValueError("image 參數僅允許檔名，不可包含路徑")
-        return sanitized
+        normalized = sanitized.replace("\\", "/")
+        path = Path(normalized)
+        if path.is_absolute() or any(part == ".." for part in path.parts):
+            raise ValueError("image 參數僅允許檔名或相對路徑，不可包含絕對路徑或 ..")
+        return normalized
 
     @model_validator(mode="after")
     def _require_source(cls, values: "PanelConfig") -> "PanelConfig":

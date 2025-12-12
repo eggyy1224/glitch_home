@@ -62,6 +62,91 @@ def test_put_iframe_config_validation(client: TestClient):
 
 
 @pytest.mark.api
+def test_put_iframe_config_accepts_ancestor_image_with_img_base(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Ancestor 資產含相對路徑與 img_base 時可保存。"""
+    nightwalk_dir = tmp_path / "nightwalk_assets"
+    nested_dir = nightwalk_dir / "AI生成靜態影像"
+    nested_dir.mkdir(parents=True, exist_ok=True)
+    image_rel = "AI生成靜態影像/good.png"
+    (nested_dir / "good.png").write_bytes(b"x")
+
+    monkeypatch.setattr(settings, "nightwalk_assets_dir", str(nightwalk_dir))
+
+    payload = {
+        "layout": "grid",
+        "gap": 4,
+        "columns": 1,
+        "panels": [
+            {
+                "id": "ancestor",
+                "image": image_rel,
+                "url": f"/?static_mode=true&img={image_rel}&img_base=/nightwalk_assets/",
+                "ratio": 1,
+            }
+        ],
+    }
+
+    response = client.put("/api/iframe-config", json=payload)
+    assert response.status_code == 200
+    raw_panel = response.json()["raw"]["panels"][0]
+    assert raw_panel["image"] == image_rel
+
+
+@pytest.mark.api
+def test_put_iframe_config_rejects_parent_path_image(client: TestClient):
+    """仍阻擋含 .. 的路徑，以避免穿越。"""
+    payload = {
+        "layout": "grid",
+        "gap": 2,
+        "columns": 1,
+        "panels": [
+            {
+                "id": "bad",
+                "image": "../bad.png",
+                "url": "/?static_mode=true&img=../bad.png",
+                "ratio": 1,
+            }
+        ],
+    }
+
+    response = client.put("/api/iframe-config", json=payload)
+    assert response.status_code in [400, 422]
+
+
+@pytest.mark.api
+def test_put_iframe_config_rejects_img_base_traversal(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """img_base 帶 .. 應被拒絕，避免跳脫資產根目錄。"""
+    nightwalk_dir = tmp_path / "nightwalk_assets"
+    nightwalk_dir.mkdir(parents=True, exist_ok=True)
+    escape_root = tmp_path / "escape"
+    escape_root.mkdir(parents=True, exist_ok=True)
+    (escape_root / "outside.png").write_bytes(b"x")
+
+    monkeypatch.setattr(settings, "nightwalk_assets_dir", str(nightwalk_dir))
+
+    payload = {
+        "layout": "grid",
+        "gap": 2,
+        "columns": 1,
+        "panels": [
+            {
+                "id": "bad_base",
+                "image": "outside.png",
+                "url": "/?static_mode=true&img=outside.png&img_base=/nightwalk_assets/../../escape",
+                "ratio": 1,
+            }
+        ],
+    }
+
+    response = client.put("/api/iframe-config", json=payload)
+    assert response.status_code in [400, 422]
+
+
+@pytest.mark.api
 def test_snapshot_iframe_config_creates_file(client: TestClient):
     """Ensure snapshot endpoint stores config on disk with generated name."""
     client_id = f"pytest_snapshot_{uuid.uuid4().hex[:6]}"

@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from urllib.parse import quote_plus
+from urllib.parse import parse_qs, quote_plus, urlparse
 
 from ..config import settings
 from ..models.iframe import IframeConfig, PanelConfig, ResolvedIframeConfig, ResolvedPanel, isoformat
@@ -357,13 +357,82 @@ def resolve_iframe_config(config: IframeConfig, client_id: Optional[str] = None)
     )
 
 
+def _extract_img_base(panel: PanelConfig) -> Optional[str]:
+    if not panel.url:
+        return None
+    try:
+        parsed = urlparse(panel.url)
+        query = parse_qs(parsed.query)
+        base = query.get("img_base", [None])[0]
+        if base is None:
+            return None
+        trimmed = base.strip()
+        return trimmed or None
+    except Exception:
+        return None
+
+
+def _resolve_candidate_path(panel: PanelConfig) -> Optional[Path]:
+    if not panel.image:
+        return None
+
+    def _clean_extra_prefix(prefix: str) -> Optional[Path]:
+        candidate = Path(prefix)
+        if candidate.is_absolute() or any(part in ("..", "") for part in candidate.parts):
+            return None
+        return candidate
+
+    img_base = _extract_img_base(panel)
+    base_dir = Path(settings.offspring_dir).resolve()
+    extra_prefix: Path | None = None
+
+    if img_base:
+        normalized = img_base.strip()
+        if normalized.startswith(("http://", "https://")):
+            return None
+
+        def strip_prefix(prefix: str) -> Optional[Path]:
+            remainder = normalized[len(prefix) :].lstrip("/")
+            return _clean_extra_prefix(remainder) if remainder else None
+
+        if normalized.startswith("/nightwalk_assets"):
+            if not settings.nightwalk_assets_dir:
+                return None
+            base_dir = Path(settings.nightwalk_assets_dir).resolve()
+            extra_prefix = strip_prefix("/nightwalk_assets")
+        elif normalized.startswith("/generated_images"):
+            base_dir = Path(settings.offspring_dir).resolve()
+            extra_prefix = strip_prefix("/generated_images")
+        else:
+            return None
+        allowed_no_extra = {"/nightwalk_assets", "/nightwalk_assets/", "/generated_images", "/generated_images/"}
+        if extra_prefix is None and normalized not in allowed_no_extra:
+            raise ValueError("img_base 僅允許資產子路徑，不可包含 .. 或絕對路徑")
+
+    candidate = base_dir
+    if extra_prefix:
+        candidate = candidate.joinpath(extra_prefix)
+    candidate = candidate.joinpath(panel.image).resolve()
+    try:
+        if not candidate.is_relative_to(base_dir):
+            raise ValueError("img_base 解析後超出允許的資產目錄")
+    except AttributeError:
+        base_str = str(base_dir)
+        candidate_str = str(candidate)
+        if not candidate_str.startswith(base_str.rstrip("/") + "/"):
+            raise ValueError("img_base 解析後超出允許的資產目錄")
+    return candidate
+
+
 def _validate_images(config: IframeConfig) -> None:
-    offspring_dir = Path(settings.offspring_dir)
     for panel in config.panels:
-        if panel.image:
-            candidate = offspring_dir / panel.image
-            if not candidate.is_file():
-                raise ValueError(f"找不到指定的圖像檔案：{panel.image}")
+        if not panel.image:
+            continue
+        candidate = _resolve_candidate_path(panel)
+        if candidate is None:
+            continue
+        if not candidate.is_file():
+            raise ValueError(f"找不到指定的圖像檔案：{panel.image}")
 
 
 def config_payload_for_response(config: IframeConfig, client_id: Optional[str] = None) -> Dict[str, object]:
