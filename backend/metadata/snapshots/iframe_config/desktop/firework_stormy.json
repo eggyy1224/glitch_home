@@ -6,7 +6,7 @@
     {
       "id": "p1",
       "image": "offspring_20250923_170818_939.png",
-      "url": "/?video_mode=true&video=Drive_in_stormy.mp4",
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&video_volume=0.15&volume=0.15",
       "params": {},
       "ratio": 1.0,
       "label": "desktop panel",
@@ -16,7 +16,7 @@
     {
       "id": "panel_2",
       "image": null,
-      "url": "/?video_mode=true&video=fireworks.mp4",
+      "url": "/?video_mode=true&video=fireworks.mp4&video_volume=0.15&volume=0.15",
       "params": {},
       "ratio": 1.0,
       "label": null,

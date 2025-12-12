@@ -6,7 +6,7 @@
     {
       "id": "p1",
       "image": null,
-      "url": "/?video_mode=true&video=%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4&video_volume=1&volume=1",
+      "url": "/?video_mode=true&video=%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4&video_volume=0.15&volume=0.15",
       "params": {
         "__preset_mode": "video_mode"
       },
@@ -18,7 +18,7 @@
     {
       "id": "p1",
       "image": null,
-      "url": "/?video_mode=true&video=%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4&video_speed=0.85&speed=0.85&video_volume=0&volume=0",
+      "url": "/?video_mode=true&video=%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4&video_speed=0.85&speed=0.85&video_volume=0.15&volume=0.15",
       "params": {
         "__preset_mode": "video_mode"
       },
@@ -30,7 +30,7 @@
     {
       "id": "p1",
       "image": null,
-      "url": "/?video_mode=true&video=%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4&video_speed=0.65&speed=0.65&video_volume=0&volume=0",
+      "url": "/?video_mode=true&video=%E9%A2%A8%E4%B8%AD%E6%AE%98%E7%8B%97.mp4&video_speed=0.65&speed=0.65&video_volume=0.15&volume=0.15",
       "params": {
         "__preset_mode": "video_mode"
       },

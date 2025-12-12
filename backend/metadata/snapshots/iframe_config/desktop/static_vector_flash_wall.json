@@ -62,6 +62,18 @@
       "label": "Vector E",
       "col_span": 1,
       "row_span": 1
+    },
+    {
+      "id": "vec_e",
+      "image": "offspring_20251203_233313_007.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "Vector E",
+      "col_span": 1,
+      "row_span": 1
     }
   ]
 }

@@ -19,7 +19,7 @@
     {
       "id": "right",
       "image": null,
-      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video",
+      "url": "/?video_mode=true&video=Birds.mp4&client=birds-video&video_volume=0.15&volume=0.15",
       "params": {},
       "ratio": 1.0,
       "label": null,

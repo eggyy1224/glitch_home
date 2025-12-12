@@ -6,7 +6,7 @@
     {
       "id": "grass_top_left",
       "image": null,
-      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-1",
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-1&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -18,7 +18,7 @@
     {
       "id": "grass_top_right",
       "image": null,
-      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-2",
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-2&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -30,7 +30,7 @@
     {
       "id": "grass_bottom_left",
       "image": null,
-      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-3",
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-3&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -42,7 +42,7 @@
     {
       "id": "grass_bottom_right",
       "image": null,
-      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-4",
+      "url": "/?video_mode=true&video=grass_man.mp4&client=grass-man-4&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },

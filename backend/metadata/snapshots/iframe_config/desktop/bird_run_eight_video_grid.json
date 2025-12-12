@@ -6,7 +6,7 @@
     {
       "id": "p1",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-1",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-1&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -18,7 +18,7 @@
     {
       "id": "p2",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-2",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-2&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -30,7 +30,7 @@
     {
       "id": "p3",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-3",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-3&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -42,7 +42,7 @@
     {
       "id": "p4",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-4",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-4&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -54,7 +54,7 @@
     {
       "id": "p5",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-5",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-5&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -66,7 +66,7 @@
     {
       "id": "p6",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-6",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-6&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -78,7 +78,7 @@
     {
       "id": "p7",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-7",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-7&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -90,7 +90,7 @@
     {
       "id": "p8",
       "image": null,
-      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-8",
+      "url": "/?video_mode=true&video=不知名鳥奔跑.mp4&client=bird-run-8&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },

@@ -18,7 +18,7 @@
     {
       "id": "p1",
       "image": "offspring_20250923_163256_169.png",
-      "url": "/?video_mode=true&video=%E9%A6%AC%E8%88%87%E4%BA%BA%E7%BE%A4.mp4",
+      "url": "/?video_mode=true&video=%E9%A6%AC%E8%88%87%E4%BA%BA%E7%BE%A4.mp4&video_volume=0.15&volume=0.15",
       "params": {
         "__preset_mode": "video_mode"
       },
