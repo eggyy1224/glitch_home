@@ -4,8 +4,8 @@
   "description": "Player Desktop Shell - Electron container for multi-screen exhibition playback",
   "main": "src/main.js",
   "scripts": {
-    "dev": "electron .",
-    "start": "electron .",
+    "dev": "node scripts/run-electron.js",
+    "start": "node scripts/run-electron.js",
     "build": "echo \"Bundle with electron-builder once ready\""
   },
   "keywords": [

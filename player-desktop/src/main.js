@@ -1,4 +1,12 @@
-const { app, dialog, ipcMain, BrowserWindow, screen } = require("electron");
+const electron = require("electron");
+if (typeof electron === "string") {
+  console.error(
+    "[PlayerShell] 偵測到 Electron 以 Node 模式執行（ELECTRON_RUN_AS_NODE 可能有被設定）。請取消該環境變數後再啟動。",
+  );
+  process.exit(1);
+}
+
+const { app, dialog, ipcMain, BrowserWindow, screen } = electron;
 const fs = require("node:fs");
 const path = require("node:path");
 const { loadConfig, DEFAULT_CONFIG_PATH } = require("./config-loader");
@@ -411,15 +419,15 @@ function buildControllerHtml() {
           const resolvedBase = baseUrlParamsBySlotId[slot.slotId] || {};
           const presetParams = slot.presetId ? (clientPresets[slot.presetId] || {}) : {};
           const resolvedParams = { ...(resolvedBase || {}), ...(presetParams || {}) };
-          const autoModeEnabled = String(resolvedParams.auto_mode || "").trim().toLowerCase() === "true";
-          const presetParamsHint = document.createElement("div");
-          presetParamsHint.className = "hint";
-          presetParamsHint.textContent =
-            (Object.keys(resolvedParams).length ? `參數：${buildQuery(resolvedParams)}` : "參數：（無）") +
-            (autoModeEnabled ? "（auto_mode=on）" : "");
-          preset.appendChild(presetSelect);
-          preset.appendChild(presetHint);
-          preset.appendChild(presetParamsHint);
+	          const autoModeEnabled = String(resolvedParams.auto_mode || "").trim().toLowerCase() === "true";
+	          const presetParamsHint = document.createElement("div");
+	          presetParamsHint.className = "hint";
+	          presetParamsHint.textContent =
+	            (Object.keys(resolvedParams).length ? "參數：" + buildQuery(resolvedParams) : "參數：（無）") +
+	            (autoModeEnabled ? "（auto_mode=on）" : "");
+	          preset.appendChild(presetSelect);
+	          preset.appendChild(presetHint);
+	          preset.appendChild(presetParamsHint);
 
           const displays = document.createElement("div");
           displays.className = "displays";
