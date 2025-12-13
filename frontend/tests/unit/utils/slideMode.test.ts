@@ -23,16 +23,20 @@ describe("slideMode utils", () => {
 
   it("計算不同尺寸樣式並保有基礎屬性", () => {
     const baseStyles = computeStyles("large");
-    expect(baseStyles.root.padding).toBe("64px 32px 140px");
+    expect(baseStyles.root.padding).toBe(0);
+    expect(baseStyles.stage.position).toBe("absolute");
+    expect(baseStyles.stage.inset).toBe(0);
+    expect(baseStyles.image.width).toBe("100%");
+    expect(baseStyles.image.height).toBe("100%");
     expect(baseStyles.button.fontSize).toBe("12px");
 
     const medium = computeStyles("medium");
-    expect(medium.root.padding).toBe("48px 24px 72px");
+    expect(medium.caption.bottom).toBe("72px");
     expect(medium.caption.fontSize).toBe("13px");
 
     const small = computeStyles("small");
-    expect(small.root.gap).toBe("16px");
     expect(small.image.borderRadius).toBe("0");
+    expect(small.status.top).toBe("18px");
 
     const xsmall = computeStyles("xsmall");
     expect(xsmall.controlBar.flexDirection).toBe("column");

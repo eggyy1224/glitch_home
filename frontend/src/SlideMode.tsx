@@ -15,6 +15,9 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [sizeClass, setSizeClass] = useState<"large" | "medium" | "small" | "xsmall">("large");
   const styles = useMemo(() => computeStyles(sizeClass), [sizeClass]) as Record<string, React.CSSProperties>;
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const objectFit = (params.get("object_fit") || "contain") as React.CSSProperties["objectFit"];
+  const objectPosition = (params.get("object_position") || "center") as React.CSSProperties["objectPosition"];
 
   const {
     current,
@@ -70,7 +73,7 @@ export default function SlideMode({ imagesBase, anchorImage, intervalMs = 3000, 
               key={current.cleanId}
               src={imageUrl || undefined}
               alt={current.cleanId}
-              style={styles.image}
+              style={{ ...styles.image, objectFit, objectPosition }}
               onError={() => handleImageError(current.cleanId)}
             />
           </div>

@@ -21,42 +21,43 @@ export const getSizeClass = (width?: number | null, height?: number | null): "la
 
 export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall") => {
   const root: StyleMap = {
-    width: "100vw",
+    width: "100%",
     height: "100vh",
     backgroundColor: "#000",
     color: "#f5f5f5",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "64px 32px 140px",
+    padding: 0,
     boxSizing: "border-box",
-    gap: "24px",
     position: "relative",
     overflow: "hidden",
     fontFamily: FONT_FAMILY,
   };
 
-  const stage = {
+  const stage: StyleMap = {
+    position: "absolute",
+    inset: 0,
     width: "100%",
-    maxWidth: "90vw",
-    maxHeight: "100%",
-    minHeight: 0,
-    flex: "1 1 auto",
+    height: "100%",
+    zIndex: 0,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   };
 
-  const image = {
-    maxWidth: "100%",
-    maxHeight: "100%",
+  const image: StyleMap = {
+    width: "100%",
+    height: "100%",
     objectFit: "contain",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
+    objectPosition: "center",
+    boxShadow: "none",
     borderRadius: "0",
   };
 
-  const caption = {
+  const caption: StyleMap = {
+    position: "absolute",
+    left: "50%",
+    bottom: "88px",
+    transform: "translateX(-50%)",
+    zIndex: 10,
     padding: "10px 16px",
     borderRadius: "20px",
     background: "rgba(0,0,0,0.55)",
@@ -65,13 +66,15 @@ export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall"
     letterSpacing: "0.05em",
     textAlign: "center",
     maxWidth: "90vw",
+    pointerEvents: "none",
   };
 
-  const status = {
+  const status: StyleMap = {
     position: "absolute",
     top: "32px",
     left: "50%",
     transform: "translateX(-50%)",
+    zIndex: 12,
     padding: "8px 16px",
     borderRadius: "16px",
     background: "rgba(20,20,20,0.75)",
@@ -80,6 +83,11 @@ export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall"
   };
 
   const controlBar: StyleMap = {
+    position: "absolute",
+    left: "50%",
+    bottom: "32px",
+    transform: "translateX(-50%)",
+    zIndex: 11,
     display: "flex",
     alignItems: "center",
     gap: "16px",
@@ -88,6 +96,7 @@ export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall"
     background: "rgba(20,20,20,0.85)",
     border: "1px solid rgba(255,255,255,0.15)",
     backdropFilter: "blur(10px)",
+    maxWidth: "calc(100% - 24px)",
   };
 
   const slider: StyleMap = {
@@ -123,35 +132,28 @@ export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall"
   };
 
   if (sizeClass === "medium") {
-    root.padding = "48px 24px 72px";
-    stage.maxWidth = "100%";
-    caption.maxWidth = "100%";
+    caption.bottom = "72px";
     caption.fontSize = "13px";
+    caption.maxWidth = "calc(100% - 24px)";
+    controlBar.bottom = "20px";
   } else if (sizeClass === "small") {
-    root.padding = "24px 16px 32px";
-    root.gap = "16px";
-    stage.maxWidth = "100%";
-    stage.maxHeight = "100%";
-    image.boxShadow = "0 12px 40px rgba(0,0,0,0.55)";
     image.borderRadius = "0";
+    caption.bottom = "60px";
     caption.fontSize = "12px";
-    caption.maxWidth = "100%";
+    caption.maxWidth = "calc(100% - 24px)";
     status.top = "18px";
     status.fontSize = "12px";
     controlBar.padding = "10px 16px";
     controlBar.gap = "12px";
+    controlBar.bottom = "16px";
     slider.minWidth = "120px";
     button.fontSize = "11px";
   } else if (sizeClass === "xsmall") {
-    root.padding = "12px";
-    root.gap = "12px";
-    stage.maxWidth = "100%";
-    stage.maxHeight = "100%";
-    image.boxShadow = "0 10px 28px rgba(0,0,0,0.5)";
     image.borderRadius = "0";
     caption.fontSize = "11px";
     caption.padding = "8px 12px";
-    caption.maxWidth = "100%";
+    caption.maxWidth = "calc(100% - 24px)";
+    caption.bottom = "108px";
     status.top = "12px";
     status.padding = "6px 12px";
     status.fontSize = "11px";
@@ -159,6 +161,7 @@ export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall"
     controlBar.alignItems = "stretch";
     controlBar.gap = "12px";
     controlBar.padding = "10px 14px";
+    controlBar.bottom = "12px";
     slider.minWidth = "100%";
     slider.width = "100%";
     sliderLabel.minWidth = "auto";

@@ -80,7 +80,7 @@ describe("SlideMode", () => {
       index: 0,
       loading: false,
       error: null,
-      showCaption: false,
+      showCaption: true,
       playbackSpeed: 1,
       isPaused: true,
       setPlaybackSpeed,
@@ -106,7 +106,7 @@ describe("SlideMode", () => {
     resizeHandler();
 
     await screen.findByAltText("img-3");
-    await waitFor(() => expect(root.style.padding).toBe("12px"));
+    await waitFor(() => expect(screen.getByRole("slider").style.width).toBe("100%"));
 
     global.ResizeObserver = originalResizeObserver;
   });
@@ -137,7 +137,7 @@ describe("SlideMode", () => {
 
     window.dispatchEvent(new Event("resize"));
 
-    await waitFor(() => expect(root.style.padding).toBe("24px 16px 32px"));
+    await waitFor(() => expect(screen.getByRole("slider").style.minWidth).toBe("120px"));
 
     global.ResizeObserver = originalResizeObserver;
   });
