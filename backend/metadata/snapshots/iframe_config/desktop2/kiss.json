@@ -6,7 +6,7 @@
     {
       "id": "video",
       "image": null,
-      "url": "/?video_mode=true&video=草叢親親.mp4",
+      "url": "/?video_mode=true&video=草叢親親.mp4&video_volume=0.15&volume=0.15",
       "params": {},
       "ratio": 1.0,
       "label": "video",

@@ -18,7 +18,7 @@
     {
       "id": "lightwave_right",
       "image": null,
-      "url": "/?video_mode=true&video=%E8%A6%96%E8%A6%BA%E5%85%89%E6%B3%A2.mp4&client=lightwave-right",
+      "url": "/?video_mode=true&video=%E8%A6%96%E8%A6%BA%E5%85%89%E6%B3%A2.mp4&client=lightwave-right&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },

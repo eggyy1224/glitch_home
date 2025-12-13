@@ -6,7 +6,7 @@
     {
       "id": "left",
       "image": null,
-      "url": "/?video_mode=true&video=打電動.mp4&auto_unmute=false&video_volume=0",
+      "url": "/?video_mode=true&video=打電動.mp4&auto_unmute=false&video_volume=0&volume=0",
       "params": {},
       "ratio": 1.0,
       "label": "game left (muted)",
@@ -16,7 +16,7 @@
     {
       "id": "right",
       "image": null,
-      "url": "/?video_mode=true&video=gaming.mp4",
+      "url": "/?video_mode=true&video=gaming.mp4&video_volume=0.15&volume=0.15",
       "params": {},
       "ratio": 1.0,
       "label": "game right",

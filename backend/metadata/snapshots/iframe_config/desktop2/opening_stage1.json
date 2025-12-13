@@ -20,7 +20,7 @@
     {
       "id": "video_column",
       "image": null,
-      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=desktop2-birdman",
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=desktop2-birdman&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },

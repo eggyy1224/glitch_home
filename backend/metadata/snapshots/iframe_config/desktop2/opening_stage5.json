@@ -34,7 +34,7 @@
     {
       "id": "drivein_video",
       "image": null,
-      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=desktop2-drivein",
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=desktop2-drivein&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -46,7 +46,7 @@
     {
       "id": "birds_video",
       "image": null,
-      "url": "/?video_mode=true&video=夜晚貓頭鷹.mp4&client=desktop2-birds",
+      "url": "/?video_mode=true&video=夜晚貓頭鷹.mp4&client=desktop2-birds&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -58,7 +58,7 @@
     {
       "id": "video_column",
       "image": null,
-      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=desktop2-birdman",
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&loop=true&client=desktop2-birdman&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -70,7 +70,7 @@
     {
       "id": "sequence_video",
       "image": null,
-      "url": "/?video_mode=true&video=風中殘狗.mp4&client=desktop2-sequence",
+      "url": "/?video_mode=true&video=風中殘狗.mp4&client=desktop2-sequence&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -132,7 +132,7 @@
     {
       "id": "photoshoot_video",
       "image": null,
-      "url": "/?video_mode=true&video=photoshooting.mp4&client=desktop2-photoshoot",
+      "url": "/?video_mode=true&video=photoshooting.mp4&client=desktop2-photoshoot&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },

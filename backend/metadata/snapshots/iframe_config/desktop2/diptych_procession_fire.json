@@ -6,7 +6,7 @@
     {
       "id": "procession_left",
       "image": null,
-      "url": "/?video_mode=true&video=%E9%A6%AC%E8%88%87%E4%BA%BA%E7%BE%A4.mp4&client=procession-left",
+      "url": "/?video_mode=true&video=%E9%A6%AC%E8%88%87%E4%BA%BA%E7%BE%A4.mp4&client=procession-left&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
@@ -18,7 +18,7 @@
     {
       "id": "fire_right",
       "image": null,
-      "url": "/?video_mode=true&video=fireworks.mp4&client=fire-right",
+      "url": "/?video_mode=true&video=fireworks.mp4&client=fire-right&video_volume=0.15&volume=0.15",
       "params": {
         "sound_player": "false"
       },
