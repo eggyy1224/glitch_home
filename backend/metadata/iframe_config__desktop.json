@@ -1,12 +1,24 @@
 {
   "layout": "grid",
   "gap": 0,
-  "columns": 1,
+  "columns": 2,
   "panels": [
     {
       "id": "p1",
-      "image": "offspring_20250923_172041_821.png",
-      "url": "/?slide_mode=true&img=offspring_20250923_172041_821.png",
+      "image": "offspring_20250923_161624_066.png",
+      "url": "/?video_mode=true&video=night_stroll_3.mp4&auto_unmute=false&video_volume=0&volume=0",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p1",
+      "image": "offspring_20250924_150022_850.png",
+      "url": "/?slide_mode=true&img=offspring_20250924_150022_850.png",
       "params": {
         "__preset_mode": "slide_mode"
       },

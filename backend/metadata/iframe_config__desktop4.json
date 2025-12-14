@@ -5,10 +5,10 @@
   "panels": [
     {
       "id": "p1",
-      "image": "offspring_20250924_172236_417.png",
-      "url": "/?slide_mode=true&img=offspring_20250924_172236_417.png",
+      "image": "projectP/offspring_20251004_220714_373.png",
+      "url": "/?static_mode=true&img=projectP%2Foffspring_20251004_220714_373.png&img_base=%2Fnightwalk_assets%2F",
       "params": {
-        "__preset_mode": "slide_mode"
+        "__preset_mode": "static_mode"
       },
       "ratio": 1.0,
       "label": "desktop panel",
