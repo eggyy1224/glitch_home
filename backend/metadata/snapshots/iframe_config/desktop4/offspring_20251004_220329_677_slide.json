@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "offspring_20251004_220329_677.png",
+      "url": "/?slide_mode=true&img=offspring_20251004_220329_677.png",
+      "params": {
+        "__preset_mode": "slide_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
