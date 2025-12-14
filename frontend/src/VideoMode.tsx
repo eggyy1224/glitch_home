@@ -31,7 +31,7 @@ const clampSpeed = (value: number | string | null | undefined, fallback = DEFAUL
   if (value == null) return fallback;
   const numberValue = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numberValue)) return fallback;
-  return Math.min(4, Math.max(0.25, numberValue));
+  return Math.min(4, Math.max(0.01, numberValue));
 };
 
 export interface VideoModeProps {

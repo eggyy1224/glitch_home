@@ -305,7 +305,7 @@ export function useControlSocketHandlers({
         if (action === "set_speed" || action === "speed") {
           const parsed = typeof speedValue === "number" ? speedValue : Number(speedValue);
           if (!Number.isFinite(parsed)) return;
-          const clamped = Math.max(0.25, Math.min(4, parsed));
+          const clamped = Math.max(0.01, Math.min(4, parsed));
           controller.setSpeed?.(clamped);
           return;
         }
@@ -416,7 +416,7 @@ export function useControlSocketHandlers({
       if (action === "set_speed" || action === "speed") {
         const parsedSpeed = typeof speedValue === "number" ? speedValue : Number(speedValue);
         if (!Number.isFinite(parsedSpeed)) return;
-        const clampedSpeed = Math.max(0.25, Math.min(4, parsedSpeed));
+        const clampedSpeed = Math.max(0.01, Math.min(4, parsedSpeed));
         applyToMediaElements((media: HTMLMediaElement): void => {
           media.playbackRate = clampedSpeed;
         });

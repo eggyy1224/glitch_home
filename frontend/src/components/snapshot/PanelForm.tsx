@@ -186,16 +186,16 @@ export function PanelForm({
           <div style={{ marginBottom: 6, color: "#82dca5" }}>video_mode 參數</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
             <label style={{ display: "flex", flexDirection: "column" }}>
-              速度 (0.25-4)
+              速度 (0.01-4)
               <input
                 type="number"
-                min="0.25"
+                min="0.01"
                 max="4"
-                step="0.05"
+                step="0.01"
                 value={videoOptions?.speed ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value;
-                  const parsed = raw === "" ? null : Math.max(0.25, Math.min(4, Number(raw)));
+                  const parsed = raw === "" ? null : Math.max(0.01, Math.min(4, Number(raw)));
                   handleVideoOptionChange({ speed: parsed });
                 }}
                 placeholder="預設 1.0"
