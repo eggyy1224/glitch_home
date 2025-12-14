@@ -257,7 +257,7 @@ export function useTimelineStepActions({
           }
           const speedValue = numberOrUndefined(action.speed);
           if (speedValue !== undefined) {
-            payload.speed = Math.max(0.01, Math.min(4, speedValue));
+            payload.speed = Math.max(0.07, Math.min(4, speedValue));
           }
           if (typeof action.muted === "boolean") {
             payload.muted = action.muted;
