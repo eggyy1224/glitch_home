@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=desktop3-v-1&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "video: Club_Scene.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

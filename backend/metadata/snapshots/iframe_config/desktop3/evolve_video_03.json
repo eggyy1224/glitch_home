@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=Disco%E9%B3%A5%E4%BA%BA.mp4&client=desktop3-v-3&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "video: Disco鳥人.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

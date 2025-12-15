@@ -1,0 +1,45 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "fieldnotes_left",
+      "image": "offspring_20251008_193228_239.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Fieldnotes 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "mid_video",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4&client=desktop2-tripM-3&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "中段 fireworks.mp4",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "right_video",
+      "image": null,
+      "url": "/?video_mode=true&video=gaming.mp4&client=desktop2-tripR-3&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "右段 gaming.mp4",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

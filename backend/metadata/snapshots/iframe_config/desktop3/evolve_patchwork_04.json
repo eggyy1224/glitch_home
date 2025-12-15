@@ -1,0 +1,81 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "nw_a",
+      "image": "夢遊/wc6725_Imagine_a_candid_raw_scene_captured_with_an_X-Pro2_and_d_34257372-802e-403d-98a0-f7e6cbd073cd.png",
+      "url": "/?static_mode=true&img=%E5%A4%A2%E9%81%8A%2Fwc6725_Imagine_a_candid_raw_scene_captured_with_an_X-Pro2_and_d_34257372-802e-403d-98a0-f7e6cbd073cd.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "video_core",
+      "image": null,
+      "url": "/?video_mode=true&video=%E6%98%9F%E9%9A%9B%E6%B4%BE%E5%B0%8D.mp4&client=desktop3-patch-4-core&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "core 星際派對.mp4",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "slide_off",
+      "image": "offspring_20250924_144027_607.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "offspring slide",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "nw_b",
+      "image": "projectP/offspring_20251007_170115_178.png",
+      "url": "/?static_mode=true&img=projectP%2Foffspring_20251007_170115_178.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "video_edge",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4&client=desktop3-patch-4-edge&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "edge fireworks.mp4",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "static_off",
+      "image": "offspring_20251116_115128_750.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.95,
+      "label": "offspring static",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

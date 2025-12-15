@@ -1,0 +1,45 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "fieldnotes_left",
+      "image": "offspring_20251012_183542_468.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Fieldnotes 左",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "mid_video",
+      "image": null,
+      "url": "/?video_mode=true&video=%E4%B8%8D%E7%9F%A5%E5%90%8D%E9%B3%A5%E5%A5%94%E8%B7%91.mp4&client=desktop2-tripM-4&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "中段 不知名鳥奔跑.mp4",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "right_video",
+      "image": null,
+      "url": "/?video_mode=true&video=%E4%B9%9D%E5%A6%B9%E9%80%A3%E7%B7%9A.mp4&client=desktop2-tripR-4&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "右段 九妹連線.mp4",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

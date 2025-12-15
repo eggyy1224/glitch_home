@@ -1,0 +1,32 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "video",
+      "image": null,
+      "url": "/?video_mode=true&video=gaming.mp4&client=desktop-mix-3-v&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "video gaming.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "slide",
+      "image": "offspring_20251113_164837_849.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "slide offspring_20251113_164837_849.png",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

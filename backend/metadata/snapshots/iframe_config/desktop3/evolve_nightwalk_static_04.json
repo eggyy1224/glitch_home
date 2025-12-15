@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "projectP/offspring_20251007_165649_159.png",
+      "url": "/?static_mode=true&img=projectP%2Foffspring_20251007_165649_159.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk: projectP",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

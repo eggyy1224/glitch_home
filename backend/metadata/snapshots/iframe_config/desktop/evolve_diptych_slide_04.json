@@ -1,0 +1,33 @@
+{
+  "layout": "grid",
+  "gap": 16,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left",
+      "image": "offspring_20251112_220142_688.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "slide left",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "right",
+      "image": "offspring_20251108_225931_654.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "slide right",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

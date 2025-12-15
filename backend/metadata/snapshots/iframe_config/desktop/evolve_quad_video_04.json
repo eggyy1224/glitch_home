@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "a",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=desktop-quad-4-a&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "A Club_Scene.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "b",
+      "image": null,
+      "url": "/?video_mode=true&video=Disco%E9%B3%A5%E4%BA%BA.mp4&client=desktop-quad-4-b&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "B Disco鳥人.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "c",
+      "image": null,
+      "url": "/?video_mode=true&video=Disco%E9%B3%A5%E4%BA%BA.mp4&client=desktop-quad-4-c&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "C Disco鳥人.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "d",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=desktop-quad-4-d&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "D Club_Scene.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

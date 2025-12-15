@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "a",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=desktop-quad-1-a&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "A Drive_in_stormy.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "b",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4&client=desktop-quad-1-b&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "B fireworks.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "c",
+      "image": null,
+      "url": "/?video_mode=true&video=fireworks.mp4&client=desktop-quad-1-c&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "C fireworks.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "d",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&client=desktop-quad-1-d&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "D Drive_in_stormy.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

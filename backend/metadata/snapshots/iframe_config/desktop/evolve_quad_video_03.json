@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "a",
+      "image": null,
+      "url": "/?video_mode=true&video=gaming.mp4&client=desktop-quad-3-a&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "A gaming.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "b",
+      "image": null,
+      "url": "/?video_mode=true&video=%E7%B6%B2%E5%92%96.mp4&client=desktop-quad-3-b&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "B 網咖.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "c",
+      "image": null,
+      "url": "/?video_mode=true&video=%E7%B6%B2%E5%92%96.mp4&client=desktop-quad-3-c&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "C 網咖.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "d",
+      "image": null,
+      "url": "/?video_mode=true&video=gaming.mp4&client=desktop-quad-3-d&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "D gaming.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "nw_a",
+      "image": "尋山問境/wc6725_Tai_1910s_Nature_wan_401a1c7d-e951-4492-9b29-5fc2eff0cbed.png",
+      "url": "/?static_mode=true&img=%E5%B0%8B%E5%B1%B1%E5%95%8F%E5%A2%83%2Fwc6725_Tai_1910s_Nature_wan_401a1c7d-e951-4492-9b29-5fc2eff0cbed.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "video_core",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E6%99%9A%E8%B2%93%E9%A0%AD%E9%B7%B9.mp4&client=desktop3-patch-3-core&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "core 夜晚貓頭鷹.mp4",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "slide_off",
+      "image": "offspring_20251109_124953_469.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "offspring slide",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "nw_b",
+      "image": "夢遊/wc6725__6c71583c-3d30-4d91-8f23-0292f86bacc3.png",
+      "url": "/?static_mode=true&img=%E5%A4%A2%E9%81%8A%2Fwc6725__6c71583c-3d30-4d91-8f23-0292f86bacc3.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "video_edge",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&client=desktop3-patch-3-edge&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "edge BirdmanTalk.mp4",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "static_off",
+      "image": "offspring_20251109_000935_926.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.95,
+      "label": "offspring static",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

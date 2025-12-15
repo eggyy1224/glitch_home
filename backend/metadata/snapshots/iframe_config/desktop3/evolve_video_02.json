@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=night_stroll_3.mp4&client=desktop3-v-2&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "video: night_stroll_3.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

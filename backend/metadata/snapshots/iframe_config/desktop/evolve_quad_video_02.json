@@ -1,0 +1,55 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "a",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=desktop-quad-2-a&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "A grass_man.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "b",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=desktop-quad-2-b&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "B Birds.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "c",
+      "image": null,
+      "url": "/?video_mode=true&video=Birds.mp4&client=desktop-quad-2-c&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "C Birds.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "d",
+      "image": null,
+      "url": "/?video_mode=true&video=grass_man.mp4&client=desktop-quad-2-d&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "D grass_man.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&video_volume=0.15&volume=0.15&video_speed=0.07&speed=0.07&auto_unmute=false&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "Drive_in_stormy.mp4 x0.07",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p2",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&video_volume=0.15&volume=0.15&video_speed=0.1&speed=0.1&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "Drive_in_stormy.mp4 x0.1",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "p3",
+      "image": null,
+      "url": "/?video_mode=true&video=Drive_in_stormy.mp4&video_volume=0.15&volume=0.15&video_speed=0.34&speed=0.34&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "Drive_in_stormy.mp4 x0.34",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

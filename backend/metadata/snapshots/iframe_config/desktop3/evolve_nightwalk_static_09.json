@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "尋山問境/wc6725_A_surreal_and_abstract_scene_of_a_dense_field_of_dark_wi_331886fe-32b2-4fee-93ea-cebf9433d653.png",
+      "url": "/?static_mode=true&img=%E5%B0%8B%E5%B1%B1%E5%95%8F%E5%A2%83%2Fwc6725_A_surreal_and_abstract_scene_of_a_dense_field_of_dark_wi_331886fe-32b2-4fee-93ea-cebf9433d653.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk: 尋山問境",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%A4%9C%E5%85%89tv.mp4&client=desktop3-v-4&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "__preset_mode": "video_mode"
+      },
+      "ratio": 1.0,
+      "label": "video: 夜光tv.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

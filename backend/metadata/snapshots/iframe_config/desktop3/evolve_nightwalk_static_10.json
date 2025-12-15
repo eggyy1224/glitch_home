@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "projectP/wc6725_finish_it_--ar_6275_--v_6.1_161cf150-322b-4e9b-b4e8-8d219225926b.png",
+      "url": "/?static_mode=true&img=projectP%2Fwc6725_finish_it_--ar_6275_--v_6.1_161cf150-322b-4e9b-b4e8-8d219225926b.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk: projectP",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "layout": "grid",
+  "gap": 8,
+  "columns": 5,
+  "panels": [
+    {
+      "id": "macro_ribbon",
+      "image": "offspring_20251012_180821_819.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 1.1,
+      "label": "Macrocosm 長條",
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "kinship_core",
+      "image": "offspring_20251109_001552_841.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship 核心",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "archive_noise",
+      "image": "offspring_20251006_201811_946.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Archive 雜訊",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "fieldnotes_stream",
+      "image": "offspring_20251116_135909_440.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.2,
+      "label": "Fieldnotes 長流",
+      "col_span": 3,
+      "row_span": 1
+    },
+    {
+      "id": "video_wave",
+      "image": null,
+      "url": "/?video_mode=true&video=SCHC_20250718_refine.mp4&client=desktop2-wall-big-1&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "主流 SCHC_20250718_refine.mp4",
+      "col_span": 3,
+      "row_span": 2
+    },
+    {
+      "id": "vector_static",
+      "image": "offspring_20251006_191946_455.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.9,
+      "label": "靜框",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "macro_tile",
+      "image": "offspring_20250923_190921_048.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "磚塊",
+      "col_span": 2,
+      "row_span": 1
+    },
+    {
+      "id": "kinship_zoom",
+      "image": "offspring_20251004_220133_209.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 0.9,
+      "label": "Kinship 近拍",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "fieldnotes_flash",
+      "image": "offspring_20250923_172113_789.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Fieldnotes 閃影",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "storm_slice",
+      "image": null,
+      "url": "/?video_mode=true&video=Sequence%2001_2.mp4&client=desktop2-wall-small-1&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.1,
+      "label": "切片 Sequence 01_2.mp4",
+      "col_span": 2,
+      "row_span": 1
+    }
+  ]
+}

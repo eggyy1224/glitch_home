@@ -1,0 +1,159 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 12,
+  "panels": [
+    {
+      "id": "hero_slide",
+      "image": "offspring_20251108_205648_031.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "macrocosm",
+        "continuous": "true"
+      },
+      "ratio": 0.85,
+      "label": "巨幅幻燈",
+      "col_span": 4,
+      "row_span": 8
+    },
+    {
+      "id": "kinship_pulse",
+      "image": "offspring_20251012_183411_754.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "kinship",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "Kinship 串流",
+      "col_span": 3,
+      "row_span": 5
+    },
+    {
+      "id": "drivein_video",
+      "image": null,
+      "url": "/?video_mode=true&video=%E6%98%9F%E9%9A%9B%E6%B4%BE%E5%B0%8D.mp4&client=desktop2-drive-5&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "暴雨駕駛",
+      "col_span": 4,
+      "row_span": 4
+    },
+    {
+      "id": "birds_video",
+      "image": null,
+      "url": "/?video_mode=true&video=%E7%B4%99%E7%AE%B1%E6%80%AA%E7%8D%B8.mp4&client=desktop2-birds-5&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "鳥群視野",
+      "col_span": 3,
+      "row_span": 4
+    },
+    {
+      "id": "video_column",
+      "image": null,
+      "url": "/?video_mode=true&video=BirdmanTalk.mp4&client=desktop2-col-5&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.75,
+      "label": "主柱影片",
+      "col_span": 5,
+      "row_span": 12
+    },
+    {
+      "id": "sequence_video",
+      "image": null,
+      "url": "/?video_mode=true&video=%E5%97%91%E5%A3%9E%E7%9A%84%E5%B0%91%E7%88%BA.mp4&client=desktop2-seq-5&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 0.85,
+      "label": "序列片段",
+      "col_span": 2,
+      "row_span": 3
+    },
+    {
+      "id": "archive_static",
+      "image": "offspring_20251008_192358_014.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.9,
+      "label": "Archive 靜態",
+      "col_span": 2,
+      "row_span": 3
+    },
+    {
+      "id": "fieldnotes_static",
+      "image": "offspring_20251108_151548_026.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.8,
+      "label": "Fieldnotes 靜幀",
+      "col_span": 2,
+      "row_span": 3
+    },
+    {
+      "id": "archive_slide_strip",
+      "image": "offspring_20251108_152402_617.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "archive",
+        "continuous": "true"
+      },
+      "ratio": 1.2,
+      "label": "Archive 幻燈",
+      "col_span": 3,
+      "row_span": 4
+    },
+    {
+      "id": "micro_static",
+      "image": "offspring_20251004_221529_773.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 1.0,
+      "label": "微距靜態",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "photoshoot_video",
+      "image": null,
+      "url": "/?video_mode=true&video=photoshooting.mp4&client=desktop2-photo-5&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "Photoshooting",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "field_slide_band",
+      "image": "offspring_20251004_215744_422.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "fieldnotes",
+        "continuous": "true"
+      },
+      "ratio": 1.5,
+      "label": "Fieldnotes 幻燈",
+      "col_span": 5,
+      "row_span": 3
+    }
+  ]
+}

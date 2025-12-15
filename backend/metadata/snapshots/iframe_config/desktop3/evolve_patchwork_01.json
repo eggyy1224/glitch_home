@@ -1,0 +1,81 @@
+{
+  "layout": "grid",
+  "gap": 10,
+  "columns": 3,
+  "panels": [
+    {
+      "id": "nw_a",
+      "image": "尋山問境/offspring_20251004_212425_446.png",
+      "url": "/?static_mode=true&img=%E5%B0%8B%E5%B1%B1%E5%95%8F%E5%A2%83%2Foffspring_20251004_212425_446.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk A",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "video_core",
+      "image": null,
+      "url": "/?video_mode=true&video=Club_Scene.mp4&client=desktop3-patch-1-core&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.2,
+      "label": "core Club_Scene.mp4",
+      "col_span": 2,
+      "row_span": 2
+    },
+    {
+      "id": "slide_off",
+      "image": "offspring_20251008_112221_248.png",
+      "url": null,
+      "params": {
+        "slide_mode": "true",
+        "slide_source": "vector",
+        "continuous": "true"
+      },
+      "ratio": 1.0,
+      "label": "offspring slide",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "nw_b",
+      "image": "夢遊/wc6725__6080abb1-f41a-420b-945c-68cac3604e78.png",
+      "url": "/?static_mode=true&img=%E5%A4%A2%E9%81%8A%2Fwc6725__6080abb1-f41a-420b-945c-68cac3604e78.png&img_base=/nightwalk_assets/",
+      "params": {
+        "__preset_mode": "static_mode"
+      },
+      "ratio": 1.0,
+      "label": "nightwalk B",
+      "col_span": 1,
+      "row_span": 1
+    },
+    {
+      "id": "video_edge",
+      "image": null,
+      "url": "/?video_mode=true&video=Disco%E9%B3%A5%E4%BA%BA.mp4&client=desktop3-patch-1-edge&video_volume=0.15&volume=0.15&loop=true",
+      "params": {
+        "sound_player": "false"
+      },
+      "ratio": 1.0,
+      "label": "edge Disco鳥人.mp4",
+      "col_span": 1,
+      "row_span": 2
+    },
+    {
+      "id": "static_off",
+      "image": "offspring_20251109_001600_627.png",
+      "url": null,
+      "params": {
+        "static_mode": "true"
+      },
+      "ratio": 0.95,
+      "label": "offspring static",
+      "col_span": 1,
+      "row_span": 1
+    }
+  ]
+}

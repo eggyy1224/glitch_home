@@ -1,0 +1,27 @@
+{
+  "layout": "grid",
+  "gap": 12,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "left",
+      "image": null,
+      "url": "/?video_mode=true&video=SCHC-1-modified.mp4&client=desktop2-dipL-3&video_volume=0&volume=0&auto_unmute=false&loop=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "muted SCHC-1-modified.mp4",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "right",
+      "image": null,
+      "url": "/?video_mode=true&video=SCHC-1-modified2.mp4&client=desktop2-dipR-3&video_volume=0.15&volume=0.15&loop=true",
+      "params": {},
+      "ratio": 1.0,
+      "label": "video SCHC-1-modified2.mp4",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
