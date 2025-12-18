@@ -1,10 +1,16 @@
 const FONT_FAMILY = "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif";
 type StyleMap = Record<string, string | number | undefined>;
 
+export type KinshipRelation = "children" | "parents" | "siblings" | "ancestors";
+
 export const SlideSourceMode = Object.freeze({
   VECTOR: "vector",
   KINSHIP: "kinship",
 });
+
+export const DEFAULT_SLIDE_TOP_K = 15;
+export const DEFAULT_KINSHIP_DEPTH = -1;
+export const DEFAULT_KINSHIP_ORDER: KinshipRelation[] = ["children", "siblings", "parents", "ancestors"];
 
 export const getSlideSourceMode = (params: URLSearchParams | null | undefined) => {
   const mode = (params?.get("slide_source") || SlideSourceMode.VECTOR).toLowerCase();
@@ -175,8 +181,9 @@ export const computeStyles = (sizeClass: "large" | "medium" | "small" | "xsmall"
 
 export const cleanId = (value: string | null | undefined) => (value ? value.replace(/:(en|zh)$/i, "") : value);
 
-export const DISPLAY_ORDER = Array.from({ length: 15 }, (_, i) => i);
-export const BATCH_SIZE = 15;
+export const DISPLAY_ORDER = Array.from({ length: DEFAULT_SLIDE_TOP_K }, (_, i) => i);
+export const BATCH_SIZE = DEFAULT_SLIDE_TOP_K;
+export const buildDisplayOrder = (count: number) => Array.from({ length: count }, (_, i) => i);
 
 export const canvasToBlob = (canvas: HTMLCanvasElement) =>
   new Promise<Blob>((resolve, reject) => {

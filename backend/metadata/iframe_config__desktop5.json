@@ -30,11 +30,16 @@
     {
       "id": "panel_3",
       "image": "offspring_20250923_172041_821.png",
-      "url": "/?slide_mode=true&img=offspring_20250923_172041_821.png&slide_interval=1700&slide_interval_ms=1700",
+      "url": "/?slide_mode=true&img=offspring_20250923_172041_821.png&slide_interval=1700&slide_interval_ms=1700&top_k=30&slide_source=kinship&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false",
       "params": {
         "__preset_mode": "slide_mode",
         "slide_interval": "1700",
-        "slide_interval_ms": "1700"
+        "slide_interval_ms": "1700",
+        "top_k": "30",
+        "kinship_depth": "-1",
+        "slide_source": "kinship",
+        "kinship_order": "children,siblings,parents,ancestors",
+        "include_deprecated": "false"
       },
       "ratio": 1.0,
       "label": "",

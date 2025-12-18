@@ -6,9 +6,12 @@ import type { SearchRequestResult } from "../types/generate";
 export async function searchImagesByImage(
   imagePath: string,
   topK = 10,
-  { signal }: RequestOptions = {},
+  { signal, includeDeprecated }: RequestOptions & { includeDeprecated?: boolean } = {},
 ): Promise<SearchRequestResult> {
-  const payload = { image_path: imagePath, top_k: topK };
+  const payload: Record<string, unknown> = { image_path: imagePath, top_k: topK };
+  if (includeDeprecated !== undefined) {
+    payload.include_deprecated = includeDeprecated;
+  }
   return apiClient.post(`/api/search/image`, payload, { signal });
 }
 

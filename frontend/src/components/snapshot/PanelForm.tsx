@@ -4,8 +4,8 @@ import type { PanelMode } from "./panelPresets";
 import { getPanelModeAndAsset, mergePresetMode, MODE_PRESETS } from "./panelPresets";
 import type { VideoPanelOptions } from "./videoPanelUtils";
 import { buildVideoModeUrl, parseVideoPanelOptions } from "./videoPanelUtils";
-import type { SlidePanelOptions } from "./slidePanelUtils";
-import { buildSlideModeUrl, parseSlidePanelOptions } from "./slidePanelUtils";
+import type { KinshipRelation, SlidePanelOptions } from "./slidePanelUtils";
+import { applySlideOptionsToParams, buildSlideModeUrl, mergeSlideOptions, parseSlidePanelOptions } from "./slidePanelUtils";
 
 interface PanelFormProps {
   index: number;
@@ -54,20 +54,11 @@ export function PanelForm({
     [isSlideMode, panel?.params, panel?.url],
   );
 
-  const mergeSlideParams = (intervalMs?: number | null): PanelConfig["params"] | undefined => {
+  const mergeSlideParams = (patch?: Partial<SlidePanelOptions>): PanelConfig["params"] | undefined => {
     const baseParams = mergePresetMode(panel?.params, "slide_mode") || {};
-    const nextParams = { ...baseParams } as Record<string, unknown>;
-    if (intervalMs !== undefined) {
-      if (intervalMs === null) {
-        delete nextParams.slide_interval;
-        delete nextParams.slide_interval_ms;
-      } else {
-        const safeValue = Math.max(0, Math.floor(intervalMs));
-        nextParams.slide_interval = String(safeValue);
-        nextParams.slide_interval_ms = String(safeValue);
-      }
-    }
-    return Object.keys(nextParams).length ? nextParams : undefined;
+    const current = slideOptions || parseSlidePanelOptions(panel?.url, panel?.params);
+    const merged = mergeSlideOptions(current, patch);
+    return applySlideOptionsToParams(baseParams, merged);
   };
 
   const handleVideoOptionChange = (patch: Partial<VideoPanelOptions>) => {
@@ -85,7 +76,7 @@ export function PanelForm({
     const nextUrl = buildSlideModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideOptions?.imgBase });
     const patchPayload: Partial<PanelConfig> = {
       url: nextUrl,
-      params: mergeSlideParams(patch.intervalMs),
+      params: mergeSlideParams(patch),
     };
     onPanelChange(index, patchPayload);
   };
@@ -215,23 +206,98 @@ export function PanelForm({
         />
       </label>
       {isSlideMode && (
-        <label style={{ display: "flex", flexDirection: "column" }}>
-          輪播間隔 (毫秒)
-          <input
-            type="number"
-            min="500"
-            step="100"
-            value={slideOptions?.intervalMs ?? ""}
-            onChange={(e) => {
-              const raw = e.target.value;
-              const parsed = raw === "" ? null : Number(raw);
-              const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
-              handleSlideOptionChange({ intervalMs: safeValue });
-            }}
-            placeholder="預設 3000"
-            data-ai-field={`snapshot.panel[${index}].slide_interval_ms`}
-          />
-        </label>
+        <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>
+          <div style={{ marginBottom: 6, color: "#82dca5" }}>slide_mode 參數</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              輪播間隔 (毫秒)
+              <input
+                type="number"
+                min="500"
+                step="100"
+                value={slideOptions?.intervalMs ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleSlideOptionChange({ intervalMs: safeValue });
+                }}
+                placeholder="預設 3000"
+                data-ai-field={`snapshot.panel[${index}].slide_interval_ms`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              結果數量 (top_k)
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={slideOptions?.topK ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : Math.max(1, parsed);
+                  handleSlideOptionChange({ topK: safeValue ?? undefined });
+                }}
+                placeholder="預設 15"
+                data-ai-field={`snapshot.panel[${index}].slide_top_k`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              資料來源
+              <select
+                value={slideOptions?.slideSource ?? "vector"}
+                onChange={(e) => handleSlideOptionChange({ slideSource: e.target.value as SlidePanelOptions["slideSource"] })}
+                data-ai-field={`snapshot.panel[${index}].slide_source`}
+              >
+                <option value="vector">vector</option>
+                <option value="kinship">kinship</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              親緣深度 (kinship_depth)
+              <input
+                type="number"
+                step="1"
+                value={slideOptions?.kinshipDepth ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleSlideOptionChange({ kinshipDepth: safeValue });
+                }}
+                placeholder="-1 代表取全部"
+                data-ai-field={`snapshot.panel[${index}].kinship_depth`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              親緣排序偏好 (逗號分隔)
+              <input
+                type="text"
+                value={(slideOptions?.kinshipOrder || []).join(",")}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const list = raw
+                    .split(",")
+                    .map((item) => item.trim())
+                    .filter(Boolean) as KinshipRelation[];
+                  handleSlideOptionChange({ kinshipOrder: list });
+                }}
+                placeholder="children,siblings,parents,ancestors"
+                data-ai-field={`snapshot.panel[${index}].kinship_order`}
+              />
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={slideOptions?.includeDeprecated ?? false}
+                onChange={(e) => handleSlideOptionChange({ includeDeprecated: e.target.checked })}
+                data-ai-field={`snapshot.panel[${index}].include_deprecated`}
+              />
+              包含 deprecated
+            </label>
+          </div>
+        </div>
       )}
       {isVideoMode && (
         <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>

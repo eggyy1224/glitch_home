@@ -8,7 +8,13 @@ import type { PanelMode } from "./panelPresets";
 import { useSnapshotPanelDnd } from "./useSnapshotPanelDnd";
 import type { AssetSearchMode, AssetTab, PanelConfig } from "./types";
 import { buildVideoModeUrl } from "./videoPanelUtils";
-import { buildSlideModeUrl, parseSlidePanelOptions } from "./slidePanelUtils";
+import {
+  applySlideOptionsToParams,
+  buildSlideModeUrl,
+  mergeSlideOptions,
+  parseSlidePanelOptions,
+  type SlidePanelOptions,
+} from "./slidePanelUtils";
 
 interface SnapshotPanelsEditorProps {
   panels: PanelConfig[];
@@ -82,22 +88,14 @@ const extractImgBaseFromUrl = (url?: string | null): string | null => {
   }
 };
 
-const mergeSlideParams = (panel?: PanelConfig, intervalMs?: number | null): PanelConfig["params"] | undefined => {
+const mergeSlideParams = (
+  panel?: PanelConfig,
+  patch?: Partial<SlidePanelOptions>,
+): PanelConfig["params"] | undefined => {
   const baseParams = mergePresetMode(panel?.params, "slide_mode") || {};
-  const nextParams = { ...baseParams } as Record<string, unknown>;
-  const fallbackInterval = parseSlidePanelOptions(panel?.url, panel?.params).intervalMs;
-  const resolvedInterval = intervalMs !== undefined ? intervalMs : fallbackInterval;
-  if (resolvedInterval !== undefined) {
-    if (resolvedInterval === null) {
-      delete nextParams.slide_interval;
-      delete nextParams.slide_interval_ms;
-    } else {
-      const safeValue = Math.max(0, Math.floor(resolvedInterval));
-      nextParams.slide_interval = String(safeValue);
-      nextParams.slide_interval_ms = String(safeValue);
-    }
-  }
-  return Object.keys(nextParams).length ? nextParams : undefined;
+  const currentOptions = parseSlidePanelOptions(panel?.url, panel?.params);
+  const mergedOptions = mergeSlideOptions(currentOptions, patch);
+  return applySlideOptionsToParams(baseParams, mergedOptions);
 };
 
 export default function SnapshotPanelsEditor({

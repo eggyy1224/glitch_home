@@ -34,7 +34,9 @@ describe("useSlidePlayback", () => {
     });
 
     expect(result.current.index).toBeGreaterThanOrEqual(1);
-    expect(searchByImage).toHaveBeenCalledWith("backend/offspring_images/offspring_seed.png", 15);
+    expect(searchByImage).toHaveBeenCalledWith("backend/offspring_images/offspring_seed.png", 15, {
+      includeDeprecated: false,
+    });
   });
 
   it("switches to kinship mode when requested", async () => {
@@ -51,6 +53,43 @@ describe("useSlidePlayback", () => {
 
     await waitFor(() => expect(result.current.current?.cleanId).toBe("offspring_seed.png"));
     expect(fetchKinshipData).toHaveBeenCalledWith("offspring_seed.png", -1);
+  });
+
+  it("applies vector slide params from URL", async () => {
+    setSearch("slide_source=vector&top_k=25&include_deprecated=true");
+    const searchByImage = vi.fn().mockResolvedValue({ results: [{ id: "offspring_seed.png" }] });
+    const fetchKinshipData = vi.fn();
+
+    renderHook(() => useSlidePlayback({ anchorImage: "offspring_seed.png", searchByImage, fetchKinshipData }));
+
+    await waitFor(() => expect(searchByImage).toHaveBeenCalled());
+    expect(searchByImage).toHaveBeenCalledWith("backend/offspring_images/offspring_seed.png", 25, {
+      includeDeprecated: true,
+    });
+  });
+
+  it("respects kinship options and ordering from URL", async () => {
+    setSearch("slide_source=kinship&kinship_depth=2&kinship_order=parents,children,siblings&top_k=3");
+    const searchByImage = vi.fn();
+    const fetchKinshipData = vi.fn().mockResolvedValue({
+      original_image: "offspring_seed.png",
+      parents: ["parent.png"],
+      siblings: ["sibling.png"],
+      children: ["child.png"],
+      ancestors: ["ancestor.png"],
+    });
+
+    const { result } = renderHook(() =>
+      useSlidePlayback({ anchorImage: "offspring_seed.png", searchByImage, fetchKinshipData }),
+    );
+
+    await waitFor(() => expect(result.current.items.length).toBeGreaterThan(0));
+    expect(fetchKinshipData).toHaveBeenCalledWith("offspring_seed.png", 2);
+    expect(result.current.items.map((item) => item.cleanId).slice(0, 3)).toEqual([
+      "offspring_seed.png",
+      "parent.png",
+      "child.png",
+    ]);
   });
 
   it("toggles caption with Ctrl+R", async () => {

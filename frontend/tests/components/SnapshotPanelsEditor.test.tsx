@@ -36,8 +36,16 @@ vi.mock("../../src/api", async () => {
 
 type PanelChangeHandler = (index: number, patch: Partial<SnapshotPanel & IframePanelConfig>) => void;
 
-function ControlledEditor({ onPanelChange, selectedRows = [0] }: { onPanelChange: PanelChangeHandler; selectedRows?: number[] }) {
-  const [panels, setPanels] = useState<SnapshotPanel[]>([{ id: "p1", url: "", image: "" }]);
+function ControlledEditor({
+  onPanelChange,
+  selectedRows = [0],
+  initialPanels,
+}: {
+  onPanelChange: PanelChangeHandler;
+  selectedRows?: number[];
+  initialPanels?: SnapshotPanel[];
+}) {
+  const [panels, setPanels] = useState<SnapshotPanel[]>(initialPanels ?? [{ id: "p1", url: "", image: "" }]);
   const handleChange: PanelChangeHandler = (index, patch) => {
     setPanels((prev) => prev.map((panel, i) => (i === index ? { ...panel, ...patch } : panel)));
     onPanelChange(index, patch);
@@ -192,10 +200,11 @@ describe("SnapshotPanelsEditor", () => {
     const assetInput = screen.getByLabelText("資產（依模式）");
     fireEvent.change(assetInput, { target: { value: "bar.png" } });
 
-    expect(onPanelChange).toHaveBeenLastCalledWith(
-      0,
-      expect.objectContaining({ url: "/?slide_mode=true&img=bar.png", image: "bar.png" }),
-    );
+    const lastPatch = onPanelChange.mock.calls[onPanelChange.mock.calls.length - 1]?.[1] as SnapshotPanel;
+    const parsed = new URL(lastPatch.url || "", "http://localhost");
+    expect(parsed.searchParams.get("slide_mode")).toBe("true");
+    expect(parsed.searchParams.get("img")).toBe("bar.png");
+    expect(lastPatch.image).toBe("bar.png");
   });
 
   it("slide_mode 可以在表單調整輪播間隔並同步寫回 url/params", async () => {
@@ -233,6 +242,47 @@ describe("SnapshotPanelsEditor", () => {
         __preset_mode: "slide_mode",
         slide_interval: "2200",
         slide_interval_ms: "2200",
+      }),
+    );
+  });
+
+  it("slide_mode 其他參數會出現在表單並寫回 url/params", async () => {
+    const onPanelChange = vi.fn();
+    const presetPanel = {
+      id: "p1",
+      url: "/?slide_mode=true&img=foo.png&slide_interval=1500&top_k=18&slide_source=kinship&kinship_depth=2&kinship_order=parents,children&include_deprecated=true",
+    };
+    render(<ControlledEditor onPanelChange={onPanelChange} initialPanels={[presetPanel as SnapshotPanel]} />);
+    await waitFor(() => expect(apiMocks.listOffspringImages).toHaveBeenCalled());
+
+    const topKInput = screen.getByLabelText(/結果數量/);
+    expect((topKInput as HTMLInputElement).value).toBe("18");
+    const sourceSelect = screen.getByLabelText("資料來源") as HTMLSelectElement;
+    expect(sourceSelect.value).toBe("kinship");
+    const depthInput = screen.getByLabelText(/親緣深度/);
+    expect((depthInput as HTMLInputElement).value).toBe("2");
+    const orderInput = screen.getByLabelText(/親緣排序偏好/);
+    expect((orderInput as HTMLInputElement).value).toBe("parents,children");
+    const includeDeprecated = screen.getByLabelText("包含 deprecated") as HTMLInputElement;
+    expect(includeDeprecated.checked).toBe(true);
+
+    fireEvent.change(topKInput, { target: { value: "25" } });
+    fireEvent.change(orderInput, { target: { value: "children,siblings,parents" } });
+    fireEvent.click(includeDeprecated);
+
+    const lastPatch = onPanelChange.mock.calls[onPanelChange.mock.calls.length - 1]?.[1] as SnapshotPanel;
+    const parsed = new URL(lastPatch.url || "", "http://localhost");
+    expect(parsed.searchParams.get("top_k")).toBe("25");
+    expect(parsed.searchParams.get("slide_source")).toBe("kinship");
+    expect(parsed.searchParams.get("kinship_depth")).toBe("2");
+    expect(parsed.searchParams.get("kinship_order")).toBe("children,siblings,parents");
+    expect(parsed.searchParams.get("include_deprecated")).toBe("false");
+    expect(lastPatch.params).toEqual(
+      expect.objectContaining({
+        top_k: "25",
+        kinship_depth: "2",
+        kinship_order: "children,siblings,parents",
+        include_deprecated: "false",
       }),
     );
   });

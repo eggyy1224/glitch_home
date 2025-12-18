@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { searchImagesByImage, fetchKinship } from "../api";
+import { parseSlidePanelOptions } from "../components/snapshot/slidePanelUtils";
 import {
-  BATCH_SIZE,
-  DISPLAY_ORDER,
+  DEFAULT_KINSHIP_DEPTH,
+  DEFAULT_KINSHIP_ORDER,
+  DEFAULT_SLIDE_TOP_K,
   SlideSourceMode,
+  buildDisplayOrder,
   cleanId,
   getSlideSourceMode,
 } from "../utils/slideMode";
@@ -29,7 +32,7 @@ const deduplicate = (entries: SlideItem[]): SlideItem[] => {
   return ordered;
 };
 
-const buildVectorResults = (list: unknown, fallbackId: string | null | undefined): SlideItem[] => {
+const buildVectorResults = (list: unknown, fallbackId: string | null | undefined, limit: number): SlideItem[] => {
   const prepared = ensureArray<{ id?: string; distance?: number }>(list)
     .map((item) => {
       const cleaned = cleanId(item?.id || "") || "";
@@ -42,7 +45,7 @@ const buildVectorResults = (list: unknown, fallbackId: string | null | undefined
     .filter((entry) => entry.cleanId);
 
   const orderedByDisplay: SlideItem[] = [];
-  DISPLAY_ORDER.forEach((index) => {
+  buildDisplayOrder(limit).forEach((index) => {
     const entry = prepared[index];
     if (!entry) return;
     orderedByDisplay.push(entry);
@@ -54,10 +57,15 @@ const buildVectorResults = (list: unknown, fallbackId: string | null | undefined
     deduped.unshift({ id: fallbackId, cleanId: fallbackId, distance: null });
   }
 
-  return deduped.slice(0, BATCH_SIZE);
+  return deduped.slice(0, limit);
 };
 
-const buildKinshipResults = (data: unknown, fallbackId: string | null | undefined): SlideItem[] => {
+const buildKinshipResults = (
+  data: unknown,
+  fallbackId: string | null | undefined,
+  limit: number,
+  order: typeof DEFAULT_KINSHIP_ORDER,
+): SlideItem[] => {
   const ordered: SlideItem[] = [];
   const pushList = (list: unknown): void => {
     ensureArray<string>(list).forEach((item) => {
@@ -68,11 +76,17 @@ const buildKinshipResults = (data: unknown, fallbackId: string | null | undefine
   };
 
   const payload = (data || {}) as Record<string, unknown>;
-  pushList(payload.children);
-  pushList(payload.siblings);
-  pushList(payload.parents);
-  ensureArray(payload.ancestors_by_level).forEach((level) => pushList(level));
-  pushList(payload.ancestors);
+  const applyAncestors = () => {
+    ensureArray(payload.ancestors_by_level).forEach((level) => pushList(level));
+    pushList(payload.ancestors);
+  };
+  order.forEach((relation) => {
+    if (relation === "ancestors") {
+      applyAncestors();
+    } else {
+      pushList(payload[relation]);
+    }
+  });
   pushList(payload.related_images);
 
   const list = deduplicate(ordered);
@@ -81,7 +95,7 @@ const buildKinshipResults = (data: unknown, fallbackId: string | null | undefine
     list.unshift({ id: original, cleanId: original, distance: null });
   }
 
-  const sliced = list.slice(0, BATCH_SIZE);
+  const sliced = list.slice(0, limit);
   if (!sliced.length && original) {
     sliced.push({ id: original, cleanId: original, distance: null });
   }
@@ -102,6 +116,24 @@ export function useSlidePlayback({
   imagesBase?: string;
 } = {}) {
   const anchorClean = cleanId(anchorImage);
+  const slideConfig = useMemo(() => {
+    const parsed = parseSlidePanelOptions(window.location.href);
+    const resolvedTopK = Math.max(1, Math.floor(parsed.topK ?? DEFAULT_SLIDE_TOP_K));
+    const resolvedDepth =
+      parsed.kinshipDepth === null || parsed.kinshipDepth === undefined
+        ? DEFAULT_KINSHIP_DEPTH
+        : Math.floor(parsed.kinshipDepth);
+    const kinshipOrder =
+      parsed.kinshipOrder && parsed.kinshipOrder.length ? parsed.kinshipOrder : DEFAULT_KINSHIP_ORDER;
+    return {
+      ...parsed,
+      topK: resolvedTopK,
+      slideSource: parsed.slideSource ?? SlideSourceMode.VECTOR,
+      kinshipDepth: resolvedDepth,
+      kinshipOrder,
+      includeDeprecated: parsed.includeDeprecated ?? false,
+    };
+  }, []);
   const [items, setItems] = useState<SlideItem[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -109,9 +141,7 @@ export function useSlidePlayback({
   const [anchor, setAnchor] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
   const [showCaption, setShowCaption] = useState(false);
-  const [sourceMode, setSourceMode] = useState(() =>
-    getSlideSourceMode(new URLSearchParams(window.location.search)),
-  );
+  const [sourceMode, setSourceMode] = useState(slideConfig.slideSource);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const failedSetRef = useRef<Set<string>>(new Set());
@@ -156,20 +186,21 @@ export function useSlidePlayback({
 
       const run = async () => {
         try {
+          const batchSize = Math.max(1, slideConfig.topK ?? DEFAULT_SLIDE_TOP_K);
           if (mode === SlideSourceMode.KINSHIP) {
-            const data = await fetchKinshipData(imageId, -1);
+            const data = await fetchKinshipData(imageId, slideConfig.kinshipDepth);
             if (cancelled || currentGeneration !== generation) return;
-            const nextItems = buildKinshipResults(data, imageId).filter(
+            const nextItems = buildKinshipResults(data, imageId, batchSize, slideConfig.kinshipOrder).filter(
               (entry) => !failedSetRef.current.has(entry.cleanId),
             );
             setItems(nextItems);
             setIndex(0);
           } else {
             const searchPath = `backend/offspring_images/${imageId}`;
-            const data = await searchByImage(searchPath, BATCH_SIZE);
+            const data = await searchByImage(searchPath, batchSize, { includeDeprecated: slideConfig.includeDeprecated });
             if (cancelled || currentGeneration !== generation) return;
             const fallbackClean = cleanId(imageId) || (imageId ?? "");
-            const list = buildVectorResults(data?.results, fallbackClean).filter(
+            const list = buildVectorResults(data?.results, fallbackClean, batchSize).filter(
               (entry) => !failedSetRef.current.has(entry.cleanId),
             );
             setItems(list.length ? list : [{ id: imageId, cleanId: fallbackClean, distance: null }]);
@@ -196,7 +227,7 @@ export function useSlidePlayback({
         cancelled = true;
       };
     },
-    [generation, fetchKinshipData, searchByImage],
+    [generation, fetchKinshipData, searchByImage, slideConfig.includeDeprecated, slideConfig.kinshipDepth, slideConfig.kinshipOrder, slideConfig.topK],
   );
 
   useEffect(() => {
