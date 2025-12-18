@@ -198,6 +198,45 @@ describe("SnapshotPanelsEditor", () => {
     );
   });
 
+  it("slide_mode 可以在表單調整輪播間隔並同步寫回 url/params", async () => {
+    const onPanelChange = vi.fn();
+    const presetPanel = { id: "p1", url: "/?slide_mode=true&img=foo.png&slide_interval=1500" };
+    const Wrapper = () => (
+      <SnapshotPanelsEditor
+        panels={[presetPanel]}
+        selectedRows={[0]}
+        onToggleRow={vi.fn()}
+        onMoveRow={vi.fn()}
+        onDuplicateRow={vi.fn()}
+        onRemoveRow={vi.fn()}
+        onAddPanel={vi.fn()}
+        onCopy={vi.fn()}
+        onPaste={vi.fn()}
+        canPaste
+        onPanelChange={onPanelChange}
+      />
+    );
+    render(<Wrapper />);
+    await waitFor(() => expect(apiMocks.listOffspringImages).toHaveBeenCalled());
+
+    const intervalInput = screen.getByLabelText(/輪播間隔/);
+    expect((intervalInput as HTMLInputElement).value).toBe("1500");
+
+    fireEvent.change(intervalInput, { target: { value: "2200" } });
+
+    const lastPatch = onPanelChange.mock.calls[onPanelChange.mock.calls.length - 1]?.[1] as SnapshotPanel;
+    const parsed = new URL(lastPatch.url || "", "http://localhost");
+    expect(parsed.searchParams.get("slide_interval")).toBe("2200");
+    expect(parsed.searchParams.get("slide_interval_ms")).toBe("2200");
+    expect(lastPatch.params).toEqual(
+      expect.objectContaining({
+        __preset_mode: "slide_mode",
+        slide_interval: "2200",
+        slide_interval_ms: "2200",
+      }),
+    );
+  });
+
   it("拖放影片資產會強制使用 video_mode 並更新 url", async () => {
     const onPanelChange = vi.fn();
     render(<ControlledEditor onPanelChange={onPanelChange} />);

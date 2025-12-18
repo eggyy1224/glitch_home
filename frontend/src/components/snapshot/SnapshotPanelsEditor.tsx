@@ -8,6 +8,7 @@ import type { PanelMode } from "./panelPresets";
 import { useSnapshotPanelDnd } from "./useSnapshotPanelDnd";
 import type { AssetSearchMode, AssetTab, PanelConfig } from "./types";
 import { buildVideoModeUrl } from "./videoPanelUtils";
+import { buildSlideModeUrl, parseSlidePanelOptions } from "./slidePanelUtils";
 
 interface SnapshotPanelsEditorProps {
   panels: PanelConfig[];
@@ -79,6 +80,24 @@ const extractImgBaseFromUrl = (url?: string | null): string | null => {
   } catch (err) {
     return null;
   }
+};
+
+const mergeSlideParams = (panel?: PanelConfig, intervalMs?: number | null): PanelConfig["params"] | undefined => {
+  const baseParams = mergePresetMode(panel?.params, "slide_mode") || {};
+  const nextParams = { ...baseParams } as Record<string, unknown>;
+  const fallbackInterval = parseSlidePanelOptions(panel?.url, panel?.params).intervalMs;
+  const resolvedInterval = intervalMs !== undefined ? intervalMs : fallbackInterval;
+  if (resolvedInterval !== undefined) {
+    if (resolvedInterval === null) {
+      delete nextParams.slide_interval;
+      delete nextParams.slide_interval_ms;
+    } else {
+      const safeValue = Math.max(0, Math.floor(resolvedInterval));
+      nextParams.slide_interval = String(safeValue);
+      nextParams.slide_interval_ms = String(safeValue);
+    }
+  }
+  return Object.keys(nextParams).length ? nextParams : undefined;
 };
 
 export default function SnapshotPanelsEditor({
@@ -286,13 +305,16 @@ export default function SnapshotPanelsEditor({
     }
     const preset = MODE_PRESETS[nextMode as PanelMode];
     const imgBase = resolveImgBase(assetTab, panel, options?.imgBase);
+    const params = nextMode === "slide_mode" ? mergeSlideParams(panel) : mergePresetMode(panel?.params, nextMode);
     const nextUrl =
       nextMode === "video_mode"
         ? buildVideoModeUrl(panel?.url, { video: currentAsset })
+        : nextMode === "slide_mode"
+        ? buildSlideModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
         : preset
         ? buildUrlFromPreset(nextMode as PanelMode, currentAsset, { imgBase })
         : "";
-    const patch: Partial<PanelConfig> = { url: nextUrl, params: mergePresetMode(panel?.params, nextMode) };
+    const patch: Partial<PanelConfig> = { url: nextUrl, params };
     if (preset?.assetKey === "img") {
       patch.image = currentAsset || panel?.image || "";
     }
@@ -314,10 +336,15 @@ export default function SnapshotPanelsEditor({
       const nextUrl =
         mode === "video_mode"
           ? buildVideoModeUrl(panel?.url, { video: assetValue })
+          : mode === "slide_mode"
+          ? buildSlideModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
           : preset
           ? buildUrlFromPreset(mode as PanelMode, assetValue, { imgBase })
           : "";
-      const patch: Partial<PanelConfig> = { url: nextUrl, params: mergePresetMode(panel?.params, mode) };
+      const patch: Partial<PanelConfig> = {
+        url: nextUrl,
+        params: mode === "slide_mode" ? mergeSlideParams(panel) : mergePresetMode(panel?.params, mode),
+      };
       if (isImageMode) {
         patch.image = assetValue || "";
       }
@@ -344,10 +371,13 @@ export default function SnapshotPanelsEditor({
     const patch: Partial<PanelConfig> = { image: value || "" };
     const imgBase = resolveImgBase(assetTab, panel, imgBaseOverride);
     if (resolvedMode) {
-      patch.params = mergePresetMode(panel?.params, resolvedMode);
+      patch.params = resolvedMode === "slide_mode" ? mergeSlideParams(panel) : mergePresetMode(panel?.params, resolvedMode);
     }
     if (resolvedUrlMode) {
-      patch.url = buildUrlFromPreset(resolvedUrlMode as PanelMode, value, { imgBase });
+      patch.url =
+        resolvedUrlMode === "slide_mode"
+          ? buildSlideModeUrl(panel?.url, { img: value }, { imgBase, panelParams: panel?.params })
+          : buildUrlFromPreset(resolvedUrlMode as PanelMode, value, { imgBase });
     }
     onPanelChange(index, patch);
   };

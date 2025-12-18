@@ -6,9 +6,11 @@
     {
       "id": "p1",
       "image": "offspring_20250927_115953_059.png",
-      "url": "/?slide_mode=true&img=offspring_20250927_115953_059.png",
+      "url": "/?slide_mode=true&img=offspring_20250927_115953_059.png&slide_interval=800&slide_interval_ms=800",
       "params": {
-        "__preset_mode": "slide_mode"
+        "__preset_mode": "slide_mode",
+        "slide_interval": "800",
+        "slide_interval_ms": "800"
       },
       "ratio": 1.0,
       "label": "desktop panel",
@@ -18,9 +20,11 @@
     {
       "id": "panel_2",
       "image": "offspring_20250927_141336_787.png",
-      "url": "/?slide_mode=true&img=offspring_20250927_141336_787.png",
+      "url": "/?slide_mode=true&img=offspring_20250927_141336_787.png&slide_interval=500&slide_interval_ms=500",
       "params": {
-        "__preset_mode": "slide_mode"
+        "__preset_mode": "slide_mode",
+        "slide_interval": "500",
+        "slide_interval_ms": "500"
       },
       "ratio": 1.0,
       "label": "",
@@ -30,9 +34,11 @@
     {
       "id": "panel_3",
       "image": "offspring_20251001_182954_752.png",
-      "url": "/?slide_mode=true&img=offspring_20251001_182954_752.png",
+      "url": "/?slide_mode=true&img=offspring_20251001_182954_752.png&slide_interval=600&slide_interval_ms=600",
       "params": {
-        "__preset_mode": "slide_mode"
+        "__preset_mode": "slide_mode",
+        "slide_interval": "600",
+        "slide_interval_ms": "600"
       },
       "ratio": 1.0,
       "label": "",
@@ -42,9 +48,11 @@
     {
       "id": "panel_4",
       "image": "offspring_20250927_143151_576.png",
-      "url": "/?slide_mode=true&img=offspring_20250927_143151_576.png",
+      "url": "/?slide_mode=true&img=offspring_20250927_143151_576.png&slide_interval=600&slide_interval_ms=600",
       "params": {
-        "__preset_mode": "slide_mode"
+        "__preset_mode": "slide_mode",
+        "slide_interval": "600",
+        "slide_interval_ms": "600"
       },
       "ratio": 1.0,
       "label": "",

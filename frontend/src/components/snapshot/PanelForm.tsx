@@ -1,9 +1,11 @@
 import React from "react";
 import type { PanelConfig } from "./types";
 import type { PanelMode } from "./panelPresets";
-import { getPanelModeAndAsset, MODE_PRESETS } from "./panelPresets";
+import { getPanelModeAndAsset, mergePresetMode, MODE_PRESETS } from "./panelPresets";
 import type { VideoPanelOptions } from "./videoPanelUtils";
 import { buildVideoModeUrl, parseVideoPanelOptions } from "./videoPanelUtils";
+import type { SlidePanelOptions } from "./slidePanelUtils";
+import { buildSlideModeUrl, parseSlidePanelOptions } from "./slidePanelUtils";
 
 interface PanelFormProps {
   index: number;
@@ -45,7 +47,28 @@ export function PanelForm({
   const assetList = preset?.assetKey === "video" ? videoAssets : imageAssets;
   const safeAssetList = Array.isArray(assetList) ? assetList : [];
   const isVideoMode = mode === "video_mode";
+  const isSlideMode = mode === "slide_mode";
   const videoOptions = React.useMemo(() => (isVideoMode ? parseVideoPanelOptions(panel?.url) : undefined), [isVideoMode, panel?.url]);
+  const slideOptions = React.useMemo(
+    () => (isSlideMode ? parseSlidePanelOptions(panel?.url, panel?.params) : undefined),
+    [isSlideMode, panel?.params, panel?.url],
+  );
+
+  const mergeSlideParams = (intervalMs?: number | null): PanelConfig["params"] | undefined => {
+    const baseParams = mergePresetMode(panel?.params, "slide_mode") || {};
+    const nextParams = { ...baseParams } as Record<string, unknown>;
+    if (intervalMs !== undefined) {
+      if (intervalMs === null) {
+        delete nextParams.slide_interval;
+        delete nextParams.slide_interval_ms;
+      } else {
+        const safeValue = Math.max(0, Math.floor(intervalMs));
+        nextParams.slide_interval = String(safeValue);
+        nextParams.slide_interval_ms = String(safeValue);
+      }
+    }
+    return Object.keys(nextParams).length ? nextParams : undefined;
+  };
 
   const handleVideoOptionChange = (patch: Partial<VideoPanelOptions>) => {
     if (!isVideoMode) return;
@@ -53,6 +76,16 @@ export function PanelForm({
     const patchPayload: Partial<PanelConfig> = {
       url: nextUrl,
       params: panel?.params,
+    };
+    onPanelChange(index, patchPayload);
+  };
+
+  const handleSlideOptionChange = (patch: Partial<SlidePanelOptions>) => {
+    if (!isSlideMode) return;
+    const nextUrl = buildSlideModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideOptions?.imgBase });
+    const patchPayload: Partial<PanelConfig> = {
+      url: nextUrl,
+      params: mergeSlideParams(patch.intervalMs),
     };
     onPanelChange(index, patchPayload);
   };
@@ -173,14 +206,33 @@ export function PanelForm({
           type="number"
           min="1"
           value={panel?.rowSpan ?? panel?.row_span ?? ""}
-        onChange={(e) => {
-          const val = e.target.value;
-          const resolved = val === "" ? undefined : Number(val);
-          onPanelChange(index, { rowSpan: resolved, row_span: resolved });
-        }}
-        data-ai-field={`snapshot.panel[${index}].rowSpan`}
-      />
-    </label>
+          onChange={(e) => {
+            const val = e.target.value;
+            const resolved = val === "" ? undefined : Number(val);
+            onPanelChange(index, { rowSpan: resolved, row_span: resolved });
+          }}
+          data-ai-field={`snapshot.panel[${index}].rowSpan`}
+        />
+      </label>
+      {isSlideMode && (
+        <label style={{ display: "flex", flexDirection: "column" }}>
+          輪播間隔 (毫秒)
+          <input
+            type="number"
+            min="500"
+            step="100"
+            value={slideOptions?.intervalMs ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const parsed = raw === "" ? null : Number(raw);
+              const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+              handleSlideOptionChange({ intervalMs: safeValue });
+            }}
+            placeholder="預設 3000"
+            data-ai-field={`snapshot.panel[${index}].slide_interval_ms`}
+          />
+        </label>
+      )}
       {isVideoMode && (
         <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>
           <div style={{ marginBottom: 6, color: "#82dca5" }}>video_mode 參數</div>
