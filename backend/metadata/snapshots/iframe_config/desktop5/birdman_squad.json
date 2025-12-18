@@ -6,7 +6,7 @@
     {
       "id": "p1",
       "image": null,
-      "url": "/?video_mode=true&video_speed=0.5&speed=0.5&video_volume=0&volume=0&video=%E8%8D%89%E5%8F%A2%E8%A6%AA%E8%A6%AA.mp4",
+      "url": "/?video_mode=true&video_speed=0.07&speed=0.07&video_volume=0&volume=0&video=BirdmanTalk.mp4",
       "params": {
         "__preset_mode": "video_mode"
       },
@@ -18,7 +18,7 @@
     {
       "id": "panel_2",
       "image": null,
-      "url": "/?video_mode=true&video=%E5%8F%AC%E5%96%9A.mp4&video_speed=0.07&speed=0.07",
+      "url": "/?video_mode=true&video_volume=0.5&volume=0.5&video_speed=1&speed=1&video=BirdmanTalk.mp4",
       "params": {
         "__preset_mode": "video_mode"
       },
@@ -29,12 +29,10 @@
     },
     {
       "id": "panel_3",
-      "image": "offspring_20250923_172041_821.png",
-      "url": "/?slide_mode=true&img=offspring_20250923_172041_821.png&slide_interval=1700&slide_interval_ms=1700",
+      "image": null,
+      "url": "/?video_mode=true&video_speed=0.08&speed=0.08&video_volume=0&volume=0&video=Birds.mp4",
       "params": {
-        "__preset_mode": "slide_mode",
-        "slide_interval": "1700",
-        "slide_interval_ms": "1700"
+        "__preset_mode": "video_mode"
       },
       "ratio": 1.0,
       "label": "",
@@ -44,7 +42,7 @@
     {
       "id": "panel_4",
       "image": null,
-      "url": "/?video_mode=true&video_speed=0.4&speed=0.4&video_volume=0&volume=0&video=Drive_in_stormy.mp4",
+      "url": "/?video_mode=true&video_speed=0.3&speed=0.3&video_volume=0&volume=0&video=Drive_in_stormy.mp4",
       "params": {
         "__preset_mode": "video_mode"
       },
