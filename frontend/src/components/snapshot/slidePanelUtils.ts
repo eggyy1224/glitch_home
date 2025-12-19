@@ -21,6 +21,7 @@ export type SlidePanelOptions = {
 };
 
 const MODE_FLAG_KEYS = [
+  "slide_mode",
   "video_mode",
   "static_mode",
   "incubator",
@@ -161,11 +162,28 @@ export const buildSlideModeUrl = (
   updates: Partial<SlidePanelOptions>,
   options?: { imgBase?: string | null; panelParams?: PanelConfig["params"] },
 ) => {
+  return buildSlideLikeUrl("slide_mode", panelUrl, updates, options);
+};
+
+export const buildMatrixModeUrl = (
+  panelUrl: PanelConfig["url"],
+  updates: Partial<SlidePanelOptions>,
+  options?: { imgBase?: string | null; panelParams?: PanelConfig["params"] },
+) => {
+  return buildSlideLikeUrl("matrix_mode", panelUrl, updates, options);
+};
+
+const buildSlideLikeUrl = (
+  modeKey: "slide_mode" | "matrix_mode",
+  panelUrl: PanelConfig["url"],
+  updates: Partial<SlidePanelOptions>,
+  options?: { imgBase?: string | null; panelParams?: PanelConfig["params"] },
+) => {
   const url = toUrl(panelUrl);
   const params = url.searchParams;
 
   MODE_FLAG_KEYS.forEach((key) => params.delete(key));
-  params.set("slide_mode", "true");
+  params.set(modeKey, "true");
 
   const current = parseSlidePanelOptions(panelUrl, options?.panelParams);
   const merged = mergeSlideOptions(current, updates);

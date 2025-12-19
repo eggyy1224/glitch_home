@@ -10,6 +10,7 @@ export const PRESET_MODE_KEY = "__preset_mode";
 
 export const MODE_PRESETS = {
   slide_mode: { assetKey: "img", label: "slide_mode (輪播)", flagKey: "slide_mode" },
+  matrix_mode: { assetKey: "img", label: "matrix_mode (矩陣)", flagKey: "matrix_mode" },
   static_mode: { assetKey: "img", label: "static_mode (單張)", flagKey: "static_mode" },
   video_mode: { assetKey: "video", label: "video_mode (影片)", flagKey: "video_mode" },
   incubator: { assetKey: "img", label: "incubator (孵化室)", flagKey: "incubator" },

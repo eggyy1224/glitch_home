@@ -360,7 +360,7 @@ describe("TimelineEpisodeEditor", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Snapshot 模式" }));
     const nameInput = await screen.findByLabelText("名稱");
     fireEvent.change(nameInput, { target: { value: "snap-demo" } });
-    fireEvent.change(screen.getByPlaceholderText("例如 /?slide_mode=true"), {
+    fireEvent.change(screen.getByPlaceholderText("例如 /?slide_mode=true 或 /?matrix_mode=true"), {
       target: { value: "/?static_mode=true&img=foo.png" },
     });
 

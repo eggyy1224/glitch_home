@@ -10,6 +10,7 @@ import type { AssetSearchMode, AssetTab, PanelConfig } from "./types";
 import { buildVideoModeUrl } from "./videoPanelUtils";
 import {
   applySlideOptionsToParams,
+  buildMatrixModeUrl,
   buildSlideModeUrl,
   mergeSlideOptions,
   parseSlidePanelOptions,
@@ -90,9 +91,10 @@ const extractImgBaseFromUrl = (url?: string | null): string | null => {
 
 const mergeSlideParams = (
   panel?: PanelConfig,
+  mode: PanelMode = "slide_mode",
   patch?: Partial<SlidePanelOptions>,
 ): PanelConfig["params"] | undefined => {
-  const baseParams = mergePresetMode(panel?.params, "slide_mode") || {};
+  const baseParams = mergePresetMode(panel?.params, mode) || {};
   const currentOptions = parseSlidePanelOptions(panel?.url, panel?.params);
   const mergedOptions = mergeSlideOptions(currentOptions, patch);
   return applySlideOptionsToParams(baseParams, mergedOptions);
@@ -303,12 +305,15 @@ export default function SnapshotPanelsEditor({
     }
     const preset = MODE_PRESETS[nextMode as PanelMode];
     const imgBase = resolveImgBase(assetTab, panel, options?.imgBase);
-    const params = nextMode === "slide_mode" ? mergeSlideParams(panel) : mergePresetMode(panel?.params, nextMode);
+    const isSlideLikeMode = nextMode === "slide_mode" || nextMode === "matrix_mode";
+    const params = isSlideLikeMode ? mergeSlideParams(panel, nextMode as PanelMode) : mergePresetMode(panel?.params, nextMode);
     const nextUrl =
       nextMode === "video_mode"
         ? buildVideoModeUrl(panel?.url, { video: currentAsset })
         : nextMode === "slide_mode"
         ? buildSlideModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
+        : nextMode === "matrix_mode"
+        ? buildMatrixModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
         : preset
         ? buildUrlFromPreset(nextMode as PanelMode, currentAsset, { imgBase })
         : "";
@@ -331,17 +336,20 @@ export default function SnapshotPanelsEditor({
     const hasModePreset = Boolean(preset);
     const imgBase = resolveImgBase(assetTab, panel, options?.imgBase);
     if (hasModePreset) {
+      const isSlideLikeMode = mode === "slide_mode" || mode === "matrix_mode";
       const nextUrl =
         mode === "video_mode"
           ? buildVideoModeUrl(panel?.url, { video: assetValue })
           : mode === "slide_mode"
           ? buildSlideModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
+          : mode === "matrix_mode"
+          ? buildMatrixModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
           : preset
           ? buildUrlFromPreset(mode as PanelMode, assetValue, { imgBase })
           : "";
       const patch: Partial<PanelConfig> = {
         url: nextUrl,
-        params: mode === "slide_mode" ? mergeSlideParams(panel) : mergePresetMode(panel?.params, mode),
+        params: isSlideLikeMode ? mergeSlideParams(panel, mode as PanelMode) : mergePresetMode(panel?.params, mode),
       };
       if (isImageMode) {
         patch.image = assetValue || "";
@@ -369,12 +377,15 @@ export default function SnapshotPanelsEditor({
     const patch: Partial<PanelConfig> = { image: value || "" };
     const imgBase = resolveImgBase(assetTab, panel, imgBaseOverride);
     if (resolvedMode) {
-      patch.params = resolvedMode === "slide_mode" ? mergeSlideParams(panel) : mergePresetMode(panel?.params, resolvedMode);
+      const isSlideLikeMode = resolvedMode === "slide_mode" || resolvedMode === "matrix_mode";
+      patch.params = isSlideLikeMode ? mergeSlideParams(panel, resolvedMode as PanelMode) : mergePresetMode(panel?.params, resolvedMode);
     }
     if (resolvedUrlMode) {
       patch.url =
         resolvedUrlMode === "slide_mode"
           ? buildSlideModeUrl(panel?.url, { img: value }, { imgBase, panelParams: panel?.params })
+          : resolvedUrlMode === "matrix_mode"
+          ? buildMatrixModeUrl(panel?.url, { img: value }, { imgBase, panelParams: panel?.params })
           : buildUrlFromPreset(resolvedUrlMode as PanelMode, value, { imgBase });
     }
     onPanelChange(index, patch);

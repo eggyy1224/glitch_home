@@ -5,7 +5,13 @@ import { getPanelModeAndAsset, mergePresetMode, MODE_PRESETS } from "./panelPres
 import type { VideoPanelOptions } from "./videoPanelUtils";
 import { buildVideoModeUrl, parseVideoPanelOptions } from "./videoPanelUtils";
 import type { KinshipRelation, SlidePanelOptions } from "./slidePanelUtils";
-import { applySlideOptionsToParams, buildSlideModeUrl, mergeSlideOptions, parseSlidePanelOptions } from "./slidePanelUtils";
+import {
+  applySlideOptionsToParams,
+  buildMatrixModeUrl,
+  buildSlideModeUrl,
+  mergeSlideOptions,
+  parseSlidePanelOptions,
+} from "./slidePanelUtils";
 
 interface PanelFormProps {
   index: number;
@@ -48,14 +54,16 @@ export function PanelForm({
   const safeAssetList = Array.isArray(assetList) ? assetList : [];
   const isVideoMode = mode === "video_mode";
   const isSlideMode = mode === "slide_mode";
+  const isMatrixMode = mode === "matrix_mode";
+  const isSlideLikeMode = isSlideMode || isMatrixMode;
   const videoOptions = React.useMemo(() => (isVideoMode ? parseVideoPanelOptions(panel?.url) : undefined), [isVideoMode, panel?.url]);
   const slideOptions = React.useMemo(
-    () => (isSlideMode ? parseSlidePanelOptions(panel?.url, panel?.params) : undefined),
-    [isSlideMode, panel?.params, panel?.url],
+    () => (isSlideLikeMode ? parseSlidePanelOptions(panel?.url, panel?.params) : undefined),
+    [isSlideLikeMode, panel?.params, panel?.url],
   );
 
   const mergeSlideParams = (patch?: Partial<SlidePanelOptions>): PanelConfig["params"] | undefined => {
-    const baseParams = mergePresetMode(panel?.params, "slide_mode") || {};
+    const baseParams = mergePresetMode(panel?.params, mode || "slide_mode") || {};
     const current = slideOptions || parseSlidePanelOptions(panel?.url, panel?.params);
     const merged = mergeSlideOptions(current, patch);
     return applySlideOptionsToParams(baseParams, merged);
@@ -72,8 +80,9 @@ export function PanelForm({
   };
 
   const handleSlideOptionChange = (patch: Partial<SlidePanelOptions>) => {
-    if (!isSlideMode) return;
-    const nextUrl = buildSlideModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideOptions?.imgBase });
+    if (!isSlideLikeMode) return;
+    const buildUrl = isMatrixMode ? buildMatrixModeUrl : buildSlideModeUrl;
+    const nextUrl = buildUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideOptions?.imgBase });
     const patchPayload: Partial<PanelConfig> = {
       url: nextUrl,
       params: mergeSlideParams(patch),
@@ -140,7 +149,7 @@ export function PanelForm({
           type="text"
           value={panel?.url || ""}
           onChange={(e) => onPanelChange(index, { url: e.target.value })}
-          placeholder="例如 /?slide_mode=true"
+          placeholder="例如 /?slide_mode=true 或 /?matrix_mode=true"
           data-ai-field={`snapshot.panel[${index}].url`}
         />
       </label>
@@ -205,9 +214,9 @@ export function PanelForm({
           data-ai-field={`snapshot.panel[${index}].rowSpan`}
         />
       </label>
-      {isSlideMode && (
+      {isSlideLikeMode && (
         <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>
-          <div style={{ marginBottom: 6, color: "#82dca5" }}>slide_mode 參數</div>
+          <div style={{ marginBottom: 6, color: "#82dca5" }}>slide/matrix 參數</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
             <label style={{ display: "flex", flexDirection: "column" }}>
               輪播間隔 (毫秒)

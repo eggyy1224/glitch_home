@@ -35,7 +35,7 @@ export function PanelCanvas({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <div style={{ color: "#82dca5", letterSpacing: "0.04em" }}>畫布預覽（拖曳重新排序，點擊聚焦）</div>
         <div style={{ display: "flex", gap: 6, color: "#82dca5", fontSize: 12 }}>
-          <span style={{ borderLeft: "8px solid #4f8", paddingLeft: 6 }}>image/slide</span>
+          <span style={{ borderLeft: "8px solid #4f8", paddingLeft: 6 }}>image/slide/matrix</span>
           <span style={{ borderLeft: "8px solid #ffb347", paddingLeft: 6 }}>video</span>
         </div>
       </div>
