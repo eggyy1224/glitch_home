@@ -25,6 +25,7 @@ const MODE_FLAG_KEYS = [
   "static_mode",
   "incubator",
   "iframe_mode",
+  "matrix_mode",
   "__preset_mode",
   "video",
   "video_speed",

@@ -3,6 +3,7 @@ import { useMemo } from "react";
 export const DisplayModes = {
   KINSHIP: "kinship",
   IFRAME: "iframe",
+  MATRIX: "matrix",
   SLIDE: "slide",
   ORGANIC: "organic",
   SEARCH: "search",
@@ -22,6 +23,7 @@ const PARAM_SEQUENCE: Array<{ type: DisplayModeType; key: string }> = [
   { type: DisplayModes.ADMIN, key: "admin_mode" },
   { type: DisplayModes.EXHIBITION, key: "exhibition_mode" },
   { type: DisplayModes.IFRAME, key: "iframe_mode" },
+  { type: DisplayModes.MATRIX, key: "matrix_mode" },
   { type: DisplayModes.SLIDE, key: "slide_mode" },
   { type: DisplayModes.ORGANIC, key: "organic_mode" },
   { type: DisplayModes.SEARCH, key: "search_mode" },

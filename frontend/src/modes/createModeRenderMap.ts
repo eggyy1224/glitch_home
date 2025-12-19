@@ -62,6 +62,7 @@ type ModeRenderMapOptions = {
 };
 
 const IframeMode = lazy(() => import("../IframeMode"));
+const MatrixMode = lazy(() => import("../MatrixMode"));
 const SlideMode = lazy(() => import("../SlideMode"));
 const OrganicRoomScene = lazy(() => import("../OrganicRoomScene"));
 const SearchMode = lazy(() => import("../SearchMode"));
@@ -77,6 +78,7 @@ const ExhibitionMode = lazy(() => import("../ExhibitionMode"));
 
 const modeBaseConfigs: Record<string, ModeBaseConfig> = {
   [DisplayModes.IFRAME]: { component: IframeMode, withCaptureReady: true },
+  [DisplayModes.MATRIX]: { component: MatrixMode, withCaptureReady: true },
   [DisplayModes.SLIDE]: { component: SlideMode, withCaptureReady: true },
   [DisplayModes.ORGANIC]: { component: OrganicRoomScene, withCaptureReady: true },
   [DisplayModes.SEARCH]: { component: SearchMode },
@@ -166,6 +168,13 @@ export function createModeRenderMap({
       beforeContent: iframeTimelineOverlay,
     }),
     [DisplayModes.SLIDE]: buildModeEntry(modeBaseConfigs[DisplayModes.SLIDE], {
+      componentProps: {
+        imagesBase,
+        anchorImage: imgId,
+        intervalMs: slideIntervalMs,
+      },
+    }),
+    [DisplayModes.MATRIX]: buildModeEntry(modeBaseConfigs[DisplayModes.MATRIX], {
       componentProps: {
         imagesBase,
         anchorImage: imgId,

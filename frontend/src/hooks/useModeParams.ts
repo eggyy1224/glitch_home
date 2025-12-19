@@ -7,6 +7,7 @@ const MIN_SLIDE_INTERVAL = 1000;
 
 export const KINSHIP_DATA_EXCLUDED: Set<DisplayModeType> = new Set([
   DisplayModes.ORGANIC,
+  DisplayModes.MATRIX,
   DisplayModes.SLIDE,
   DisplayModes.IFRAME,
   DisplayModes.STATIC,

@@ -108,17 +108,25 @@ export function useSlidePlayback({
   searchByImage = searchImagesByImage,
   fetchKinshipData = fetchKinship,
   imagesBase = "/generated_images/", // Default base path
+  defaultTopK,
 }: {
   anchorImage?: string | null | undefined;
   intervalMs?: number;
   searchByImage?: typeof searchImagesByImage;
   fetchKinshipData?: typeof fetchKinship;
   imagesBase?: string;
+  defaultTopK?: number;
 } = {}) {
   const anchorClean = cleanId(anchorImage);
   const slideConfig = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
     const parsed = parseSlidePanelOptions(window.location.href);
     const resolvedTopK = Math.max(1, Math.floor(parsed.topK ?? DEFAULT_SLIDE_TOP_K));
+    const fallbackTopK =
+      Number.isFinite(defaultTopK) && defaultTopK !== null && defaultTopK !== undefined
+        ? Math.max(1, Math.floor(defaultTopK))
+        : null;
+    const effectiveTopK = !params.has("top_k") && fallbackTopK ? fallbackTopK : resolvedTopK;
     const resolvedDepth =
       parsed.kinshipDepth === null || parsed.kinshipDepth === undefined
         ? DEFAULT_KINSHIP_DEPTH
@@ -127,13 +135,13 @@ export function useSlidePlayback({
       parsed.kinshipOrder && parsed.kinshipOrder.length ? parsed.kinshipOrder : DEFAULT_KINSHIP_ORDER;
     return {
       ...parsed,
-      topK: resolvedTopK,
+      topK: effectiveTopK,
       slideSource: parsed.slideSource ?? SlideSourceMode.VECTOR,
       kinshipDepth: resolvedDepth,
       kinshipOrder,
       includeDeprecated: parsed.includeDeprecated ?? false,
     };
-  }, []);
+  }, [defaultTopK]);
   const [items, setItems] = useState<SlideItem[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(false);
