@@ -1,0 +1,81 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 2,
+  "panels": [
+    {
+      "id": "p1",
+      "image": "offspring_20250928_203748_266.png",
+      "url": "/?slide_mode=true&top_k=15&slide_source=vector&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false&img=offspring_20250928_203748_266.png&slide_interval=1400&slide_interval_ms=1400",
+      "params": {
+        "__preset_mode": "slide_mode",
+        "top_k": "15",
+        "kinship_depth": "-1",
+        "slide_source": "vector",
+        "kinship_order": "children,siblings,parents,ancestors",
+        "include_deprecated": "false",
+        "slide_interval": "1400",
+        "slide_interval_ms": "1400"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "panel_2",
+      "image": "offspring_20250929_114341_263.png",
+      "url": "/?slide_mode=true&top_k=15&slide_source=vector&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false&img=offspring_20250929_114341_263.png&slide_interval=900&slide_interval_ms=900",
+      "params": {
+        "__preset_mode": "slide_mode",
+        "top_k": "15",
+        "kinship_depth": "-1",
+        "slide_source": "vector",
+        "kinship_order": "children,siblings,parents,ancestors",
+        "include_deprecated": "false",
+        "slide_interval": "900",
+        "slide_interval_ms": "900"
+      },
+      "ratio": 1.0,
+      "label": "",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "panel_3",
+      "image": "offspring_20250929_120902_864.png",
+      "url": "/?slide_mode=true&img=offspring_20250929_120902_864.png&slide_interval=1700&slide_interval_ms=1700&top_k=30&slide_source=kinship&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false",
+      "params": {
+        "__preset_mode": "slide_mode",
+        "slide_interval": "1700",
+        "slide_interval_ms": "1700",
+        "top_k": "30",
+        "kinship_depth": "-1",
+        "slide_source": "kinship",
+        "kinship_order": "children,siblings,parents,ancestors",
+        "include_deprecated": "false"
+      },
+      "ratio": 1.0,
+      "label": "",
+      "col_span": null,
+      "row_span": null
+    },
+    {
+      "id": "panel_4",
+      "image": "offspring_20251001_182954_752.png",
+      "url": "/?img=offspring_20251001_182954_752.png&slide_mode=true&top_k=10&slide_source=vector&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false",
+      "params": {
+        "__preset_mode": "slide_mode",
+        "top_k": "10",
+        "kinship_depth": "-1",
+        "slide_source": "vector",
+        "kinship_order": "children,siblings,parents,ancestors",
+        "include_deprecated": "false"
+      },
+      "ratio": 1.0,
+      "label": "",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}
