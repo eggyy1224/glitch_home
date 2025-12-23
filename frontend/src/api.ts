@@ -10,4 +10,5 @@ export * from "./api/search";
 export * from "./api/generate";
 export * from "./api/iframe";
 export * from "./api/clients";
+export * from "./api/schedule";
 export { ApiError } from "./utils/request";

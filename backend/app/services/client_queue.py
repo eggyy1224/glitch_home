@@ -22,6 +22,7 @@ from .iframe_timeline import (
     resolve_iframe_timeline,
     sanitize_timeline_id,
 )
+from .schedule import build_next_schedule_item, extract_schedule_ref
 from .realtime_bus import RealtimeBroadcaster, realtime_broadcaster
 
 logger = logging.getLogger(__name__)
@@ -374,6 +375,13 @@ class ClientQueueManager:
             "total": len(sorted_items),
         }
 
+    async def has_schedule_key(self, client_id: str, schedule_key: str) -> bool:
+        cleaned_client = sanitize_client_id(client_id)
+        if not cleaned_client or not schedule_key:
+            return False
+        async with self._lock:
+            return self._has_schedule_key_locked(cleaned_client, schedule_key)
+
     async def cancel_items(self, ids: Iterable[str]) -> List[Dict[str, Any]]:
         affected_clients: set[str] = set()
         canceled: List[Dict[str, Any]] = []
@@ -551,6 +559,17 @@ class ClientQueueManager:
         queue = self._queue_by_client.get(client_id, [])
         return sum(1 for item_id in queue if self._items.get(item_id) and self._items[item_id].status == "pending")
 
+    def _has_schedule_key_locked(self, client_id: str, schedule_key: str) -> bool:
+        queue = self._queue_by_client.get(client_id, [])
+        for item_id in queue:
+            item = self._items.get(item_id)
+            if not item:
+                continue
+            payload = item.payload or {}
+            if payload.get("_schedule_key") == schedule_key and item.status in {"pending", "running"}:
+                return True
+        return False
+
     def _compact_queue_locked(self, client_id: str) -> None:
         queue = self._queue_by_client.get(client_id)
         if queue is None:
@@ -709,6 +728,36 @@ class ClientQueueManager:
             if error_message:
                 await self._state_store.add_error(item.client_id, error_message)
             await self._broadcast_state(item.client_id)
+            if item.status == "done":
+                await self._maybe_repeat_schedule_item(item)
+
+    async def _maybe_repeat_schedule_item(self, item: QueueItem) -> None:
+        ref = extract_schedule_ref(item.payload)
+        if not ref:
+            return
+        schedule_id, event_id = ref
+        try:
+            spec = build_next_schedule_item(schedule_id, event_id, now=_utcnow())
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Schedule repeat failed for %s/%s: %s", schedule_id, event_id, exc)
+            return
+        if spec is None:
+            return
+        async with self._lock:
+            if self._has_schedule_key_locked(spec.client_id, spec.schedule_key):
+                return
+        try:
+            await self.enqueue(
+                client_id=spec.client_id,
+                item_type=spec.item_type,
+                target_id=spec.target_id,
+                eta=spec.eta,
+                priority=None,
+                retries=0,
+                payload=spec.payload,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Schedule repeat enqueue failed for %s/%s: %s", schedule_id, event_id, exc)
 
     async def _broadcast_state(self, client_id: str) -> None:
         if self._broadcaster is None:

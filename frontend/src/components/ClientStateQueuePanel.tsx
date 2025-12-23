@@ -8,6 +8,7 @@ import type { Scene, Script } from "../types/scene";
 import { ClientListSection } from "./stateQueue/ClientListSection";
 import { QueueControlForm } from "./stateQueue/QueueControlForm";
 import { QueueTableSection } from "./stateQueue/QueueTableSection";
+import ScheduleManager from "./ScheduleManager";
 
 export default function ClientStateQueuePanel() {
   const { defaultClientId } = useContext(AdminPanelContext);
@@ -208,6 +209,8 @@ export default function ClientStateQueuePanel() {
           <li data-ai-role="state-queue.step-note.queue">步驟 4：在佇列表中可插隊、延後、停止播放等操作（危險操作標示紅色）。</li>
         </ol>
       </section>
+
+      <ScheduleManager />
 
       <ClientListSection
         clients={clients}
