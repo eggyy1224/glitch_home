@@ -18,6 +18,19 @@ const makeClientId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random(
 
 const absoluteSrc = (src: string) => new URL(src, BASE_URL).toString();
 
+async function waitForClientConnection(request: APIRequestContext, clientId: string) {
+  await expect.poll(
+    async () => {
+      const resp = await request.get("/api/clients");
+      if (!resp.ok()) return false;
+      const payload = await resp.json();
+      const clients = Array.isArray(payload?.clients) ? payload.clients : [];
+      return clients.some((client: { client_id?: string; connections?: number }) => client.client_id === clientId && (client.connections ?? 0) > 0);
+    },
+    { timeout: 15_000 },
+  ).toBe(true);
+}
+
 async function cleanupArtifacts() {
   for (const file of createdFiles) {
     try {
@@ -245,6 +258,7 @@ test.describe("即時顯示 e2e", () => {
     const captionText = "標題即時測試";
 
     await page.goto(`/?caption_mode=true&client=${clientId}`);
+    await waitForClientConnection(request, clientId);
 
     await postSubtitle(request, clientId, subtitleText, 3);
     const subtitleLocator = page.locator(".subtitle-text");
