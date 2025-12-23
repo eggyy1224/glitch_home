@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { boxStyle, columnStyle, columnsStyle, labelStyle } from "../AdminPanelStyles";
-import { deleteSchedule, deploySchedule, getSchedule, listSchedules, saveSchedule } from "../api";
+import { deleteSchedule, deploySchedule, getSchedule, listEpisodes, listIframeSnapshots, listIframeTimelines, listSchedules, listScenes, listScripts, saveSchedule } from "../api";
 import type { ScheduleDefinition, ScheduleDeployResult, ScheduleEvent, ScheduleEventType, ScheduleSummary } from "../types/schedule";
 
 interface ScheduleEventDraft {
@@ -12,6 +12,17 @@ interface ScheduleEventDraft {
   enabled: boolean;
   payloadText: string;
   notes: string;
+}
+
+interface ScheduleTargetOption {
+  value: string;
+  label: string;
+}
+
+interface ScheduleManagerProps {
+  availableClients: string[];
+  activeClient?: string;
+  defaultClientId?: string;
 }
 
 const DEFAULT_TIMEZONE = "Asia/Taipei";
@@ -52,7 +63,14 @@ function serializeEvents(events: ScheduleEventDraft[]) {
   });
 }
 
-export default function ScheduleManager() {
+function extractClientFromSnapshot(targetId: string): string {
+  const trimmed = targetId.trim();
+  if (!trimmed.includes("/")) return "";
+  const [client] = trimmed.split("/", 1);
+  return client.trim();
+}
+
+export default function ScheduleManager({ availableClients, activeClient, defaultClientId }: ScheduleManagerProps) {
   const [scheduleList, setScheduleList] = useState<ScheduleSummary[]>([]);
   const [scheduleId, setScheduleId] = useState("");
   const [scheduleTitle, setScheduleTitle] = useState("");
@@ -65,6 +83,108 @@ export default function ScheduleManager() {
   const [staggerSeconds, setStaggerSeconds] = useState("2");
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [targetOptionsByKey, setTargetOptionsByKey] = useState<Record<string, ScheduleTargetOption[]>>({});
+  const [targetMessageByKey, setTargetMessageByKey] = useState<Record<string, string>>({});
+  const [loadingTargetsByKey, setLoadingTargetsByKey] = useState<Record<string, boolean>>({});
+
+  const clientOptions = useMemo(() => {
+    const merged = [activeClient, defaultClientId, ...availableClients].filter((value): value is string => Boolean(value && value.trim()));
+    return Array.from(new Set(merged)).sort((a, b) => a.localeCompare(b));
+  }, [activeClient, availableClients, defaultClientId]);
+
+  const buildTargetKey = useCallback((type: ScheduleEventType, clientId: string) => `${type}::${clientId || ""}`, []);
+
+  const ensureTargetOptions = useCallback(
+    async (type: ScheduleEventType, clientId: string) => {
+      const resolvedClient = clientId.trim();
+      const key = buildTargetKey(type, resolvedClient);
+      if (targetOptionsByKey[key] || loadingTargetsByKey[key]) {
+        return;
+      }
+      if ((type === "snapshot" || type === "timeline") && !resolvedClient) {
+        setTargetMessageByKey((prev) => ({ ...prev, [key]: "請先選擇 client" }));
+        return;
+      }
+      setLoadingTargetsByKey((prev) => ({ ...prev, [key]: true }));
+      try {
+        if (type === "snapshot") {
+          const data = await listIframeSnapshots(resolvedClient || null);
+          const list = Array.isArray(data?.snapshots) ? data.snapshots : [];
+          setTargetOptionsByKey((prev) => ({
+            ...prev,
+            [key]: list.map((item) => ({
+              value: item.name || "",
+              label: `${item.client || resolvedClient}/${item.name}`,
+            })),
+          }));
+          setTargetMessageByKey((prev) => ({ ...prev, [key]: `已載入 ${list.length} 個 snapshot` }));
+        } else if (type === "timeline") {
+          const data = await listIframeTimelines(resolvedClient || null);
+          const list = Array.isArray(data?.timelines) ? data.timelines : [];
+          setTargetOptionsByKey((prev) => ({
+            ...prev,
+            [key]: list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          }));
+          setTargetMessageByKey((prev) => ({ ...prev, [key]: `已載入 ${list.length} 個 timeline` }));
+        } else if (type === "episode") {
+          const data = await listEpisodes();
+          const list = Array.isArray(data?.episodes) ? data.episodes : [];
+          setTargetOptionsByKey((prev) => ({
+            ...prev,
+            [key]: list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          }));
+          setTargetMessageByKey((prev) => ({ ...prev, [key]: `已載入 ${list.length} 個 episode` }));
+        } else if (type === "scene") {
+          const data = await listScenes();
+          const list = Array.isArray(data?.scenes) ? data.scenes : [];
+          setTargetOptionsByKey((prev) => ({
+            ...prev,
+            [key]: list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          }));
+          setTargetMessageByKey((prev) => ({ ...prev, [key]: `已載入 ${list.length} 個 scene` }));
+        } else {
+          const data = await listScripts();
+          const list = Array.isArray(data?.scripts) ? data.scripts : [];
+          setTargetOptionsByKey((prev) => ({
+            ...prev,
+            [key]: list.map((item) => ({
+              value: item.id,
+              label: item.title ? `${item.id} · ${item.title}` : item.id,
+            })),
+          }));
+          setTargetMessageByKey((prev) => ({ ...prev, [key]: `已載入 ${list.length} 個 script` }));
+        }
+      } catch (err) {
+        setTargetMessageByKey((prev) => ({
+          ...prev,
+          [key]: (err as Error)?.message || "載入可選目標失敗",
+        }));
+      } finally {
+        setLoadingTargetsByKey((prev) => ({ ...prev, [key]: false }));
+      }
+    },
+    [buildTargetKey, loadingTargetsByKey, targetOptionsByKey],
+  );
+
+  useEffect(() => {
+    const loaded = new Set<string>();
+    events.forEach((event) => {
+      const inferredClient = event.client_id.trim() || (event.type === "snapshot" ? extractClientFromSnapshot(event.target_id) : "");
+      const key = buildTargetKey(event.type, inferredClient);
+      if (loaded.has(key)) return;
+      loaded.add(key);
+      void ensureTargetOptions(event.type, inferredClient);
+    });
+  }, [buildTargetKey, ensureTargetOptions, events]);
 
   const refreshScheduleList = useCallback(async () => {
     setLoading(true);
@@ -181,6 +301,7 @@ export default function ScheduleManager() {
   }, [deployDryRun, scheduleId, skipDuplicates, staggerSeconds]);
 
   const addEvent = useCallback(() => {
+    const defaultClient = (activeClient || defaultClientId || "").trim();
     setEvents((prev) => [
       ...prev,
       {
@@ -188,13 +309,13 @@ export default function ScheduleManager() {
         time: "09:00",
         type: "snapshot",
         target_id: "",
-        client_id: "",
+        client_id: defaultClient,
         enabled: true,
         payloadText: "",
         notes: "",
       },
     ]);
-  }, []);
+  }, [activeClient, defaultClientId]);
 
   const updateEvent = useCallback((index: number, patch: Partial<ScheduleEventDraft>) => {
     setEvents((prev) => prev.map((event, idx) => (idx === index ? { ...event, ...patch } : event)));
@@ -411,17 +532,40 @@ export default function ScheduleManager() {
                           type="text"
                           value={event.target_id}
                           onChange={(e) => updateEvent(index, { target_id: e.target.value })}
-                          placeholder="target id"
+                          placeholder={event.type === "snapshot" ? "snapshot 名稱" : "target id"}
                           style={{ width: 160 }}
+                          list={`schedule-target-${event.id}`}
+                          aria-describedby={`schedule-target-status-${event.id}`}
                         />
+                        <datalist id={`schedule-target-${event.id}`}>
+                          {(targetOptionsByKey[buildTargetKey(
+                            event.type,
+                            event.client_id.trim() || (event.type === "snapshot" ? extractClientFromSnapshot(event.target_id) : ""),
+                          )] || []).map((item) => (
+                            <option key={item.value} value={item.value} label={item.label} />
+                          ))}
+                        </datalist>
+                        <div
+                          id={`schedule-target-status-${event.id}`}
+                          style={{ fontSize: 11, color: "#82dca5", marginTop: 2 }}
+                        >
+                          {(() => {
+                            const inferredClient =
+                              event.client_id.trim() || (event.type === "snapshot" ? extractClientFromSnapshot(event.target_id) : "");
+                            const key = buildTargetKey(event.type, inferredClient);
+                            if (loadingTargetsByKey[key]) return "載入中...";
+                            return targetMessageByKey[key] || "";
+                          })()}
+                        </div>
                       </td>
                       <td>
                         <input
                           type="text"
                           value={event.client_id}
                           onChange={(e) => updateEvent(index, { client_id: e.target.value })}
-                          placeholder="optional"
+                          placeholder="auto"
                           style={{ width: 120 }}
+                          list="schedule-client-options"
                         />
                       </td>
                       <td>
@@ -457,6 +601,11 @@ export default function ScheduleManager() {
                 </tbody>
               </table>
             </div>
+            <datalist id="schedule-client-options">
+              {clientOptions.map((client) => (
+                <option key={client} value={client} />
+              ))}
+            </datalist>
           </div>
         </div>
       </div>

@@ -43,6 +43,10 @@ export default function ClientStateQueuePanel() {
   } = useClientStateQueue(defaultClientId);
 
   const activeClient = selectedClient || clientOverride || defaultClientId || "";
+  const clientOptions = useMemo(
+    () => clients.map((client) => client.client_id).filter((value): value is string => Boolean(value && value.trim())),
+    [clients],
+  );
 
   const filteredClients = useMemo(() => {
     if (!showActiveOnly) return clients;
@@ -210,7 +214,7 @@ export default function ClientStateQueuePanel() {
         </ol>
       </section>
 
-      <ScheduleManager />
+      <ScheduleManager availableClients={clientOptions} activeClient={activeClient} defaultClientId={defaultClientId} />
 
       <ClientListSection
         clients={clients}
