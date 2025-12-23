@@ -64,6 +64,7 @@ export interface IframeConfig {
   gap: number;
   columns: number;
   panels: IframePanelConfig[];
+  reloadNonce?: string | number;
   [key: string]: unknown;
 }
 

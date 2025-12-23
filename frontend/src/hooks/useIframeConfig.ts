@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildQueryFromIframeConfig,
   parseIframeConfigFromParams,
@@ -32,6 +32,12 @@ export function useIframeConfig({
   const [localConfig, setLocalConfig] = useState<IframeConfig | null>(initialConfigFromParams);
   const [serverConfig, setServerConfig] = useState<IframeConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const remoteNonceRef = useRef(0);
+
+  const nextRemoteNonce = useCallback(() => {
+    remoteNonceRef.current += 1;
+    return `${Date.now()}-${remoteNonceRef.current}`;
+  }, []);
 
   const updateQueryWithIframeConfig = useCallback((config?: IframeConfig | null) => {
     if (typeof window === "undefined") return;
@@ -84,11 +90,12 @@ export function useIframeConfig({
   const applyRemoteConfig = useCallback(
     (config: Partial<IframeConfig> | null) => {
       const sanitized = sanitizeIframeConfig(config, defaultConfig);
-      setServerConfig(sanitized);
+      const reloadNonce = nextRemoteNonce();
+      setServerConfig({ ...sanitized, reloadNonce });
       setError(null);
       updateQueryWithIframeConfig(sanitized);
     },
-    [defaultConfig, updateQueryWithIframeConfig],
+    [defaultConfig, updateQueryWithIframeConfig, nextRemoteNonce],
   );
 
   const applyServerSnapshot = useCallback(

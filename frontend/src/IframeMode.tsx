@@ -50,6 +50,12 @@ export default function IframeMode({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
   const sanitizedConfig = useMemo(() => sanitizeIframeConfig(config, DEFAULT_CONFIG), [config]);
+  const reloadNonce = useMemo(() => {
+    const value = (config as { reloadNonce?: unknown }).reloadNonce;
+    if (value === null || value === undefined) return null;
+    if (typeof value === "string" || typeof value === "number") return String(value);
+    return null;
+  }, [config]);
   const panels = sanitizedConfig.panels;
 
   const [isControlOpen, setControlOpen] = useState(false);
@@ -467,6 +473,7 @@ export default function IframeMode({
         {panels.length ? (
           panels.map((panel, index) => {
             const panelId = panel.id || `panel_${index + 1}`;
+            const panelKey = reloadNonce ? `${panelId}:${reloadNonce}` : panelId;
             const flexStyle: React.CSSProperties = sanitizedConfig.layout === "grid" ? {} : { flex: `${panel.ratio} 1 0` };
             const gridStyle: React.CSSProperties =
               sanitizedConfig.layout === "grid"
@@ -479,7 +486,7 @@ export default function IframeMode({
               ? { ...panelStyle, ...gridStyle }
               : { ...panelStyle, ...flexStyle };
             return (
-              <div key={panelId} style={combinedStyle}>
+              <div key={panelKey} style={combinedStyle}>
                 <iframe
                   title={panel.label || `iframe-${index + 1}`}
                   src={panel.src}
