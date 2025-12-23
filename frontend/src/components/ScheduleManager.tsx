@@ -93,6 +93,15 @@ export default function ScheduleManager({ availableClients, activeClient, defaul
   }, [activeClient, availableClients, defaultClientId]);
 
   const buildTargetKey = useCallback((type: ScheduleEventType, clientId: string) => `${type}::${clientId || ""}`, []);
+  const targetSeedKey = useMemo(() => {
+    const seeds = new Set<string>();
+    events.forEach((event) => {
+      const inferredClient =
+        event.client_id.trim() || (event.type === "snapshot" ? extractClientFromSnapshot(event.target_id) : "");
+      seeds.add(buildTargetKey(event.type, inferredClient));
+    });
+    return Array.from(seeds).sort().join("||");
+  }, [buildTargetKey, events]);
 
   const ensureTargetOptions = useCallback(
     async (type: ScheduleEventType, clientId: string) => {
@@ -176,15 +185,14 @@ export default function ScheduleManager({ availableClients, activeClient, defaul
   );
 
   useEffect(() => {
-    const loaded = new Set<string>();
-    events.forEach((event) => {
-      const inferredClient = event.client_id.trim() || (event.type === "snapshot" ? extractClientFromSnapshot(event.target_id) : "");
-      const key = buildTargetKey(event.type, inferredClient);
-      if (loaded.has(key)) return;
-      loaded.add(key);
-      void ensureTargetOptions(event.type, inferredClient);
+    if (!targetSeedKey) return;
+    const seeds = targetSeedKey.split("||").filter(Boolean);
+    seeds.forEach((seed) => {
+      const [type, client] = seed.split("::");
+      if (!type) return;
+      void ensureTargetOptions(type as ScheduleEventType, client || "");
     });
-  }, [buildTargetKey, ensureTargetOptions, events]);
+  }, [ensureTargetOptions, targetSeedKey]);
 
   const refreshScheduleList = useCallback(async () => {
     setLoading(true);
@@ -511,7 +519,9 @@ export default function ScheduleManager({ availableClients, activeClient, defaul
                           step={1}
                           value={event.time}
                           onChange={(e) => updateEvent(index, { time: e.target.value })}
-                          style={{ width: 110 }}
+                          onFocus={(e) => e.currentTarget.select()}
+                          style={{ width: 140, minWidth: 140, fontVariantNumeric: "tabular-nums" }}
+                          lang="en-GB"
                         />
                       </td>
                       <td>
@@ -533,7 +543,7 @@ export default function ScheduleManager({ availableClients, activeClient, defaul
                           value={event.target_id}
                           onChange={(e) => updateEvent(index, { target_id: e.target.value })}
                           placeholder={event.type === "snapshot" ? "snapshot 名稱" : "target id"}
-                          style={{ width: 160 }}
+                          style={{ width: 180 }}
                           list={`schedule-target-${event.id}`}
                           aria-describedby={`schedule-target-status-${event.id}`}
                         />
