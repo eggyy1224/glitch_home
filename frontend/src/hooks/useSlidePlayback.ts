@@ -17,6 +17,49 @@ interface SlideItem {
   distance: number | null;
 }
 
+const TRUTHY_VALUES = new Set(["1", "true", "yes", "on"]);
+
+const isTruthyParam = (value: string | null | undefined): boolean => {
+  if (!value) return false;
+  return TRUTHY_VALUES.has(value.trim().toLowerCase());
+};
+
+const isInIframe = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.self !== window.top;
+  } catch (err) {
+    return true;
+  }
+};
+
+const hashString = (value: string): number => {
+  // FNV-1a 32-bit
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+
+const resolveInstanceSeed = (): number => {
+  if (typeof window === "undefined") return 0.5;
+  const candidates: string[] = [];
+  try {
+    const frameTitle = window.frameElement?.getAttribute?.("title");
+    if (frameTitle) candidates.push(frameTitle);
+  } catch (err) {
+    // ignore cross-origin frame access
+  }
+  if (window.name) candidates.push(window.name);
+  const key = candidates.find((value) => value && value.trim());
+  if (key) {
+    return hashString(key) / 4294967296;
+  }
+  return Math.random();
+};
+
 const ensureArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
 const deduplicate = (entries: SlideItem[]): SlideItem[] => {
@@ -140,6 +183,7 @@ export function useSlidePlayback({
       kinshipDepth: resolvedDepth,
       kinshipOrder,
       includeDeprecated: parsed.includeDeprecated ?? false,
+      continuous: isTruthyParam(params.get("continuous")),
     };
   }, [defaultTopK]);
   const [items, setItems] = useState<SlideItem[]>([]);
@@ -154,6 +198,13 @@ export function useSlidePlayback({
   const [isPaused, setIsPaused] = useState(false);
   const failedSetRef = useRef<Set<string>>(new Set());
   const latestItemsRef = useRef<SlideItem[]>([]);
+  const retryAttemptRef = useRef(0);
+  const instanceSeedRef = useRef<number | null>(null);
+  if (instanceSeedRef.current === null) {
+    instanceSeedRef.current = resolveInstanceSeed();
+  }
+
+  const autoRecoverEnabled = slideConfig.continuous || isInIframe();
 
   const toggleCaption = useCallback(() => setShowCaption((prev) => !prev), []);
   const togglePause = useCallback(() => setIsPaused((prev) => !prev), []);
@@ -189,6 +240,7 @@ export function useSlidePlayback({
       }
 
       let cancelled = false;
+      let startTimer: ReturnType<typeof setTimeout> | null = null;
       setLoading(true);
       setError(null);
 
@@ -203,6 +255,7 @@ export function useSlidePlayback({
             );
             setItems(nextItems);
             setIndex(0);
+            retryAttemptRef.current = 0;
           } else {
             const searchPath = `backend/offspring_images/${imageId}`;
             const data = await searchByImage(searchPath, batchSize, { includeDeprecated: slideConfig.includeDeprecated });
@@ -213,15 +266,18 @@ export function useSlidePlayback({
             );
             setItems(list.length ? list : [{ id: imageId, cleanId: fallbackClean, distance: null }]);
             setIndex(0);
+            retryAttemptRef.current = 0;
           }
           setError(null);
         } catch (err) {
           if (cancelled || currentGeneration !== generation) return;
           const message = err instanceof Error ? err.message : "搜尋失敗，請稍後再試。";
           setError(message);
-          const fallbackClean = cleanId(imageId) || (imageId ?? "");
-          setItems([{ id: imageId ?? "", cleanId: fallbackClean, distance: null }]);
-          setIndex(0);
+          if (latestItemsRef.current.length <= 1) {
+            const fallbackClean = cleanId(imageId) || (imageId ?? "");
+            setItems([{ id: imageId ?? "", cleanId: fallbackClean, distance: null }]);
+            setIndex(0);
+          }
         } finally {
           if (!cancelled && currentGeneration === generation) {
             setLoading(false);
@@ -229,13 +285,35 @@ export function useSlidePlayback({
         }
       };
 
-      run();
+      const seed = instanceSeedRef.current ?? 0;
+      const jitterMs = autoRecoverEnabled ? Math.floor(seed * 1500) : 0;
+      if (jitterMs > 0) {
+        startTimer = setTimeout(() => {
+          if (!cancelled) {
+            run();
+          }
+        }, jitterMs);
+      } else {
+        run();
+      }
 
       return () => {
         cancelled = true;
+        if (startTimer) {
+          clearTimeout(startTimer);
+        }
       };
     },
-    [generation, fetchKinshipData, searchByImage, slideConfig.includeDeprecated, slideConfig.kinshipDepth, slideConfig.kinshipOrder, slideConfig.topK],
+    [
+      generation,
+      fetchKinshipData,
+      searchByImage,
+      slideConfig.includeDeprecated,
+      slideConfig.kinshipDepth,
+      slideConfig.kinshipOrder,
+      slideConfig.topK,
+      autoRecoverEnabled,
+    ],
   );
 
   useEffect(() => {
@@ -266,6 +344,30 @@ export function useSlidePlayback({
     }, effectiveInterval);
     return () => clearInterval(timer);
   }, [items, intervalMs, playbackSpeed, isPaused]);
+
+  useEffect(() => {
+    if (!autoRecoverEnabled) return;
+    if (!anchor) return;
+    if (isPaused) return;
+    if (loading) return;
+    if (items.length > 1) return;
+    if ((slideConfig.topK ?? DEFAULT_SLIDE_TOP_K) <= 1) return;
+    if (!error && failedSetRef.current.size === 0) return;
+
+    const attempt = retryAttemptRef.current;
+    const baseDelay = 2000;
+    const maxDelay = 30000;
+    const delay = Math.min(maxDelay, baseDelay * Math.pow(2, attempt));
+    retryAttemptRef.current = Math.min(attempt + 1, 10);
+
+    const seed = instanceSeedRef.current ?? 0;
+    const jitterMs = Math.floor(seed * 1200);
+    const timer = setTimeout(() => {
+      setGeneration((g) => g + 1);
+    }, delay + jitterMs);
+
+    return () => clearTimeout(timer);
+  }, [autoRecoverEnabled, anchor, isPaused, loading, items.length, slideConfig.topK, error]);
 
   useEffect(() => {
     latestItemsRef.current = items;

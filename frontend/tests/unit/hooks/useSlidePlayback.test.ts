@@ -105,4 +105,37 @@ describe("useSlidePlayback", () => {
 
     expect(result.current.showCaption).toBe(true);
   });
+
+  it("auto-recovers in continuous mode when initial search fails", async () => {
+    setSearch("slide_source=vector&continuous=true");
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    try {
+      const searchByImage = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("boom"))
+        .mockResolvedValueOnce({
+          results: [
+            { id: "offspring_a.png", distance: 0.1 },
+            { id: "offspring_b.png", distance: 0.2 },
+          ],
+        });
+      const fetchKinshipData = vi.fn();
+
+      const { result } = renderHook(() =>
+        useSlidePlayback({ anchorImage: "offspring_seed.png", intervalMs: 100, searchByImage, fetchKinshipData }),
+      );
+
+      await waitFor(() => expect(searchByImage).toHaveBeenCalledTimes(1));
+      expect(result.current.current?.cleanId).toBe("offspring_seed.png");
+
+      await act(async () => {
+        await sleep(2600);
+      });
+
+      expect(searchByImage).toHaveBeenCalledTimes(2);
+      expect(result.current.items.length).toBeGreaterThan(1);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
 });
