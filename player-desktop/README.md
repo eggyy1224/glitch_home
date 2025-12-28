@@ -148,6 +148,7 @@ npm run dev -- --calibrate
 - mapping 檔存在時，啟動會自動套用到：
   - `clients[].display_id / display_ids`（找不到才回退 `display_index`）
   - `clients[].url_params`（用來切換前端介面 preset）
+- 校正時會自動移除「不在本機偵測到的 `display.id`」的舊指派，避免隱性多螢幕設定導致 fullscreen 失效。
 - 若 `client_presets` 未設定，校正面板會以現有 `clients[].url_params.client` 的不同值作為可選 preset 清單。
 
 ## 疑難排解

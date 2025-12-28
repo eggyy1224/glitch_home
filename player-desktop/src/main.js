@@ -513,10 +513,19 @@ function resolvePresetUrlParams(presetId, clientPresets) {
 
 function writeDisplayMapping(displayMappingPath, displayOrder, displays, slotsById, clientPresets, baseUrlParamsBySlotId) {
   ensureDirectoryExists(displayMappingPath);
+  const knownDisplayIds = new Set(
+    (displays || [])
+      .map((display) => display?.id)
+      .filter((id) => Number.isInteger(id) && id > 0),
+  );
   const clients = {};
   for (const [slotId, slot] of Object.entries(slotsById || {})) {
     const entry = {};
-    const displayIds = Array.isArray(slot?.displayIds) ? slot.displayIds.filter((id) => Number.isInteger(id) && id > 0) : [];
+    const displayIds = Array.isArray(slot?.displayIds)
+      ? slot.displayIds
+        .filter((id) => Number.isInteger(id) && id > 0)
+        .filter((id) => knownDisplayIds.has(id))
+      : [];
     if (displayIds.length > 0) {
       entry.display_ids = displayIds;
       if (displayIds.length === 1) {
@@ -624,10 +633,32 @@ function runCalibration() {
     slot.displayIds = unique;
   }
 
+  const knownDisplayIds = new Set(orderedDisplays.map((display) => display.id));
+  const staleMappingWarnings = [];
+  for (const slotId of slots) {
+    const slot = slotsById[slotId];
+    if (!slot) continue;
+    const currentIds = Array.isArray(slot.displayIds) ? slot.displayIds : [];
+    const kept = [];
+    const dropped = [];
+    for (const id of currentIds) {
+      if (knownDisplayIds.has(id)) {
+        kept.push(id);
+      } else {
+        dropped.push(id);
+      }
+    }
+    if (dropped.length > 0) {
+      slot.displayIds = kept;
+      staleMappingWarnings.push(`slot '${slotId}' 包含不存在的 display.id：${dropped.join(", ")}（已自動移除）`);
+    }
+  }
+
   const overlayWindows = new Map();
 
   function broadcastState(controllerWindow) {
     const warnings = [];
+    warnings.push(...staleMappingWarnings);
     const used = new Set();
     for (const slotId of slots) {
       const slot = slotsById[slotId];

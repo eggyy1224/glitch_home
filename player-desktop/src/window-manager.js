@@ -129,15 +129,15 @@ class WindowManager {
       return existingWindow;
     }
 
-    let bounds;
+    let placement;
     try {
-      bounds = this.getBoundsForClient(clientConfig);
+      placement = this.getBoundsForClient(clientConfig);
     } catch (error) {
       throw new Error(`[WindowManager] 無法建立 client '${clientId}': ${error.message}`);
     }
 
-    const displaySpanCount = Array.isArray(clientConfig.displayIds) ? clientConfig.displayIds.length : 0;
-    const spansMultipleDisplays = displaySpanCount > 1;
+    const bounds = placement.bounds;
+    const spansMultipleDisplays = Boolean(placement.spansMultipleDisplays);
     const effectiveFullscreen = clientConfig.fullscreen !== false && !spansMultipleDisplays;
     const windowOptions = {
       title: `Player Shell - ${clientConfig.clientId}`,
@@ -361,7 +361,7 @@ class WindowManager {
           if (typeof clientConfig.bounds.x === "number") bounds.x = clientConfig.bounds.x;
           if (typeof clientConfig.bounds.y === "number") bounds.y = clientConfig.bounds.y;
         }
-        return bounds;
+        return { bounds, spansMultipleDisplays: selectedDisplays.length > 1 };
       }
       console.warn(
         `[WindowManager] client '${clientConfig.clientId}' display_ids 無法對應任何顯示器，將回退使用 display_id / display_index`,
@@ -381,7 +381,7 @@ class WindowManager {
         if (process.platform === "darwin" && bounds.y === 0 && displayById.bounds.y !== 0) {
           bounds.y = displayById.bounds.y;
         }
-        return bounds;
+        return { bounds, spansMultipleDisplays: false };
       }
       console.warn(
         `[WindowManager] client '${clientConfig.clientId}' 找不到 display_id=${clientConfig.displayId}，將回退使用 display_index`,
@@ -417,7 +417,7 @@ class WindowManager {
       bounds.y = targetDisplay.bounds.y;
     }
 
-    return bounds;
+    return { bounds, spansMultipleDisplays: false };
   }
 
   focusFirstWindow() {
