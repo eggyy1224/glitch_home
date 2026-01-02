@@ -22,6 +22,7 @@ export type SlidePanelOptions = {
 
 const MODE_FLAG_KEYS = [
   "slide_mode",
+  "vj_mode",
   "video_mode",
   "static_mode",
   "incubator",

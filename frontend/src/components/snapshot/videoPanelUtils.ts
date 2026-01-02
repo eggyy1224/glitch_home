@@ -19,7 +19,7 @@ const toUrl = (rawUrl?: string | null) => {
   }
 };
 
-const MODE_FLAG_KEYS = ["slide_mode", "static_mode", "incubator", "iframe_mode", "matrix_mode", "__preset_mode", "img"];
+const MODE_FLAG_KEYS = ["slide_mode", "vj_mode", "static_mode", "incubator", "iframe_mode", "matrix_mode", "__preset_mode", "img"];
 
 const parseNumber = (value: string | null | undefined) => {
   if (value == null || value === "") return undefined;

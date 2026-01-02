@@ -9,6 +9,7 @@ export const KINSHIP_DATA_EXCLUDED: Set<DisplayModeType> = new Set([
   DisplayModes.ORGANIC,
   DisplayModes.MATRIX,
   DisplayModes.SLIDE,
+  DisplayModes.VJ,
   DisplayModes.IFRAME,
   DisplayModes.STATIC,
   DisplayModes.VIDEO,
