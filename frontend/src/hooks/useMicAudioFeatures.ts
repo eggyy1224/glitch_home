@@ -126,6 +126,7 @@ export function useMicAudioFeatures(): {
   const rafRef = useRef<number | null>(null);
   const beatPulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // TS 5.5+ defines Uint8Array as generic over ArrayBufferLike; keep this typing.
   const timeDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const freqDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 

@@ -9,6 +9,9 @@ import { SlideSourceMode, cleanId } from "./utils/slideMode";
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const clamp01 = (value: number) => clamp(value, 0, 1);
 
+const DEFAULT_VJ_MIN_INTERVAL_MS = 260;
+const DEFAULT_VJ_MAX_INTERVAL_MS = 15000;
+
 const hashString = (value: string): number => {
   let hash = 2166136261;
   for (let i = 0; i < value.length; i += 1) {
@@ -35,9 +38,28 @@ export interface VjModeProps {
   onCaptureReady?: ((capture: (() => Promise<Blob>) | null) => void) | null | undefined;
 }
 
+type AudioSnapshot = {
+  rms: number;
+  centroid: number;
+  bands: { low: number; mid: number; high: number };
+};
+
+const computeIntensity = ({ rms, bands }: AudioSnapshot): number => {
+  return clamp01(rms * 1.25 + bands.mid * 0.55 + bands.high * 0.75);
+};
+
+const computeIntervalMs = (
+  intensity: number,
+  minMs = DEFAULT_VJ_MIN_INTERVAL_MS,
+  maxMs = DEFAULT_VJ_MAX_INTERVAL_MS,
+): number => {
+  const t = clamp01(intensity);
+  // 低能量 → 很慢；高能量 → 明顯加速
+  return minMs + (maxMs - minMs) * Math.pow(1 - t, 2.2);
+};
+
 export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjModeProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
   const [micStarted, setMicStarted] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(() => cleanId(anchorImage) || null);
 
@@ -45,6 +67,30 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   const objectFit = (urlParams.get("object_fit") || "cover") as React.CSSProperties["objectFit"];
   const objectPosition = (urlParams.get("object_position") || "center") as React.CSSProperties["objectPosition"];
   const debugEnabled = useMemo(() => String(urlParams.get("vj_debug") ?? "false") === "true", [urlParams]);
+
+  const vjMinIntervalMs = useMemo(() => {
+    const raw = urlParams.get("vj_fast_ms") ?? urlParams.get("vj_min_ms") ?? urlParams.get("vj_min_interval_ms");
+    if (!raw) return DEFAULT_VJ_MIN_INTERVAL_MS;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DEFAULT_VJ_MIN_INTERVAL_MS;
+    return clamp(Math.floor(parsed), 80, 5000);
+  }, [urlParams]);
+
+  const vjMaxIntervalMs = useMemo(() => {
+    const raw = urlParams.get("vj_slow_ms") ?? urlParams.get("vj_max_ms") ?? urlParams.get("vj_max_interval_ms");
+    const fallback = DEFAULT_VJ_MAX_INTERVAL_MS;
+    const parsed = raw ? Number(raw) : Number.NaN;
+    const candidate = Number.isFinite(parsed) ? clamp(Math.floor(parsed), 1000, 60000) : fallback;
+    return Math.max(candidate, vjMinIntervalMs);
+  }, [urlParams, vjMinIntervalMs]);
+
+  const vjDrift = useMemo(() => {
+    const raw = urlParams.get("vj_drift");
+    if (!raw) return 1;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return 1;
+    return clamp(parsed, 0, 2);
+  }, [urlParams]);
 
   const slideOptions = useMemo(() => parseSlidePanelOptions(window.location.href), []);
   const topK = slideOptions.topK ?? 30;
@@ -87,15 +133,21 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
 
       const current = cleanId(currentImage) || "";
       const featuresNow = featuresRef.current;
-      const energy = clamp01(featuresNow.rms * 0.8 + featuresNow.bands.high * 0.6 + featuresNow.bands.mid * 0.3);
+      const intensity = computeIntensity(featuresNow);
+      const exploration = clamp01(intensity * 0.85 + featuresNow.centroid * 0.35);
 
       const rng = rngRef.current || Math.random;
       const n = list.length;
 
-      let gamma = 2.6 - energy * 2.0; // 高能量 → 更常跳遠
-      gamma = clamp(gamma, 0.65, 2.6);
-      let idx = Math.floor(Math.pow(rng(), gamma) * n);
-      idx = clamp(idx, 0, n - 1);
+      let idx = 0;
+      if (intensity < 0.08) {
+        idx = Math.floor(rng() * Math.min(2, n));
+      } else {
+        let gamma = 3.0 - exploration * 2.2; // 高能量/高頻 → 更常跳遠
+        gamma = clamp(gamma, 0.9, 3.0);
+        idx = Math.floor(Math.pow(rng(), gamma) * n);
+        idx = clamp(idx, 0, n - 1);
+      }
 
       let next = list[idx]?.cleanId || list[0]?.cleanId || null;
       if (!next) return;
@@ -107,16 +159,17 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
       setCurrentImage(next);
 
       const now = performance.now();
-      const driftCooldownMs = 900;
-      const driftChance = clamp01(0.08 + featuresNow.bands.mid * 0.35 + featuresNow.bands.high * 0.25);
-      const allowDrift = reason === "beat" ? now - lastDriftAtRef.current > driftCooldownMs : now - lastDriftAtRef.current > 1600;
-      const shouldDrift = allowDrift && rng() < driftChance;
+      const driftCooldownMs = reason === "beat" ? 3200 : 5200;
+      const driftStrength = clamp01((intensity - 0.22) / 0.78);
+      const driftChance = clamp01(((reason === "beat" ? 0.16 : 0.06) * driftStrength) * vjDrift);
+      const allowDrift = now - lastDriftAtRef.current > driftCooldownMs;
+      const shouldDrift = allowDrift && driftChance > 0 && rng() < driftChance;
       if (shouldDrift) {
         lastDriftAtRef.current = now;
         pool.setAnchor(next);
       }
     },
-    [pool, currentImage, featuresRef],
+    [pool, currentImage, featuresRef, vjDrift],
   );
 
   const handleStartMic = useCallback(async () => {
@@ -133,38 +186,19 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
     const loop = () => {
       if (!active) return;
 
-      const img = imgRef.current;
       const f = featuresRef.current;
       const now = performance.now();
 
-      if (img) {
-        const low = f.bands.low;
-        const mid = f.bands.mid;
-        const high = f.bands.high;
-        const rms = f.rms;
-
-        const zoom = 1 + low * 0.08 + rms * 0.05;
-        const rot = (high - 0.5) * 1.2;
-        const hue = (mid * 240 + high * 90) % 360;
-        const sat = 1 + mid * 1.6;
-        const contrast = 1 + high * 0.9;
-        const brightness = 0.9 + rms * 0.5;
-        const blur = Math.max(0, (high - 0.55) * 4.0);
-
-        img.style.transform = `scale(${zoom.toFixed(3)}) rotate(${rot.toFixed(2)}deg)`;
-        img.style.filter = `saturate(${sat.toFixed(2)}) contrast(${contrast.toFixed(2)}) brightness(${brightness.toFixed(
-          2,
-        )}) hue-rotate(${hue.toFixed(1)}deg) blur(${blur.toFixed(2)}px)`;
-      }
+      const intensity = computeIntensity(f);
+      const intervalMs = computeIntervalMs(intensity, vjMinIntervalMs, vjMaxIntervalMs);
 
       const beatAt = f.beatAt;
-      if (beatAt != null && beatAt !== lastBeatAtHandledRef.current) {
+      const allowBeat = intensity >= 0.1;
+      if (allowBeat && beatAt != null && beatAt !== lastBeatAtHandledRef.current) {
         lastBeatAtHandledRef.current = beatAt;
         lastChangeAtRef.current = now;
         pickNextImage("beat");
       } else {
-        const speed = 0.55 + f.rms * 1.4 + f.bands.mid * 1.1 + f.bands.high * 0.6;
-        const intervalMs = clamp(1800 / speed, 220, 2200);
         if (now - lastChangeAtRef.current > intervalMs) {
           lastChangeAtRef.current = now;
           pickNextImage("timer");
@@ -179,7 +213,7 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
       active = false;
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [micStarted, featuresRef, pickNextImage]);
+  }, [micStarted, featuresRef, pickNextImage, vjMinIntervalMs, vjMaxIntervalMs]);
 
   const imageUrl = currentImage ? `${imagesBase}${currentImage}` : null;
   const showOverlay = !micStarted || Boolean(micError) || !pool.anchor;
@@ -188,7 +222,6 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
     <div ref={rootRef} className="vj-root">
       {imageUrl ? (
         <img
-          ref={imgRef}
           className="vj-image"
           src={imageUrl}
           alt={currentImage || ""}
@@ -239,7 +272,7 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
               {features.running ? "麥克風啟動中…" : "啟動麥克風"}
             </button>
             <p className="vj-hint">
-              參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援 `vj_debug=true`。
+              參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援 `vj_debug=true`、`vj_fast_ms`、`vj_slow_ms`、`vj_drift`。
             </p>
             {micStarted && (
               <button
@@ -263,6 +296,10 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
           <div>anchor: {pool.anchor || "-"}</div>
           <div>current: {currentImage || "-"}</div>
           <div>items: {pool.items?.length ?? 0}</div>
+          <div>
+            intensity: {computeIntensity(featuresRef.current).toFixed(3)} · interval:{" "}
+            {Math.round(computeIntervalMs(computeIntensity(featuresRef.current), vjMinIntervalMs, vjMaxIntervalMs))}ms
+          </div>
           <div>
             rms: {featuresRef.current.rms.toFixed(3)} | low: {featuresRef.current.bands.low.toFixed(3)} | mid:{" "}
             {featuresRef.current.bands.mid.toFixed(3)} | high: {featuresRef.current.bands.high.toFixed(3)}
