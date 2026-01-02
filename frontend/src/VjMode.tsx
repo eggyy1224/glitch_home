@@ -62,6 +62,7 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [micStarted, setMicStarted] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(() => cleanId(anchorImage) || null);
+  const [, bumpDebugTick] = useState(0);
 
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const objectFit = (urlParams.get("object_fit") || "cover") as React.CSSProperties["objectFit"];
@@ -91,6 +92,14 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
     if (!Number.isFinite(parsed)) return 1;
     return clamp(parsed, 0, 2);
   }, [urlParams]);
+
+  useEffect(() => {
+    if (!debugEnabled || !micStarted) return undefined;
+    const timer = setInterval(() => {
+      bumpDebugTick((prev) => (prev + 1) % 1_000_000);
+    }, 120);
+    return () => clearInterval(timer);
+  }, [debugEnabled, micStarted]);
 
   const slideOptions = useMemo(() => parseSlidePanelOptions(window.location.href), []);
   const topK = slideOptions.topK ?? 30;
@@ -239,6 +248,17 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   const imageUrl = currentImage ? `${imagesBase}${currentImage}` : null;
   const showOverlay = !micStarted || Boolean(micError) || !pool.anchor;
 
+  const debugAudio = featuresRef.current;
+  const debugIntensity = computeIntensity(debugAudio);
+  const debugExploration = clamp01(debugIntensity * 0.85 + debugAudio.centroid * 0.35);
+  const debugIntervalMs = computeIntervalMs(debugIntensity, vjMinIntervalMs, vjMaxIntervalMs);
+  const debugSpeed = (() => {
+    const denom = vjMaxIntervalMs - vjMinIntervalMs;
+    if (denom <= 0) return 0;
+    const normalized = (debugIntervalMs - vjMinIntervalMs) / denom;
+    return clamp01(1 - normalized);
+  })();
+
   return (
     <div ref={rootRef} className="vj-root">
       {imageUrl ? (
@@ -294,18 +314,90 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
 
       {debugEnabled && (
         <div className="vj-debug">
-          <div>anchor: {pool.anchor || "-"}</div>
-          <div>current: {currentImage || "-"}</div>
-          <div>items: {pool.items?.length ?? 0}</div>
-          <div>
-            intensity: {computeIntensity(featuresRef.current).toFixed(3)} · interval:{" "}
-            {Math.round(computeIntervalMs(computeIntensity(featuresRef.current), vjMinIntervalMs, vjMaxIntervalMs))}ms
+          <div className="vj-debug-header">
+            <div className="vj-debug-title">VJ Debug</div>
+            <div className="vj-debug-pills">
+              <span className={`vj-debug-pill vj-debug-beat${features.beat ? " is-on" : ""}`} title="beat" />
+              <span className="vj-debug-pill" title="beat count">
+                {debugAudio.beatCount}
+              </span>
+              <span className="vj-debug-pill" title="items">
+                {pool.items?.length ?? 0}
+              </span>
+            </div>
           </div>
-          <div>
-            rms: {featuresRef.current.rms.toFixed(3)} | low: {featuresRef.current.bands.low.toFixed(3)} | mid:{" "}
-            {featuresRef.current.bands.mid.toFixed(3)} | high: {featuresRef.current.bands.high.toFixed(3)}
+
+          <div className="vj-debug-kv">
+            <div className="vj-debug-k">anchor</div>
+            <div className="vj-debug-v">{pool.anchor || "-"}</div>
           </div>
-          <div>beats: {features.beatCount}</div>
+          <div className="vj-debug-kv">
+            <div className="vj-debug-k">current</div>
+            <div className="vj-debug-v">{currentImage || "-"}</div>
+          </div>
+
+          <div className="vj-debug-meter">
+            <div className="vj-debug-label">intensity</div>
+            <div className="vj-debug-bar">
+              <div
+                className="vj-debug-bar-fill vj-debug-bar-fill--intensity"
+                style={{ width: `${Math.round(debugIntensity * 100)}%` }}
+              />
+            </div>
+            <div className="vj-debug-value">{debugIntensity.toFixed(2)}</div>
+          </div>
+
+          <div className="vj-debug-meter">
+            <div className="vj-debug-label">speed</div>
+            <div className="vj-debug-bar">
+              <div
+                className="vj-debug-bar-fill vj-debug-bar-fill--speed"
+                style={{ width: `${Math.round(debugSpeed * 100)}%` }}
+              />
+            </div>
+            <div className="vj-debug-value">{Math.round(debugIntervalMs)}ms</div>
+          </div>
+
+          <div className="vj-debug-meter">
+            <div className="vj-debug-label">explore</div>
+            <div className="vj-debug-bar">
+              <div
+                className="vj-debug-bar-fill vj-debug-bar-fill--explore"
+                style={{ width: `${Math.round(debugExploration * 100)}%` }}
+              />
+            </div>
+            <div className="vj-debug-value">{debugExploration.toFixed(2)}</div>
+          </div>
+
+          <div className="vj-debug-bands">
+            <div className="vj-debug-band" title="low">
+              <div className="vj-debug-band-label">L</div>
+              <div className="vj-debug-bar">
+                <div
+                  className="vj-debug-bar-fill vj-debug-bar-fill--low"
+                  style={{ width: `${Math.round(debugAudio.bands.low * 100)}%` }}
+                />
+              </div>
+            </div>
+            <div className="vj-debug-band" title="mid">
+              <div className="vj-debug-band-label">M</div>
+              <div className="vj-debug-bar">
+                <div
+                  className="vj-debug-bar-fill vj-debug-bar-fill--mid"
+                  style={{ width: `${Math.round(debugAudio.bands.mid * 100)}%` }}
+                />
+              </div>
+            </div>
+            <div className="vj-debug-band" title="high">
+              <div className="vj-debug-band-label">H</div>
+              <div className="vj-debug-bar">
+                <div
+                  className="vj-debug-bar-fill vj-debug-bar-fill--high"
+                  style={{ width: `${Math.round(debugAudio.bands.high * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
