@@ -143,21 +143,43 @@ export function useVjImagePool({
           const nextItems = buildKinshipResults(data, anchor, safeTopK, kinshipOrder).filter(
             (entry) => !failedSetRef.current.has(entry.cleanId),
           );
-          setItems(nextItems.length ? nextItems : [{ id: anchor, cleanId: anchor, distance: null }]);
+          if (nextItems.length) {
+            setItems(nextItems);
+            return;
+          }
+          if (failedSetRef.current.has(anchor)) {
+            setItems([]);
+            setError("找不到可用圖片（anchor 已失敗且無替代結果）。");
+            return;
+          }
+          setItems([{ id: anchor, cleanId: anchor, distance: null }]);
           return;
         }
 
         const searchPath = `backend/offspring_images/${anchor}`;
         const data = await searchImagesByImage(searchPath, safeTopK, { signal: controller.signal, includeDeprecated });
         const nextItems = buildVectorResults(data, anchor, safeTopK).filter((entry) => !failedSetRef.current.has(entry.cleanId));
-        setItems(nextItems.length ? nextItems : [{ id: anchor, cleanId: anchor, distance: null }]);
+        if (nextItems.length) {
+          setItems(nextItems);
+          return;
+        }
+        if (failedSetRef.current.has(anchor)) {
+          setItems([]);
+          setError("找不到可用圖片（anchor 已失敗且無替代結果）。");
+          return;
+        }
+        setItems([{ id: anchor, cleanId: anchor, distance: null }]);
       } catch (err) {
         if ((err as { name?: unknown })?.name === "AbortError") {
           return;
         }
         const message = err instanceof Error ? err.message : "載入播放清單失敗";
         setError(message);
-        setItems([{ id: anchor, cleanId: anchor, distance: null }]);
+        if (failedSetRef.current.has(anchor)) {
+          setItems([]);
+        } else {
+          setItems([{ id: anchor, cleanId: anchor, distance: null }]);
+        }
       } finally {
         setLoading(false);
       }
