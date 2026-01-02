@@ -9,6 +9,7 @@ interface PanelListProps {
   selectedRows: number[];
   videoAssets: string[];
   imageAssets: string[];
+  bgmAssets: string[];
   onPanelChange: (index: number, patch: Partial<PanelConfig>) => void;
   onModeSelect: (index: number, nextMode: PanelMode | "", currentAsset: string, panel?: PanelConfig, options?: { imgBase?: string | null }) => void;
   onAssetChange: (
@@ -37,6 +38,7 @@ export function PanelList({
   selectedRows,
   videoAssets,
   imageAssets,
+  bgmAssets,
   onPanelChange,
   onModeSelect,
   onAssetChange,
@@ -60,6 +62,7 @@ export function PanelList({
           selected={selectedRows.includes(index)}
           videoAssets={videoAssets}
           imageAssets={imageAssets}
+          bgmAssets={bgmAssets}
           onPanelChange={onPanelChange}
           onModeSelect={onModeSelect}
           onAssetChange={onAssetChange}

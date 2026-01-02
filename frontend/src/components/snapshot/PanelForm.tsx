@@ -20,6 +20,7 @@ interface PanelFormProps {
   panel: PanelConfig;
   videoAssets: string[];
   imageAssets: string[];
+  bgmAssets: string[];
   onPanelChange: (index: number, patch: Partial<PanelConfig>) => void;
   onModeSelect: (index: number, nextMode: PanelMode | "", currentAsset: string, panel?: PanelConfig, options?: { imgBase?: string | null }) => void;
   onAssetChange: (
@@ -43,6 +44,7 @@ export function PanelForm({
   panel,
   videoAssets,
   imageAssets,
+  bgmAssets,
   onPanelChange,
   onModeSelect,
   onAssetChange,
@@ -52,8 +54,10 @@ export function PanelForm({
   const preset = mode ? MODE_PRESETS[mode as PanelMode] : undefined;
   const assetPlaceholder = preset?.assetKey === "video" ? "影片檔名.mp4" : "offspring_xxx.png";
   const assetListId = `snapshot-panel-${index}-asset-options`;
+  const bgmListId = `snapshot-panel-${index}-bgm-options`;
   const assetList = preset?.assetKey === "video" ? videoAssets : imageAssets;
   const safeAssetList = Array.isArray(assetList) ? assetList : [];
+  const safeBgmAssets = Array.isArray(bgmAssets) ? bgmAssets : [];
   const isVideoMode = mode === "video_mode";
   const isSlideMode = mode === "slide_mode";
   const isMatrixMode = mode === "matrix_mode";
@@ -412,8 +416,16 @@ export function PanelForm({
                     handleVjOptionChange({ vjBgm: raw || null });
                   }}
                   placeholder="heavy_metal_bgm_03.mp3"
+                  list={safeBgmAssets.length ? bgmListId : undefined}
                   data-ai-field={`snapshot.panel[${index}].vj_bgm`}
                 />
+                {safeBgmAssets.length > 0 && (
+                  <datalist id={bgmListId}>
+                    {safeBgmAssets.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
+                )}
               </label>
               <label style={{ display: "flex", flexDirection: "column" }}>
                 BGM 音量 (0-1)

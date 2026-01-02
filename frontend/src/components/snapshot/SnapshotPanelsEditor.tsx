@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createTextSearchRequest, listAncestorImages, listOffspringImages, listVideoAssets } from "../../api";
+import { createTextSearchRequest, fetchBgmAssets, listAncestorImages, listOffspringImages, listVideoAssets } from "../../api";
 import { AssetDrawer } from "./AssetDrawer";
 import { PanelCanvas } from "./PanelCanvas";
 import { PanelList } from "./PanelList";
@@ -120,6 +120,7 @@ export default function SnapshotPanelsEditor({
   const [offspringImageAssets, setOffspringImageAssets] = useState<string[]>([]);
   const [ancestorImageAssets, setAncestorImageAssets] = useState<string[]>([]);
   const [videoAssets, setVideoAssets] = useState<string[]>([]);
+  const [bgmAssets, setBgmAssets] = useState<string[]>([]);
   const [assetStatus, setAssetStatus] = useState<string>("尚未載入資產");
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [assetTab, setAssetTab] = useState<AssetTab>("offspring_images");
@@ -157,9 +158,24 @@ export default function SnapshotPanelsEditor({
     }
   }, []);
 
-  useEffect(() => {
+  const loadBgmAssets = useCallback(async () => {
+    try {
+      const { tracks } = await fetchBgmAssets();
+      const names = parseAssetList(tracks);
+      setBgmAssets(names);
+    } catch (err) {
+      setBgmAssets([]);
+    }
+  }, []);
+
+  const reloadAssets = useCallback(() => {
     void loadAssets();
-  }, [loadAssets]);
+    void loadBgmAssets();
+  }, [loadAssets, loadBgmAssets]);
+
+  useEffect(() => {
+    reloadAssets();
+  }, [reloadAssets]);
 
   useEffect(() => {
     return () => {
@@ -497,7 +513,7 @@ export default function SnapshotPanelsEditor({
         >
           資產：{assetStatus}
         </span>
-        <button type="button" onClick={loadAssets} disabled={loadingAssets} data-ai-action="snapshot.panel.assets.reload">
+        <button type="button" onClick={reloadAssets} disabled={loadingAssets} data-ai-action="snapshot.panel.assets.reload">
           重新載入資產
         </button>
       </div>
@@ -507,6 +523,7 @@ export default function SnapshotPanelsEditor({
         selectedRows={selectedRows}
         videoAssets={videoAssets}
         imageAssets={offspringImageAssets}
+        bgmAssets={bgmAssets}
         onPanelChange={onPanelChange}
         onModeSelect={handleModeSelect}
         onAssetChange={handleAssetChange}
