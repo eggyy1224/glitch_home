@@ -224,6 +224,28 @@ def api_list_video_assets() -> dict:
     return {"videos": videos}
 
 
+ALLOWED_BGM_EXTS = {".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a"}
+
+
+@router.get("/api/bgm-assets")
+def api_list_bgm_assets() -> dict:
+    """List BGM audio files for VJ mode."""
+    base_dir = Path(settings.bgm_assets_dir)
+    if not base_dir.exists() or not base_dir.is_dir():
+        return {"tracks": []}
+
+    public_base = settings.bgm_assets_public_base.rstrip("/")
+    tracks: list[dict[str, str]] = []
+    for path in sorted(base_dir.iterdir()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() not in ALLOWED_BGM_EXTS:
+            continue
+        name = path.name
+        tracks.append({"filename": name, "url": f"{public_base}/{name}"})
+    return {"tracks": tracks}
+
+
 @router.get("/api/ancestor-images")
 def api_list_ancestor_images() -> dict:
     """List nightwalk (ancestor) images, filtering out offspring_* leftovers."""

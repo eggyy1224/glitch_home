@@ -62,6 +62,14 @@ if settings.nightwalk_assets_dir:
         name="nightwalk_assets",
     )
 
+bgm_path = Path(settings.bgm_assets_dir)
+if bgm_path.exists() and bgm_path.is_dir():
+    app.mount(
+        settings.bgm_assets_public_base,
+        StaticFiles(directory=bgm_path),
+        name="bgm_assets",
+    )
+
 app.include_router(storage_router)
 app.include_router(generation_router)
 app.include_router(indexing_router)

@@ -2,15 +2,18 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import "./VjMode.css";
 import { useSlideScreenshot } from "./hooks/useSlideScreenshot";
 import { useMicAudioFeatures } from "./hooks/useMicAudioFeatures";
+import { useBgmAudioFeatures } from "./hooks/useBgmAudioFeatures";
 import { useVjImagePool } from "./hooks/useVjImagePool";
 import { parseSlidePanelOptions } from "./components/snapshot/slidePanelUtils";
 import { SlideSourceMode, cleanId } from "./utils/slideMode";
+import type { AudioFeatures } from "./hooks/audioAnalysis";
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const clamp01 = (value: number) => clamp(value, 0, 1);
 
 const DEFAULT_VJ_MIN_INTERVAL_MS = 260;
 const DEFAULT_VJ_MAX_INTERVAL_MS = 15000;
+const DEFAULT_VJ_BGM_VOLUME = 0.6;
 
 const hashString = (value: string): number => {
   let hash = 2166136261;
@@ -60,7 +63,7 @@ const computeIntervalMs = (
 
 export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjModeProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [micStarted, setMicStarted] = useState(false);
+  const [audioStarted, setAudioStarted] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(() => cleanId(anchorImage) || null);
   const [, bumpDebugTick] = useState(0);
 
@@ -69,6 +72,18 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   const objectPosition = (urlParams.get("object_position") || "center") as React.CSSProperties["objectPosition"];
   const debugEnabled = useMemo(() => String(urlParams.get("vj_debug") ?? "false") === "true", [urlParams]);
   const autostartMic = useMemo(() => String(urlParams.get("vj_autostart_mic") ?? "false") === "true", [urlParams]);
+
+  // BGM mode parameters
+  const vjBgm = useMemo(() => urlParams.get("vj_bgm") || null, [urlParams]);
+  const vjBgmVolume = useMemo(() => {
+    const raw = urlParams.get("vj_bgm_volume");
+    if (!raw) return DEFAULT_VJ_BGM_VOLUME;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DEFAULT_VJ_BGM_VOLUME;
+    return clamp(parsed, 0, 1);
+  }, [urlParams]);
+
+  const isBgmMode = Boolean(vjBgm);
 
   const vjMinIntervalMs = useMemo(() => {
     const raw = urlParams.get("vj_fast_ms") ?? urlParams.get("vj_min_ms") ?? urlParams.get("vj_min_interval_ms");
@@ -95,12 +110,12 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   }, [urlParams]);
 
   useEffect(() => {
-    if (!debugEnabled || !micStarted) return undefined;
+    if (!debugEnabled || !audioStarted) return undefined;
     const timer = setInterval(() => {
       bumpDebugTick((prev) => (prev + 1) % 1_000_000);
     }, 120);
     return () => clearInterval(timer);
-  }, [debugEnabled, micStarted]);
+  }, [debugEnabled, audioStarted]);
 
   const slideOptions = useMemo(() => parseSlidePanelOptions(window.location.href), []);
   const topK = slideOptions.topK ?? 30;
@@ -118,23 +133,62 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
 
   useSlideScreenshot({ rootRef, onCaptureReady: onCaptureReady ?? undefined });
 
-  const { featuresRef, features, error: micError, start: startMic, stop: stopMic } = useMicAudioFeatures();
+  // Microphone mode hook
+  const micHook = useMicAudioFeatures();
 
+  // BGM mode hook (auto-start handled in separate effect below)
+  const bgmHook = useBgmAudioFeatures({
+    bgmFile: vjBgm,
+    volume: vjBgmVolume,
+  });
+
+  // Select which audio source to use
+  const featuresRef = isBgmMode ? bgmHook.featuresRef : micHook.featuresRef;
+  const features = isBgmMode ? bgmHook.features : micHook.features;
+  const audioError = isBgmMode ? bgmHook.error : micHook.error;
+  const startAudio = isBgmMode ? bgmHook.start : micHook.start;
+  const stopAudio = isBgmMode ? bgmHook.stop : micHook.stop;
+
+  // Auto-start microphone mode if requested
   const autostartAttemptedRef = useRef(false);
   useEffect(() => {
+    if (isBgmMode) return undefined; // BGM mode auto-starts via hook option
     if (!autostartMic) return undefined;
     if (!pool.anchor) return undefined;
-    if (micStarted) return undefined;
+    if (audioStarted) return undefined;
     if (autostartAttemptedRef.current) return undefined;
     autostartAttemptedRef.current = true;
 
     void (async () => {
-      await startMic();
-      setMicStarted(featuresRef.current.running);
+      await startAudio();
+      setAudioStarted(featuresRef.current.running);
     })();
 
     return undefined;
-  }, [autostartMic, micStarted, pool.anchor, startMic, featuresRef]);
+  }, [isBgmMode, autostartMic, audioStarted, pool.anchor, startAudio, featuresRef]);
+
+  // Auto-start BGM mode when pool.anchor is ready
+  const bgmAutoStartAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (!isBgmMode) return;
+    if (!pool.anchor) return; // Wait for anchor to load
+    if (audioStarted) return;
+    if (bgmAutoStartAttemptedRef.current) return;
+    if (!bgmHook.playlist.length) return; // Wait for playlist to load
+    bgmAutoStartAttemptedRef.current = true;
+
+    void (async () => {
+      await bgmHook.start();
+      setAudioStarted(true);
+    })();
+  }, [isBgmMode, pool.anchor, audioStarted, bgmHook.playlist.length, bgmHook.start]);
+
+  // Track BGM running state
+  useEffect(() => {
+    if (isBgmMode && bgmHook.features.running && !audioStarted) {
+      setAudioStarted(true);
+    }
+  }, [isBgmMode, bgmHook.features.running, audioStarted]);
 
   useEffect(() => {
     const first = pool.items?.[0]?.cleanId || null;
@@ -198,34 +252,35 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
     [pool, currentImage, featuresRef, vjDrift],
   );
 
-  const toggleMic = useCallback(() => {
+  const toggleAudio = useCallback(() => {
     if (!pool.anchor) return;
     if (featuresRef.current.running) {
-      stopMic();
-      setMicStarted(false);
+      stopAudio();
+      setAudioStarted(false);
       return;
     }
 
     void (async () => {
-      await startMic();
-      setMicStarted(featuresRef.current.running);
+      await startAudio();
+      setAudioStarted(featuresRef.current.running);
     })();
-  }, [pool.anchor, featuresRef, startMic, stopMic]);
+  }, [pool.anchor, featuresRef, startAudio, stopAudio]);
 
-  // Ctrl+R toggle 麥克風（只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
+  // Ctrl+R toggle audio（只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
   useEffect(() => {
+    if (isBgmMode) return undefined; // BGM mode doesn't need manual toggle
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && !event.metaKey && (event.key === "r" || event.key === "R")) {
         event.preventDefault();
-        toggleMic();
+        toggleAudio();
       }
     };
     window.addEventListener("keydown", onKeyDown, { passive: false });
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [toggleMic]);
+  }, [isBgmMode, toggleAudio]);
 
   useEffect(() => {
-    if (!micStarted) return () => {};
+    if (!audioStarted) return () => {};
 
     let active = true;
     let raf: number | null = null;
@@ -260,10 +315,20 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
       active = false;
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [micStarted, featuresRef, pickNextImage, vjMinIntervalMs, vjMaxIntervalMs]);
+  }, [audioStarted, featuresRef, pickNextImage, vjMinIntervalMs, vjMaxIntervalMs]);
 
   const imageUrl = currentImage ? `${imagesBase}${currentImage}` : null;
-  const showOverlay = !micStarted || Boolean(micError) || !pool.anchor;
+  const showOverlay = !isBgmMode && (!audioStarted || Boolean(audioError) || !pool.anchor);
+  
+  // BGM mode: show overlay when not yet running (autoplay blocked or waiting for user interaction)
+  // Use features.running instead of isPlaying to avoid overlay flickering during track changes
+  const bgmNeedsClick = isBgmMode && !bgmHook.features.running && pool.anchor;
+  const bgmAutoplayBlocked = isBgmMode && bgmHook.error && bgmHook.error.includes("自動播放");
+
+  const handleBgmClick = useCallback(() => {
+    if (!isBgmMode) return;
+    void bgmHook.start();
+  }, [isBgmMode, bgmHook]);
 
   const debugAudio = featuresRef.current;
   const debugIntensity = computeIntensity(debugAudio);
@@ -309,6 +374,7 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
         </div>
       )}
 
+      {/* Microphone mode overlay */}
       {showOverlay && (
         <div className="vj-overlay">
           <div className="vj-panel">
@@ -321,24 +387,59 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
               </p>
             )}
             <div className="vj-actions">
-              <button type="button" className="vj-button" onClick={toggleMic} disabled={!pool.anchor}>
-                {micStarted ? "停止麥克風" : "啟動麥克風"}
+              <button type="button" className="vj-button" onClick={toggleAudio} disabled={!pool.anchor}>
+                {audioStarted ? "停止麥克風" : "啟動麥克風"}
               </button>
-              <div className="vj-status">{micStarted ? "狀態：已啟動" : "狀態：未啟動"}</div>
+              <div className="vj-status">{audioStarted ? "狀態：已啟動" : "狀態：未啟動"}</div>
             </div>
-            {micError && <p className="vj-desc">麥克風錯誤：{micError}</p>}
+            {audioError && <p className="vj-desc">麥克風錯誤：{audioError}</p>}
             <p className="vj-hint">
               Ctrl+R 開關麥克風（或按上方按鈕）；參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援
               `vj_debug=true`、`vj_fast_ms`、`vj_slow_ms`、`vj_drift`、`vj_autostart_mic=true`。
             </p>
+            <p className="vj-hint">
+              或使用 `vj_bgm=檔名.mp3` 切換為 BGM 驅動模式。
+            </p>
           </div>
+        </div>
+      )}
+
+      {/* BGM mode: click to start overlay */}
+      {bgmNeedsClick && (
+        <div className="vj-overlay vj-overlay--clickable" onClick={handleBgmClick}>
+          <div className="vj-panel">
+            <h2 className="vj-title">VJ Mode（BGM 驅動）</h2>
+            <p className="vj-desc">
+              {bgmAutoplayBlocked
+                ? "瀏覽器阻擋了自動播放，請點擊任意處開始播放 BGM。"
+                : bgmHook.playlist.length === 0
+                ? "載入 BGM 清單中..."
+                : "點擊任意處開始播放 BGM"}
+            </p>
+            <div className="vj-actions">
+              <button type="button" className="vj-button">
+                ▶ 開始播放
+              </button>
+            </div>
+            <p className="vj-hint">
+              BGM: {bgmHook.currentTrack || vjBgm || "載入中..."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* BGM mode status bar (when playing) */}
+      {isBgmMode && bgmHook.isPlaying && (
+        <div className="vj-bgm-status">
+          <span className="vj-bgm-icon">♫</span>
+          <span className="vj-bgm-track">{bgmHook.currentTrack || "播放中..."}</span>
         </div>
       )}
 
       {debugEnabled && (
         <div className="vj-debug">
           <div className="vj-debug-header">
-            <div className="vj-debug-title">VJ Debug</div>
+            <div className="vj-debug-title">VJ Debug {isBgmMode ? "(BGM)" : "(Mic)"}</div>
             <div className="vj-debug-pills">
               <span className={`vj-debug-pill vj-debug-beat${features.beat ? " is-on" : ""}`} title="beat" />
               <span className="vj-debug-pill" title="beat count">
@@ -349,6 +450,13 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
               </span>
             </div>
           </div>
+
+          {isBgmMode && (
+            <div className="vj-debug-kv">
+              <div className="vj-debug-k">track</div>
+              <div className="vj-debug-v">{bgmHook.currentTrack || "-"}</div>
+            </div>
+          )}
 
           <div className="vj-debug-kv">
             <div className="vj-debug-k">anchor</div>

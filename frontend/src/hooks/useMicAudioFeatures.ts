@@ -1,112 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
+import {
+  type AudioBands,
+  type AudioFeatures,
+  type BeatState,
+  computeBandsAndCentroid,
+  computeRmsAndPeak,
+  createInitialBeatState,
+  createInitialFeatures,
+  detectBeat,
+  getAudioContext,
+} from "./audioAnalysis";
 
-export type MicBands = {
-  low: number;
-  mid: number;
-  high: number;
-};
-
-export type MicAudioFeatures = {
-  running: boolean;
-  sampleRate: number | null;
-  rms: number;
-  peak: number;
-  bands: MicBands;
-  centroid: number;
-  beat: boolean;
-  beatCount: number;
-  beatAt: number | null;
-};
-
-const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
-
-const normalizeByte = (value: number) => clamp01(value / 255);
-
-const computeRmsAndPeak = (timeData: Uint8Array): { rms: number; peak: number } => {
-  if (!timeData.length) return { rms: 0, peak: 0 };
-  let sumSquares = 0;
-  let peak = 0;
-  for (let i = 0; i < timeData.length; i += 1) {
-    const normalized = (timeData[i] - 128) / 128;
-    const abs = Math.abs(normalized);
-    if (abs > peak) peak = abs;
-    sumSquares += normalized * normalized;
-  }
-  const rms = Math.sqrt(sumSquares / timeData.length);
-  return { rms: clamp01(rms), peak: clamp01(peak) };
-};
-
-type BeatState = {
-  lastEnergy: number;
-  lastBeatAt: number;
-  history: number[];
-  historySize: number;
-  beatCount: number;
-};
-
-const computeMeanAndStd = (values: number[]): { mean: number; std: number } => {
-  if (!values.length) return { mean: 0, std: 0 };
-  let sum = 0;
-  for (let i = 0; i < values.length; i += 1) sum += values[i];
-  const mean = sum / values.length;
-  let varianceSum = 0;
-  for (let i = 0; i < values.length; i += 1) {
-    const d = values[i] - mean;
-    varianceSum += d * d;
-  }
-  const std = Math.sqrt(varianceSum / values.length);
-  return { mean, std };
-};
-
-const computeBandsAndCentroid = (
-  freqData: Uint8Array,
-  sampleRate: number,
-): { bands: MicBands; centroid: number } => {
-  const n = freqData.length;
-  if (!n || !sampleRate) return { bands: { low: 0, mid: 0, high: 0 }, centroid: 0 };
-  const nyquist = sampleRate / 2;
-  const binHz = nyquist / n;
-
-  const lowMaxHz = 160;
-  const midMaxHz = 2000;
-  const highMaxHz = 8000;
-
-  let lowSum = 0;
-  let lowCount = 0;
-  let midSum = 0;
-  let midCount = 0;
-  let highSum = 0;
-  let highCount = 0;
-
-  let weightedSum = 0;
-  let magnitudeSum = 0;
-
-  for (let i = 0; i < n; i += 1) {
-    const mag = normalizeByte(freqData[i]);
-    const hz = i * binHz;
-    if (hz <= lowMaxHz) {
-      lowSum += mag;
-      lowCount += 1;
-    } else if (hz <= midMaxHz) {
-      midSum += mag;
-      midCount += 1;
-    } else if (hz <= highMaxHz) {
-      highSum += mag;
-      highCount += 1;
-    }
-    weightedSum += hz * mag;
-    magnitudeSum += mag;
-  }
-
-  const low = lowCount ? lowSum / lowCount : 0;
-  const mid = midCount ? midSum / midCount : 0;
-  const high = highCount ? highSum / highCount : 0;
-  const centroidHz = magnitudeSum > 0 ? weightedSum / magnitudeSum : 0;
-  const centroid = clamp01(centroidHz / highMaxHz);
-
-  return { bands: { low: clamp01(low), mid: clamp01(mid), high: clamp01(high) }, centroid };
-};
+// Re-export types for backwards compatibility
+export type MicBands = AudioBands;
+export type MicAudioFeatures = AudioFeatures;
 
 export function useMicAudioFeatures(): {
   featuresRef: React.MutableRefObject<MicAudioFeatures>;
@@ -136,25 +44,9 @@ export function useMicAudioFeatures(): {
   const centroidRef = useRef(0);
   const beatAtRef = useRef<number | null>(null);
 
-  const beatStateRef = useRef<BeatState>({
-    lastEnergy: 0,
-    lastBeatAt: 0,
-    history: [],
-    historySize: 60,
-    beatCount: 0,
-  });
+  const beatStateRef = useRef<BeatState>(createInitialBeatState(60));
 
-  const featuresRef = useRef<MicAudioFeatures>({
-    running: false,
-    sampleRate: null,
-    rms: 0,
-    peak: 0,
-    bands: { low: 0, mid: 0, high: 0 },
-    centroid: 0,
-    beat: false,
-    beatCount: 0,
-    beatAt: null,
-  });
+  const featuresRef = useRef<MicAudioFeatures>(createInitialFeatures());
 
   const stop = useCallback(() => {
     setRunning(false);
@@ -181,15 +73,8 @@ export function useMicAudioFeatures(): {
     }
     beatAtRef.current = null;
     featuresRef.current = {
-      running: false,
-      sampleRate: null,
-      rms: 0,
-      peak: 0,
-      bands: { low: 0, mid: 0, high: 0 },
-      centroid: 0,
-      beat: false,
+      ...createInitialFeatures(),
       beatCount: beatStateRef.current.beatCount,
-      beatAt: null,
     };
   }, []);
 
@@ -216,9 +101,7 @@ export function useMicAudioFeatures(): {
       });
       streamRef.current = stream;
 
-      const AudioContextCtor =
-        (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const AudioContextCtor = getAudioContext();
       if (!AudioContextCtor) {
         setError("此瀏覽器不支援 AudioContext。");
         stop();
@@ -238,13 +121,7 @@ export function useMicAudioFeatures(): {
       timeDataRef.current = new Uint8Array(analyser.fftSize);
       freqDataRef.current = new Uint8Array(analyser.frequencyBinCount);
 
-      beatStateRef.current = {
-        lastEnergy: 0,
-        lastBeatAt: performance.now(),
-        history: [],
-        historySize: 60,
-        beatCount: 0,
-      };
+      beatStateRef.current = createInitialBeatState(60);
 
       setRunning(true);
       featuresRef.current = {
@@ -281,24 +158,10 @@ export function useMicAudioFeatures(): {
         centroidRef.current = centroid;
 
         const now = performance.now();
-        const energy = rms;
         const beatState = beatStateRef.current;
-        const delta = energy - beatState.lastEnergy;
-        beatState.lastEnergy = energy;
-        beatState.history.push(energy);
-        if (beatState.history.length > beatState.historySize) {
-          beatState.history.shift();
-        }
+        const shouldBeat = detectBeat(rms, beatState, now);
 
-        const { mean, std } = computeMeanAndStd(beatState.history);
-        const minIntervalMs = 120;
-        const energyGate = Math.max(0.04, mean + std * 0.7);
-        const deltaGate = Math.max(0.01, std * 0.35);
-
-        const shouldBeat = delta > deltaGate && energy > energyGate && now - beatState.lastBeatAt > minIntervalMs;
         if (shouldBeat) {
-          beatState.lastBeatAt = now;
-          beatState.beatCount += 1;
           beatAtRef.current = now;
           setBeatCount(beatState.beatCount);
           setBeatPulse(true);

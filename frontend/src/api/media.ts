@@ -119,3 +119,37 @@ export async function unlockAudio(targetClientId: string | null = null, { signal
     query: buildTargetQuery(targetClientId),
   });
 }
+
+export interface BgmTrackEntry {
+  filename: string;
+  url: string;
+}
+
+export async function fetchBgmAssets({ signal }: RequestOptions = {}): Promise<{ tracks: BgmTrackEntry[] }> {
+  const { data, response } = (await apiClient.request(`/api/bgm-assets`, {
+    signal,
+    returnResponse: true,
+  })) as RequestWithResponse<{ tracks?: BgmTrackEntry[] }>;
+
+  const list = Array.isArray(data?.tracks) ? data.tracks : [];
+  const requestUrl = new URL(response.url);
+  const mapped = list.map((track) => {
+    if (!track?.url) return track;
+    try {
+      const href = String(track.url);
+      const absolute = new URL(href, requestUrl.origin);
+      const encodedPath = absolute.pathname
+        .split("/")
+        .map((segment) => encodeURIComponent(segment))
+        .join("/");
+      absolute.pathname = encodedPath;
+      return {
+        ...track,
+        url: absolute.toString(),
+      };
+    } catch (err) {
+      return track;
+    }
+  });
+  return { tracks: mapped as BgmTrackEntry[] };
+}

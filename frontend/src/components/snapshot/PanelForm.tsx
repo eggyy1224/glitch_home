@@ -399,6 +399,45 @@ export function PanelForm({
               顯示 debug 面板 (vj_debug)
             </label>
           </div>
+          <div style={{ marginTop: 10, borderTop: "1px dashed rgba(130, 220, 165, 0.4)", paddingTop: 8 }}>
+            <div style={{ marginBottom: 6, color: "#82dca5", fontSize: 12 }}>BGM 驅動模式（設定後會取代麥克風）</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                BGM 檔名 (vj_bgm)
+                <input
+                  type="text"
+                  value={vjOptions?.vjBgm ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    handleVjOptionChange({ vjBgm: raw || null });
+                  }}
+                  placeholder="heavy_metal_bgm_03.mp3"
+                  data-ai-field={`snapshot.panel[${index}].vj_bgm`}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                BGM 音量 (0-1)
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={vjOptions?.vjBgmVolume ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const parsed = raw === "" ? null : Number(raw);
+                    const safeValue = parsed === null || Number.isNaN(parsed) ? null : Math.max(0, Math.min(1, parsed));
+                    handleVjOptionChange({ vjBgmVolume: safeValue });
+                  }}
+                  placeholder="預設 0.6"
+                  data-ai-field={`snapshot.panel[${index}].vj_bgm_volume`}
+                />
+              </label>
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+              提示：BGM 檔案放在 /bgm/ 資料夾（例如 heavy_metal_bgm_03.mp3、星際狂舞.mp3）
+            </div>
+          </div>
         </div>
       )}
       {isVideoMode && (

@@ -26,6 +26,8 @@ export type VjPanelOptions = SlidePanelOptions & {
   vjDrift?: number | null;
   vjDebug?: boolean;
   vjAutostartMic?: boolean;
+  vjBgm?: string | null;
+  vjBgmVolume?: number | null;
 };
 
 const MODE_FLAG_KEYS = [
@@ -228,6 +230,16 @@ export const parseVjPanelOptions = (
     params.get("vj_autostart_mic") ?? (paramEntries.vj_autostart_mic as string | boolean | number | null | undefined),
   );
 
+  // BGM options
+  const vjBgmFromUrl = params.get("vj_bgm");
+  const vjBgmFromParams = paramEntries.vj_bgm as string | undefined;
+  const vjBgm = vjBgmFromUrl || vjBgmFromParams || null;
+
+  const vjBgmVolumeFromUrl = parseNumber(params.get("vj_bgm_volume"));
+  const vjBgmVolumeFromParams = parseNumber(paramEntries.vj_bgm_volume as string);
+  const rawVolume = vjBgmVolumeFromUrl ?? vjBgmVolumeFromParams;
+  const vjBgmVolume = rawVolume === undefined ? undefined : clampNumber(rawVolume, 0, 1);
+
   return {
     ...slideOptions,
     vjFastMs,
@@ -235,6 +247,8 @@ export const parseVjPanelOptions = (
     vjDrift,
     vjDebug: debugRaw ?? false,
     vjAutostartMic: autostartRaw ?? false,
+    vjBgm,
+    vjBgmVolume,
   };
 };
 
@@ -285,6 +299,8 @@ export const buildVjModeUrl = (
     vjDrift: updates.vjDrift === undefined ? current.vjDrift : updates.vjDrift,
     vjDebug: updates.vjDebug === undefined ? current.vjDebug : updates.vjDebug,
     vjAutostartMic: updates.vjAutostartMic === undefined ? current.vjAutostartMic : updates.vjAutostartMic,
+    vjBgm: updates.vjBgm === undefined ? current.vjBgm : updates.vjBgm,
+    vjBgmVolume: updates.vjBgmVolume === undefined ? current.vjBgmVolume : updates.vjBgmVolume,
   };
 
   const mergedImgBase = options?.imgBase !== undefined ? options.imgBase : merged.imgBase;
@@ -328,6 +344,16 @@ export const buildVjModeUrl = (
   setFloatParam(params, "vj_drift", merged.vjDrift, { min: 0, max: 2 });
   setBooleanParam(params, "vj_debug", merged.vjDebug);
   setBooleanParam(params, "vj_autostart_mic", merged.vjAutostartMic);
+
+  // BGM options
+  if (merged.vjBgm) {
+    params.set("vj_bgm", merged.vjBgm);
+    // When BGM is set, autostart_mic is not needed
+    params.delete("vj_autostart_mic");
+  } else {
+    params.delete("vj_bgm");
+  }
+  setFloatParam(params, "vj_bgm_volume", merged.vjBgmVolume, { min: 0, max: 1 });
 
   const qs = params.toString();
   return `${url.pathname}${qs ? `?${qs}` : ""}`;
