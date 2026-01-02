@@ -196,9 +196,17 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
           loading="eager"
           decoding="async"
           onError={() => {
-            if (currentImage) {
-              pool.markFailed(currentImage);
+            const failed = cleanId(currentImage) || "";
+            if (!failed) return;
+            pool.markFailed(failed);
+            const alternatives = (pool.items || []).map((item) => item.cleanId).filter((id) => id && id !== failed);
+            const next = alternatives[0] || null;
+            if (next) {
+              setCurrentImage(next);
+            } else {
+              setCurrentImage(null);
             }
+            pool.refresh?.();
           }}
         />
       ) : (

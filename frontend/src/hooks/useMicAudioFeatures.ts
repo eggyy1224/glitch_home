@@ -126,8 +126,8 @@ export function useMicAudioFeatures(): {
   const rafRef = useRef<number | null>(null);
   const beatPulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const timeDataRef = useRef<Uint8Array | null>(null);
-  const freqDataRef = useRef<Uint8Array | null>(null);
+  const timeDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const freqDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   const rmsRef = useRef(0);
   const peakRef = useRef(0);

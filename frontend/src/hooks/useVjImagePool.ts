@@ -93,6 +93,7 @@ export function useVjImagePool({
   const [items, setItems] = useState<SlideItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const failedSetRef = useRef<Set<string>>(new Set());
   const controllerRef = useRef<AbortController | null>(null);
@@ -110,6 +111,10 @@ export function useVjImagePool({
 
   const clearFailed = useCallback(() => {
     failedSetRef.current.clear();
+  }, []);
+
+  const refresh = useCallback(() => {
+    setReloadKey((prev) => prev + 1);
   }, []);
 
   useEffect(() => {
@@ -138,14 +143,14 @@ export function useVjImagePool({
           const nextItems = buildKinshipResults(data, anchor, safeTopK, kinshipOrder).filter(
             (entry) => !failedSetRef.current.has(entry.cleanId),
           );
-          setItems(nextItems);
+          setItems(nextItems.length ? nextItems : [{ id: anchor, cleanId: anchor, distance: null }]);
           return;
         }
 
         const searchPath = `backend/offspring_images/${anchor}`;
         const data = await searchImagesByImage(searchPath, safeTopK, { signal: controller.signal, includeDeprecated });
         const nextItems = buildVectorResults(data, anchor, safeTopK).filter((entry) => !failedSetRef.current.has(entry.cleanId));
-        setItems(nextItems);
+        setItems(nextItems.length ? nextItems : [{ id: anchor, cleanId: anchor, distance: null }]);
       } catch (err) {
         if ((err as { name?: unknown })?.name === "AbortError") {
           return;
@@ -166,7 +171,7 @@ export function useVjImagePool({
         controllerRef.current = null;
       }
     };
-  }, [anchor, topK, slideSource, kinshipDepth, kinshipOrder, includeDeprecated]);
+  }, [anchor, topK, slideSource, kinshipDepth, kinshipOrder, includeDeprecated, reloadKey]);
 
   const currentAnchor = anchor;
   const setAnchorClean = useCallback((next: string | null) => {
@@ -183,9 +188,9 @@ export function useVjImagePool({
       setAnchor: setAnchorClean,
       markFailed,
       clearFailed,
+      refresh,
     };
-  }, [currentAnchor, items, loading, error, setAnchorClean, markFailed, clearFailed]);
+  }, [currentAnchor, items, loading, error, setAnchorClean, markFailed, clearFailed, refresh]);
 
   return pool;
 }
-
