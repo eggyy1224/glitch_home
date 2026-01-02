@@ -12,6 +12,7 @@ import {
   applySlideOptionsToParams,
   buildMatrixModeUrl,
   buildSlideModeUrl,
+  buildVjModeUrl,
   mergeSlideOptions,
   parseSlidePanelOptions,
   type SlidePanelOptions,
@@ -305,7 +306,7 @@ export default function SnapshotPanelsEditor({
     }
     const preset = MODE_PRESETS[nextMode as PanelMode];
     const imgBase = resolveImgBase(assetTab, panel, options?.imgBase);
-    const isSlideLikeMode = nextMode === "slide_mode" || nextMode === "matrix_mode";
+    const isSlideLikeMode = nextMode === "slide_mode" || nextMode === "matrix_mode" || nextMode === "vj_mode";
     const params = isSlideLikeMode ? mergeSlideParams(panel, nextMode as PanelMode) : mergePresetMode(panel?.params, nextMode);
     const nextUrl =
       nextMode === "video_mode"
@@ -314,6 +315,8 @@ export default function SnapshotPanelsEditor({
         ? buildSlideModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
         : nextMode === "matrix_mode"
         ? buildMatrixModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
+        : nextMode === "vj_mode"
+        ? buildVjModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
         : preset
         ? buildUrlFromPreset(nextMode as PanelMode, currentAsset, { imgBase })
         : "";
@@ -336,7 +339,7 @@ export default function SnapshotPanelsEditor({
     const hasModePreset = Boolean(preset);
     const imgBase = resolveImgBase(assetTab, panel, options?.imgBase);
     if (hasModePreset) {
-      const isSlideLikeMode = mode === "slide_mode" || mode === "matrix_mode";
+      const isSlideLikeMode = mode === "slide_mode" || mode === "matrix_mode" || mode === "vj_mode";
       const nextUrl =
         mode === "video_mode"
           ? buildVideoModeUrl(panel?.url, { video: assetValue })
@@ -344,6 +347,8 @@ export default function SnapshotPanelsEditor({
           ? buildSlideModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
           : mode === "matrix_mode"
           ? buildMatrixModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
+          : mode === "vj_mode"
+          ? buildVjModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
           : preset
           ? buildUrlFromPreset(mode as PanelMode, assetValue, { imgBase })
           : "";
@@ -377,7 +382,7 @@ export default function SnapshotPanelsEditor({
     const patch: Partial<PanelConfig> = { image: value || "" };
     const imgBase = resolveImgBase(assetTab, panel, imgBaseOverride);
     if (resolvedMode) {
-      const isSlideLikeMode = resolvedMode === "slide_mode" || resolvedMode === "matrix_mode";
+      const isSlideLikeMode = resolvedMode === "slide_mode" || resolvedMode === "matrix_mode" || resolvedMode === "vj_mode";
       patch.params = isSlideLikeMode ? mergeSlideParams(panel, resolvedMode as PanelMode) : mergePresetMode(panel?.params, resolvedMode);
     }
     if (resolvedUrlMode) {
@@ -386,6 +391,8 @@ export default function SnapshotPanelsEditor({
           ? buildSlideModeUrl(panel?.url, { img: value }, { imgBase, panelParams: panel?.params })
           : resolvedUrlMode === "matrix_mode"
           ? buildMatrixModeUrl(panel?.url, { img: value }, { imgBase, panelParams: panel?.params })
+          : resolvedUrlMode === "vj_mode"
+          ? buildVjModeUrl(panel?.url, { img: value }, { imgBase, panelParams: panel?.params })
           : buildUrlFromPreset(resolvedUrlMode as PanelMode, value, { imgBase });
     }
     onPanelChange(index, patch);

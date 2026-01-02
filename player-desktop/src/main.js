@@ -6,7 +6,7 @@ if (typeof electron === "string") {
   process.exit(1);
 }
 
-const { app, dialog, ipcMain, BrowserWindow, screen } = electron;
+const { app, dialog, ipcMain, BrowserWindow, screen, session, systemPreferences } = electron;
 const fs = require("node:fs");
 const path = require("node:path");
 const { loadConfig, DEFAULT_CONFIG_PATH } = require("./config-loader");
@@ -16,6 +16,113 @@ let windowManager = null;
 let explicitQuitRequested = false;
 const DEFAULT_REMOTE_DEBUG_PORT = 5858;
 const REMOTE_DEBUG_SWITCHES = ["--remote-debug-port", "--remote-debugging-port"];
+
+function parseBooleanEnv(key, defaultValue = false) {
+  if (process.env[key] === undefined) return defaultValue;
+  const normalized = String(process.env[key]).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return defaultValue;
+}
+
+function isTruthyQueryParam(raw) {
+  const normalized = String(raw || "").trim().toLowerCase();
+  return ["1", "true", "yes", "on"].includes(normalized);
+}
+
+function isVjModeUrl(rawUrl) {
+  if (!rawUrl) return false;
+  try {
+    const parsed = new URL(String(rawUrl));
+    return isTruthyQueryParam(parsed.searchParams.get("vj_mode"));
+  } catch (error) {
+    return false;
+  }
+}
+
+function buildFrontendGate(frontendUrl) {
+  try {
+    const parsed = new URL(frontendUrl);
+    return { protocol: parsed.protocol, origin: parsed.origin };
+  } catch (error) {
+    return null;
+  }
+}
+
+function matchesFrontendGate(rawUrl, gate) {
+  if (!gate || !rawUrl) return false;
+  try {
+    const parsed = new URL(String(rawUrl));
+    if (gate.protocol === "file:") {
+      return parsed.protocol === "file:";
+    }
+    return parsed.origin === gate.origin;
+  } catch (error) {
+    return false;
+  }
+}
+
+function configureMicrophonePermissions(config) {
+  const enable = parseBooleanEnv("PLAYER_DESKTOP_ENABLE_MIC", true);
+  if (!enable) {
+    console.info("[PlayerShell] 已停用麥克風 permission handler（PLAYER_DESKTOP_ENABLE_MIC=false）");
+    return;
+  }
+
+  const debug = parseBooleanEnv("PLAYER_DESKTOP_MIC_DEBUG", false);
+  const allowAll = parseBooleanEnv("PLAYER_DESKTOP_ALLOW_MIC_ALL", false);
+  const gate = buildFrontendGate(config?.frontendUrl || "");
+
+  if (!session?.defaultSession) {
+    console.warn("[PlayerShell] 找不到 defaultSession，無法設定麥克風權限");
+    return;
+  }
+
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    if (permission !== "media") {
+      callback(false);
+      return;
+    }
+
+    const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
+    const wantsAudio = mediaTypes.length === 0 || mediaTypes.includes("audio");
+    if (!wantsAudio) {
+      callback(false);
+      return;
+    }
+
+    const requestingUrl = details?.requestingUrl || webContents?.getURL?.() || "";
+    const allowedOrigin = matchesFrontendGate(requestingUrl, gate);
+    const allowed = allowedOrigin && (allowAll || isVjModeUrl(requestingUrl));
+
+    if (debug) {
+      console.info(
+        `[PlayerShell] permission=${permission} mediaTypes=${JSON.stringify(mediaTypes)} url=${requestingUrl} allow=${allowed}`,
+      );
+    }
+
+    callback(allowed);
+  });
+
+  if (process.platform === "darwin" && parseBooleanEnv("PLAYER_DESKTOP_MIC_PREFLIGHT", false)) {
+    if (typeof systemPreferences?.askForMediaAccess === "function") {
+      const status = typeof systemPreferences.getMediaAccessStatus === "function"
+        ? systemPreferences.getMediaAccessStatus("microphone")
+        : "unknown";
+      console.info(`[PlayerShell] microphone access status=${status}`);
+      systemPreferences
+        .askForMediaAccess("microphone")
+        .then((granted) => {
+          console.info(`[PlayerShell] microphone access granted=${Boolean(granted)}`);
+        })
+        .catch((error) => {
+          console.warn(`[PlayerShell] microphone preflight failed: ${error?.message || String(error)}`);
+        });
+    } else {
+      console.warn("[PlayerShell] systemPreferences.askForMediaAccess 不可用，略過 microphone preflight");
+    }
+  }
+}
 
 function parseRemoteDebugPortValue(rawValue) {
   if (rawValue === undefined || rawValue === null) {
@@ -917,6 +1024,7 @@ function bootstrap() {
   try {
     const configPath = resolveConfigPath();
     const config = loadConfig(configPath);
+    configureMicrophonePermissions(config);
     windowManager = new WindowManager(config);
     windowManager.launchAll();
     console.info(`[PlayerShell] 已載入配置 ${config.configPath}`);

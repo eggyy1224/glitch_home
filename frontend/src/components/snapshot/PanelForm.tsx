@@ -4,13 +4,15 @@ import type { PanelMode } from "./panelPresets";
 import { getPanelModeAndAsset, mergePresetMode, MODE_PRESETS } from "./panelPresets";
 import type { VideoPanelOptions } from "./videoPanelUtils";
 import { buildVideoModeUrl, parseVideoPanelOptions } from "./videoPanelUtils";
-import type { KinshipRelation, SlidePanelOptions } from "./slidePanelUtils";
+import type { KinshipRelation, SlidePanelOptions, VjPanelOptions } from "./slidePanelUtils";
 import {
   applySlideOptionsToParams,
   buildMatrixModeUrl,
   buildSlideModeUrl,
+  buildVjModeUrl,
   mergeSlideOptions,
   parseSlidePanelOptions,
+  parseVjPanelOptions,
 } from "./slidePanelUtils";
 
 interface PanelFormProps {
@@ -55,12 +57,15 @@ export function PanelForm({
   const isVideoMode = mode === "video_mode";
   const isSlideMode = mode === "slide_mode";
   const isMatrixMode = mode === "matrix_mode";
-  const isSlideLikeMode = isSlideMode || isMatrixMode;
+  const isVjMode = mode === "vj_mode";
+  const isSlideLikeMode = isSlideMode || isMatrixMode || isVjMode;
   const videoOptions = React.useMemo(() => (isVideoMode ? parseVideoPanelOptions(panel?.url) : undefined), [isVideoMode, panel?.url]);
   const slideOptions = React.useMemo(
-    () => (isSlideLikeMode ? parseSlidePanelOptions(panel?.url, panel?.params) : undefined),
-    [isSlideLikeMode, panel?.params, panel?.url],
+    () => (isSlideMode || isMatrixMode ? parseSlidePanelOptions(panel?.url, panel?.params) : undefined),
+    [isSlideMode, isMatrixMode, panel?.params, panel?.url],
   );
+  const vjOptions = React.useMemo(() => (isVjMode ? parseVjPanelOptions(panel?.url, panel?.params) : undefined), [isVjMode, panel?.params, panel?.url]);
+  const slideLikeOptions = isVjMode ? vjOptions : slideOptions;
 
   const mergeSlideParams = (patch?: Partial<SlidePanelOptions>): PanelConfig["params"] | undefined => {
     const baseParams = mergePresetMode(panel?.params, mode || "slide_mode") || {};
@@ -81,13 +86,22 @@ export function PanelForm({
 
   const handleSlideOptionChange = (patch: Partial<SlidePanelOptions>) => {
     if (!isSlideLikeMode) return;
-    const buildUrl = isMatrixMode ? buildMatrixModeUrl : buildSlideModeUrl;
-    const nextUrl = buildUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideOptions?.imgBase });
+    const nextUrl = isVjMode
+      ? buildVjModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideLikeOptions?.imgBase })
+      : isMatrixMode
+      ? buildMatrixModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideLikeOptions?.imgBase })
+      : buildSlideModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideLikeOptions?.imgBase });
     const patchPayload: Partial<PanelConfig> = {
       url: nextUrl,
       params: mergeSlideParams(patch),
     };
     onPanelChange(index, patchPayload);
+  };
+
+  const handleVjOptionChange = (patch: Partial<VjPanelOptions>) => {
+    if (!isVjMode) return;
+    const nextUrl = buildVjModeUrl(panel?.url, patch, { panelParams: panel?.params, imgBase: slideLikeOptions?.imgBase });
+    onPanelChange(index, { url: nextUrl });
   };
 
   return (
@@ -149,7 +163,7 @@ export function PanelForm({
           type="text"
           value={panel?.url || ""}
           onChange={(e) => onPanelChange(index, { url: e.target.value })}
-          placeholder="例如 /?slide_mode=true 或 /?matrix_mode=true"
+          placeholder="例如 /?slide_mode=true 或 /?matrix_mode=true 或 /?vj_mode=true"
           data-ai-field={`snapshot.panel[${index}].url`}
         />
       </label>
@@ -216,32 +230,34 @@ export function PanelForm({
       </label>
       {isSlideLikeMode && (
         <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>
-          <div style={{ marginBottom: 6, color: "#82dca5" }}>slide/matrix 參數</div>
+          <div style={{ marginBottom: 6, color: "#82dca5" }}>{isVjMode ? "vj_mode 相似池參數（沿用 slide_mode）" : "slide/matrix 參數"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-            <label style={{ display: "flex", flexDirection: "column" }}>
-              輪播間隔 (毫秒)
-              <input
-                type="number"
-                min="500"
-                step="100"
-                value={slideOptions?.intervalMs ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const parsed = raw === "" ? null : Number(raw);
-                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
-                  handleSlideOptionChange({ intervalMs: safeValue });
-                }}
-                placeholder="預設 3000"
-                data-ai-field={`snapshot.panel[${index}].slide_interval_ms`}
-              />
-            </label>
+            {!isVjMode && (
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                輪播間隔 (毫秒)
+                <input
+                  type="number"
+                  min="500"
+                  step="100"
+                  value={slideLikeOptions?.intervalMs ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const parsed = raw === "" ? null : Number(raw);
+                    const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                    handleSlideOptionChange({ intervalMs: safeValue });
+                  }}
+                  placeholder="預設 3000"
+                  data-ai-field={`snapshot.panel[${index}].slide_interval_ms`}
+                />
+              </label>
+            )}
             <label style={{ display: "flex", flexDirection: "column" }}>
               結果數量 (top_k)
               <input
                 type="number"
                 min="1"
                 step="1"
-                value={slideOptions?.topK ?? ""}
+                value={slideLikeOptions?.topK ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value;
                   const parsed = raw === "" ? null : Number(raw);
@@ -255,7 +271,7 @@ export function PanelForm({
             <label style={{ display: "flex", flexDirection: "column" }}>
               資料來源
               <select
-                value={slideOptions?.slideSource ?? "vector"}
+                value={slideLikeOptions?.slideSource ?? "vector"}
                 onChange={(e) => handleSlideOptionChange({ slideSource: e.target.value as SlidePanelOptions["slideSource"] })}
                 data-ai-field={`snapshot.panel[${index}].slide_source`}
               >
@@ -268,7 +284,7 @@ export function PanelForm({
               <input
                 type="number"
                 step="1"
-                value={slideOptions?.kinshipDepth ?? ""}
+                value={slideLikeOptions?.kinshipDepth ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value;
                   const parsed = raw === "" ? null : Number(raw);
@@ -283,7 +299,7 @@ export function PanelForm({
               親緣排序偏好 (逗號分隔)
               <input
                 type="text"
-                value={(slideOptions?.kinshipOrder || []).join(",")}
+                value={(slideLikeOptions?.kinshipOrder || []).join(",")}
                 onChange={(e) => {
                   const raw = e.target.value;
                   const list = raw
@@ -299,11 +315,88 @@ export function PanelForm({
             <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <input
                 type="checkbox"
-                checked={slideOptions?.includeDeprecated ?? false}
+                checked={slideLikeOptions?.includeDeprecated ?? false}
                 onChange={(e) => handleSlideOptionChange({ includeDeprecated: e.target.checked })}
                 data-ai-field={`snapshot.panel[${index}].include_deprecated`}
               />
               包含 deprecated
+            </label>
+          </div>
+        </div>
+      )}
+      {isVjMode && (
+        <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>
+          <div style={{ marginBottom: 6, color: "#82dca5" }}>vj_mode 參數</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              快速切換上限 vj_fast_ms
+              <input
+                type="number"
+                min="80"
+                step="10"
+                value={vjOptions?.vjFastMs ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjOptionChange({ vjFastMs: safeValue });
+                }}
+                placeholder="預設 260"
+                data-ai-field={`snapshot.panel[${index}].vj_fast_ms`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              慢速切換下限 vj_slow_ms
+              <input
+                type="number"
+                min="1000"
+                step="100"
+                value={vjOptions?.vjSlowMs ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjOptionChange({ vjSlowMs: safeValue });
+                }}
+                placeholder="預設 15000"
+                data-ai-field={`snapshot.panel[${index}].vj_slow_ms`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              漂移強度 vj_drift (0-2)
+              <input
+                type="number"
+                min="0"
+                max="2"
+                step="0.05"
+                value={vjOptions?.vjDrift ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjOptionChange({ vjDrift: safeValue });
+                }}
+                placeholder="預設 1.0"
+                data-ai-field={`snapshot.panel[${index}].vj_drift`}
+              />
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={vjOptions?.vjAutostartMic ?? false}
+                onChange={(e) => handleVjOptionChange({ vjAutostartMic: e.target.checked })}
+                data-ai-field={`snapshot.panel[${index}].vj_autostart_mic`}
+              />
+              自動啟動麥克風 (vj_autostart_mic)
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={vjOptions?.vjDebug ?? false}
+                onChange={(e) => handleVjOptionChange({ vjDebug: e.target.checked })}
+                data-ai-field={`snapshot.panel[${index}].vj_debug`}
+              />
+              顯示 debug 面板 (vj_debug)
             </label>
           </div>
         </div>

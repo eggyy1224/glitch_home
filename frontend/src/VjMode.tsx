@@ -68,6 +68,7 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   const objectFit = (urlParams.get("object_fit") || "cover") as React.CSSProperties["objectFit"];
   const objectPosition = (urlParams.get("object_position") || "center") as React.CSSProperties["objectPosition"];
   const debugEnabled = useMemo(() => String(urlParams.get("vj_debug") ?? "false") === "true", [urlParams]);
+  const autostartMic = useMemo(() => String(urlParams.get("vj_autostart_mic") ?? "false") === "true", [urlParams]);
 
   const vjMinIntervalMs = useMemo(() => {
     const raw = urlParams.get("vj_fast_ms") ?? urlParams.get("vj_min_ms") ?? urlParams.get("vj_min_interval_ms");
@@ -118,6 +119,22 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
   useSlideScreenshot({ rootRef, onCaptureReady: onCaptureReady ?? undefined });
 
   const { featuresRef, features, error: micError, start: startMic, stop: stopMic } = useMicAudioFeatures();
+
+  const autostartAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (!autostartMic) return undefined;
+    if (!pool.anchor) return undefined;
+    if (micStarted) return undefined;
+    if (autostartAttemptedRef.current) return undefined;
+    autostartAttemptedRef.current = true;
+
+    void (async () => {
+      await startMic();
+      setMicStarted(featuresRef.current.running);
+    })();
+
+    return undefined;
+  }, [autostartMic, micStarted, pool.anchor, startMic, featuresRef]);
 
   useEffect(() => {
     const first = pool.items?.[0]?.cleanId || null;
@@ -303,10 +320,16 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
                 會使用麥克風輸入做即時音訊分析，並以「生成式漫遊」方式在相似圖像空間中選片與跳轉。
               </p>
             )}
+            <div className="vj-actions">
+              <button type="button" className="vj-button" onClick={toggleMic} disabled={!pool.anchor}>
+                {micStarted ? "停止麥克風" : "啟動麥克風"}
+              </button>
+              <div className="vj-status">{micStarted ? "狀態：已啟動" : "狀態：未啟動"}</div>
+            </div>
             {micError && <p className="vj-desc">麥克風錯誤：{micError}</p>}
             <p className="vj-hint">
-              Ctrl+R 開關麥克風；參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援
-              `vj_debug=true`、`vj_fast_ms`、`vj_slow_ms`、`vj_drift`。
+              Ctrl+R 開關麥克風（或按上方按鈕）；參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援
+              `vj_debug=true`、`vj_fast_ms`、`vj_slow_ms`、`vj_drift`、`vj_autostart_mic=true`。
             </p>
           </div>
         </div>

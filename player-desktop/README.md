@@ -6,6 +6,7 @@ Player Desktop Shell 是一個 Electron 桌面應用程式，用來在展覽現�
 
 - 依照配置檔自動建立對應實體螢幕的播放視窗
 - 強制啟用 `autoplayPolicy: "no-user-gesture-required"` 解除音訊/影片手動解鎖
+- 支援 VJ mode 麥克風權限（可選擇自動放行，並限制在前端 origin 範圍內）
 - 視窗關閉、崩潰或載入失敗時自動重啟，避免人工介入
 - 透過 URL 參數傳遞 `clientId`、`mode` 等資訊，沿用既有前端邏輯
 - 單一應用即可管理多個 client，支援 kiosk / fullscreen 模式
@@ -125,6 +126,22 @@ npm run dev    # 或 npm start
 - CLI：`npm start -- --config /path/to/custom.json`
 - 環境變數：`PLAYER_DESKTOP_CONFIG=/path/to/custom.json npm run dev`
 - 列出目前顯示器資訊（id/bounds）：`npm run dev -- --dump-displays`
+
+## 麥克風權限（VJ mode）
+
+VJ mode 會使用 `navigator.mediaDevices.getUserMedia()` 取得麥克風。Electron 預設不一定會提供完整的瀏覽器權限提示 UI，因此 Player Desktop Shell 在主進程加入了 permission handler，讓展演現場可用「零互動（或最少互動）」方式啟動麥克風。
+
+- **預設策略**：只允許「前端 `frontend_url` 同 origin」且「`vj_mode=true` 的頁面」取得麥克風。
+- **macOS 注意**：OS 層第一次仍可能跳出麥克風授權視窗（這是作業系統限制），拒絕後需到系統設定重新開啟。
+
+### 環境變數
+
+| 變數 | 預設 | 說明 |
+|------|------|------|
+| `PLAYER_DESKTOP_ENABLE_MIC` | `true` | 是否啟用 permission handler。 |
+| `PLAYER_DESKTOP_ALLOW_MIC_ALL` | `false` | 允許同 origin 的任何頁面請求麥克風（不再要求 `vj_mode=true`）。 |
+| `PLAYER_DESKTOP_MIC_PREFLIGHT` | `false` | **macOS**：啟動時先呼叫 `askForMediaAccess("microphone")` 提早觸發 OS 授權。 |
+| `PLAYER_DESKTOP_MIC_DEBUG` | `false` | 在終端輸出每次 permission decision 的 debug log。 |
 
 ## 螢幕校正模式（展場對應用）
 

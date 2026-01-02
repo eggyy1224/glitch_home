@@ -9,6 +9,32 @@ type Drawable =
   | { kind: "bitmap"; value: ImageBitmap }
   | { kind: "image"; value: HTMLCanvasElement | HTMLImageElement };
 
+const BASE_IFRAME_ALLOW = [
+  "accelerometer",
+  "autoplay",
+  "clipboard-write",
+  "encrypted-media",
+  "gyroscope",
+  "picture-in-picture",
+];
+
+const buildIframeAllow = (rawSrc?: string | null): string => {
+  const allow = [...BASE_IFRAME_ALLOW];
+  if (!rawSrc) {
+    return allow.join("; ");
+  }
+  try {
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost";
+    const parsed = new URL(rawSrc, origin);
+    if (parsed.origin === origin) {
+      allow.push("microphone");
+    }
+  } catch (err) {
+    // ignore parse errors
+  }
+  return allow.join("; ");
+};
+
 const blobToDrawable = async (blob: Blob | null): Promise<Drawable | null> => {
   if (!blob) return null;
   if (typeof window !== "undefined" && typeof window.createImageBitmap === "function") {
@@ -504,7 +530,7 @@ export default function IframeMode({
                     backgroundColor: "#000",
                   }}
                   loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow={buildIframeAllow(panel.src)}
                   allowFullScreen
                 />
               </div>

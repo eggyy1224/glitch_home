@@ -52,6 +52,19 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
+.vj-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 14px;
+}
+
+.vj-status {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .vj-button {
   appearance: none;
   border: 0;
