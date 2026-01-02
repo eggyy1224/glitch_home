@@ -172,10 +172,31 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
     [pool, currentImage, featuresRef, vjDrift],
   );
 
-  const handleStartMic = useCallback(async () => {
-    await startMic();
-    setMicStarted(featuresRef.current.running);
-  }, [startMic, featuresRef]);
+  const toggleMic = useCallback(() => {
+    if (!pool.anchor) return;
+    if (featuresRef.current.running) {
+      stopMic();
+      setMicStarted(false);
+      return;
+    }
+
+    void (async () => {
+      await startMic();
+      setMicStarted(featuresRef.current.running);
+    })();
+  }, [pool.anchor, featuresRef, startMic, stopMic]);
+
+  // Ctrl+R toggle 麥克風（只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && !event.metaKey && (event.key === "r" || event.key === "R")) {
+        event.preventDefault();
+        toggleMic();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, { passive: false });
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [toggleMic]);
 
   useEffect(() => {
     if (!micStarted) return () => {};
@@ -263,30 +284,10 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
               </p>
             )}
             {micError && <p className="vj-desc">麥克風錯誤：{micError}</p>}
-            <button
-              type="button"
-              className="vj-button"
-              onClick={handleStartMic}
-              disabled={!pool.anchor || features.running}
-            >
-              {features.running ? "麥克風啟動中…" : "啟動麥克風"}
-            </button>
             <p className="vj-hint">
-              參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援 `vj_debug=true`、`vj_fast_ms`、`vj_slow_ms`、`vj_drift`。
+              Ctrl+R 開關麥克風；參數沿用 `slide_mode`：`top_k` / `slide_source` / `kinship_depth` / `include_deprecated`；另支援
+              `vj_debug=true`、`vj_fast_ms`、`vj_slow_ms`、`vj_drift`。
             </p>
-            {micStarted && (
-              <button
-                type="button"
-                className="vj-button"
-                style={{ marginLeft: 10, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.92)" }}
-                onClick={() => {
-                  stopMic();
-                  setMicStarted(false);
-                }}
-              >
-                停止
-              </button>
-            )}
           </div>
         </div>
       )}
