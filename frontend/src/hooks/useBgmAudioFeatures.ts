@@ -39,6 +39,64 @@ export interface UseBgmAudioFeaturesResult {
   setVolume: (vol: number) => void;
 }
 
+const isAutoplayBlockedError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") return false;
+  const name = typeof (error as { name?: unknown }).name === "string" ? String((error as { name?: unknown }).name) : "";
+  const message =
+    typeof (error as { message?: unknown }).message === "string" ? String((error as { message?: unknown }).message) : "";
+  const combined = `${name} ${message}`.toLowerCase();
+  return (
+    name === "NotAllowedError" ||
+    combined.includes("notallowed") ||
+    combined.includes("autoplay") ||
+    combined.includes("user gesture") ||
+    combined.includes("gesture")
+  );
+};
+
+const formatPlayError = (error: unknown): string => {
+  if (!error) return "unknown";
+  if (error instanceof Error) {
+    return error.message || error.name || "unknown";
+  }
+  if (typeof error === "string") return error;
+  return "unknown";
+};
+
+const waitForPlayable = (audio: HTMLAudioElement, timeoutMs = 2000): Promise<void> => {
+  if (audio.readyState >= 2) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      audio.removeEventListener("canplay", handleReady);
+      audio.removeEventListener("loadeddata", handleReady);
+      audio.removeEventListener("error", handleError);
+      if (timer) window.clearTimeout(timer);
+    };
+    const handleReady = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve();
+    };
+    const handleError = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("BGM 載入失敗"));
+    };
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve();
+    }, timeoutMs);
+    audio.addEventListener("canplay", handleReady);
+    audio.addEventListener("loadeddata", handleReady);
+    audio.addEventListener("error", handleError);
+  });
+};
+
 export function useBgmAudioFeatures(options: UseBgmAudioFeaturesOptions = {}): UseBgmAudioFeaturesResult {
   const { bgmFile = null, volume: initialVolume = 0.6, autoStart = false } = options;
 
@@ -330,16 +388,41 @@ export function useBgmAudioFeatures(options: UseBgmAudioFeaturesOptions = {}): U
         beatAt: null,
       };
 
-      // Start playing
-      try {
-        await audio.play();
-        setIsPlaying(true);
-        setError(null); // Clear any previous autoplay error
-      } catch (playErr) {
-        // Autoplay might be blocked - reset running state so user can retry
+      if (currentTrackUrl && audio.src !== currentTrackUrl) {
+        audio.src = currentTrackUrl;
+        audio.load();
+      }
+
+      const tryPlay = async (): Promise<boolean> => {
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            await waitForPlayable(audio, 2000);
+            await audio.play();
+            setIsPlaying(true);
+            setError(null);
+            return true;
+          } catch (playErr) {
+            lastError = playErr;
+            if (isAutoplayBlockedError(playErr)) {
+              setRunning(false);
+              setError("自動播放被阻擋，請點擊頁面後重試");
+              return false;
+            }
+            if (attempt === 0) {
+              await new Promise((resolve) => window.setTimeout(resolve, 200));
+              continue;
+            }
+          }
+        }
         setRunning(false);
-        setError("自動播放被阻擋，請點擊頁面後重試");
-        return; // Don't start the animation loop if playback failed
+        setError(`BGM 播放失敗：${formatPlayError(lastError)}`);
+        return false;
+      };
+
+      const didPlay = await tryPlay();
+      if (!didPlay) {
+        return;
       }
 
       const tick = () => {
@@ -401,7 +484,7 @@ export function useBgmAudioFeatures(options: UseBgmAudioFeaturesOptions = {}): U
       setError(message);
       stop();
     }
-  }, [running, stop, playlist.length, volume]);
+  }, [currentTrackUrl, running, stop, playlist.length, volume]);
 
   // Auto-start if requested and playlist is loaded
   const autoStartAttemptedRef = useRef(false);
