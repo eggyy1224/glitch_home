@@ -10,6 +10,7 @@ type ApiMocks = {
   listOffspringImages: Mock;
   listAncestorImages: Mock;
   listVideoAssets: Mock;
+  fetchBgmAssets: Mock;
 };
 
 const apiMocksRef = vi.hoisted(() => ({ current: null as ApiMocks | null }));
@@ -25,11 +26,10 @@ const getApiMocks = () => {
 
 vi.mock("../../src/api", async () => {
   const { createMockApi } = await import("../testUtils");
-  const { mocks, factory } = createMockApi<typeof api, "listOffspringImages" | "listAncestorImages" | "listVideoAssets">([
-    "listOffspringImages",
-    "listAncestorImages",
-    "listVideoAssets",
-  ]);
+  const { mocks, factory } = createMockApi<
+    typeof api,
+    "listOffspringImages" | "listAncestorImages" | "listVideoAssets" | "fetchBgmAssets"
+  >(["listOffspringImages", "listAncestorImages", "listVideoAssets", "fetchBgmAssets"]);
   apiMocksRef.current = mocks;
   return { __esModule: true, ...factory() };
 });
@@ -73,6 +73,7 @@ beforeEach(() => {
   apiMocks.listOffspringImages.mockResolvedValue({ images: [{ filename: "img-a.png" }] });
   apiMocks.listAncestorImages.mockResolvedValue({ images: [{ relative_path: "攝影圖像/img-b.png" }] });
   apiMocks.listVideoAssets.mockResolvedValue({ videos: [{ filename: "clipA.mp4" }] });
+  apiMocks.fetchBgmAssets.mockResolvedValue({ tracks: [{ filename: "bgmA.mp3" }] });
 });
 
 describe("SnapshotPanelsEditor", () => {
@@ -124,6 +125,30 @@ describe("SnapshotPanelsEditor", () => {
         image: "img-b.png",
         url: "/?static_mode=true&img=img-b.png",
         params: { __preset_mode: "static_mode" },
+      }),
+    );
+  });
+
+  it("vj_video_mode 會組出對應影片網址並保留 preset mode", async () => {
+    const onPanelChange = vi.fn();
+    render(<ControlledEditor onPanelChange={onPanelChange} />);
+    await waitFor(() => expect(apiMocks.listVideoAssets).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText("模式"), { target: { value: "vj_video_mode" } });
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({
+        url: "/?vj_video_mode=true",
+        params: expect.objectContaining({ __preset_mode: "vj_video_mode" }),
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("資產（依模式）"), { target: { value: "clipA.mp4" } });
+    expect(onPanelChange).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({
+        url: "/?vj_video_mode=true&video=clipA.mp4",
+        params: expect.objectContaining({ __preset_mode: "vj_video_mode" }),
       }),
     );
   });

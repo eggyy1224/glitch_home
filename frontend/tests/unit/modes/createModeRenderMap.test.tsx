@@ -6,7 +6,10 @@ import type { KinshipCluster, KinshipData } from "../../../src/types/kinship";
 
 const {
   IframeModeMock,
+  MatrixModeMock,
   SlideModeMock,
+  VjModeMock,
+  VjVideoModeMock,
   OrganicRoomSceneMock,
   SearchModeMock,
   CollageModeMock,
@@ -19,11 +22,14 @@ const {
   AdminPanelMock,
 } = vi.hoisted(() => {
   const stub = (name: string) => vi.fn(() => name);
-  return {
-    IframeModeMock: stub("IframeMode"),
-    SlideModeMock: stub("SlideMode"),
-    OrganicRoomSceneMock: stub("OrganicRoomScene"),
-    SearchModeMock: stub("SearchMode"),
+    return {
+      IframeModeMock: stub("IframeMode"),
+      MatrixModeMock: stub("MatrixMode"),
+      SlideModeMock: stub("SlideMode"),
+      VjModeMock: stub("VjMode"),
+      VjVideoModeMock: stub("VjVideoMode"),
+      OrganicRoomSceneMock: stub("OrganicRoomScene"),
+      SearchModeMock: stub("SearchMode"),
     CollageModeMock: stub("CollageMode"),
     CaptionModeMock: stub("CaptionMode"),
     CollageVersionModeMock: stub("CollageVersionMode"),
@@ -36,7 +42,10 @@ const {
 });
 
 vi.mock("../../../src/IframeMode", () => ({ __esModule: true, default: IframeModeMock }));
+vi.mock("../../../src/MatrixMode", () => ({ __esModule: true, default: MatrixModeMock }));
 vi.mock("../../../src/SlideMode", () => ({ __esModule: true, default: SlideModeMock }));
+vi.mock("../../../src/VjMode", () => ({ __esModule: true, default: VjModeMock }));
+vi.mock("../../../src/VjVideoMode", () => ({ __esModule: true, default: VjVideoModeMock }));
 vi.mock("../../../src/OrganicRoomScene", () => ({ __esModule: true, default: OrganicRoomSceneMock }));
 vi.mock("../../../src/SearchMode", () => ({ __esModule: true, default: SearchModeMock }));
 vi.mock("../../../src/CollageMode", () => ({ __esModule: true, default: CollageModeMock }));
@@ -130,6 +139,19 @@ describe("createModeRenderMap", () => {
     const slide = map[DisplayModes.SLIDE];
     await expect(resolveComponent(slide.component)).resolves.toBe(SlideModeMock);
     expect(slide.componentProps).toMatchObject({ imagesBase: "/imgs/", anchorImage: "img-1", intervalMs: 3000 });
+
+    const matrix = map[DisplayModes.MATRIX];
+    await expect(resolveComponent(matrix.component)).resolves.toBe(MatrixModeMock);
+    expect(matrix.componentProps).toMatchObject({ imagesBase: "/imgs/", anchorImage: "img-1", intervalMs: 3000 });
+
+    const vj = map[DisplayModes.VJ];
+    await expect(resolveComponent(vj.component)).resolves.toBe(VjModeMock);
+    expect(vj.componentProps).toMatchObject({ imagesBase: "/imgs/", anchorImage: "img-1" });
+
+    const vjVideo = map[DisplayModes.VJ_VIDEO];
+    await expect(resolveComponent(vjVideo.component)).resolves.toBe(VjVideoModeMock);
+    expect(vjVideo.withCaptureReady).toBe(true);
+    expect(vjVideo.componentProps).toBeUndefined();
 
     const collage = map[DisplayModes.COLLAGE];
     await expect(resolveComponent(collage.component)).resolves.toBe(CollageModeMock);

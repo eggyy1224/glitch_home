@@ -51,4 +51,16 @@ describe("getActiveMode", () => {
     const result = getActiveMode(params);
     expect(result.type).toBe(DisplayModes.VIDEO);
   });
+
+  it("detects vj_video_mode ahead of vj_mode", () => {
+    const params = buildParams("vj_mode=true&vj_video_mode=true");
+    const result = getActiveMode(params);
+    expect(result.type).toBe(DisplayModes.VJ_VIDEO);
+  });
+
+  it("detects vj_mode when flagged", () => {
+    const params = buildParams("vj_mode=true");
+    const result = getActiveMode(params);
+    expect(result.type).toBe(DisplayModes.VJ);
+  });
 });

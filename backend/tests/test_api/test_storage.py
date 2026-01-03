@@ -367,6 +367,35 @@ def test_list_video_assets_returns_sorted_urls(client: TestClient, monkeypatch: 
 
 
 @pytest.mark.api
+def test_list_bgm_assets_empty_when_missing(client: TestClient, monkeypatch: pytest.MonkeyPatch, temp_dir: Path):
+    """When bgm assets directory is missing, API returns empty list instead of error."""
+    monkeypatch.setattr(settings, "bgm_assets_dir", str(temp_dir / "missing-bgm"))
+    response = client.get("/api/bgm-assets")
+    assert response.status_code == 200
+    assert response.json() == {"tracks": []}
+
+
+@pytest.mark.api
+def test_list_bgm_assets_filters_and_sorts(client: TestClient, monkeypatch: pytest.MonkeyPatch, temp_dir: Path):
+    """API should surface allowed audio assets with configured public base URL."""
+    bgm_dir = temp_dir / "bgm"
+    bgm_dir.mkdir(parents=True, exist_ok=True)
+    (bgm_dir / "b.ogg").write_text("demo", encoding="utf-8")
+    (bgm_dir / "a.mp3").write_text("demo", encoding="utf-8")
+    (bgm_dir / "ignore.txt").write_text("nope", encoding="utf-8")
+    (bgm_dir / "folder").mkdir()
+    monkeypatch.setattr(settings, "bgm_assets_dir", str(bgm_dir))
+    monkeypatch.setattr(settings, "bgm_assets_public_base", "https://cdn.example.com/bgm")
+
+    response = client.get("/api/bgm-assets")
+    assert response.status_code == 200
+    assert response.json()["tracks"] == [
+        {"filename": "a.mp3", "url": "https://cdn.example.com/bgm/a.mp3"},
+        {"filename": "b.ogg", "url": "https://cdn.example.com/bgm/b.ogg"},
+    ]
+
+
+@pytest.mark.api
 def test_list_camera_presets(client: TestClient):
     """Test listing camera presets."""
     response = client.get("/api/camera-presets")

@@ -49,6 +49,8 @@ import {
   listVideoAssets,
 } from "../../../src/api/collage";
 import {
+  fetchBgmAssets,
+  fetchVideoAssets,
   fetchSoundFiles,
   fetchSubtitleState,
   fetchCaptionState,
@@ -331,7 +333,7 @@ describe("api extended coverage", () => {
         "/api/sound-files",
         expect.objectContaining({ returnResponse: true }),
       );
-      expect(soundResult.files[0]?.url).toBe("https://example.com/generated%2520images/audio%25201.wav");
+      expect(soundResult.files[0]?.url).toBe("https://example.com/generated%20images/audio%201.wav");
       expect(soundResult.files[1]?.url).toBe("http://ext.com/b");
 
       requestMock.mockResolvedValueOnce({ subtitle: "hello" });
@@ -401,6 +403,32 @@ describe("api extended coverage", () => {
         "/api/unlock-audio?target_client_id=client-6",
         expect.objectContaining({ method: "POST" }),
       );
+    });
+
+    it("normalizes bgm/video asset urls", async () => {
+      requestMock.mockResolvedValueOnce({
+        data: { tracks: [{ filename: "track 1.mp3", url: "/bgm/track 1.mp3" }, { filename: "ext", url: "http://ext.com/a.mp3" }] },
+        response: { url: "https://example.com/api/bgm-assets" },
+      });
+      const bgmResult = await fetchBgmAssets();
+      expect(requestMock).toHaveBeenCalledWith(
+        "/api/bgm-assets",
+        expect.objectContaining({ returnResponse: true }),
+      );
+      expect(bgmResult.tracks[0]?.url).toBe("https://example.com/bgm/track%201.mp3");
+      expect(bgmResult.tracks[1]?.url).toBe("http://ext.com/a.mp3");
+
+      requestMock.mockResolvedValueOnce({
+        data: { videos: [{ filename: "clip 1.mp4", url: "/videos/clip 1.mp4" }, { filename: "ext", url: "http://ext.com/b.mp4" }] },
+        response: { url: "https://example.com/api/video-assets" },
+      });
+      const videoResult = await fetchVideoAssets();
+      expect(requestMock).toHaveBeenCalledWith(
+        "/api/video-assets",
+        expect.objectContaining({ returnResponse: true }),
+      );
+      expect(videoResult.videos[0]?.url).toBe("https://example.com/videos/clip%201.mp4");
+      expect(videoResult.videos[1]?.url).toBe("http://ext.com/b.mp4");
     });
   });
 
