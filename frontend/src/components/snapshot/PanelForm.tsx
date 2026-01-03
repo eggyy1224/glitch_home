@@ -4,6 +4,8 @@ import type { PanelMode } from "./panelPresets";
 import { getPanelModeAndAsset, mergePresetMode, MODE_PRESETS } from "./panelPresets";
 import type { VideoPanelOptions } from "./videoPanelUtils";
 import { buildVideoModeUrl, parseVideoPanelOptions } from "./videoPanelUtils";
+import type { VjVideoPanelOptions } from "./vjVideoPanelUtils";
+import { buildVjVideoModeUrl, parseVjVideoPanelOptions } from "./vjVideoPanelUtils";
 import type { KinshipRelation, SlidePanelOptions, VjPanelOptions } from "./slidePanelUtils";
 import {
   applySlideOptionsToParams,
@@ -59,11 +61,13 @@ export function PanelForm({
   const safeAssetList = Array.isArray(assetList) ? assetList : [];
   const safeBgmAssets = Array.isArray(bgmAssets) ? bgmAssets : [];
   const isVideoMode = mode === "video_mode";
+  const isVjVideoMode = mode === "vj_video_mode";
   const isSlideMode = mode === "slide_mode";
   const isMatrixMode = mode === "matrix_mode";
   const isVjMode = mode === "vj_mode";
   const isSlideLikeMode = isSlideMode || isMatrixMode || isVjMode;
   const videoOptions = React.useMemo(() => (isVideoMode ? parseVideoPanelOptions(panel?.url) : undefined), [isVideoMode, panel?.url]);
+  const vjVideoOptions = React.useMemo(() => (isVjVideoMode ? parseVjVideoPanelOptions(panel?.url) : undefined), [isVjVideoMode, panel?.url]);
   const slideOptions = React.useMemo(
     () => (isSlideMode || isMatrixMode ? parseSlidePanelOptions(panel?.url, panel?.params) : undefined),
     [isSlideMode, isMatrixMode, panel?.params, panel?.url],
@@ -86,6 +90,12 @@ export function PanelForm({
       params: panel?.params,
     };
     onPanelChange(index, patchPayload);
+  };
+
+  const handleVjVideoOptionChange = (patch: Partial<VjVideoPanelOptions>) => {
+    if (!isVjVideoMode) return;
+    const nextUrl = buildVjVideoModeUrl(panel?.url, patch);
+    onPanelChange(index, { url: nextUrl });
   };
 
   const handleSlideOptionChange = (patch: Partial<SlidePanelOptions>) => {
@@ -167,7 +177,7 @@ export function PanelForm({
           type="text"
           value={panel?.url || ""}
           onChange={(e) => onPanelChange(index, { url: e.target.value })}
-          placeholder="例如 /?slide_mode=true 或 /?matrix_mode=true 或 /?vj_mode=true"
+          placeholder="例如 /?slide_mode=true 或 /?matrix_mode=true 或 /?vj_mode=true 或 /?vj_video_mode=true"
           data-ai-field={`snapshot.panel[${index}].url`}
         />
       </label>
@@ -440,6 +450,177 @@ export function PanelForm({
                     const parsed = raw === "" ? null : Number(raw);
                     const safeValue = parsed === null || Number.isNaN(parsed) ? null : Math.max(0, Math.min(1, parsed));
                     handleVjOptionChange({ vjBgmVolume: safeValue });
+                  }}
+                  placeholder="預設 0.6"
+                  data-ai-field={`snapshot.panel[${index}].vj_bgm_volume`}
+                />
+              </label>
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+              提示：BGM 檔案放在 /bgm/ 資料夾（例如 heavy_metal_bgm_03.mp3、星際狂舞.mp3）
+            </div>
+          </div>
+        </div>
+      )}
+      {isVjVideoMode && (
+        <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #0f4", paddingTop: 8 }}>
+          <div style={{ marginBottom: 6, color: "#82dca5" }}>vj_video_mode 參數</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              速度下限 vj_video_rate_min
+              <input
+                type="number"
+                min="0.1"
+                max="4"
+                step="0.05"
+                value={vjVideoOptions?.vjVideoRateMin ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjVideoOptionChange({ vjVideoRateMin: safeValue });
+                }}
+                placeholder="預設 0.55"
+                data-ai-field={`snapshot.panel[${index}].vj_video_rate_min`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              速度上限 vj_video_rate_max
+              <input
+                type="number"
+                min="0.2"
+                max="6"
+                step="0.05"
+                value={vjVideoOptions?.vjVideoRateMax ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjVideoOptionChange({ vjVideoRateMax: safeValue });
+                }}
+                placeholder="預設 1.8"
+                data-ai-field={`snapshot.panel[${index}].vj_video_rate_max`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              跳段下限 vj_video_jump_min (秒)
+              <input
+                type="number"
+                min="0.05"
+                max="10"
+                step="0.05"
+                value={vjVideoOptions?.vjVideoJumpMin ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjVideoOptionChange({ vjVideoJumpMin: safeValue });
+                }}
+                placeholder="預設 0.25"
+                data-ai-field={`snapshot.panel[${index}].vj_video_jump_min`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              跳段上限 vj_video_jump_max (秒)
+              <input
+                type="number"
+                min="0.1"
+                max="20"
+                step="0.1"
+                value={vjVideoOptions?.vjVideoJumpMax ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjVideoOptionChange({ vjVideoJumpMax: safeValue });
+                }}
+                placeholder="預設 2.8"
+                data-ai-field={`snapshot.panel[${index}].vj_video_jump_max`}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column" }}>
+              換片門檻 vj_video_swap_threshold (0-1)
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.05"
+                value={vjVideoOptions?.vjVideoSwapThreshold ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? null : Number(raw);
+                  const safeValue = parsed === null || Number.isNaN(parsed) ? null : parsed;
+                  handleVjVideoOptionChange({ vjVideoSwapThreshold: safeValue });
+                }}
+                placeholder="預設 0.7"
+                data-ai-field={`snapshot.panel[${index}].vj_video_swap_threshold`}
+              />
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={vjVideoOptions?.vjVideoShuffle !== false}
+                onChange={(e) => handleVjVideoOptionChange({ vjVideoShuffle: e.target.checked })}
+                data-ai-field={`snapshot.panel[${index}].vj_video_shuffle`}
+              />
+              高強度 beat 時換片 (vj_video_shuffle)
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={vjVideoOptions?.vjAutostartMic ?? false}
+                onChange={(e) => handleVjVideoOptionChange({ vjAutostartMic: e.target.checked })}
+                data-ai-field={`snapshot.panel[${index}].vj_autostart_mic`}
+              />
+              自動啟動麥克風 (vj_autostart_mic)
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={vjVideoOptions?.vjDebug ?? false}
+                onChange={(e) => handleVjVideoOptionChange({ vjDebug: e.target.checked })}
+                data-ai-field={`snapshot.panel[${index}].vj_debug`}
+              />
+              顯示 debug 面板 (vj_debug)
+            </label>
+          </div>
+          <div style={{ marginTop: 10, borderTop: "1px dashed rgba(130, 220, 165, 0.4)", paddingTop: 8 }}>
+            <div style={{ marginBottom: 6, color: "#82dca5", fontSize: 12 }}>BGM 驅動模式（設定後會取代麥克風）</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                BGM 檔名 (vj_bgm)
+                <input
+                  type="text"
+                  value={vjVideoOptions?.vjBgm ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    handleVjVideoOptionChange({ vjBgm: raw || null });
+                  }}
+                  placeholder="heavy_metal_bgm_03.mp3"
+                  list={safeBgmAssets.length ? bgmListId : undefined}
+                  data-ai-field={`snapshot.panel[${index}].vj_bgm`}
+                />
+                {safeBgmAssets.length > 0 && (
+                  <datalist id={bgmListId}>
+                    {safeBgmAssets.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
+                )}
+              </label>
+              <label style={{ display: "flex", flexDirection: "column" }}>
+                BGM 音量 (0-1)
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={vjVideoOptions?.vjBgmVolume ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const parsed = raw === "" ? null : Number(raw);
+                    const safeValue = parsed === null || Number.isNaN(parsed) ? null : Math.max(0, Math.min(1, parsed));
+                    handleVjVideoOptionChange({ vjBgmVolume: safeValue });
                   }}
                   placeholder="預設 0.6"
                   data-ai-field={`snapshot.panel[${index}].vj_bgm_volume`}

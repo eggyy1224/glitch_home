@@ -7,6 +7,30 @@ export interface SoundFileEntry {
   [key: string]: unknown;
 }
 
+const MAX_DECODE_PASSES = 3;
+const PERCENT_SEQUENCE = /%[0-9A-Fa-f]{2}/;
+
+function normalizeEncodedPath(pathname: string): string {
+  return pathname
+    .split("/")
+    .map((segment) => {
+      if (!segment) return segment;
+      let decoded = segment;
+      for (let i = 0; i < MAX_DECODE_PASSES; i += 1) {
+        if (!PERCENT_SEQUENCE.test(decoded)) break;
+        try {
+          const next = decodeURIComponent(decoded);
+          if (next === decoded) break;
+          decoded = next;
+        } catch (err) {
+          break;
+        }
+      }
+      return encodeURIComponent(decoded);
+    })
+    .join("/");
+}
+
 function buildTargetQuery(targetClientId: string | null | undefined): Record<string, string> | undefined {
   if (!targetClientId) return undefined;
   return { target_client_id: targetClientId };
@@ -25,11 +49,7 @@ export async function fetchSoundFiles({ signal }: RequestOptions = {}): Promise<
     try {
       const href = String(file.url);
       const absolute = new URL(href, requestUrl.origin);
-      const encodedPath = absolute.pathname
-        .split("/")
-        .map((segment) => encodeURIComponent(segment))
-        .join("/");
-      absolute.pathname = encodedPath;
+      absolute.pathname = normalizeEncodedPath(absolute.pathname);
       return {
         ...file,
         url: absolute.toString(),
@@ -125,6 +145,11 @@ export interface BgmTrackEntry {
   url: string;
 }
 
+export interface VideoAssetEntry {
+  filename: string;
+  url: string;
+}
+
 export async function fetchBgmAssets({ signal }: RequestOptions = {}): Promise<{ tracks: BgmTrackEntry[] }> {
   const { data, response } = (await apiClient.request(`/api/bgm-assets`, {
     signal,
@@ -138,11 +163,7 @@ export async function fetchBgmAssets({ signal }: RequestOptions = {}): Promise<{
     try {
       const href = String(track.url);
       const absolute = new URL(href, requestUrl.origin);
-      const encodedPath = absolute.pathname
-        .split("/")
-        .map((segment) => encodeURIComponent(segment))
-        .join("/");
-      absolute.pathname = encodedPath;
+      absolute.pathname = normalizeEncodedPath(absolute.pathname);
       return {
         ...track,
         url: absolute.toString(),
@@ -152,4 +173,29 @@ export async function fetchBgmAssets({ signal }: RequestOptions = {}): Promise<{
     }
   });
   return { tracks: mapped as BgmTrackEntry[] };
+}
+
+export async function fetchVideoAssets({ signal }: RequestOptions = {}): Promise<{ videos: VideoAssetEntry[] }> {
+  const { data, response } = (await apiClient.request(`/api/video-assets`, {
+    signal,
+    returnResponse: true,
+  })) as RequestWithResponse<{ videos?: VideoAssetEntry[] }>;
+
+  const list = Array.isArray(data?.videos) ? data.videos : [];
+  const requestUrl = new URL(response.url);
+  const mapped = list.map((video) => {
+    if (!video?.url) return video;
+    try {
+      const href = String(video.url);
+      const absolute = new URL(href, requestUrl.origin);
+      absolute.pathname = normalizeEncodedPath(absolute.pathname);
+      return {
+        ...video,
+        url: absolute.toString(),
+      };
+    } catch (err) {
+      return video;
+    }
+  });
+  return { videos: mapped as VideoAssetEntry[] };
 }

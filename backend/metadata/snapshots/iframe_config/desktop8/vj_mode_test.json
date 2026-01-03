@@ -5,8 +5,8 @@
   "panels": [
     {
       "id": "p1",
-      "image": "offspring_20251004_220810_023.png",
-      "url": "/?top_k=15&slide_source=vector&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false&img=offspring_20251004_220810_023.png&vj_bgm_volume=1&vj_bgm=theme2.wav&vj_fast_ms=80&vj_slow_ms=16400&vj_mode=true",
+      "image": "offspring_20251116_124812_907.png",
+      "url": "/?top_k=15&slide_source=vector&kinship_depth=-1&kinship_order=children%2Csiblings%2Cparents%2Cancestors&include_deprecated=false&img=offspring_20251116_124812_907.png&vj_bgm_volume=1&vj_bgm=theme3.wav&vj_fast_ms=80&vj_slow_ms=16400&vj_mode=true",
       "params": {
         "__preset_mode": "vj_mode",
         "top_k": "15",

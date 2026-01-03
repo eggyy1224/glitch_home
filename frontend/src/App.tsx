@@ -232,12 +232,12 @@ export default function App() {
   }, []);
 
   // Ctrl+R toggle 左上角資訊（避免與瀏覽器刷新衝突：只攔截 Ctrl+R，不處理 Cmd+R/Meta+R）
-  // VJ mode 由 VjMode 接管 Ctrl+R（開關麥克風）
+  // VJ mode / vj_video_mode 由各自的元件接管 Ctrl+R（開關麥克風）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && (e.key === "r" || e.key === "R")) {
         e.preventDefault();
-        if (activeMode === DisplayModes.VJ) return;
+        if (activeMode === DisplayModes.VJ || activeMode === DisplayModes.VJ_VIDEO) return;
         setShowInfo((v) => !v);
       }
     };

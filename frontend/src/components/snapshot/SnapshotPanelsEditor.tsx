@@ -8,6 +8,7 @@ import type { PanelMode } from "./panelPresets";
 import { useSnapshotPanelDnd } from "./useSnapshotPanelDnd";
 import type { AssetSearchMode, AssetTab, PanelConfig } from "./types";
 import { buildVideoModeUrl } from "./videoPanelUtils";
+import { buildVjVideoModeUrl } from "./vjVideoPanelUtils";
 import {
   applySlideOptionsToParams,
   buildMatrixModeUrl,
@@ -327,6 +328,8 @@ export default function SnapshotPanelsEditor({
     const nextUrl =
       nextMode === "video_mode"
         ? buildVideoModeUrl(panel?.url, { video: currentAsset })
+        : nextMode === "vj_video_mode"
+        ? buildVjVideoModeUrl(panel?.url, { video: currentAsset })
         : nextMode === "slide_mode"
         ? buildSlideModeUrl(panel?.url, { img: currentAsset }, { imgBase, panelParams: panel?.params })
         : nextMode === "matrix_mode"
@@ -359,6 +362,8 @@ export default function SnapshotPanelsEditor({
       const nextUrl =
         mode === "video_mode"
           ? buildVideoModeUrl(panel?.url, { video: assetValue })
+          : mode === "vj_video_mode"
+          ? buildVjVideoModeUrl(panel?.url, { video: assetValue })
           : mode === "slide_mode"
           ? buildSlideModeUrl(panel?.url, { img: assetValue }, { imgBase, panelParams: panel?.params })
           : mode === "matrix_mode"

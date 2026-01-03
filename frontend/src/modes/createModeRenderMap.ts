@@ -73,6 +73,7 @@ const GenerateMode = lazy(() => import("../GenerateMode"));
 const StaticMode = lazy(() => import("../StaticMode"));
 const VideoMode = lazy(() => import("../VideoMode"));
 const VjMode = lazy(() => import("../VjMode"));
+const VjVideoMode = lazy(() => import("../VjVideoMode"));
 const KinshipScene = lazy(() => import("../ThreeKinshipScene"));
 const AdminPanel = lazy(() => import("../AdminPanel"));
 const ExhibitionMode = lazy(() => import("../ExhibitionMode"));
@@ -82,6 +83,7 @@ const modeBaseConfigs: Record<string, ModeBaseConfig> = {
   [DisplayModes.MATRIX]: { component: MatrixMode, withCaptureReady: true },
   [DisplayModes.SLIDE]: { component: SlideMode, withCaptureReady: true },
   [DisplayModes.VJ]: { component: VjMode, withCaptureReady: true },
+  [DisplayModes.VJ_VIDEO]: { component: VjVideoMode, withCaptureReady: true },
   [DisplayModes.ORGANIC]: { component: OrganicRoomScene, withCaptureReady: true },
   [DisplayModes.SEARCH]: { component: SearchMode },
   [DisplayModes.COLLAGE]: { component: CollageMode, withCaptureReady: true },
@@ -189,6 +191,7 @@ export function createModeRenderMap({
         anchorImage: imgId,
       },
     }),
+    [DisplayModes.VJ_VIDEO]: buildModeEntry(modeBaseConfigs[DisplayModes.VJ_VIDEO]),
     [DisplayModes.ORGANIC]: buildModeEntry(modeBaseConfigs[DisplayModes.ORGANIC], {
       componentProps: {
         imagesBase,
