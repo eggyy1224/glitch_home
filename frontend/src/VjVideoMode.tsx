@@ -422,13 +422,6 @@ export default function VjVideoMode({ onCaptureReady }: VjVideoModeProps) {
         </div>
       )}
 
-      {isBgmMode && bgmHook.isPlaying && (
-        <div className="vj-bgm-status">
-          <span className="vj-bgm-icon">♫</span>
-          <span className="vj-bgm-track">{bgmHook.currentTrack || "播放中..."}</span>
-        </div>
-      )}
-
       {debugEnabled && (
         <div className="vj-debug">
           <div className="vj-debug-header">

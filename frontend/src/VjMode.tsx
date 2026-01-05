@@ -429,14 +429,6 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
         </div>
       )}
 
-      {/* BGM mode status bar (when playing) */}
-      {isBgmMode && bgmHook.isPlaying && (
-        <div className="vj-bgm-status">
-          <span className="vj-bgm-icon">♫</span>
-          <span className="vj-bgm-track">{bgmHook.currentTrack || "播放中..."}</span>
-        </div>
-      )}
-
       {debugEnabled && (
         <div className="vj-debug">
           <div className="vj-debug-header">
