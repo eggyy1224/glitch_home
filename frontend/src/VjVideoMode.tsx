@@ -214,13 +214,14 @@ export default function VjVideoMode({ onCaptureReady }: VjVideoModeProps) {
 
     void (async () => {
       await bgmHook.start();
-      setAudioStarted(true);
+      setAudioStarted(bgmHook.featuresRef.current.running);
     })();
-  }, [isBgmMode, videoUrl, audioStarted, bgmHook.playlist.length, bgmHook.start]);
+  }, [isBgmMode, videoUrl, audioStarted, bgmHook.playlist.length, bgmHook.start, bgmHook.featuresRef]);
 
   useEffect(() => {
-    if (isBgmMode && bgmHook.features.running && !audioStarted) {
-      setAudioStarted(true);
+    if (!isBgmMode) return;
+    if (audioStarted !== bgmHook.features.running) {
+      setAudioStarted(bgmHook.features.running);
     }
   }, [isBgmMode, bgmHook.features.running, audioStarted]);
 

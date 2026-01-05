@@ -179,14 +179,15 @@ export default function VjMode({ imagesBase, anchorImage, onCaptureReady }: VjMo
 
     void (async () => {
       await bgmHook.start();
-      setAudioStarted(true);
+      setAudioStarted(bgmHook.featuresRef.current.running);
     })();
-  }, [isBgmMode, pool.anchor, audioStarted, bgmHook.playlist.length, bgmHook.start]);
+  }, [isBgmMode, pool.anchor, audioStarted, bgmHook.playlist.length, bgmHook.start, bgmHook.featuresRef]);
 
   // Track BGM running state
   useEffect(() => {
-    if (isBgmMode && bgmHook.features.running && !audioStarted) {
-      setAudioStarted(true);
+    if (!isBgmMode) return;
+    if (audioStarted !== bgmHook.features.running) {
+      setAudioStarted(bgmHook.features.running);
     }
   }, [isBgmMode, bgmHook.features.running, audioStarted]);
 

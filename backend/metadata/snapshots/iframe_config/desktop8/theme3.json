@@ -1,0 +1,19 @@
+{
+  "layout": "grid",
+  "gap": 0,
+  "columns": 1,
+  "panels": [
+    {
+      "id": "p1",
+      "image": null,
+      "url": "/?vj_bgm_volume=1&vj_video_mode=true&video=SCHC-1-modified.mp4&vj_bgm=theme3.wav",
+      "params": {
+        "__preset_mode": "vj_video_mode"
+      },
+      "ratio": 1.0,
+      "label": "desktop panel",
+      "col_span": null,
+      "row_span": null
+    }
+  ]
+}

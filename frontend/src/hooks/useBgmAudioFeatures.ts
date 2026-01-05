@@ -405,8 +405,8 @@ export function useBgmAudioFeatures(options: UseBgmAudioFeaturesOptions = {}): U
           } catch (playErr) {
             lastError = playErr;
             if (isAutoplayBlockedError(playErr)) {
-              setRunning(false);
               setError("自動播放被阻擋，請點擊頁面後重試");
+              stop();
               return false;
             }
             if (attempt === 0) {
@@ -415,8 +415,8 @@ export function useBgmAudioFeatures(options: UseBgmAudioFeaturesOptions = {}): U
             }
           }
         }
-        setRunning(false);
         setError(`BGM 播放失敗：${formatPlayError(lastError)}`);
+        stop();
         return false;
       };
 

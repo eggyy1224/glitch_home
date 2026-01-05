@@ -34,7 +34,10 @@ function isVjModeUrl(rawUrl) {
   if (!rawUrl) return false;
   try {
     const parsed = new URL(String(rawUrl));
-    return isTruthyQueryParam(parsed.searchParams.get("vj_mode"));
+    return (
+      isTruthyQueryParam(parsed.searchParams.get("vj_mode")) ||
+      isTruthyQueryParam(parsed.searchParams.get("vj_video_mode"))
+    );
   } catch (error) {
     return false;
   }
